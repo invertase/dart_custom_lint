@@ -1,0 +1,17 @@
+name: example_app
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ">=2.16.0 <3.0.0"
+
+dependencies:
+  riverpod: ^1.0.3
+
+dev_dependencies:
+  custom_lint:
+    path: ../packages/custom_lint
+  riverpod_lint:
+    path: ../packages/riverpod_lint
+  target_lint:
+    path: ../packages/target_lint

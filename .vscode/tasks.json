@@ -1,0 +1,13 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "delete .plugin_manager",
+      "command": "rm -rf /Users/remirousselet/.dartServer/.plugin_manager/ ; echo ' ' > /Users/remirousselet/dev/invertase/custom_lint/packages/target_lint/log.txt ; echo ' ' > /Users/remirousselet/dev/invertase/custom_lint/packages/custom_lint/log.txt ; echo ' ' > /Users/remirousselet/dev/invertase/custom_lint/packages/riverpod_lint/log.txt",
+      "type": "shell",
+      "presentation": {
+        "reveal": "silent",
+      }
+    }
+  ]
+}
