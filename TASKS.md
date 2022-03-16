@@ -1,35 +1,41 @@
 potential lint errors:
-- no bin found
-- threw during start
-- failed to connect
-- unknown lint rule
-- lint rule threw
-- CLI executed vs local custom_lint version mismatch
+
+- [ ] no bin found
+- [ ] threw during start
+- [ ] failed to connect
+- [ ] unknown lint rule
+- [ ] lint rule threw
+- [ ] CLI executed vs local custom_lint version mismatch
+
+
 
 
 features to have:
-- CLI for running lints
-- IDE integration
-- reactive syntax for source change
-- hot reload or hot-restart
+
+- [x] IDE integration
 - [x] support prints
 - [x] built-in error reporting
-- handle ignores:
-  - `// ignore: lint` 
-  - `// ignore_for_file: lint` 
-  - `// ignore_for_file: type=lint`
-- testable (expect_error?)
-- support analysis_options' configs:
-  - `import`
-  - `exclude`
-  - `include`
-- custom lint packages can specify default configs (rules enabled or disabled by default)
-- unknown configs
-- unknown rules
-
+- [ ] add built-in linter for providing warnings if a custom lint package is incorrectly setup
+- [ ] CLI for running lints
+- [ ] reactive syntax for source change
+- [ ] hot reload or hot-restart
+- [ ] handle ignores:
+  - [ ] `// ignore: lint`
+  - [ ] `// ignore_for_file: lint`
+  - [ ] `// ignore_for_file: type=lint`
+- [ ] testing framework
+- [ ] support analysis_options' configs:
+  - [ ] `import`
+  - [ ] `exclude`
+  - [ ] `include`
+- [ ] add optional configuration file for changing the entrypoint location & passing options
+- [ ] custom lint packages can specify default configs (rules enabled or disabled by default)
+- [ ] unknown configs
+- [ ] unknown rules
 
 How to deal with mono-repos?
 Maybe:
+
 ```
 packages/
   foo/
@@ -37,5 +43,7 @@ packages/
 analysis_options.yaml
 pubspec.yaml << depends on custom_lint
 ```
+
 Things to consider:
+
 - a package may not depend on a specific rule
