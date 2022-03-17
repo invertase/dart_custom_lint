@@ -14,6 +14,7 @@ import 'package:package_config/package_config_types.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:riverpod/riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../log.dart';
@@ -22,190 +23,12 @@ import 'plugin_link.dart';
 
 const _uui = Uuid();
 
-class CustomLintPlugin extends MyServerPlugin {
-  CustomLintPlugin(analyzer.ResourceProvider provider) : super(provider);
+final _activeContextRootsProvider = StateProvider<List<plugin.ContextRoot>>(
+  (ref) => [],
+);
 
-  @override
-  String get contactInfo => 'https://github.com/invertase/custom_lint/issues';
-
-  @override
-  List<String> get fileGlobsToAnalyze => const ['*.dart'];
-
-  @override
-  String get name => 'custom_lint';
-
-  @override
-  String get version => '1.0.0-alpha.0';
-
-  // Storing the future directly to avoid race conditions
-  final _pluginLinks = <Uri, PluginLink>{};
-
-  /// A table mapping the current context roots to the analysis driver created
-  /// for that root.
-  final _activeContextRoots = <plugin.ContextRoot>{};
-
-  late plugin.PluginVersionCheckParams _versionCheckRequest;
-  plugin.AnalysisSetPriorityFilesParams? _lastSetPriorityFilesRequest;
-
-  @override
-  Future<plugin.AnalysisSetContextRootsResult> handleAnalysisSetContextRoots(
-    plugin.AnalysisSetContextRootsParams parameters,
-  ) async {
-    // Context roots have changed, so we spawn/kill plugins associated with
-    // the new/removed roots.
-
-    final contextRoots = parameters.roots;
-    final oldRoots = _activeContextRoots.toList();
-
-    // Let's spawn new plugins for new context roots
-    final newPluginKeys = contextRoots.expand<Uri>((contextRoot) {
-      // contextRoot was already initialized, so we don't re-create it
-      if (oldRoots.remove(contextRoot)) return const [];
-
-      _activeContextRoots.add(contextRoot);
-      return _spawnNewPluginsForContext(contextRoot).keys;
-    }).toList();
-
-    // Initializing new plugins, calling version check + set context roots + initial priority files
-    // TODO use Future.wait
-    // TODO guard errors
-    for (final linkKey in newPluginKeys) {
-      // TODO close subscribption
-      _pluginLinks[linkKey]!
-        ..messages.listen((event) {
-          final file = File('${linkKey.toFilePath()}/log.txt');
-          file.writeAsStringSync(
-            event.message + '\n',
-            mode: FileMode.append,
-          );
-        })
-        ..error.listen((event) {
-          final file = File('${linkKey.toFilePath()}/log.txt');
-          file.writeAsStringSync(
-            '${event.message}\n${event.stackTrace}\n',
-            mode: FileMode.append,
-          );
-        })
-        ..notifications.listen((event) {
-          _handleNotification(event, linkKey);
-        });
-
-      // TODO what if setContextRoot or priotity files changes while these
-      // requests are pending?
-      await _requestPlugin(linkKey, _versionCheckRequest);
-
-      // TODO filter events if the previous/new values are the same
-      // Call setContextRoots on the plugin with only the roots that have
-      // the plugin enabled
-      await _requestPlugin(
-        linkKey,
-        plugin.AnalysisSetContextRootsParams(
-          parameters.roots
-              .where((contextRoot) =>
-                  _pluginLinks[linkKey]!.contextRoots.contains(contextRoot))
-              .toList(),
-        ),
-      );
-
-      final priorityFilesParam = _priorityFilesForPlugin(linkKey);
-      if (priorityFilesParam != null) {
-        await _requestPlugin(linkKey, priorityFilesParam);
-      }
-    }
-
-    // TODO handle context root change on already existing plugins
-    // Killing unused plugins from removed roots
-    await Future.wait(
-      oldRoots.map((contextRoot) {
-        // The context has been removed, so we kill the plugin.
-        if (_activeContextRoots.remove(contextRoot)) {
-          return _disposePluginsForContext(contextRoot);
-        }
-        return Future<void>.value();
-      }),
-    );
-
-    return plugin.AnalysisSetContextRootsResult();
-  }
-
-  Future<void> _disposePluginsForContext(
-    plugin.ContextRoot contextRoot,
-  ) {
-    // Remove the context root and stop all plugins that are no-longer
-    // associated with any context root.
-
-    return Future.wait([
-      for (final pluginLink in _pluginLinks.values.toList())
-        if (pluginLink.contextRoots.remove(contextRoot) &&
-            pluginLink.contextRoots.isEmpty)
-          _pluginLinks.remove(pluginLink.key)!.close(),
-    ]);
-  }
-
-  Map<Uri, PluginLink> _spawnNewPluginsForContext(
-    plugin.ContextRoot pluginContextRoot,
-  ) {
-    final result = <Uri, PluginLink>{};
-
-    try {
-      for (final plugin in _getPluginsForContext(pluginContextRoot)) {
-        if (!_pluginLinks.containsKey(plugin.root)) {
-          runZonedGuarded(() {
-            result[plugin.root] =
-                _pluginLinks[plugin.root] = PluginLink.spawn(plugin.root);
-          }, (err, stack) {
-            log('Error while spawning isolate $err \n $stack');
-          });
-
-          final pubspecPath = p.join(
-            plugin.root.toFilePath(),
-            'pubspec.yaml',
-          );
-
-          log('warning at $pubspecPath');
-
-          // try {
-          //   void fn() {
-          //     channel.sendNotification(
-          //       plugin.AnalysisErrorsParams(
-          //         pubspecPath,
-          //         [
-          //           // plugin.AnalysisError(
-          //           //   // TODO use plugin.class
-          //           //   AnalysisErrorSeverity.WARNING,
-          //           //   AnalysisErrorType.LINT,
-          //           //   plugin.Location(pubspecPath, 0, 100, 0, 0),
-          //           //   'Invalid pubspec format',
-          //           //   'custom_lint_setup',
-          //           // ),
-          //         ],
-          //       ).toNotification(),
-          //     );
-          //   }
-
-          //   // Timer(Duration(seconds: 10), fn);
-          // } catch (err, stack) {
-          //   log('failed to do something $err\n$stack');
-          // }
-        }
-
-        result[plugin.root]!.contextRoots.add(pluginContextRoot);
-      }
-
-      return result;
-    } catch (err, stack) {
-      log('Failed to start plugins2:\n$err\n$stack\n\n');
-      channel.sendNotification(
-        plugin.PluginErrorParams(
-          true,
-          err.toString(),
-          stack.toString(),
-        ).toNotification(),
-      );
-      rethrow;
-    }
-  }
-
+final _pluginMetasForContextRootProvider = Provider.autoDispose
+    .family<List<Package>, plugin.ContextRoot>((ref, contextRoot) {
   Iterable<Package> _getPluginsForContext(
     plugin.ContextRoot contextRoot,
   ) sync* {
@@ -262,11 +85,162 @@ class CustomLintPlugin extends MyServerPlugin {
     }
   }
 
+  return _getPluginsForContext(contextRoot).toList();
+});
+
+final _allPluginsProvider = Provider.autoDispose<Map<Uri, PluginLink>>((ref) {
+  final contextRoots = ref.watch(_activeContextRootsProvider);
+
+  final plugins = contextRoots.expand(
+    (contextRoot) => ref.watch(_pluginMetasForContextRootProvider(contextRoot)),
+  );
+
+  return {
+    for (final plugin in plugins)
+      // TODO catch errors
+      plugin.root: ref.watch(pluginLinkProvider(plugin.root)),
+  };
+});
+
+final _contextRootsForPlugin =
+    Provider.autoDispose.family<List<plugin.ContextRoot>, Uri>(
+  (ref, packageUri) {
+    final contextRoots = ref.watch(_activeContextRootsProvider);
+
+    return contextRoots
+        .where(
+          (contextRoot) => ref
+              .watch(_pluginMetasForContextRootProvider(contextRoot))
+              .any((package) => package.root == packageUri),
+        )
+        .toList();
+  },
+  cacheTime: const Duration(minutes: 5),
+);
+
+class CustomLintPlugin extends MyServerPlugin {
+  CustomLintPlugin(analyzer.ResourceProvider provider) : super(provider) {
+    _allPluginsSub = _listenPlugins();
+  }
+
+  @override
+  String get contactInfo => 'https://github.com/invertase/custom_lint/issues';
+
+  @override
+  List<String> get fileGlobsToAnalyze => const ['*.dart'];
+
+  @override
+  String get name => 'custom_lint';
+
+  @override
+  String get version => '1.0.0-alpha.0';
+
+  final _container = ProviderContainer();
+
+  /// An imperative anchor for reading the current list of plugins
+  late final ProviderSubscription<Map<Uri, PluginLink>> _allPluginsSub;
+
+  late plugin.PluginVersionCheckParams _versionCheckRequest;
+  plugin.AnalysisSetPriorityFilesParams? _lastSetPriorityFilesRequest;
+
+  ProviderSubscription<Map<Uri, PluginLink>> _listenPlugins() {
+    return _container.listen<Map<Uri, PluginLink>>(
+      _allPluginsProvider,
+      (previousPlugins, currentPlugins) async {
+        final changedPlugins = {
+          for (final entry in currentPlugins.entries)
+            if (entry.value != previousPlugins?[entry.key])
+              entry.key: entry.value,
+        };
+
+        // Initializing new plugins, calling version check + set context roots + initial priority files
+        // TODO use Future.wait
+        // TODO guard errors
+        await Future.wait<void>(
+          changedPlugins.entries.map((changedPlugin) async {
+            // TODO close subscribption
+            changedPlugin.value
+              ..messages.listen((event) {
+                final file = File('${changedPlugin.key.toFilePath()}/log.txt');
+                file.writeAsStringSync(
+                  event.message + '\n',
+                  mode: FileMode.append,
+                );
+              })
+              ..error.listen((event) {
+                final file = File('${changedPlugin.key.toFilePath()}/log.txt');
+                file.writeAsStringSync(
+                  '${event.message}\n${event.stackTrace}\n',
+                  mode: FileMode.append,
+                );
+              })
+              ..notifications.listen((event) {
+                _handleNotification(event, changedPlugin.key);
+              });
+
+            // TODO what if setContextRoot or priotity files changes while these
+            // requests are pending?
+            await _requestPlugin(changedPlugin.key, _versionCheckRequest);
+
+            // TODO filter events if the previous/new values are the same
+            // Call setContextRoots on the plugin with only the roots that have
+            // the plugin enabled
+            await _requestPlugin(
+              changedPlugin.key,
+              plugin.AnalysisSetContextRootsParams(
+                _container
+                    .read(_activeContextRootsProvider)
+                    .where(
+                      _container
+                          .read(_contextRootsForPlugin(changedPlugin.key))
+                          .contains,
+                    )
+                    .toList(),
+              ),
+            );
+
+            final priorityFilesParam =
+                _priorityFilesForPlugin(changedPlugin.key);
+            if (priorityFilesParam != null) {
+              await _requestPlugin(changedPlugin.key, priorityFilesParam);
+            }
+          }),
+        );
+
+        // TODO refresh lints, such that we don't see previous lints while plugins are rebuilding
+      },
+      fireImmediately: true,
+      onError: (err, stack) {
+        // TODO on error send plugin error message
+        log('Failed to start plugins2:\n$err\n$stack\n\n');
+        channel.sendNotification(
+          plugin.PluginErrorParams(
+            true,
+            err.toString(),
+            stack.toString(),
+          ).toNotification(),
+        );
+      },
+    );
+  }
+
+  @override
+  Future<plugin.AnalysisSetContextRootsResult> handleAnalysisSetContextRoots(
+    plugin.AnalysisSetContextRootsParams parameters,
+  ) async {
+    _container.read(_activeContextRootsProvider.notifier).state =
+        parameters.roots;
+
+    // TODO handle context root change on already existing plugins
+    // Unused plugins will automatically be disposed thanks to Riverpod
+    return plugin.AnalysisSetContextRootsResult();
+  }
+
   void _handleNotification(plugin.Notification notification, Uri pluginKey) {
     // TODO try/catch
     switch (notification.event) {
       case 'analysis.errors':
-        final link = _pluginLinks[pluginKey]!;
+        final link = _allPluginsSub.read()[pluginKey]!;
         final params =
             plugin.AnalysisErrorsParams.fromNotification(notification);
 
@@ -278,7 +252,9 @@ class CustomLintPlugin extends MyServerPlugin {
         // TODO handle removed files or there is otherwise a memory leak
         link.lintsForLibrary[params.file] = params;
 
-        final lintsForFile = _pluginLinks.values
+        final lintsForFile = _allPluginsSub
+            .read()
+            .values
             .expand<plugin.AnalysisError>(
               (link) => link.lintsForLibrary[params.file]?.errors ?? const [],
             )
@@ -303,7 +279,7 @@ class CustomLintPlugin extends MyServerPlugin {
     plugin.RequestParams request,
   ) {
     return Future.wait(
-      _pluginLinks.keys.map((key) => _requestPlugin(key, request)),
+      _allPluginsSub.read().keys.map((key) => _requestPlugin(key, request)),
     );
   }
 
@@ -312,10 +288,10 @@ class CustomLintPlugin extends MyServerPlugin {
     plugin.RequestParams request,
   ) async {
     assert(
-      _pluginLinks.containsKey(pluginKey),
+      _allPluginsSub.read().containsKey(pluginKey),
       'Bad state, plugin $pluginKey not found',
     );
-    final link = _pluginLinks[pluginKey]!;
+    final link = _allPluginsSub.read()[pluginKey]!;
     final id = _uui.v4();
 
     final response = link.responses.firstWhere((message) => message.id == id);
@@ -370,16 +346,16 @@ class CustomLintPlugin extends MyServerPlugin {
     final allPriorityFiles = _lastSetPriorityFilesRequest?.files;
     if (allPriorityFiles == null) return null;
 
-    final link = _pluginLinks[pluginKey];
+    final link = _allPluginsSub.read()[pluginKey];
     if (link == null) {
       throw StateError('Plugin $pluginKey not found');
     }
 
     final priorityFilesForPlugin = allPriorityFiles.where(
       (priorityFile) {
-        return link.contextRoots.any(
-          (contextRoot) => p.isWithin(contextRoot.root, priorityFile),
-        );
+        return _container.read(_contextRootsForPlugin(pluginKey)).any(
+              (contextRoot) => p.isWithin(contextRoot.root, priorityFile),
+            );
       },
     ).toList();
 
@@ -395,11 +371,11 @@ class CustomLintPlugin extends MyServerPlugin {
     _lastSetPriorityFilesRequest = parameters;
 
     await Future.wait(
-      _pluginLinks.entries.map(
-        (entry) =>
-            // TODO filter request if previous/new values are the same
-            _requestPlugin(entry.key, _priorityFilesForPlugin(entry.key)!),
-      ),
+      _allPluginsSub.read().entries.map(
+            (entry) =>
+                // TODO filter request if previous/new values are the same
+                _requestPlugin(entry.key, _priorityFilesForPlugin(entry.key)!),
+          ),
     );
 
     return plugin.AnalysisSetPriorityFilesResult();
@@ -488,8 +464,12 @@ class CustomLintPlugin extends MyServerPlugin {
   FutureOr<plugin.PluginShutdownResult> handlePluginShutdown(
     plugin.PluginShutdownParams parameters,
   ) async {
-    await _requestAllPlugins(parameters);
-    return plugin.PluginShutdownResult();
+    try {
+      await _requestAllPlugins(parameters);
+      return plugin.PluginShutdownResult();
+    } finally {
+      _container.dispose();
+    }
   }
 }
 

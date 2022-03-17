@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -12,7 +13,13 @@ import 'analyzer_plugin.dart';
 void start(Iterable<String> _, SendPort sendPort) {
   log('Start custom_plugin');
 
-  // Server(sendPort, CustomLintPlugin(PhysicalResourceProvider.INSTANCE)).start();
-  MyServerPluginStarter(CustomLintPlugin(PhysicalResourceProvider.INSTANCE))
-      .start(sendPort);
+  runZonedGuarded(
+    () {
+      MyServerPluginStarter(CustomLintPlugin(PhysicalResourceProvider.INSTANCE))
+          .start(sendPort);
+    },
+    (err, stack) {
+      log('Uncaught error:\n$err\n$stack');
+    },
+  );
 }

@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:developer';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint/protocol.dart';
+import 'package:custom_lint/src/log.dart';
 
 import 'src/analyzer_plugin/client.dart';
 import 'src/analyzer_plugin/isolate_channel.dart';
@@ -17,17 +20,19 @@ void startPlugin(SendPort sendPort, PluginBase plugin) {
   }
 
   runZonedGuarded(
-    () {
+    () async {
       final client = Client(plugin);
       client.start(PluginIsolateChannel(sendPort));
     },
-    (err, stack) => send(
-      PluginErrorParams(
-        false,
-        err.toString(),
-        stack.toString(),
-      ).toNotification().toJson(),
-    ),
+    (err, stack) {
+      send(
+        PluginErrorParams(
+          false,
+          err.toString(),
+          stack.toString(),
+        ).toNotification().toJson(),
+      );
+    },
     zoneSpecification: ZoneSpecification(
       print: (self, zoneDelegate, zone, message) {
         send(PrintParams(message).toNotification().toJson());
