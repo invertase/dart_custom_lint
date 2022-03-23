@@ -1,33 +1,38 @@
-// Copyright (c) 2017, the Dart project authors. Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/overlay_file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/byte_store.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/driver.dart'
     show AnalysisDriver, AnalysisDriverGeneric, AnalysisDriverScheduler;
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/file_byte_store.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/performance_logger.dart';
+// ignore: implementation_imports
 import 'package:analyzer/src/generated/sdk.dart';
 import 'package:analyzer_plugin/channel/channel.dart';
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_constants.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+// ignore: implementation_imports
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart';
+// ignore: implementation_imports
 import 'package:analyzer_plugin/src/utilities/null_string_sink.dart';
 import 'package:analyzer_plugin/utilities/subscriptions/subscription_manager.dart';
+import 'package:custom_lint/protocol.dart';
 import 'package:pub_semver/pub_semver.dart';
-import 'package:custom_lint/src/log.dart';
 
 /// The abstract superclass of any class implementing a plugin for the analysis
 /// server.
 ///
 /// Clients may not implement or mix-in this class, but are expected to extend
 /// it.
+///
+/// Imported from package:analyzer_plugin
 abstract class ClientPlugin {
   /// Initialize a newly created analysis server plugin. If a resource [provider]
   /// is given, then it will be used to access the file system. Otherwise a
@@ -60,8 +65,8 @@ abstract class ClientPlugin {
 
   /// A table mapping the current context roots to the analysis driver created
   /// for that root.
-  final Map<ContextRoot, AnalysisDriverGeneric> driverMap =
-      <ContextRoot, AnalysisDriverGeneric>{};
+  final Map<ContextRoot, AnalysisDriver> driverMap =
+      <ContextRoot, AnalysisDriver>{};
 
   /// The performance log used by any analysis drivers that are created.
   final PerformanceLog performanceLog = PerformanceLog(NullStringSink());
@@ -140,10 +145,10 @@ abstract class ClientPlugin {
 
   /// Create an analysis driver that can analyze the files within the given
   /// [contextRoot].
-  AnalysisDriverGeneric createAnalysisDriver(ContextRoot contextRoot);
+  AnalysisDriver createAnalysisDriver(ContextRoot contextRoot);
 
   /// Return the driver being used to analyze the file with the given [path].
-  AnalysisDriverGeneric? driverForPath(String path) {
+  AnalysisDriver? driverForPath(String path) {
     final contextRoot = contextRootContaining(path);
     if (contextRoot == null) {
       return null;
@@ -234,8 +239,7 @@ abstract class ClientPlugin {
 
     final filesToFullyResolve = {
       // ... all other files need to be analyzed, but don't trump priority
-      for (final driver2 in driverMap.values)
-        ...(driver2 as AnalysisDriver).addedFiles,
+      for (final driver2 in driverMap.values) ...driver2.addedFiles,
     };
 
     handleAnalysisSetPriorityFiles(
@@ -261,9 +265,7 @@ abstract class ClientPlugin {
         filesByDriver.putIfAbsent(driver, () => <String>[]).add(file);
       }
     }
-    filesByDriver.forEach((AnalysisDriverGeneric driver, List<String> files) {
-      driver.priorityFiles = files;
-    });
+    filesByDriver.forEach((driver, files) => driver.priorityFiles = files);
     return AnalysisSetPriorityFilesResult();
   }
 
@@ -281,15 +283,13 @@ abstract class ClientPlugin {
     return AnalysisSetSubscriptionsResult();
   }
 
-  /// Handle an 'analysis.updateContent' request. Most subclasses should not
-  /// override this method, but should instead use the [contentCache] to access
-  /// the current content of overlaid files.
+  /// Handle an 'analysis.updateContent' request.
   ///
   /// Throw a [RequestFailure] if the request could not be handled.
   Future<AnalysisUpdateContentResult> handleAnalysisUpdateContent(
       AnalysisUpdateContentParams parameters) async {
     final files = parameters.files;
-    files.forEach((String filePath, Object? overlay) {
+    files.forEach((filePath, overlay) {
       // Prepare the old overlay contents.
       String? oldContents;
       try {
@@ -312,9 +312,11 @@ abstract class ClientPlugin {
         }
         try {
           newContents = SourceEdit.applySequence(oldContents, overlay.edits);
+          // ignore: avoid_catching_errors
         } on RangeError {
           throw RequestFailure(
-              RequestErrorFactory.invalidOverlayChangeInvalidEdit());
+            RequestErrorFactory.invalidOverlayChangeInvalidEdit(),
+          );
         }
       } else if (overlay is RemoveContentOverlay) {
         newContents = null;
@@ -385,6 +387,11 @@ abstract class ClientPlugin {
       KytheGetKytheEntriesParams parameters) async {
     return null;
   }
+
+  /// Requests lints for specific files
+  Future<GetAnalysisErrorResult> handleGetAnalysisErrors(
+    GetAnalysisErrorParams parameters,
+  );
 
   /// Handle a 'plugin.shutdown' request. Subclasses can override this method to
   /// perform any required clean-up, but cannot prevent the plugin from shutting
@@ -469,7 +476,7 @@ abstract class ClientPlugin {
   /// have already been analyzed.
   void sendNotificationsForSubscriptions(
       Map<String, List<AnalysisService>> subscriptions) {
-    subscriptions.forEach((String path, List<AnalysisService> services) {
+    subscriptions.forEach((path, services) {
       for (final service in services) {
         _sendNotificationForFile(path, service);
       }
@@ -520,6 +527,10 @@ abstract class ClientPlugin {
   Future<Response?> _getResponse(Request request, int requestTime) async {
     ResponseResult? result;
     switch (request.method) {
+      case GetAnalysisErrorParams.key:
+        final params = GetAnalysisErrorParams.fromRequest(request);
+        result = await handleGetAnalysisErrors(params);
+        break;
       case ANALYSIS_REQUEST_GET_NAVIGATION:
         final params = AnalysisGetNavigationParams.fromRequest(request);
         result = await handleAnalysisGetNavigation(params);
