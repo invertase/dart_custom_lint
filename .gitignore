@@ -1,6 +1,7 @@
 log.txt
 
 pubspec.lock
+.packages
 
 # Ignoring generated files, as they pollute pull requests and can create merge conflicts
 *.g.dart
