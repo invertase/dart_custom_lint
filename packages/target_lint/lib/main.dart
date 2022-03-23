@@ -1,12 +1,10 @@
 import 'dart:isolate';
 
-import 'package:analyzer/dart/analysis/results.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart';
-import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:recase/recase.dart';
-import 'package:path/path.dart' as path;
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer_plugin/protocol/protocol_common.dart';
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:path/path.dart' as path;
+import 'package:recase/recase.dart';
 
 void main(List<String> args, SendPort sendPort) {
   startPlugin(sendPort, _TargetLint());

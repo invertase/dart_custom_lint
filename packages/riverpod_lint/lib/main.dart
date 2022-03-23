@@ -5,12 +5,6 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:source_gen/source_gen.dart';
-
-// TODO ensure fromURL doesn't break
-const _providerMatcher = TypeChecker.fromUrl(
-  'package:riverpod/src/framework.dart#ProviderBase',
-);
 
 bool _isProvider(DartType type) {
   // TODO refactor to use TypeChecker

@@ -1,13 +1,13 @@
-// Copyright (c) 2017, the Dart project authors. Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
 import 'dart:async';
 import 'dart:isolate';
 
 import 'package:analyzer_plugin/channel/channel.dart';
 import 'package:analyzer_plugin/protocol/protocol.dart';
 
+/// A channel used to communicate with the analyzer server using the
+/// analyzer_plugin protocol
+///
+/// Imported from package:analyzer_plugin
 class PluginIsolateChannel implements PluginCommunicationChannel {
   /// Initialize a newly created channel to communicate with the server.
   PluginIsolateChannel(this._sendPort) {

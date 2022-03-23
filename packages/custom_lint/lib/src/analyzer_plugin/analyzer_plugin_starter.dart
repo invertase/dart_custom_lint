@@ -1,22 +1,19 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer/file_system/physical_file_system.dart';
-import 'package:analyzer_plugin/starter.dart';
-import 'package:custom_lint/src/analyzer_plugin/custom_server_plugin_starter.dart';
 
 import '../log.dart';
-
 import 'analyzer_plugin.dart';
+import 'isolate_channel.dart';
 
+/// Connects custom_lint to the analyzer server using the analyzer_plugin protocol
 void start(Iterable<String> _, SendPort sendPort) {
-  log('Start custom_plugin');
-
   runZonedGuarded(
     () {
-      MyServerPluginStarter(CustomLintPlugin(PhysicalResourceProvider.INSTANCE))
-          .start(sendPort);
+      final channel = PluginIsolateChannel(sendPort);
+      final server = CustomLintPlugin(PhysicalResourceProvider.INSTANCE);
+      server.start(channel);
     },
     (err, stack) {
       log('Uncaught error:\n$err\n$stack');

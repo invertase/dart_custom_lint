@@ -148,6 +148,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "4.0.0"
+  riverpod:
+    dependency: transitive
+    description:
+      name: riverpod
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.0.0-dev.5"
   source_span:
     dependency: transitive
     description:
@@ -155,6 +162,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.8.2"
+  stack_trace:
+    dependency: transitive
+    description:
+      name: stack_trace
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.10.0"
+  state_notifier:
+    dependency: transitive
+    description:
+      name: state_notifier
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.7.2+1"
   string_scanner:
     dependency: transitive
     description:
