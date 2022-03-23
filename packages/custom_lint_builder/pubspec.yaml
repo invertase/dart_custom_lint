@@ -8,6 +8,7 @@ environment:
 dependencies:
   analyzer: ^3.3.1
   analyzer_plugin: ^0.9.0
+  # TODO use tight constraints
   custom_lint:
     path: ../custom_lint
   package_config: ^2.0.2

@@ -9,15 +9,14 @@ import 'package:analyzer/file_system/overlay_file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer_plugin/channel/channel.dart';
 import 'package:analyzer_plugin/protocol/protocol.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_constants.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
 import 'package:pub_semver/pub_semver.dart';
 
+import '../../protocol.dart';
 import '../log.dart';
 
 /// The abstract superclass of any class implementing a plugin for the analysis
@@ -67,7 +66,7 @@ abstract class MyServerPlugin {
   ///
   /// Throw a [RequestFailure] if the request could not be handled.
   FutureOr<AnalysisGetNavigationResult> handleAnalysisGetNavigation(
-    AnalysisGetNavigationParams params,
+    AnalysisGetNavigationParams parameters,
   );
 
   /// Handle an 'analysis.handleWatchEvents' request.
@@ -150,6 +149,11 @@ abstract class MyServerPlugin {
     KytheGetKytheEntriesParams parameters,
   );
 
+  /// Requests lints for specific files
+  Future<GetAnalysisErrorResult> handleGetAnalysisErrors(
+    GetAnalysisErrorParams parameters,
+  );
+
   /// Handle a 'plugin.shutdown' request. Subclasses can override this method to
   /// perform any required clean-up, but cannot prevent the plugin from shutting
   /// down.
@@ -194,6 +198,10 @@ abstract class MyServerPlugin {
   Future<Response?> _getResponse(Request request, int requestTime) async {
     ResponseResult? result;
     switch (request.method) {
+      case GetAnalysisErrorParams.key:
+        final params = GetAnalysisErrorParams.fromRequest(request);
+        result = await handleGetAnalysisErrors(params);
+        break;
       case ANALYSIS_REQUEST_GET_NAVIGATION:
         final params = AnalysisGetNavigationParams.fromRequest(request);
         result = await handleAnalysisGetNavigation(params);
@@ -283,6 +291,8 @@ abstract class MyServerPlugin {
           stackTrace: stackTrace.toString(),
         ),
       );
+      log('error $exception\n$stackTrace');
+      Zone.current.handleUncaughtError(exception, stackTrace);
     }
     if (response != null) {
       _channel.sendResponse(response);

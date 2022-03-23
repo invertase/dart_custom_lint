@@ -7,18 +7,15 @@ potential lint errors:
 - [ ] lint rule threw
 - [ ] CLI executed vs local custom_lint version mismatch
 
-
-
-
 features to have:
 
 - [x] IDE integration
 - [x] support prints
 - [x] built-in error reporting
+- [x] hot-restart
 - [ ] add built-in linter for providing warnings if a custom lint package is incorrectly setup
-- [ ] CLI for running lints
+- [x] CLI for running lints
 - [ ] reactive syntax for source change
-- [ ] hot reload or hot-restart
 - [ ] handle ignores:
   - [ ] `// ignore: lint`
   - [ ] `// ignore_for_file: lint`

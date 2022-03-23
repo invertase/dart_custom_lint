@@ -57,6 +57,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.1"
+  cli_util:
+    dependency: transitive
+    description:
+      name: cli_util
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.3.5"
   collection:
     dependency: transitive
     description:
@@ -113,13 +120,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.2"
-  hotreloader:
-    dependency: transitive
-    description:
-      name: hotreloader
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "3.0.2"
   json_annotation:
     dependency: transitive
     description:
@@ -182,7 +182,7 @@ packages:
       name: riverpod
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.3"
+    version: "2.0.0-dev.5"
   riverpod_lint:
     dependency: "direct dev"
     description:
@@ -204,6 +204,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.8.2"
+  stack_trace:
+    dependency: transitive
+    description:
+      name: stack_trace
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.10.0"
   state_notifier:
     dependency: transitive
     description:
@@ -211,13 +218,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.7.2+1"
-  stream_transform:
-    dependency: transitive
-    description:
-      name: stream_transform
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.0.0"
   string_scanner:
     dependency: transitive
     description:
@@ -253,13 +253,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.0.6"
-  vm_service:
-    dependency: transitive
-    description:
-      name: vm_service
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "7.5.0"
   watcher:
     dependency: transitive
     description:
