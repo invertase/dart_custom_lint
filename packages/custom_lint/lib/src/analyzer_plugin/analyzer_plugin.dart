@@ -39,7 +39,7 @@ final _allPluginsProvider =
   };
 });
 
-class CustomLintPlugin extends MyServerPlugin {
+class CustomLintPlugin extends ServerPlugin {
   CustomLintPlugin([analyzer.ResourceProvider? provider]) : super(provider);
 
   @override

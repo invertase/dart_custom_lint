@@ -11,6 +11,7 @@ import 'isolate_channel.dart';
 void start(Iterable<String> _, SendPort sendPort) {
   runZonedGuarded(
     () {
+      log('start server');
       final channel = PluginIsolateChannel(sendPort);
       final server = CustomLintPlugin(PhysicalResourceProvider.INSTANCE);
       server.start(channel);

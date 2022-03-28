@@ -37,15 +37,7 @@ final _pluginSourceChangeProvider =
 
 final _pluginLinkProvider =
     Provider.autoDispose.family<PluginLink, Uri>((ref, pluginRootUri) {
-  log('build plugin $pluginRootUri');
   ref.watch(_pluginSourceChangeProvider(pluginRootUri));
-  ref.listen<Object?>(_pluginSourceChangeProvider(pluginRootUri), (_, value) {
-    log('Source changed for $pluginRootUri: $value');
-  });
-
-  ref.onDispose(() {
-    log('Close plugin $pluginRootUri');
-  });
 
   final receivePort = ReceivePort();
   final Stream<Object?> receivePortStream = receivePort;
@@ -79,7 +71,7 @@ final _pluginLinkProvider =
   ref.onDispose(link.close);
 
   // TODO close subscribption
-  receivePortStream.listen(
+  final sub = receivePortStream.listen(
     (obj) {
       if (obj is SendPort) {
         sendPortCompleter.complete(obj);
@@ -122,6 +114,8 @@ final _pluginLinkProvider =
       link._notificationsController.close();
     },
   );
+
+  ref.onDispose(sub.cancel);
 
   return link;
 });
@@ -221,6 +215,7 @@ final pluginMetasForContextRootProvider = Provider.autoDispose
   Iterable<Package> _getPluginsForContext(
     plugin.ContextRoot contextRoot,
   ) sync* {
+    log('Start plugin ${contextRoot.root}');
     final packagePath = contextRoot.root;
     // TODO if it is a plugin definition, assert that it contains the necessary configs
 
@@ -228,8 +223,6 @@ final pluginMetasForContextRootProvider = Provider.autoDispose
     // TODO will there be packages nested in this directory, or will analyzer_plugin spawn a new plugin?
     // TODO should we listen to source changes for pubspec change/creation?
     final pubspec = _loadPubspecAt(packagePath);
-
-    log('Got package ${pubspec.name}');
 
     final packageConfigFile = File(
       p.join(packagePath, '.dart_tool', 'package_config.json'),
@@ -266,10 +259,7 @@ final pluginMetasForContextRootProvider = Provider.autoDispose
 // TODO extract magic value
       if (dependencyPubspec.hasDependency('custom_lint_builder')) {
         yield dependencyMeta;
-        log('found plugin for ${dependency.key}:  ${dependencyPubspec.name}');
         // TODO assert that they have the necessary configs
-
-        log('spawning plugin: ${dependencyPubspec.name}');
       }
     }
   }
