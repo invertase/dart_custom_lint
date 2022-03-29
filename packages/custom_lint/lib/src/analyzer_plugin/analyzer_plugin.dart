@@ -11,9 +11,11 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart' as plugin
     show RequestParams;
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../protocol.dart';
 import '../log.dart';
@@ -39,8 +41,10 @@ final _allPluginsProvider =
   };
 });
 
-class CustomLintPlugin extends MyServerPlugin {
-  CustomLintPlugin([analyzer.ResourceProvider? provider]) : super(provider);
+class CustomLintPlugin extends ServerPlugin {
+  CustomLintPlugin({
+    analyzer.ResourceProvider? resourceProvider,
+  }) : super(resourceProvider);
 
   @override
   String get contactInfo => 'https://github.com/invertase/custom_lint/issues';
@@ -73,56 +77,61 @@ class CustomLintPlugin extends MyServerPlugin {
 
           void pluginLog(String message) {
             final file = File('${link.key.toFilePath()}/log.txt');
-            file.writeAsStringSync(message, mode: FileMode.append);
+            file.writeAsStringSync('$message\n', mode: FileMode.append);
           }
 
           // Initializing new plugins, calling version check + set context roots + initial priority files
           // TODO use Future.wait
           // TODO guard errors
           // TODO close subscribption
-          link.messages.listen((event) => pluginLog('${event.message}\n'));
-          link.error.listen(
-            (event) => pluginLog('${event.message}\n${event.stackTrace}\n'),
-          );
-          link.notifications.listen((notification) async {
-            // TODO try/catch
-            switch (notification.event) {
-              case 'analysis.errors':
-                final params =
-                    plugin.AnalysisErrorsParams.fromNotification(notification);
+          link.channel
+            ..messages.listen((event) => pluginLog(event.message))
+            ..pluginErrors.listen(
+              (event) => pluginLog('${event.message}\n${event.stackTrace}'),
+            )
+            ..responseErrors.listen(
+              (event) => pluginLog('${event.message}\n${event.stackTrace}'),
+            )
+            ..notifications.listen((notification) async {
+              // TODO try/catch
+              switch (notification.event) {
+                case 'analysis.errors':
+                  final params = plugin.AnalysisErrorsParams.fromNotification(
+                      notification);
 
-                if (!p.isAbsolute(params.file)) {
-                  throw StateError('${params.file} is not an absolute path');
-                }
+                  if (!p.isAbsolute(params.file)) {
+                    throw StateError('${params.file} is not an absolute path');
+                  }
 
-                // TODO why are all files re-analyzed when a single file changes?
-                // TODO handle removed files or there is otherwise a memory leak
-                // TODO extract to a StateProvider?
-                link.lintsForLibrary[params.file] = params;
+                  // TODO why are all files re-analyzed when a single file changes?
+                  // TODO handle removed files or there is otherwise a memory leak
+                  // TODO extract to a StateProvider?
+                  link.lintsForLibrary[params.file] = params;
 
-                final lintsForFile = links.values
-                    .expand<plugin.AnalysisError>(
-                      (link) =>
-                          link.lintsForLibrary[params.file]?.errors ?? const [],
-                    )
-                    .toList();
+                  final lintsForFile = links.values
+                      .expand<plugin.AnalysisError>(
+                        (link) =>
+                            link.lintsForLibrary[params.file]?.errors ??
+                            const [],
+                      )
+                      .toList();
 
-                pluginLog(
-                  'got lints for ${params.file}: ${lintsForFile.map((e) => e.code)}',
-                );
+                  pluginLog(
+                    'got lints for ${params.file}: ${lintsForFile.map((e) => e.code)}',
+                  );
 
-                channel.sendNotification(
-                  plugin.AnalysisErrorsParams(
-                    params.file,
-                    lintsForFile,
-                  ).toNotification(),
-                );
-                break;
-              default:
-                channel.sendNotification(notification);
-                break;
-            }
-          });
+                  channel.sendNotification(
+                    plugin.AnalysisErrorsParams(
+                      params.file,
+                      lintsForFile,
+                    ).toNotification(),
+                  );
+                  break;
+                default:
+                  channel.sendNotification(notification);
+                  break;
+              }
+            });
         }
 
         // TODO refresh lints, such that we don't see previous lints while plugins are rebuilding
@@ -161,9 +170,21 @@ class CustomLintPlugin extends MyServerPlugin {
   ) async {
     final links = await _allPluginsSub.read();
 
-    return Future.wait(
-      links.keys.map((key) => _requestPlugin(key, request)),
-    );
+    return Stream<plugin.Response>.fromFutures(
+      links.keys.map((key) =>
+          _requestPlugin(key, request).onError<Object>((error, stackTrace) {
+            channel.sendNotification(
+              plugin.PluginErrorParams(
+                false,
+                'The plugin $key failed with the error:\n$error',
+                stackTrace.toString(),
+              ).toNotification(),
+            );
+
+            // ignore: only_throw_errors
+            throw error;
+          })),
+    ).handleError((Object err, StackTrace stack) {}).toList();
   }
 
   Future<plugin.Response> _requestPlugin(
@@ -177,7 +198,7 @@ class CustomLintPlugin extends MyServerPlugin {
       'Bad state, plugin $pluginKey not found',
     );
     final link = links[pluginKey]!;
-    return link.sendRequest(request);
+    return link.channel.sendRequest(request);
   }
 
   @override
@@ -187,6 +208,7 @@ class CustomLintPlugin extends MyServerPlugin {
     final responses = await _requestAllPlugins(parameters);
 
     return plugin.EditGetFixesResult(
+      // TODO any error handling necessary?
       responses
           .map(plugin.EditGetFixesResult.fromResponse)
           .expand((e) => e.fixes)
@@ -298,10 +320,18 @@ class CustomLintPlugin extends MyServerPlugin {
     final response = await _requestAllPlugins(parameters);
 
     return GetAnalysisErrorResult(
+      // TODO do we want to show failing plugins as "error" in the file?
       response
           .map(GetAnalysisErrorResult.fromResponse)
-          // TODO aggregate by file
           .expand((element) => element.lints)
+          // Merge plugin results if two plugins emit lints on the same file
+          .fold<Map<String, plugin.AnalysisErrorsParams>>({}, (acc, element) {
+            final params = acc[element.file] ??=
+                plugin.AnalysisErrorsParams(element.file, []);
+            params.errors.addAll(element.errors);
+            return acc;
+          })
+          .values
           .toList(),
     );
   }
@@ -361,10 +391,11 @@ class CustomLintPlugin extends MyServerPlugin {
   ) async {
     try {
       final links = await _allPluginsSub.read();
-      // Voluntarily don't await for the response because the connection may
-      // get closed before response is received
+      final id = const Uuid().v4();
       for (final link in links.values) {
-        await link.sendRequest(parameters);
+        // Voluntarily don't await for the response because the connection may
+        // get closed before response is received
+        await link.channel.sendJson(parameters.toRequest(id).toJson());
       }
 
       return plugin.PluginShutdownResult();

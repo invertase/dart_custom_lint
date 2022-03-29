@@ -24,11 +24,11 @@ import '../log.dart';
 ///
 /// Clients may not implement or mix-in this class, but are expected to extend
 /// it.
-abstract class MyServerPlugin {
+abstract class ServerPlugin {
   /// Initialize a newly created analysis server plugin. If a resource [provider]
   /// is given, then it will be used to access the file system. Otherwise a
   /// resource provider that accesses the physical file system will be used.
-  MyServerPlugin(ResourceProvider? provider)
+  ServerPlugin([ResourceProvider? provider])
       : resourceProvider = OverlayResourceProvider(
           provider ?? PhysicalResourceProvider.INSTANCE,
         );
@@ -282,6 +282,7 @@ abstract class MyServerPlugin {
     } on RequestFailure catch (exception) {
       response = Response(id, requestTime, error: exception.error);
     } catch (exception, stackTrace) {
+      // TODO log?
       response = Response(
         id,
         requestTime,
@@ -291,8 +292,6 @@ abstract class MyServerPlugin {
           stackTrace: stackTrace.toString(),
         ),
       );
-      log('error $exception\n$stackTrace');
-      Zone.current.handleUncaughtError(exception, stackTrace);
     }
     if (response != null) {
       _channel.sendResponse(response);

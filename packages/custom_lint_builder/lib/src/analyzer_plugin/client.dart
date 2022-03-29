@@ -95,6 +95,15 @@ class Client extends ClientPlugin {
           .where((e) => e != null)
           .cast<analyzer.ResolvedUnitResult>()
           .asyncMap(_getAnalysisErrorsForUnit)
+          .handleError((Object err, StackTrace stack) {
+            channel.sendNotification(
+              analyzer_plugin.PluginErrorParams(
+                false,
+                err.toString(),
+                stack.toString(),
+              ).toNotification(),
+            );
+          })
           .toList(),
     );
   }

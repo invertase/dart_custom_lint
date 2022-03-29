@@ -4,7 +4,7 @@ import 'dart:isolate';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint/protocol.dart';
 // ignore: implementation_imports, safe since we are using tight constraints
-import 'package:custom_lint/src/analyzer_plugin/isolate_channel.dart';
+import 'package:custom_lint/src/analyzer_plugin/client_isolate_channel.dart';
 
 import 'src/analyzer_plugin/client.dart';
 import 'src/plugin_base.dart';
@@ -23,17 +23,15 @@ void startPlugin(SendPort sendPort, PluginBase plugin) {
   }
 
   runZonedGuarded(
-    () async {
+    () {
       final client = Client(plugin);
-      client.start(PluginIsolateChannel(sendPort));
+      client.start(ClientIsolateChannel(sendPort));
     },
     (err, stack) {
       send(
-        PluginErrorParams(
-          false,
-          err.toString(),
-          stack.toString(),
-        ).toNotification().toJson(),
+        PluginErrorParams(false, err.toString(), stack.toString())
+            .toNotification()
+            .toJson(),
       );
     },
     zoneSpecification: ZoneSpecification(
