@@ -603,15 +603,21 @@ abstract class ClientPlugin {
     final requestTime = DateTime.now().millisecondsSinceEpoch;
     final id = request.id;
     Response? response;
+
     try {
       response = await _getResponse(request, requestTime);
     } on RequestFailure catch (exception) {
       response = Response(id, requestTime, error: exception.error);
     } catch (exception, stackTrace) {
-      response = Response(id, requestTime,
-          error: RequestError(
-              RequestErrorCode.PLUGIN_ERROR, exception.toString(),
-              stackTrace: stackTrace.toString()));
+      response = Response(
+        id,
+        requestTime,
+        error: RequestError(
+          RequestErrorCode.PLUGIN_ERROR,
+          exception.toString(),
+          stackTrace: stackTrace.toString(),
+        ),
+      );
     }
     if (response != null) {
       _channel.sendResponse(response);
