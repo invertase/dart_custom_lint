@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart';
-import 'package:package_config/package_config.dart';
 
 class PeerProjectMeta {
   PeerProjectMeta({

@@ -11,7 +11,6 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart' as plugin
     show RequestParams;
-import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:riverpod/riverpod.dart';

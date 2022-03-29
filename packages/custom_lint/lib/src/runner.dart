@@ -3,11 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/context_locator.dart';
-import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-// ignore: implementation_imports
-import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
-    show RequestParams;
 import 'package:cli_util/cli_util.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
