@@ -282,6 +282,7 @@ abstract class ServerPlugin {
     } on RequestFailure catch (exception) {
       response = Response(id, requestTime, error: exception.error);
     } catch (exception, stackTrace) {
+      // TODO log?
       response = Response(
         id,
         requestTime,
@@ -291,8 +292,6 @@ abstract class ServerPlugin {
           stackTrace: stackTrace.toString(),
         ),
       );
-      log('error $exception\n$stackTrace');
-      Zone.current.handleUncaughtError(exception, stackTrace);
     }
     if (response != null) {
       _channel.sendResponse(response);

@@ -149,19 +149,15 @@ Directory createDartProject({
 }
 
 Directory createTmpFolder(Map<String, String> files, String name) {
-  Directory('/Users/remirousselet/dev/invertase/custom_lint/random/$name')
-      .createSync(recursive: true);
-  final newFolder =
-      Directory('/Users/remirousselet/dev/invertase/custom_lint/random/$name');
-  newFolder.createSync(recursive: true);
-  // addTearDown(() => newFolder.deleteSync(recursive: true));
+  final newFolder = Directory.systemTemp.createTempSync(name);
+  addTearDown(() => newFolder.deleteSync(recursive: true));
 
   for (final fileEntry in files.entries) {
     assert(isRelative(fileEntry.key), 'Only relative file paths are supported');
 
     final file = File(join(newFolder.path, fileEntry.key));
     file.createSync(recursive: true);
-    // addTearDown(file.deleteSync);
+    addTearDown(file.deleteSync);
     file.writeAsStringSync(fileEntry.value);
   }
 

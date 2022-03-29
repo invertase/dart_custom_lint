@@ -1,19 +1,15 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:custom_lint/runner.dart';
 import 'package:custom_lint/src/analyzer_plugin/analyzer_plugin.dart';
+import 'package:custom_lint/src/runner.dart';
 import 'package:path/path.dart' as p;
-
-const pluginName = 'custom_lint';
-
-const analyzerPluginProtocolVersion = '1.0.0-alpha.0';
 
 Future<void> main() async {
   await runZonedGuarded(() async {
-    final runner = CustomLintRunner(CustomLintPlugin());
+    final runner = CustomLintRunner(CustomLintPlugin(), Directory.current);
 
-    runner
+    runner.channel
       ..responseErrors.listen((event) {
         exitCode = -1;
         stdout.writeln('${event.message} ${event.code}\n${event.stackTrace}');

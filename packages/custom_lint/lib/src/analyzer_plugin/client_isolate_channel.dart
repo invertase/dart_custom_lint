@@ -8,9 +8,9 @@ import 'package:analyzer_plugin/protocol/protocol.dart';
 /// analyzer_plugin protocol
 ///
 /// Imported from package:analyzer_plugin
-class PluginIsolateChannel implements PluginCommunicationChannel {
+class ClientIsolateChannel implements PluginCommunicationChannel {
   /// Initialize a newly created channel to communicate with the server.
-  PluginIsolateChannel(this._sendPort) {
+  ClientIsolateChannel(this._sendPort) {
     _receivePort = ReceivePort();
     _sendPort.send(_receivePort.sendPort);
   }

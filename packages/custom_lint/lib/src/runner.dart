@@ -12,10 +12,11 @@ import 'package:cli_util/cli_util.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
-import 'protocol.dart';
-import 'src/analyzer_plugin/isolate_channel.dart';
-import 'src/analyzer_plugin/my_server_plugin.dart';
-import 'src/analyzer_utils/analyzer_utils.dart';
+import '../protocol.dart';
+import 'analyzer_plugin/client_isolate_channel.dart';
+import 'analyzer_plugin/my_server_plugin.dart';
+import 'analyzer_plugin/server_isolate_channel.dart';
+import 'analyzer_utils/analyzer_utils.dart';
 
 const _uuid = Uuid();
 const _pluginName = 'custom_lint';
@@ -24,18 +25,18 @@ const _analyzerPluginProtocolVersion = '1.0.0-alpha.0';
 /// A runner for programmatically interact with a plugin.
 class CustomLintRunner {
   /// Creates a runner from a [ServerPlugin].
-  CustomLintRunner(this._server) {
-    _server.start(_channel);
+  CustomLintRunner(this._server, this._workingDirectory) {
+    _server.start(_clientChannel);
   }
 
   final ServerPlugin _server;
+  final Directory _workingDirectory;
 
   late final _receivePort = ReceivePort();
-  late final PluginIsolateChannel _channel =
-      PluginIsolateChannel(_receivePort.sendPort);
-  late final Stream<Object?> _events = _receivePort.asBroadcastStream();
-  late final Future<SendPort> _sendPort =
-      _events.first.then((value) => value! as SendPort);
+  late final _clientChannel = ClientIsolateChannel(_receivePort.sendPort);
+
+  /// The connection between the server and pluginsÌ
+  late final channel = ServerIsolateChannel(_receivePort);
 
   late final _resourceProvider = _server.resourceProvider;
   late final _sdkPath = getSdkPath();
@@ -43,7 +44,7 @@ class CustomLintRunner {
   late final _contextLocator =
       ContextLocator(resourceProvider: _resourceProvider);
   late final _allContextRoots = _contextLocator.locateRoots(
-    includedPaths: [Directory.current.path],
+    includedPaths: [_workingDirectory.path],
   );
 
   late final _contextRoots = _allContextRoots
@@ -69,48 +70,27 @@ class CustomLintRunner {
       .map((file) => file.path)
       .toList();
 
-  /// The [Notification]s emitted by the plugin
-  late final Stream<Notification> notifications = _events
-      .where((e) => e is Map)
-      .map((e) => e! as Map)
-      .where((e) => e.containsKey(Notification.EVENT))
-      .map(Notification.fromJson);
-
-  /// The [Response]s emitted by the plugin
-  late final Stream<Response> responses = _events
-      .where((event) => event is Map<String, Object?>)
-      .map((event) => event! as Map<String, Object?>)
-      .where((e) => e.containsKey(Response.ID))
-      .map(Response.fromJson);
-
-  /// Error [Notification]s.
-  late final Stream<PluginErrorParams> pluginErrors = notifications
-      .where((e) => e.event == 'plugin.error')
-      .map(PluginErrorParams.fromNotification);
-
-  /// Errors for [Request]s that failed.
-  late final Stream<RequestError> responseErrors =
-      responses.where((e) => e.error != null).map((e) => e.error!);
-
   /// Sends a [GetAnalysisErrorParams] request to the plugin and obtains the
   /// [GetAnalysisErrorResult] response.
   Future<GetAnalysisErrorResult> _sendGetAnalysisErrorRequest(
     GetAnalysisErrorParams parameters,
   ) async {
-    final response = await sendRequest(parameters);
-    return GetAnalysisErrorResult.fromResponse(response);
+    final response = await channel.sendRequest(parameters);
+    return GetAnalysisErrorResult.fromResponse(response)
+      // Sort lints based on file path
+      ..lints.sort((a, b) => a.file.compareTo(b.file));
   }
 
   /// Starts the plugin and send the necessary requests for initializing it.
   Future<void> initialize() async {
-    await sendRequest(
+    await channel.sendRequest(
       PluginVersionCheckParams(
         _resourceProvider.getByteStorePath(_pluginName),
         _sdkPath,
         _analyzerPluginProtocolVersion,
       ),
     );
-    await sendRequest(
+    await channel.sendRequest(
       AnalysisSetContextRootsParams([
         for (final contextRoot in _contextRoots)
           ContextRoot(
@@ -130,25 +110,16 @@ class CustomLintRunner {
     return response.lints;
   }
 
-  /// Send a [Request] to the plugin and return the [Response].
-  Future<Response> sendRequest(RequestParams params) async {
-    final id = _uuid.v4();
-
-    final response = responses.firstWhere((e) => e.id == id);
-    await _sendJson(params.toRequest(id).toJson());
-    return response;
-  }
-
-  Future<void> _sendJson(Map<String, Object?> json) {
-    return _sendPort.then((value) => value.send(json));
-  }
-
   /// Stop the command runner, sending a [PluginShutdownParams] request in the process.
   Future<void> close() async {
     try {
-      await sendRequest(PluginShutdownParams());
+      // Voluntarily don't await for the response because the connection may
+      // get closed before response is received
+      await channel.sendJson(
+        PluginShutdownParams().toRequest(_uuid.v4()).toJson(),
+      );
     } finally {
-      _channel.close();
+      _clientChannel.close();
       _receivePort.close();
     }
   }
