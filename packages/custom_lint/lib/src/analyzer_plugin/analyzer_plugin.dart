@@ -115,10 +115,6 @@ class CustomLintPlugin extends ServerPlugin {
                       )
                       .toList();
 
-                  pluginLog(
-                    'got lints for ${params.file}: ${lintsForFile.map((e) => e.code)}',
-                  );
-
                   channel.sendNotification(
                     plugin.AnalysisErrorsParams(
                       params.file,

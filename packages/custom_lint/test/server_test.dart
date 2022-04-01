@@ -230,10 +230,10 @@ import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _HelloWorldLint());
+  startPlugin(sendPort, _AnotherLint());
 }
 
-class _HelloWorldLint extends PluginBase {
+class _AnotherLint extends PluginBase {
   @override
   Iterable<AnalysisError> getLints(LibraryElement library) sync* {
     final libraryPath = library.source.fullName;
@@ -303,6 +303,14 @@ void fail() {}
     expect(
       lints.last.errors.map((e) => e.code),
       unorderedEquals(<Object?>['hello_world', 'oy']),
+    );
+
+    expect(
+      plugin.log.readAsStringSync(),
+      startsWith('''
+Hello world
+Bad state: fail
+#0      _HelloWorldLint.getLints (package:test_lint/main.dart:16:8)'''),
     );
 
     // Closing so that previous error matchers relying on stream
