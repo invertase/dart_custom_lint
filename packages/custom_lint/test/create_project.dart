@@ -39,7 +39,7 @@ dependencies:
     analysisOptions: analysisOptions,
     packageConfig: pubpsec != _pluginDefaultPubspec
         ? null
-        : createPackageConfig(customLintBuilder: true),
+        : createPackageConfig(customLintBuilder: true, name: name),
     name: name,
   );
 }
@@ -82,6 +82,7 @@ $pluginDevDependencies
     packageConfig: createPackageConfig(
       plugins: plugins,
       customLintBuilder: false,
+      name: name,
     ),
     name: name,
   );
@@ -90,6 +91,7 @@ $pluginDevDependencies
 String createPackageConfig({
   Map<String, Uri> plugins = const {},
   required bool customLintBuilder,
+  required String name,
 }) {
   return jsonEncode({
     ...PeerProjectMeta.current.exampleLintPackageConfig,
@@ -100,6 +102,7 @@ String createPackageConfig({
           .where(
             (e) =>
                 e['name'] != 'custom_lint' &&
+                e['name'] != 'example_lint' &&
                 e['name'] != 'custom_lint_builder',
           ),
       for (final plugin in plugins.entries)
@@ -109,6 +112,12 @@ String createPackageConfig({
           'packageUri': 'lib/',
           'languageVersion': '2.16'
         },
+      <String, String>{
+        'name': name,
+        'rootUri': '../',
+        'packageUri': 'lib/',
+        'languageVersion': '2.16'
+      },
       <String, String>{
         'name': 'custom_lint',
         'rootUri': PeerProjectMeta.current.customLintPath,

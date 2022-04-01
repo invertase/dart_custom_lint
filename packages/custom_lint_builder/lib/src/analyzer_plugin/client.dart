@@ -37,7 +37,6 @@ class Client extends ClientPlugin {
   AnalysisDriver createAnalysisDriver(
     analyzer_plugin.ContextRoot contextRoot,
   ) {
-    print('createAnalysisDriver');
     final analyzerContextRoot = contextRoot.asAnalayzerContextRoot(
       resourceProvider: resourceProvider,
     );
@@ -50,17 +49,15 @@ class Client extends ClientPlugin {
 // TODO cancel sub
     context.driver.results.listen((analysisResult) {
       if (analysisResult is analyzer.ResolvedUnitResult) {
-        print('result: ${analysisResult.path} for ${contextRoot.root}');
-
         if (analysisResult.exists) {
           channel.sendNotification(
             _getAnalysisErrorsForUnit(analysisResult).toNotification(),
           );
         }
       } else if (analysisResult is analyzer.ErrorsResult) {
-        print('error at ${analysisResult.path} for ${contextRoot.root}');
+        // TODO handle
       } else {
-        print('StateError $analysisResult');
+        throw UnsupportedError('Unknown result type ${analysisResult}');
       }
     });
 
