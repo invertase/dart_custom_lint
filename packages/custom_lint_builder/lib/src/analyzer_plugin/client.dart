@@ -57,7 +57,7 @@ class Client extends ClientPlugin {
       } else if (analysisResult is analyzer.ErrorsResult) {
         // TODO handle
       } else {
-        throw UnsupportedError('Unknown result type ${analysisResult}');
+        throw UnsupportedError('Unknown result type $analysisResult');
       }
     });
 
@@ -92,6 +92,7 @@ class Client extends ClientPlugin {
           .where((e) => e != null)
           .cast<analyzer.ResolvedUnitResult>()
           .asyncMap(_getAnalysisErrorsForUnit)
+          // ignore: avoid_types_on_closure_parameters, false positive because of implicit-dynamic
           .handleError((Object err, StackTrace stack) {
             channel.sendNotification(
               analyzer_plugin.PluginErrorParams(

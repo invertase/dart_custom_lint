@@ -31,6 +31,7 @@ final _pluginSourceChangeProvider =
 
 final _pluginLinkProvider =
     Provider.autoDispose.family<PluginLink, Uri>((ref, pluginRootUri) {
+  log('Start plugin $pluginRootUri');
   ref.watch(_pluginSourceChangeProvider(pluginRootUri));
 
   final receivePort = ReceivePort();
@@ -61,6 +62,7 @@ final _pluginLinkProvider =
     isolate,
     ServerIsolateChannel(receivePort),
     pluginRootUri,
+    ref.watch(_pluginMetaProvider(pluginRootUri).select((value) => value.name)),
   );
   ref.onDispose(link.close);
 
@@ -73,11 +75,16 @@ class PluginLink {
     this._isolate,
     this.channel,
     this.key,
+    this.name,
   );
+
+  final Future<Isolate> _isolate;
+
+  /// The name of this plugin
+  final String name;
 
   /// The unique key for this plugin
   final Uri key;
-  final Future<Isolate> _isolate;
 
   /// A channel for interacting with this plugin
   final ServerIsolateChannel channel;
@@ -115,13 +122,21 @@ final activeContextRootsProvider = StateProvider<List<plugin.ContextRoot>>(
   (ref) => [],
 );
 
+final _pluginMetaProvider =
+    Provider.autoDispose.family<Package, Uri>((ref, pluginUri) {
+  final contextRoot = ref.watch(contextRootsForPluginProvider(pluginUri)).first;
+
+  return ref
+      .watch(pluginMetasForContextRootProvider(contextRoot))
+      .firstWhere((element) => element.root == pluginUri);
+});
+
 /// The list of plugins associated with a context root.
 final pluginMetasForContextRootProvider = Provider.autoDispose
     .family<List<Package>, plugin.ContextRoot>((ref, contextRoot) {
   Iterable<Package> _getPluginsForContext(
     plugin.ContextRoot contextRoot,
   ) sync* {
-    log('Start plugin ${contextRoot.root}');
     final packagePath = contextRoot.root;
     // TODO if it is a plugin definition, assert that it contains the necessary configs
 
@@ -174,7 +189,7 @@ final pluginMetasForContextRootProvider = Provider.autoDispose
 });
 
 /// The context roots that a plugin is currently analyzing
-final contextRootsForPlugin =
+final contextRootsForPluginProvider =
     Provider.autoDispose.family<List<plugin.ContextRoot>, Uri>(
   (ref, packageUri) {
     final contextRoots = ref.watch(activeContextRootsProvider);
@@ -202,7 +217,7 @@ final _contextRootInitializedProvider =
       ref
           .watch(activeContextRootsProvider)
           .where(
-            ref.watch(contextRootsForPlugin(pluginUri)).contains,
+            ref.watch(contextRootsForPluginProvider(pluginUri)).contains,
           )
           .toList(),
     ),
@@ -223,7 +238,7 @@ final _priorityFilesInitializedProvider =
   final priorityFilesForPlugin = priorityFilesRequest.files.where(
     (priorityFile) {
       return ref
-          .watch(contextRootsForPlugin(pluginUri))
+          .watch(contextRootsForPluginProvider(pluginUri))
           .any((contextRoot) => p.isWithin(contextRoot.root, priorityFile));
     },
   ).toList();
@@ -237,6 +252,9 @@ final _priorityFilesInitializedProvider =
 final pluginLinkProvider =
     FutureProvider.autoDispose.family<PluginLink, Uri>((ref, pluginUri) async {
   final link = ref.watch(_pluginLinkProvider(pluginUri));
+
+  // Cause the provider to fail if somehow the isolate failed to spawn.
+  await link._isolate;
 
   // TODO what if setContextRoot or priotity files changes while these
   // requests are pending?
