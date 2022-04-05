@@ -1,21 +1,25 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint/src/analyzer_plugin/analyzer_plugin.dart';
 import 'package:custom_lint/src/runner.dart';
 import 'package:path/path.dart' as p;
 
-Future<void> main() async {
+Future<int> main() async {
+  var code = 0;
+
   await runZonedGuarded(() async {
     final runner = CustomLintRunner(CustomLintPlugin(), Directory.current);
 
     runner.channel
+      ..messages.listen((event) => stdout.writeln(event.message))
       ..responseErrors.listen((event) {
-        exitCode = -1;
+        code = -1;
         stdout.writeln('${event.message} ${event.code}\n${event.stackTrace}');
       })
       ..pluginErrors.listen((event) {
-        exitCode = -1;
+        code = -1;
         stdout.writeln('${event.message}\n${event.stackTrace}');
       });
 
@@ -23,11 +27,25 @@ Future<void> main() async {
       await runner.initialize();
       final lints = await runner.getLints();
 
+      lints
+          .sort((a, b) => a.relativeFilePath().compareTo(b.relativeFilePath()));
+
       for (final lintsForFile in lints) {
-        final relativeFilePath = p.relative(lintsForFile.file);
+        code = -1;
+
+        final relativeFilePath = lintsForFile.relativeFilePath();
+
+        lintsForFile.errors.sort((a, b) {
+          final codeCompare = a.code.compareTo(b.code);
+          if (codeCompare != 0) return codeCompare;
+
+          return a.message.compareTo(b.message);
+        });
+
         for (final lint in lintsForFile.errors) {
           stdout.writeln(
-            '  $relativeFilePath • ${lint.message} • ${lint.code} • ${lint.location.file}',
+            '  $relativeFilePath:${lint.location.startLine}:${lint.location.startColumn}'
+            ' • ${lint.message} • ${lint.code}',
           );
         }
       }
@@ -35,7 +53,18 @@ Future<void> main() async {
       await runner.close();
     }
   }, (err, stack) {
-    exitCode = -1;
+    code = -1;
     stdout.writeln('$err\n$stack');
   });
+
+  return code;
+}
+
+extension on AnalysisErrorsParams {
+  String relativeFilePath() {
+    return p.relative(
+      file,
+      from: Directory.current.path,
+    );
+  }
 }
