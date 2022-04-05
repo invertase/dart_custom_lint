@@ -80,7 +80,7 @@ class _RiverpodLint extends PluginBase {
               edits: [
                 SourceFileEdit(
                   libraryPath,
-                  library.librarySource.modificationStamp,
+                  0,
                   edits: [
                     // TODO handle "Type provider =" -> "final Type provider = "
                     SourceEdit(

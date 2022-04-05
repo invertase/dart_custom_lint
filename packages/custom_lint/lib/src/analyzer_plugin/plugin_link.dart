@@ -10,7 +10,6 @@ import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:riverpod/riverpod.dart';
 
-import '../log.dart';
 import 'server_isolate_channel.dart';
 
 final _pluginSourceChangeProvider =
@@ -31,7 +30,6 @@ final _pluginSourceChangeProvider =
 
 final _pluginLinkProvider =
     Provider.autoDispose.family<PluginLink, Uri>((ref, pluginRootUri) {
-  log('Start plugin $pluginRootUri');
   ref.watch(_pluginSourceChangeProvider(pluginRootUri));
 
   final receivePort = ReceivePort();

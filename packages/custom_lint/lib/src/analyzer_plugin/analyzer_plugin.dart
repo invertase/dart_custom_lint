@@ -18,7 +18,6 @@ import 'package:riverpod/riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../protocol.dart';
-import '../log.dart';
 import 'my_server_plugin.dart';
 import 'plugin_link.dart';
 
@@ -312,7 +311,6 @@ class CustomLintPlugin extends ServerPlugin {
     final versionString = parameters.version;
     final serverVersion = Version.parse(versionString);
 
-    log(parameters);
     // TODO does this needs to be deferred to plugins?
     return plugin.PluginVersionCheckResult(
       isCompatibleWith(serverVersion),
