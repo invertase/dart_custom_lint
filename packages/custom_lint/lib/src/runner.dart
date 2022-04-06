@@ -6,7 +6,6 @@ import 'package:analyzer/dart/analysis/context_locator.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:cli_util/cli_util.dart';
 import 'package:path/path.dart' as p;
-import 'package:uuid/uuid.dart';
 
 import '../protocol.dart';
 import 'analyzer_plugin/client_isolate_channel.dart';
@@ -14,7 +13,6 @@ import 'analyzer_plugin/my_server_plugin.dart';
 import 'analyzer_plugin/server_isolate_channel.dart';
 import 'analyzer_utils/analyzer_utils.dart';
 
-const _uuid = Uuid();
 const _pluginName = 'custom_lint';
 const _analyzerPluginProtocolVersion = '1.0.0-alpha.0';
 
