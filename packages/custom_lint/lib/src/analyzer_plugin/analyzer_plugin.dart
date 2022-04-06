@@ -140,8 +140,6 @@ class CustomLintPlugin extends ServerPlugin {
 
           // TODO test initialization error into valid initialization (hot-restart)
           if (linkResult.hasError) {
-            // TODO show error
-            stdout.writeln(linkResult.error);
             continue;
           }
 

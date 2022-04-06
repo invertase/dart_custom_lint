@@ -109,11 +109,7 @@ class CustomLintRunner {
   /// Stop the command runner, sending a [PluginShutdownParams] request in the process.
   Future<void> close() async {
     try {
-      // Voluntarily don't await for the response because the connection may
-      // get closed before response is received
-      await channel.sendJson(
-        PluginShutdownParams().toRequest(_uuid.v4()).toJson(),
-      );
+      await channel.sendRequest(PluginShutdownParams());
     } finally {
       _clientChannel.close();
       _receivePort.close();
