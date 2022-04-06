@@ -16,11 +16,11 @@ Future<int> main() async {
       ..messages.listen((event) => stdout.writeln(event.message))
       ..responseErrors.listen((event) {
         code = -1;
-        stdout.writeln('${event.message} ${event.code}\n${event.stackTrace}');
+        stderr.writeln('${event.message} ${event.code}\n${event.stackTrace}');
       })
       ..pluginErrors.listen((event) {
         code = -1;
-        stdout.writeln('${event.message}\n${event.stackTrace}');
+        stderr.writeln('${event.message}\n${event.stackTrace}');
       });
 
     try {
@@ -31,8 +31,6 @@ Future<int> main() async {
           .sort((a, b) => a.relativeFilePath().compareTo(b.relativeFilePath()));
 
       for (final lintsForFile in lints) {
-        code = -1;
-
         final relativeFilePath = lintsForFile.relativeFilePath();
 
         lintsForFile.errors.sort((a, b) {
@@ -43,6 +41,7 @@ Future<int> main() async {
         });
 
         for (final lint in lintsForFile.errors) {
+          code = -1;
           stdout.writeln(
             '  $relativeFilePath:${lint.location.startLine}:${lint.location.startColumn}'
             ' • ${lint.message} • ${lint.code}',
@@ -54,8 +53,13 @@ Future<int> main() async {
     }
   }, (err, stack) {
     code = -1;
-    stdout.writeln('$err\n$stack');
+    stderr.writeln('$err\n$stack');
   });
+
+  // Since no problem happened, we print a message saying everything went well
+  if (code == 0) {
+    stdout.writeln('No issues found!');
+  }
 
   return code;
 }

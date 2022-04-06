@@ -1,21 +1,3 @@
-/*
- * Copyright (c) 2016-present Invertase Limited & Contributors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this library except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-// ignore_for_file: avoid_redundant_argument_values
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -39,10 +21,11 @@ Future<T> runWithIOOverride<T>(
       fs,
     );
   } finally {
-    await Future.wait<void>([
-      fs.stderr.close(),
-      fs.stdout.close(),
-    ]);
+    // TODO figure out why awaiting the close causes tests to time-out if they fail
+    // ignore: unawaited_futures
+    fs.stderr.close();
+    // ignore: unawaited_futures
+    fs.stdout.close();
   }
 }
 
