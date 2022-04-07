@@ -28,9 +28,12 @@ final _pluginSourceChangeProvider =
   ]);
 });
 
-final _pluginLinkProvider =
-    Provider.autoDispose.family<PluginLink, Uri>((ref, pluginRootUri) {
+final _pluginLinkProvider = FutureProvider.autoDispose
+    .family<PluginLink, Uri>((ref, pluginRootUri) async {
   ref.watch(_pluginSourceChangeProvider(pluginRootUri));
+
+  final pluginName = ref
+      .watch(_pluginMetaProvider(pluginRootUri).select((value) => value.name));
 
   final receivePort = ReceivePort();
   ref.onDispose(receivePort.close);
@@ -42,7 +45,7 @@ final _pluginLinkProvider =
     p.join(pluginRootPath, 'lib', 'main.dart'),
   );
 
-  final isolate = Isolate.spawnUri(
+  final isolate = await Isolate.spawnUri(
     mainUri,
     const [],
     receivePort.sendPort,
@@ -60,7 +63,7 @@ final _pluginLinkProvider =
     isolate,
     ServerIsolateChannel(receivePort),
     pluginRootUri,
-    ref.watch(_pluginMetaProvider(pluginRootUri).select((value) => value.name)),
+    pluginName,
   );
   ref.onDispose(link.close);
 
@@ -76,7 +79,7 @@ class PluginLink {
     this.name,
   );
 
-  final Future<Isolate> _isolate;
+  final Isolate _isolate;
 
   /// The name of this plugin
   final String name;
@@ -93,7 +96,7 @@ class PluginLink {
   /// Close the plugin, killing the isolate
   Future<void> close() async {
     // TODO send pluginShutdown?
-    return _isolate.then((value) => value.kill());
+    return _isolate.kill();
   }
 }
 
@@ -103,7 +106,7 @@ final versionCheckProvider =
 
 final _versionInitializedProvider =
     FutureProvider.autoDispose.family<void, Uri>((ref, pluginUri) async {
-  final link = ref.watch(_pluginLinkProvider(pluginUri));
+  final link = await ref.watch(_pluginLinkProvider(pluginUri).future);
 
   final versionCheck = ref.watch(versionCheckProvider);
   if (versionCheck == null) {
@@ -205,7 +208,7 @@ final contextRootsForPluginProvider =
 
 final _contextRootInitializedProvider =
     FutureProvider.autoDispose.family<void, Uri>((ref, pluginUri) async {
-  final link = ref.watch(_pluginLinkProvider(pluginUri));
+  final link = await ref.watch(_pluginLinkProvider(pluginUri).future);
 
   // TODO filter events if the previous/new values are the same
   // Call setContextRoots on the plugin with only the roots that have
@@ -228,7 +231,7 @@ final priorityFilesProvider =
 
 final _priorityFilesInitializedProvider =
     FutureProvider.autoDispose.family<void, Uri>((ref, pluginUri) async {
-  final link = ref.watch(_pluginLinkProvider(pluginUri));
+  final link = await ref.watch(_pluginLinkProvider(pluginUri).future);
 
   final priorityFilesRequest = ref.watch(priorityFilesProvider);
   if (priorityFilesRequest == null) return;
@@ -249,10 +252,7 @@ final _priorityFilesInitializedProvider =
 /// A provider for obtaining for link of a specific plugin
 final pluginLinkProvider =
     FutureProvider.autoDispose.family<PluginLink, Uri>((ref, pluginUri) async {
-  final link = ref.watch(_pluginLinkProvider(pluginUri));
-
-  // Cause the provider to fail if somehow the isolate failed to spawn.
-  await link._isolate;
+  final link = await ref.watch(_pluginLinkProvider(pluginUri).future);
 
   // TODO what if setContextRoot or priotity files changes while these
   // requests are pending?

@@ -15,7 +15,6 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../protocol.dart';
 import 'my_server_plugin.dart';
@@ -130,6 +129,45 @@ class CustomLintPlugin extends ServerPlugin {
       (previousPlugins, currentPlugins) async {
         final previousLinks = await previousPlugins;
         final links = await currentPlugins;
+
+        // The list of removed/updated links
+        final changedLinks = previousLinks?.values
+            .where((link) => link.hasValue)
+            .map((link) => link.value)
+            .where(
+              (previousLink) =>
+                  // A plugin was removed
+                  !links.containsKey(previousLink.key) ||
+                  // A plugin is now in error state
+                  links[previousLink.key]!.hasError ||
+                  // A plugin got reconstruted
+                  links[previousLink.key]!.value == previousLink,
+            );
+        final filesFromChangedLinks =
+            changedLinks?.expand((link) => link.lintsForLibrary.keys).toSet();
+
+        // Since some links changed, we remove their lints
+        if (filesFromChangedLinks != null) {
+          for (final fileToUpdate in filesFromChangedLinks) {
+            // TODO remove code duplicate
+            final lintsForFile = links.values
+                .where((link) => link.hasValue)
+                .expand<plugin.AnalysisError>(
+                  (link) =>
+                      link.value.lintsForLibrary[fileToUpdate]?.errors ??
+                      const [],
+                )
+                .toList();
+
+            channel.sendNotification(
+              plugin.AnalysisErrorsParams(
+                fileToUpdate,
+                lintsForFile,
+              ).toNotification(),
+            );
+          }
+        }
+
         for (final linkEntry in links.entries) {
           final previousLinkResult = previousLinks?[linkEntry.key];
           final linkResult = linkEntry.value;
@@ -140,6 +178,13 @@ class CustomLintPlugin extends ServerPlugin {
 
           // TODO test initialization error into valid initialization (hot-restart)
           if (linkResult.hasError) {
+            channel.sendNotification(
+              plugin.PluginErrorParams(
+                false,
+                linkResult.error.toString(),
+                linkResult.stackTrace.toString(),
+              ).toNotification(),
+            );
             continue;
           }
 
@@ -175,40 +220,39 @@ class CustomLintPlugin extends ServerPlugin {
             ..responseErrors.listen(
               (event) => pluginLog('${event.message}\n${event.stackTrace}'),
             )
+            ..lints.listen((params) {
+              if (!p.isAbsolute(params.file)) {
+                throw StateError('${params.file} is not an absolute path');
+              }
+
+              // TODO why are all files re-analyzed when a single file changes?
+              // TODO handle removed files or there is otherwise a memory leak
+              // TODO extract to a StateProvider?
+              link.lintsForLibrary[params.file] = params;
+
+              // TODO remove code duplicate
+              final lintsForFile = links.values
+                  .where((link) => link.hasValue)
+                  .expand<plugin.AnalysisError>(
+                    (link) =>
+                        link.value.lintsForLibrary[params.file]?.errors ??
+                        const [],
+                  )
+                  .toList();
+
+              channel.sendNotification(
+                plugin.AnalysisErrorsParams(
+                  params.file,
+                  lintsForFile,
+                ).toNotification(),
+              );
+            })
             ..notifications.listen((notification) async {
               // TODO try/catch
               switch (notification.event) {
-                // prints are handled separately
+                // Event handled separately
                 case PrintNotification.key:
-                  break;
                 case 'analysis.errors':
-                  final params = plugin.AnalysisErrorsParams.fromNotification(
-                      notification);
-
-                  if (!p.isAbsolute(params.file)) {
-                    throw StateError('${params.file} is not an absolute path');
-                  }
-
-                  // TODO why are all files re-analyzed when a single file changes?
-                  // TODO handle removed files or there is otherwise a memory leak
-                  // TODO extract to a StateProvider?
-                  link.lintsForLibrary[params.file] = params;
-
-                  final lintsForFile = links.values
-                      .where((link) => link.hasValue)
-                      .expand<plugin.AnalysisError>(
-                        (link) =>
-                            link.value.lintsForLibrary[params.file]?.errors ??
-                            const [],
-                      )
-                      .toList();
-
-                  channel.sendNotification(
-                    plugin.AnalysisErrorsParams(
-                      params.file,
-                      lintsForFile,
-                    ).toNotification(),
-                  );
                   break;
                 default:
                   channel.sendNotification(notification);
@@ -228,13 +272,11 @@ class CustomLintPlugin extends ServerPlugin {
   Future<plugin.AnalysisSetContextRootsResult> handleAnalysisSetContextRoots(
     plugin.AnalysisSetContextRootsParams parameters,
   ) async {
+    // Unused plugins will automatically be disposed thanks to Riverpod
+
     _container.read(activeContextRootsProvider.notifier).state =
         parameters.roots;
 
-    // _allPluginsSub.read();
-
-    // TODO handle context root change on already existing plugins
-    // Unused plugins will automatically be disposed thanks to Riverpod
     return plugin.AnalysisSetContextRootsResult();
   }
 
@@ -259,6 +301,9 @@ class CustomLintPlugin extends ServerPlugin {
                 ).toNotification(),
               );
 
+              // Rethrow the error only to capture it again later in `handleError`
+              // because `onError` expects us to return a valid value, which
+              // we are unable to do.
               Error.throwWithStackTrace(error, stackTrace);
             },
           );
@@ -334,11 +379,6 @@ class CustomLintPlugin extends ServerPlugin {
     plugin.AnalysisSetPriorityFilesParams parameters,
   ) async {
     _container.read(priorityFilesProvider.notifier).state = parameters;
-
-    // TODO verify priority files are part of the context roots associated with the plugin
-
-    // _allPluginsSub.read();
-
     return plugin.AnalysisSetPriorityFilesResult();
   }
 
@@ -475,17 +515,8 @@ class CustomLintPlugin extends ServerPlugin {
     plugin.PluginShutdownParams parameters,
   ) async {
     try {
-      final links = await _allPluginsSub.read();
-      final id = const Uuid().v4();
-      for (final link in links.values) {
-        // Voluntarily don't await for the response because the connection may
-        // get closed before response is received
-        if (link.hasValue) {
-          // TODO
-          await link.value.channel.sendJson(parameters.toRequest(id).toJson());
-        }
-      }
-
+      // TODO what if a plugin initialized, then context root changed and is now failing
+      await _requestAllPlugins(parameters);
       return plugin.PluginShutdownResult();
     } finally {
       _container.dispose();
