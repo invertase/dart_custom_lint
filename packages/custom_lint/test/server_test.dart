@@ -275,14 +275,15 @@ void fail() {}
     expect(
       runner.channel.pluginErrors.toList(),
       completion([
-        isA<PluginErrorParams>()
-            .having((e) => e.message, 'message', 'Bad state: fail'),
-
-        // This redundant error is coming from the plugin automatically analyzing
-        // the dart files outside of the "getLints" request
-        // TODO find a way to remove this notification
-        isA<PluginErrorParams>()
-            .having((e) => e.message, 'message', 'Bad state: fail'),
+        predicate<PluginErrorParams>((value) {
+          expect(value.message, 'Bad state: fail');
+          return true;
+        }),
+        // TODO figure out why there is a duplicate
+        predicate<PluginErrorParams>((value) {
+          expect(value.message, 'Bad state: fail');
+          return true;
+        }),
       ]),
     );
 
@@ -316,5 +317,271 @@ Bad state: fail
     // Closing so that previous error matchers relying on stream
     // closing can complete
     await runner.close();
+  });
+
+  group('hot-restart', () {
+    test('handles the source change of one plugin and restart it', () async {
+      final plugin = createPlugin(
+        name: 'test_lint',
+        main: '''
+import 'dart:isolate';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+
+void main(List<String> args, SendPort sendPort) {
+  startPlugin(sendPort, _HelloWorldLint());
+}
+
+class _HelloWorldLint extends PluginBase {
+  @override
+  Iterable<AnalysisError> getLints(LibraryElement library) sync* {
+    final libraryPath = library.source.fullName;
+    yield AnalysisError(
+      AnalysisErrorSeverity.WARNING,
+      AnalysisErrorType.LINT,
+      Location(libraryPath, 0, 0, 0, 0),
+      'Hello world',
+      'hello_world',
+    );
+  }
+}
+''',
+      );
+      final plugin2 = createPlugin(
+        name: 'test_lint2',
+        main: '''
+import 'dart:isolate';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+
+void main(List<String> args, SendPort sendPort) {
+  startPlugin(sendPort, _AnotherLint());
+}
+
+class _AnotherLint extends PluginBase {
+  @override
+  Iterable<AnalysisError> getLints(LibraryElement library) sync* {
+    final libraryPath = library.source.fullName;
+    yield AnalysisError(
+      AnalysisErrorSeverity.WARNING,
+      AnalysisErrorType.LINT,
+      Location(libraryPath, 0, 0, 0, 0),
+      'Oy',
+      'oy',
+    );
+  }
+}
+''',
+      );
+
+      final app = creatLintUsage(
+        source: {'lib/main.dart': 'void fn() {}'},
+        plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
+        name: 'test_app',
+      );
+
+      final runner = await startRunnerForApp(app);
+
+      await expectLater(
+        runner.channel.lints,
+        emitsInOrder(<Object?>[
+          predicate<AnalysisErrorsParams>((value) {
+            expect(value.file, join(app.path, 'lib', 'main.dart'));
+            expect(value.errors.single.code, anyOf('hello_world', 'oy'));
+            return true;
+          }),
+          predicate<AnalysisErrorsParams>((value) {
+            expect(value.file, join(app.path, 'lib', 'main.dart'));
+            expect(
+              value.errors.map((e) => e.code),
+              unorderedEquals(<Object?>['hello_world', 'oy']),
+            );
+            return true;
+          }),
+        ]),
+      );
+
+      plugin.pluginMain.writeAsStringSync('''
+import 'dart:isolate';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+
+void main(List<String> args, SendPort sendPort) {
+  startPlugin(sendPort, _ReloaddLint());
+}
+
+class _ReloaddLint extends PluginBase {
+  @override
+  Iterable<AnalysisError> getLints(LibraryElement library) sync* {
+    final libraryPath = library.source.fullName;
+    yield AnalysisError(
+      AnalysisErrorSeverity.WARNING,
+      AnalysisErrorType.LINT,
+      Location(libraryPath, 0, 0, 0, 0),
+      'Hello reload',
+      'hello_reload',
+    );
+  }
+}
+''');
+
+      await expectLater(
+        runner.channel.lints,
+        emitsInOrder(<Object?>[
+          predicate<AnalysisErrorsParams>((value) {
+            expect(value.file, join(app.path, 'lib', 'main.dart'));
+            // Clears lints previously emitted by the reloaded plugin
+            expect(value.errors.single.code, 'oy');
+            return true;
+          }),
+          predicate<AnalysisErrorsParams>((value) {
+            expect(value.file, join(app.path, 'lib', 'main.dart'));
+            expect(
+              value.errors.map((e) => e.code),
+              unorderedEquals(<Object?>['hello_reload', 'oy']),
+            );
+            return true;
+          }),
+        ]),
+      );
+
+      expect(runner.channel.lints, emitsDone);
+
+      // Closing so that previous error matchers relying on stream
+      // closing can complete
+      await runner.close();
+
+      expect(plugin.log.existsSync(), false);
+      expect(plugin2.log.existsSync(), false);
+    });
+
+    test('supports reloading a working plugin into one that fails', () async {
+      final plugin = createPlugin(
+        name: 'test_lint',
+        main: '''
+import 'dart:isolate';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+
+void main(List<String> args, SendPort sendPort) {
+  startPlugin(sendPort, _HelloWorldLint());
+}
+
+class _HelloWorldLint extends PluginBase {
+  @override
+  Iterable<AnalysisError> getLints(LibraryElement library) sync* {
+    final libraryPath = library.source.fullName;
+    yield AnalysisError(
+      AnalysisErrorSeverity.WARNING,
+      AnalysisErrorType.LINT,
+      Location(libraryPath, 0, 0, 0, 0),
+      'Hello world',
+      'hello_world',
+    );
+  }
+}
+''',
+      );
+      final plugin2 = createPlugin(
+        name: 'test_lint2',
+        main: '''
+import 'dart:isolate';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+
+void main(List<String> args, SendPort sendPort) {
+  startPlugin(sendPort, _AnotherLint());
+}
+
+class _AnotherLint extends PluginBase {
+  @override
+  Iterable<AnalysisError> getLints(LibraryElement library) sync* {
+    final libraryPath = library.source.fullName;
+    yield AnalysisError(
+      AnalysisErrorSeverity.WARNING,
+      AnalysisErrorType.LINT,
+      Location(libraryPath, 0, 0, 0, 0),
+      'Oy',
+      'oy',
+    );
+  }
+}
+''',
+      );
+
+      final app = creatLintUsage(
+        source: {'lib/main.dart': 'void fn() {}'},
+        plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
+        name: 'test_app',
+      );
+
+      final runner = await startRunnerForApp(app, ignoreErrors: true);
+
+      await expectLater(
+        runner.channel.lints,
+        emitsInOrder(<Object?>[
+          predicate<AnalysisErrorsParams>((value) {
+            expect(value.file, join(app.path, 'lib', 'main.dart'));
+            expect(value.errors.single.code, anyOf('hello_world', 'oy'));
+            return true;
+          }),
+          predicate<AnalysisErrorsParams>((value) {
+            expect(value.file, join(app.path, 'lib', 'main.dart'));
+            expect(
+              value.errors.map((e) => e.code),
+              unorderedEquals(<Object?>['hello_world', 'oy']),
+            );
+            return true;
+          }),
+        ]),
+      );
+
+      expect(plugin.log.existsSync(), false);
+      expect(plugin2.log.existsSync(), false);
+
+      plugin.pluginMain.writeAsStringSync('''
+invalid;
+''');
+
+      // Plugin errors will be emitted as notifications, not as part of the response
+      expect(runner.channel.responseErrors, emitsDone);
+
+      // The error in our plugin will be reported as PluginErrorParams
+      expect(
+        runner.channel.pluginErrors.single,
+        completion(
+          isA<PluginErrorParams>().having((e) => e.message, 'message', '''
+IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/lib/main.dart:1:1: \x1B[31mError: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
+Try adding the name of the type of the variable or the keyword 'var'.\x1B[39;49m
+invalid;
+^^^^^^^'''),
+        ),
+      );
+      await expectLater(
+        runner.channel.lints,
+        emits(
+          predicate<AnalysisErrorsParams>((value) {
+            expect(value.file, join(app.path, 'lib', 'main.dart'));
+            // Clears lints previously emitted by the reloaded plugin
+            expect(value.errors.single.code, 'oy');
+            return true;
+          }),
+        ),
+      );
+
+      expect(runner.channel.lints, emitsDone);
+
+      // Closing so that previous error matchers relying on stream
+      // closing can complete
+      await runner.close();
+
+      expect(plugin.log.existsSync(), false);
+      expect(plugin2.log.existsSync(), false);
+    });
   });
 }

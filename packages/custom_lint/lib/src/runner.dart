@@ -26,6 +26,8 @@ class CustomLintRunner {
   final ServerPlugin _server;
   final Directory _workingDirectory;
 
+  var _closed = false;
+
   late final _receivePort = ReceivePort();
   late final _clientChannel = ClientIsolateChannel(_receivePort.sendPort);
 
@@ -106,6 +108,9 @@ class CustomLintRunner {
 
   /// Stop the command runner, sending a [PluginShutdownParams] request in the process.
   Future<void> close() async {
+    if (_closed) return;
+    _closed = true;
+
     try {
       await channel.sendRequest(PluginShutdownParams());
     } finally {

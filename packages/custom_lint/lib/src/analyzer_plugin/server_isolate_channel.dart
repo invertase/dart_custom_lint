@@ -34,6 +34,11 @@ class ServerIsolateChannel {
       .where((e) => e.containsKey(Notification.EVENT))
       .map(Notification.fromJson);
 
+  /// Lints emitted by the plugin
+  late final Stream<AnalysisErrorsParams> lints = notifications
+      .where((e) => e.event == 'analysis.errors')
+      .map(AnalysisErrorsParams.fromNotification);
+
   /// The [Notification]s emitted by the plugin
   late final Stream<PrintNotification> messages = notifications
       .where((e) => e.event == PrintNotification.key)
