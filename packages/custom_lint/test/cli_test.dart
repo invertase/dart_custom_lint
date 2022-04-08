@@ -4,6 +4,54 @@ import '../bin/custom_lint.dart' as cli;
 import 'create_project.dart';
 import 'mock_fs.dart';
 
+const oyPluginSource = '''
+import 'dart:isolate';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+
+void main(List<String> args, SendPort sendPort) {
+  startPlugin(sendPort, _AnotherLint());
+}
+
+class _AnotherLint extends PluginBase {
+  @override
+  Iterable<Lint> getLints(LibraryElement library) sync* {
+    yield Lint(
+      code: 'oy',
+      message: 'Oy',
+      location: LintLocation.fromOffsets(
+        offset: library.topLevelElements.first.nameOffset,
+        length: library.topLevelElements.first.nameLength,
+      ),
+    );
+  }
+}
+''';
+
+const helloWordPluginSource = '''
+import 'dart:isolate';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+
+void main(List<String> args, SendPort sendPort) {
+  startPlugin(sendPort, _HelloWorldLint());
+}
+
+class _HelloWorldLint extends PluginBase {
+  @override
+  Iterable<Lint> getLints(LibraryElement library) sync* {
+    yield Lint(
+      code: 'hello_world',
+      message: 'Hello world',
+      location: LintLocation.fromOffsets(
+        offset: library.topLevelElements.first.nameOffset,
+        length: library.topLevelElements.first.nameLength,
+      ),
+    );
+  }
+}
+''';
+
 void main() {
   // TODO move plugin main to bin/custom_lint.dart
 
@@ -13,7 +61,6 @@ void main() {
       main: '''
 import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 void main(List<String> args, SendPort sendPort) {
@@ -22,7 +69,7 @@ void main(List<String> args, SendPort sendPort) {
 
 class _AnotherLint extends PluginBase {
   @override
-  Iterable<AnalysisError> getLints(LibraryElement library) sync* {}
+  Iterable<Lint> getLints(LibraryElement library) sync* {}
 }
 ''',
     );
@@ -48,12 +95,7 @@ No issues found!
   });
 
   test('exits with -1 if only an error but no lint are found', () async {
-    final plugin = createPlugin(
-      name: 'test_lint',
-      main: '''
-invalid;
-''',
-    );
+    final plugin = createPlugin(name: 'test_lint', main: 'invalid;');
 
     final app = creatLintUsage(
       source: {'lib/main.dart': 'void fn() {}'},
@@ -80,69 +122,13 @@ invalid;
   });
 
   test('CLI lists warnings from all plugins and set exit code', () async {
-    final plugin = createPlugin(
-      name: 'test_lint',
-      main: '''
-import 'dart:isolate';
-import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _HelloWorldLint());
-}
-
-class _HelloWorldLint extends PluginBase {
-  @override
-  Iterable<AnalysisError> getLints(LibraryElement library) sync* {
-    final libraryPath = library.source.fullName;
-    yield AnalysisError(
-      AnalysisErrorSeverity.WARNING,
-      AnalysisErrorType.LINT,
-      Location(libraryPath, 0, 0, 0, 0),
-      'Hello world',
-      'hello_world',
-    );
-  }
-}
-''',
-    );
-    final plugin2 = createPlugin(
-      name: 'test_lint2',
-      main: '''
-import 'dart:isolate';
-import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _AnotherLint());
-}
-
-class _AnotherLint extends PluginBase {
-  @override
-  Iterable<AnalysisError> getLints(LibraryElement library) sync* {
-    final libraryPath = library.source.fullName;
-    yield AnalysisError(
-      AnalysisErrorSeverity.WARNING,
-      AnalysisErrorType.LINT,
-      Location(libraryPath, 0, 0, 1, 42),
-      'Oy',
-      'oy',
-    );
-  }
-}
-''',
-    );
+    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
+    final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
 
     final app = creatLintUsage(
       source: {
-        'lib/main.dart': '''
-void fn() {}
-''',
-        'lib/another.dart': '''
-void fail() {}
-''',
+        'lib/main.dart': 'void fn() {}',
+        'lib/another.dart': 'void fail() {}',
       },
       plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
       name: 'test_app',
@@ -154,10 +140,10 @@ void fail() {}
 
         expect(code, -1);
         expect(out.join(), completion('''
-  lib/another.dart:0:0 • Hello world • hello_world
-  lib/another.dart:1:42 • Oy • oy
-  lib/main.dart:0:0 • Hello world • hello_world
-  lib/main.dart:1:42 • Oy • oy
+  lib/another.dart:0:5 • Hello world • hello_world
+  lib/another.dart:0:5 • Oy • oy
+  lib/main.dart:0:5 • Hello world • hello_world
+  lib/main.dart:0:5 • Oy • oy
 '''));
         expect(err, emitsDone);
       },
@@ -166,48 +152,16 @@ void fail() {}
   });
 
   test('supports plugins that do not compile', () async {
-    final plugin = createPlugin(
-      name: 'test_lint',
-      main: '''
-import 'dart:isolate';
-import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _HelloWorldLint());
-}
-
-class _HelloWorldLint extends PluginBase {
-  @override
-  Iterable<AnalysisError> getLints(LibraryElement library) sync* {
-    final libraryPath = library.source.fullName;
-    yield AnalysisError(
-      AnalysisErrorSeverity.WARNING,
-      AnalysisErrorType.LINT,
-      Location(libraryPath, 0, 0, 0, 0),
-      'Hello world',
-      'hello_world',
-    );
-  }
-}
-''',
-    );
+    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
     final plugin2 = createPlugin(
       name: 'test_lint2',
-      main: '''
-int x = 'oy';
-''',
+      main: "int x = 'oy';",
     );
 
     final app = creatLintUsage(
       source: {
-        'lib/main.dart': '''
-void fn() {}
-''',
-        'lib/another.dart': '''
-void fail() {}
-''',
+        'lib/main.dart': 'void fn() {}',
+        'lib/another.dart': 'void fail() {}',
       },
       plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
       name: 'test_app',
@@ -230,8 +184,8 @@ int x = 'oy';
           ),
         );
         expect(out.join(), completion('''
-  lib/another.dart:0:0 • Hello world • hello_world
-  lib/main.dart:0:0 • Hello world • hello_world
+  lib/another.dart:0:5 • Hello world • hello_world
+  lib/main.dart:0:5 • Hello world • hello_world
 '''));
       },
       currentDirectory: app,
@@ -244,7 +198,6 @@ int x = 'oy';
       main: r'''
 import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 void main(List<String> args, SendPort sendPort) {
@@ -253,62 +206,29 @@ void main(List<String> args, SendPort sendPort) {
 
 class _HelloWorldLint extends PluginBase {
   @override
-  Iterable<AnalysisError> getLints(LibraryElement library) sync* {
-    final libraryPath = library.source.fullName;
+  Iterable<Lint> getLints(LibraryElement library) sync* {
     if (library.topLevelElements.single.name == 'fail') {
       print('');
       print(' ');
        print('Hello\nworld');
        throw StateError('fail');
     }
-    yield AnalysisError(
-      AnalysisErrorSeverity.WARNING,
-      AnalysisErrorType.LINT,
-      Location(libraryPath, 0, 0, 0, 0),
-      'Hello world',
-      'hello_world',
+    yield Lint(
+      message: 'Hello world',
+      code: 'hello_world',
+      location: LintLocation.fromOffsets(offset: 0, length: 5),
     );
   }
 }
 ''',
     );
 
-    final plugin2 = createPlugin(
-      name: 'test_lint2',
-      main: '''
-import 'dart:isolate';
-import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _AnotherLint());
-}
-
-class _AnotherLint extends PluginBase {
-  @override
-  Iterable<AnalysisError> getLints(LibraryElement library) sync* {
-    final libraryPath = library.source.fullName;
-    yield AnalysisError(
-      AnalysisErrorSeverity.WARNING,
-      AnalysisErrorType.LINT,
-      Location(libraryPath, 0, 0, 1, 42),
-      'Oy',
-      'oy',
-    );
-  }
-}
-''',
-    );
+    final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
 
     final app = creatLintUsage(
       source: {
-        'lib/main.dart': '''
-void fn() {}
-''',
-        'lib/another.dart': '''
-void fail() {}
-''',
+        'lib/main.dart': 'void fn() {}',
+        'lib/another.dart': 'void fail() {}',
       },
       plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
       name: 'test_app',
@@ -331,9 +251,9 @@ void fail() {}
 '''),
               endsWith(
                 '''
-  lib/another.dart:1:42 • Oy • oy
+  lib/another.dart:0:5 • Oy • oy
   lib/main.dart:0:0 • Hello world • hello_world
-  lib/main.dart:1:42 • Oy • oy
+  lib/main.dart:0:5 • Oy • oy
 ''',
               ),
             ),
@@ -344,7 +264,7 @@ void fail() {}
           completion(
             contains('''
 Bad state: fail
-#0      _HelloWorldLint.getLints (file://${plugin.path}/bin/custom_lint.dart:18:8)
+#0      _HelloWorldLint.getLints (file://${plugin.path}/bin/custom_lint.dart:16:8)
 '''),
           ),
         );

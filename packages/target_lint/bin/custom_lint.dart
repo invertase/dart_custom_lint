@@ -2,7 +2,6 @@ import 'dart:isolate';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:custom_lint_builder/protocol.dart';
 import 'package:path/path.dart' as path;
 import 'package:recase/recase.dart';
 
