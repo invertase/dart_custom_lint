@@ -4,7 +4,6 @@
 </p>
 
 <p align="center">
-  <a href="https://melos.invertase.dev">Documentation</a> &bull; 
   <a href="https://github.com/invertase/custom_lint/blob/main/LICENSE">License</a>
 </p>
 
@@ -137,11 +136,11 @@ $ dart run custom_lint
 ---
 
 <p align="center">
-  <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=melos">
+  <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=dart_custom_lint">
     <img width="75px" src="https://static.invertase.io/assets/invertase/invertase-rounded-avatar.png">
   </a>
   <p align="center">
-    Built and maintained by <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=melos">Invertase</a>.
+    Built and maintained by <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=dart_custom_lint">Invertase</a>.
   </p>
 </p>
 
