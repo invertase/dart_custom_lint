@@ -22,11 +22,11 @@ provide a better developer experience.
 
 That includes:
 
-- Use custom_lint's command line to obtain the list of lints in your CI –
+- A command-line to obtain the list of lints in your CI
   without having to write a command line yourself.
 - A simplified project setup.  
-  No need to deal with `analyzer` or error handling. Custom_lint takes care of
-  that for you, so that you can focus on writing lints.
+  No need to deal with the `analyzer` server or error handling. Custom_lint
+  takes care of that for you, so that you can focus on writing lints.
 - Support for hot-restart.  
   Updating the source code of a linter plugin will dynamically restart it,
   without having to restart your IDE/analyzer server
