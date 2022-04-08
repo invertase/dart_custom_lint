@@ -311,7 +311,7 @@ void fail() {}
       startsWith('''
 Hello world
 Bad state: fail
-#0      _HelloWorldLint.getLints (package:test_lint/main.dart:16:8)'''),
+#0      _HelloWorldLint.getLints (file://${plugin.path}/bin/custom_lint.dart:16:8)'''),
     );
 
     // Closing so that previous error matchers relying on stream
@@ -556,7 +556,7 @@ invalid;
         runner.channel.pluginErrors.single,
         completion(
           isA<PluginErrorParams>().having((e) => e.message, 'message', '''
-IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/lib/main.dart:1:1: \x1B[31mError: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
+IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: \x1B[31mError: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
 Try adding the name of the type of the variable or the keyword 'var'.\x1B[39;49m
 invalid;
 ^^^^^^^'''),

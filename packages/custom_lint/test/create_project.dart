@@ -18,7 +18,7 @@ Directory createPlugin({
   return createDartProject(
     sources: {
       ...?sources,
-      if (main != null) 'lib/main.dart': main,
+      if (main != null) 'bin/custom_lint.dart': main,
     },
     pubspec: pubpsec == _pluginDefaultPubspec
         ? '''
@@ -173,5 +173,5 @@ Directory createTmpFolder(Map<String, String> files, String name) {
 }
 
 extension PluginDirX on Directory {
-  File get pluginMain => File(join(path, 'lib', 'main.dart'));
+  File get pluginMain => File(join(path, 'bin', 'custom_lint.dart'));
 }

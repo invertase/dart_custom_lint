@@ -67,7 +67,7 @@ invalid;
 
         expect(code, -1);
         expect(err.join(), completion('''
-IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/lib/main.dart:1:1: \x1B[31mError: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
+IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: \x1B[31mError: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
 Try adding the name of the type of the variable or the keyword 'var'.\x1B[39;49m
 invalid;
 ^^^^^^^
@@ -222,7 +222,7 @@ void fail() {}
           err.join(),
           completion(
             '''
-IsolateSpawnException: Unable to spawn isolate: ${plugin2.path}/lib/main.dart:1:9: \x1B[31mError: A value of type 'String' can't be assigned to a variable of type 'int'.\x1B[39;49m
+IsolateSpawnException: Unable to spawn isolate: ${plugin2.path}/bin/custom_lint.dart:1:9: \x1B[31mError: A value of type 'String' can't be assigned to a variable of type 'int'.\x1B[39;49m
 int x = 'oy';
         ^
 
@@ -344,7 +344,7 @@ void fail() {}
           completion(
             contains('''
 Bad state: fail
-#0      _HelloWorldLint.getLints (package:test_lint/main.dart:18:8)
+#0      _HelloWorldLint.getLints (file://${plugin.path}/bin/custom_lint.dart:18:8)
 '''),
           ),
         );
