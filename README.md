@@ -8,7 +8,7 @@
   <a href="https://github.com/invertase/custom_lint/blob/main/LICENSE">License</a>
 </p>
 
-### About
+## About
 
 Lint rules are a powerful way to improve the maintainability of a project.
 The more, the merrier!  
@@ -35,7 +35,101 @@ That includes:
   If your plugin somehow throws or print debug messages, custom_lint
   will generate a log file with the messages/errors.
 
-## Installing
+## Usage
+
+Using custom_lint is split in two parts:
+
+- how to define a custom_lint package
+- how users can install our package in their application to see our newly defined lints
+
+### Creating a custom lint package
+
+To create a custom lint, you will need two things:
+
+- updating your `pubspec.yaml` to include `custom_lint_builder` as a dependency:
+
+  ```yaml
+  # pubspec.yaml
+  name: my_custom_lint_package
+  environment:
+    sdk: ">=2.16.0 <3.0.0"
+
+  dependencies:
+    # we will use analyzer for inspecting Dart files
+    analyzer:
+    # custom_lint_builder will give us tools for writing lints
+    custom_lint_builder:
+  ```
+
+- create a `bin/custom_lint.dart` file in your project with the following:
+
+  ```dart
+  // This is the entrypoint of our custom linter
+  void main(List<String> args, SendPort sendPort) {
+    startPlugin(sendPort, _ExampleLint());
+  }
+
+  // This class is the one that will analyze Dart files and return lints
+  class _ExampleLint extends PluginBase {
+    @override
+    Iterable<AnalysisError> getLints(LibraryElement library) sync* {
+      // A basic lint that shows at the top of the file.
+      yield AnalysisError(
+        AnalysisErrorSeverity.WARNING,
+        AnalysisErrorType.LINT,
+        Location(library.source.fullName, 0, 0, 0, 0),
+        'This is the description of our custom lint',
+        'my_custom_lint_code',
+      );
+    }
+  }
+  ```
+
+That's it for defining a custom lint package!
+
+Let's use it in an application now.
+
+### Using our custom lint package in an application
+
+For users to run custom_lint packages, there are a few steps:
+
+- The application must contain an `analysis_options.yaml` with the following:
+
+  ```yaml
+  analyzer:
+    plugins:
+      - custom_lint
+  ```
+
+- The application also needs to add `custom_lint` and our package(s) as dev
+  dependency in their application:
+
+  ```yaml
+  # The pubspec.yaml of an application using our lints
+  name: example_app
+  environment:
+    sdk: ">=2.16.0 <3.0.0"
+
+  dev_dependencies:
+    custom_lint:
+    my_custom_lint_package:
+  ```
+
+That's all!  
+After running `pub get` (and possibly restarting their IDE), users should now
+see our custom lints in their Dart files.
+
+#### Obtaining the list of lints in the CI
+
+Unfortunately, running `dart analyze` does not pick up our newly defined lints.  
+We need a separate command for this.
+
+To do that, users of our custom lint package can run inside the application the following:
+
+```sh
+$ dart run custom_lint
+  lib/main.dart:0:0 • This is the description of our custom lint • my_custom_lint_code
+```
 
 ---
 
