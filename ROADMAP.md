@@ -20,3 +20,9 @@ custom_lint:
   rules:
     riverpod_final_provider: false
 ```
+
+## Add support for refactors and fixes
+
+Instead of being limited to lints
+
+Bonus point for a `dart run custom_lint --fix`
