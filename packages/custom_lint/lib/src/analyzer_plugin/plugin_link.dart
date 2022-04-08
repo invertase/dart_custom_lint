@@ -42,7 +42,7 @@ final _pluginLinkProvider = FutureProvider.autoDispose
 
   // TODO configure that through build.yaml-like file
   final mainUri = Uri.file(
-    p.join(pluginRootPath, 'lib', 'main.dart'),
+    p.join(pluginRootPath, 'bin', 'custom_lint.dart'),
   );
 
   final isolate = await Isolate.spawnUri(
