@@ -129,16 +129,5 @@ London
         );
       });
     });
-
-    test('fromSourceSpan', () {
-      final file = SourceFile.fromString('Hello world');
-      final span = file.span(1, 10);
-
-      expect(
-        LintLocation.fromSourceSpan(span)
-            .toSourceSpan(SourceFile.fromString('')),
-        span,
-      );
-    });
   });
 }

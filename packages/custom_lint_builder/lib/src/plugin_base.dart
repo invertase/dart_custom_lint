@@ -1,6 +1,6 @@
 import 'package:analyzer/dart/element/element.dart';
 
-import '../protocol.dart';
+import '../custom_lint_builder.dart';
 
 /// A base class for custom analyzer plugins
 ///

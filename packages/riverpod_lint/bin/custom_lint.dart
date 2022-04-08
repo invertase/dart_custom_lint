@@ -3,7 +3,6 @@ import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:custom_lint_builder/protocol.dart';
 
 bool _isProvider(DartType type) {
   // TODO refactor to use TypeChecker

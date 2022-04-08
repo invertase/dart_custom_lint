@@ -108,10 +108,6 @@ class LintLocation {
           );
         });
 
-  /// Defines a [LintLocation] from a [source_span.SourceSpan].
-  LintLocation.fromSourceSpan(source_span.SourceSpan span)
-      : _toSourceSpan = ((f) => span);
-
   // TODO use factory
   final source_span.SourceSpan Function(source_span.SourceFile sourceFile)
       _toSourceSpan;

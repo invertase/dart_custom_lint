@@ -13,9 +13,8 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart'
     as analyzer_plugin;
 import 'package:source_span/source_span.dart' as source_span;
 
-import '../../protocol.dart';
+import '../../custom_lint_builder.dart';
 import '../internal_protocol.dart';
-import '../plugin_base.dart';
 import 'plugin_client.dart';
 
 /// An internal client for connecting a custom_lint plugin to the server
