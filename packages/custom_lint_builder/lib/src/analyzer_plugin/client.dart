@@ -105,25 +105,6 @@ class Client extends ClientPlugin {
           .toList(),
     );
   }
-
-  @override
-  Future<analyzer_plugin.EditGetFixesResult> handleEditGetFixes(
-    analyzer_plugin.EditGetFixesParams parameters,
-  ) async {
-    final result =
-        await driverForPath(parameters.file)?.getResult(parameters.file);
-    if (result != null && result is analyzer.ResolvedUnitResult) {
-      return analyzer_plugin.EditGetFixesResult(
-        plugin
-            .getFixes(
-              result.libraryElement,
-              parameters.offset,
-            )
-            .toList(),
-      );
-    }
-    return super.handleEditGetFixes(parameters);
-  }
 }
 
 extension on analyzer_plugin.ContextRoot {
