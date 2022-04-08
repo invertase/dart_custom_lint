@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:isolate';
 
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-import 'package:custom_lint/protocol.dart';
 // ignore: implementation_imports, safe since we are using tight constraints
 import 'package:custom_lint/src/analyzer_plugin/client_isolate_channel.dart';
 
 import 'src/analyzer_plugin/client.dart';
+import 'src/internal_protocol.dart';
 import 'src/plugin_base.dart';
 
 export 'src/plugin_base.dart' show PluginBase;

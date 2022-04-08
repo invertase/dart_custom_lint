@@ -16,7 +16,7 @@ import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
 import 'package:pub_semver/pub_semver.dart';
 
-import '../../protocol.dart';
+import '../protocol/internal_protocol.dart';
 
 /// The abstract superclass of any class implementing a plugin for the analysis
 /// server.

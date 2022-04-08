@@ -2,8 +2,8 @@ import 'dart:isolate';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:custom_lint_builder/protocol.dart';
 
 bool _isProvider(DartType type) {
   // TODO refactor to use TypeChecker
@@ -25,9 +25,7 @@ void main(List<String> args, SendPort sendPort) {
 
 class _RiverpodLint extends PluginBase {
   @override
-  Iterable<AnalysisError> getLints(LibraryElement library) sync* {
-    final libraryPath = library.source.fullName;
-
+  Iterable<Lint> getLints(LibraryElement library) sync* {
     final providers = library.topLevelElements
         .whereType<VariableElement>()
         .where((e) => !e.isFinal)
@@ -35,13 +33,13 @@ class _RiverpodLint extends PluginBase {
         .toList();
 
     for (final provider in providers) {
-      yield AnalysisError(
-        // TODO use plugin.Type
-        AnalysisErrorSeverity.WARNING,
-        AnalysisErrorType.LINT,
-        Location(libraryPath, provider.nameOffset, provider.nameLength, 0, 0),
-        'Providers should always be declared as final',
-        'riverpod_final_provider',
+      yield Lint(
+        code: 'riverpod_final_provider',
+        message: 'Providers should always be declared as final',
+        location: LintLocation.fromOffsets(
+          offset: provider.nameOffset,
+          length: provider.nameLength,
+        ),
       );
     }
   }

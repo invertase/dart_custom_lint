@@ -16,7 +16,7 @@ import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:riverpod/riverpod.dart';
 
-import '../../protocol.dart';
+import '../protocol/internal_protocol.dart';
 import 'my_server_plugin.dart';
 import 'plugin_link.dart';
 
