@@ -1,12 +1,11 @@
 import 'package:analyzer/dart/analysis/context_locator.dart' as analyzer;
 import 'package:analyzer/dart/analysis/context_root.dart' as analyzer;
 import 'package:analyzer/dart/analysis/results.dart' as analyzer;
-import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/file_system.dart' as analyzer;
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/context_builder.dart' as analyzer;
 // ignore: implementation_imports
-import 'package:analyzer/src/dart/analysis/driver.dart';
+import 'package:analyzer/src/dart/analysis/driver.dart' as analyzer;
 import 'package:analyzer_plugin/protocol/protocol_common.dart'
     as analyzer_plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart'
@@ -22,7 +21,7 @@ import 'plugin_client.dart';
 class Client extends ClientPlugin {
   /// An internal client for connecting a custom_lint plugin to the server
   /// using the analyzer_plugin protocol
-  Client(this.plugin, [ResourceProvider? provider]) : super(provider);
+  Client(this.plugin, [analyzer.ResourceProvider? provider]) : super(provider);
 
   /// The plugin that will be connected to the analyzer server
   final PluginBase plugin;
@@ -37,7 +36,7 @@ class Client extends ClientPlugin {
   String get version => '1.0.0-alpha.0';
 
   @override
-  AnalysisDriver createAnalysisDriver(
+  analyzer.AnalysisDriver createAnalysisDriver(
     analyzer_plugin.ContextRoot contextRoot,
   ) {
     final analyzerContextRoot = contextRoot.asAnalayzerContextRoot(
@@ -73,13 +72,23 @@ class Client extends ClientPlugin {
     final sourceFile =
         source_span.SourceFile.fromString(analysisResult.content);
 
+    final ignoredCodes = _getAllIgnoredForFileCodes(analysisResult.content);
+
     return analyzer_plugin.AnalysisErrorsParams(
       analysisResult.path,
-      plugin
-          // TODO handle error
-          .getLints(analysisResult.libraryElement)
-          .map((e) => e.encode(sourceFile, analysisResult.path))
-          .toList(),
+      ignoredCodes.contains('type=lint')
+          // No need to run the plugin if lints are disabled in the file
+          ? const []
+          : plugin
+              // TODO handle error
+              .getLints(analysisResult.libraryElement)
+              .where(
+                (lint) =>
+                    !ignoredCodes.contains(lint.code) &&
+                    !_isIgnored(lint, sourceFile),
+              )
+              .map((e) => e.encode(sourceFile, analysisResult.path))
+              .toList(),
     );
   }
 
@@ -114,6 +123,38 @@ class Client extends ClientPlugin {
           .toList(),
     );
   }
+}
+
+final _ignoreRegex = RegExp(r'//\s*ignore\s*:(.+)$', multiLine: true);
+final _ignoreForFileRegex =
+    RegExp(r'//\s*ignore_for_file\s*:(.+)$', multiLine: true);
+
+bool _isIgnored(Lint lint, source_span.SourceFile sourceFile) {
+  final span = lint.location.toSourceSpan(sourceFile);
+  final line = span.start.line;
+
+  if (line == 0) return false;
+
+  final previousLine = sourceFile.getText(
+    sourceFile.getOffset(line - 1),
+    span.start.offset - 1,
+  );
+
+  final codeContent = _ignoreRegex.firstMatch(previousLine)?.group(1);
+  if (codeContent == null) return false;
+
+  final codes = codeContent.split(',').map((e) => e.trim()).toSet();
+
+  return codes.contains(lint.code) || codes.contains('type=lint');
+}
+
+Set<String> _getAllIgnoredForFileCodes(String source) {
+  return _ignoreForFileRegex
+      .allMatches(source)
+      .map((e) => e.group(1)!)
+      .expand((e) => e.split(','))
+      .map((e) => e.trim())
+      .toSet();
 }
 
 extension on analyzer_plugin.ContextRoot {

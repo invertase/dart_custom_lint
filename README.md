@@ -30,6 +30,7 @@ That includes:
 - Support for hot-restart.  
   Updating the source code of a linter plugin will dynamically restart it,
   without having to restart your IDE/analyzer server
+- Built-in support for `// ignore:` and `// ignore_for_file:`.
 - Support for `print(...)` and exceptions.  
   If your plugin somehow throws or print debug messages, custom_lint
   will generate a log file with the messages/errors.
@@ -117,7 +118,6 @@ For users to run custom_lint packages, there are a few steps:
 That's all!  
 After running `pub get` (and possibly restarting their IDE), users should now
 see our custom lints in their Dart files:
-
 
 ![screenshot of our custom lints in the IDE](https://raw.githubusercontent.com/invertase/dart_custom_lint/main/resources/lint_showcase.png?token=GHSAT0AAAAAABKV7FKIJQP5CKCH3R74IPAYYSZFGZQ)
 
