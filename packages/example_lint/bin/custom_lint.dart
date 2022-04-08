@@ -3,7 +3,6 @@ import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
-import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 bool _isProvider(DartType type) {
@@ -43,58 +42,6 @@ class _RiverpodLint extends PluginBase {
         Location(libraryPath, provider.nameOffset, provider.nameLength, 0, 0),
         'Providers should always be declared as final',
         'riverpod_final_provider',
-      );
-    }
-  }
-
-  @override
-  Iterable<AnalysisErrorFixes> getFixes(
-    LibraryElement library,
-    int offset,
-  ) sync* {
-    final providers = library.topLevelElements
-        .whereType<VariableElement>()
-        .where((e) => !e.isFinal)
-        .where((e) =>
-            offset >= e.nameOffset && offset < e.nameOffset + e.nameLength)
-        .where((e) => _isProvider(e.type))
-        .toList();
-
-    for (final provider in providers) {
-      print('Get fixes for $provider');
-      final libraryPath = library.source.fullName;
-      yield AnalysisErrorFixes(
-        // TODO refactor
-        AnalysisError(
-          AnalysisErrorSeverity.WARNING,
-          AnalysisErrorType.LINT,
-          Location(libraryPath, provider.nameOffset, provider.nameLength, 0, 0),
-          'Providers should always be declared as final',
-          'riverpod_final_provider',
-        ),
-        fixes: [
-          PrioritizedSourceChange(
-            0,
-            SourceChange(
-              'Make provider final',
-              edits: [
-                SourceFileEdit(
-                  libraryPath,
-                  0,
-                  edits: [
-                    // TODO handle "Type provider =" -> "final Type provider = "
-                    SourceEdit(
-                      provider.nameOffset,
-                      provider.nameLength,
-                      'final ${provider.name}',
-                      id: provider.name,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
       );
     }
   }
