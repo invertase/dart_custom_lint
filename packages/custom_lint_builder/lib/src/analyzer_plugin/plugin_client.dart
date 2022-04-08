@@ -23,8 +23,9 @@ import 'package:analyzer_plugin/src/protocol/protocol_internal.dart';
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/utilities/null_string_sink.dart';
 import 'package:analyzer_plugin/utilities/subscriptions/subscription_manager.dart';
-import 'package:custom_lint/protocol.dart';
 import 'package:pub_semver/pub_semver.dart';
+
+import '../internal_protocol.dart';
 
 /// The abstract superclass of any class implementing a plugin for the analysis
 /// server.

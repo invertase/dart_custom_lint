@@ -1,8 +1,8 @@
 import 'dart:isolate';
 
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:custom_lint_builder/protocol.dart';
 import 'package:path/path.dart' as path;
 import 'package:recase/recase.dart';
 
@@ -12,7 +12,7 @@ void main(List<String> args, SendPort sendPort) {
 
 class _TargetLint extends PluginBase {
   @override
-  Iterable<AnalysisError> getLints(LibraryElement library) sync* {
+  Iterable<Lint> getLints(LibraryElement library) sync* {
     final libraryPath = library.source.fullName;
     final fileName = path.basenameWithoutExtension(libraryPath);
 
@@ -22,12 +22,13 @@ class _TargetLint extends PluginBase {
         .every((element) => element.name != expectedName);
 
     if (hasElementWithExpectedName) {
-      yield AnalysisError(
-        AnalysisErrorSeverity.WARNING,
-        AnalysisErrorType.LINT,
-        Location(libraryPath, 0, 100, 0, 0),
-        'must contain a class named $expectedName',
-        'target_controller',
+      yield Lint(
+        code: 'target_controller',
+        message: 'must contain a class named $expectedName',
+        location: LintLocation.fromOffsets(
+          offset: library.topLevelElements.first.nameOffset,
+          length: library.topLevelElements.first.nameLength,
+        ),
       );
     }
   }

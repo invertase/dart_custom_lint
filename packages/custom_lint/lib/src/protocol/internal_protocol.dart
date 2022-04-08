@@ -1,3 +1,7 @@
+/// A list of custom requests/notifications that are not part of analyzer_plugin
+/// but that custom_lint defines
+library custom_protocol;
+
 import 'dart:convert';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';

@@ -9,7 +9,7 @@ import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
 import 'package:async/async.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../protocol.dart';
+import '../protocol/internal_protocol.dart';
 
 const _uuid = Uuid();
 

@@ -7,10 +7,14 @@ import 'package:analyzer/file_system/file_system.dart' as analyzer;
 import 'package:analyzer/src/dart/analysis/context_builder.dart' as analyzer;
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/driver.dart';
+import 'package:analyzer_plugin/protocol/protocol_common.dart'
+    as analyzer_plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart'
     as analyzer_plugin;
-import 'package:custom_lint/protocol.dart';
+import 'package:source_span/source_span.dart' as source_span;
 
+import '../../protocol.dart';
+import '../internal_protocol.dart';
 import '../plugin_base.dart';
 import 'plugin_client.dart';
 
@@ -67,10 +71,16 @@ class Client extends ClientPlugin {
   analyzer_plugin.AnalysisErrorsParams _getAnalysisErrorsForUnit(
     analyzer.ResolvedUnitResult analysisResult,
   ) {
+    final sourceFile =
+        source_span.SourceFile.fromString(analysisResult.content);
+
     return analyzer_plugin.AnalysisErrorsParams(
       analysisResult.path,
-      // TODO handle error
-      plugin.getLints(analysisResult.libraryElement).toList(),
+      plugin
+          // TODO handle error
+          .getLints(analysisResult.libraryElement)
+          .map((e) => e.encode(sourceFile, analysisResult.path))
+          .toList(),
     );
   }
 
@@ -119,5 +129,55 @@ extension on analyzer_plugin.ContextRoot {
     );
 
     return locator.single;
+  }
+}
+
+extension on Lint {
+  analyzer_plugin.AnalysisError encode(
+    source_span.SourceFile sourceFileForLibrary,
+    String filePath,
+  ) {
+    return analyzer_plugin.AnalysisError(
+      severity.encode(),
+      analyzer_plugin.AnalysisErrorType.LINT,
+      location.encode(sourceFileForLibrary, filePath),
+      message,
+      code,
+      correction: correction,
+      url: url,
+      // TODO contextMessages & hasFix
+    );
+  }
+}
+
+extension on LintSeverity {
+  analyzer_plugin.AnalysisErrorSeverity encode() {
+    switch (this) {
+      case LintSeverity.error:
+        return analyzer_plugin.AnalysisErrorSeverity.ERROR;
+      case LintSeverity.warning:
+        return analyzer_plugin.AnalysisErrorSeverity.WARNING;
+      case LintSeverity.info:
+        return analyzer_plugin.AnalysisErrorSeverity.INFO;
+    }
+  }
+}
+
+extension on LintLocation {
+  analyzer_plugin.Location encode(
+    source_span.SourceFile sourceFile,
+    String filePath,
+  ) {
+    final span = toSourceSpan(sourceFile);
+
+    return analyzer_plugin.Location(
+      filePath,
+      span.start.offset,
+      span.length,
+      span.start.line,
+      span.start.column,
+      endLine: span.end.line,
+      endColumn: span.end.column,
+    );
   }
 }

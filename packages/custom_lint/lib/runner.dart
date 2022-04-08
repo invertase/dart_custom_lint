@@ -7,11 +7,11 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:cli_util/cli_util.dart';
 import 'package:path/path.dart' as p;
 
-import '../protocol.dart';
-import 'analyzer_plugin/client_isolate_channel.dart';
-import 'analyzer_plugin/my_server_plugin.dart';
-import 'analyzer_plugin/server_isolate_channel.dart';
-import 'analyzer_utils/analyzer_utils.dart';
+import 'src/analyzer_plugin/client_isolate_channel.dart';
+import 'src/analyzer_plugin/my_server_plugin.dart';
+import 'src/analyzer_plugin/server_isolate_channel.dart';
+import 'src/analyzer_utils/analyzer_utils.dart';
+import 'src/protocol/internal_protocol.dart';
 
 const _pluginName = 'custom_lint';
 const _analyzerPluginProtocolVersion = '1.0.0-alpha.0';
