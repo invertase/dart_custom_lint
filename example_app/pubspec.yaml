@@ -11,7 +11,5 @@ dependencies:
 dev_dependencies:
   custom_lint:
     path: ../packages/custom_lint
-  riverpod_lint:
-    path: ../packages/riverpod_lint
-  target_lint:
-    path: ../packages/target_lint
+  example_lint:
+    path: ../packages/example_lint
