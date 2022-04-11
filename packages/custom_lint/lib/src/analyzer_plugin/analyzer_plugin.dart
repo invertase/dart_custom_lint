@@ -103,7 +103,8 @@ class CustomLintPlugin extends ServerPlugin {
   }) : super(resourceProvider);
 
   @override
-  String get contactInfo => 'https://github.com/invertase/custom_lint/issues';
+  String get contactInfo =>
+      'https://github.com/invertase/dart_custom_lint/issues';
 
   @override
   List<String> get fileGlobsToAnalyze => const ['*.dart'];
