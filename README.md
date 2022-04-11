@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/invertase/custom_lint/blob/main/LICENSE">License</a>
+  <a href="https://github.com/invertase/dart_custom_lint/blob/main/LICENSE">License</a>
 </p>
 
 ## About
