@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-import 'package:custom_lint/runner.dart';
 import 'package:custom_lint/src/analyzer_plugin/analyzer_plugin.dart';
+import 'package:custom_lint/src/runner.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
