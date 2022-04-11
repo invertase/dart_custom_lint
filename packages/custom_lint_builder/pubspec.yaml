@@ -1,6 +1,6 @@
 name: custom_lint_builder
 version: 0.0.1
-publish_to: none
+repository: https://github.com/invertase/custom_lint
 
 environment:
   sdk: ">=2.16.0 <3.0.0"

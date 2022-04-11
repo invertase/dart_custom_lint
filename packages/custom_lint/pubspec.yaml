@@ -1,6 +1,6 @@
 name: custom_lint
 version: 0.0.1
-repository: https://github.com/custom_lint/river_pod
+repository: https://github.com/invertase/custom_lint
 
 environment:
   sdk: ">=2.16.0 <3.0.0"

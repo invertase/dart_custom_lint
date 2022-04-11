@@ -66,20 +66,22 @@ To create a custom lint, you will need two things:
   ```dart
   // This is the entrypoint of our custom linter
   void main(List<String> args, SendPort sendPort) {
-    startPlugin(sendPort, _ExampleLint());
+    startPlugin(sendPort, _ExampleLinter());
   }
 
   // This class is the one that will analyze Dart files and return lints
-  class _ExampleLint extends PluginBase {
+  class _ExampleLinter extends PluginBase {
     @override
-    Iterable<AnalysisError> getLints(LibraryElement library) sync* {
+    Iterable<Lint> getLints(LibraryElement library) sync* {
       // A basic lint that shows at the top of the file.
-      yield AnalysisError(
-        AnalysisErrorSeverity.WARNING,
-        AnalysisErrorType.LINT,
-        Location(library.source.fullName, 0, 0, 0, 0),
-        'This is the description of our custom lint',
-        'my_custom_lint_code',
+      yield Lint(
+        code: 'my_custom_lint_code',
+        message: 'This is the description of our custom lint',
+        // where your lint will appear within the Dart file.
+        location: LintLocation.fromOffsets(
+          offset: 0,
+          length: 10,
+        ),
       );
     }
   }
