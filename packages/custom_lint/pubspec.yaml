@@ -1,5 +1,6 @@
 name: custom_lint
 version: 0.0.1
+description: A package to help writing custom linters
 repository: https://github.com/invertase/custom_lint
 
 environment:
