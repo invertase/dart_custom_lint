@@ -9,10 +9,10 @@ import 'src/analyzer_plugin/client.dart';
 import 'src/internal_protocol.dart';
 import 'src/plugin_base.dart';
 
-// This is fine to do since we are using tight constraints on custom_lint
-export 'package:custom_lint/src/protocol/public_protocol.dart';
-
 export 'src/plugin_base.dart' show PluginBase;
+
+// This is fine to do since we are using tight constraints on custom_lint
+export 'src/public_protocol.dart' show Lint, LintLocation, LintSeverity;
 
 /// Starts a plugin and emits lints/fixes/...
 ///

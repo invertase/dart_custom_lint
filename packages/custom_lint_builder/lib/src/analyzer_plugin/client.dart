@@ -2,6 +2,7 @@ import 'package:analyzer/dart/analysis/context_locator.dart' as analyzer;
 import 'package:analyzer/dart/analysis/context_root.dart' as analyzer;
 import 'package:analyzer/dart/analysis/results.dart' as analyzer;
 import 'package:analyzer/file_system/file_system.dart' as analyzer;
+import 'package:analyzer/source/line_info.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/analysis/context_builder.dart' as analyzer;
 // ignore: implementation_imports
@@ -10,10 +11,10 @@ import 'package:analyzer_plugin/protocol/protocol_common.dart'
     as analyzer_plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart'
     as analyzer_plugin;
-import 'package:source_span/source_span.dart' as source_span;
 
 import '../../custom_lint_builder.dart';
 import '../internal_protocol.dart';
+import '../public_protocol.dart';
 import 'plugin_client.dart';
 
 /// An internal client for connecting a custom_lint plugin to the server
@@ -69,8 +70,8 @@ class Client extends ClientPlugin {
   analyzer_plugin.AnalysisErrorsParams _getAnalysisErrorsForUnit(
     analyzer.ResolvedUnitResult analysisResult,
   ) {
-    final sourceFile =
-        source_span.SourceFile.fromString(analysisResult.content);
+    final lineInfo = analysisResult.lineInfo;
+    final source = analysisResult.content;
 
     final ignoredCodes = _getAllIgnoredForFileCodes(analysisResult.content);
 
@@ -85,9 +86,9 @@ class Client extends ClientPlugin {
               .where(
                 (lint) =>
                     !ignoredCodes.contains(lint.code) &&
-                    !_isIgnored(lint, sourceFile),
+                    !_isIgnored(lint, lineInfo, source),
               )
-              .map((e) => e.encode(sourceFile, analysisResult.path))
+              .map((e) => e.encode(lineInfo, analysisResult.path))
               .toList(),
     );
   }
@@ -129,15 +130,16 @@ final _ignoreRegex = RegExp(r'//\s*ignore\s*:(.+)$', multiLine: true);
 final _ignoreForFileRegex =
     RegExp(r'//\s*ignore_for_file\s*:(.+)$', multiLine: true);
 
-bool _isIgnored(Lint lint, source_span.SourceFile sourceFile) {
-  final span = lint.location.toSourceSpan(sourceFile);
-  final line = span.start.line;
+bool _isIgnored(Lint lint, LineInfo lineInfo, String source) {
+  final span = lint.location.getRange(lineInfo);
+  // -1 because lines starts at 1 not 0
+  final line = span.startLocation.lineNumber - 1;
 
   if (line == 0) return false;
 
-  final previousLine = sourceFile.getText(
-    sourceFile.getOffset(line - 1),
-    span.start.offset - 1,
+  final previousLine = source.substring(
+    lineInfo.getOffsetOfLine(line - 1),
+    span.startOffset - 1,
   );
 
   final codeContent = _ignoreRegex.firstMatch(previousLine)?.group(1);
@@ -174,13 +176,13 @@ extension on analyzer_plugin.ContextRoot {
 
 extension on Lint {
   analyzer_plugin.AnalysisError encode(
-    source_span.SourceFile sourceFileForLibrary,
+    LineInfo lineInfo,
     String filePath,
   ) {
     return analyzer_plugin.AnalysisError(
       severity.encode(),
       analyzer_plugin.AnalysisErrorType.LINT,
-      location.encode(sourceFileForLibrary, filePath),
+      location.encode(lineInfo, filePath),
       message,
       code,
       correction: correction,
@@ -204,20 +206,18 @@ extension on LintSeverity {
 }
 
 extension on LintLocation {
-  analyzer_plugin.Location encode(
-    source_span.SourceFile sourceFile,
-    String filePath,
-  ) {
-    final span = toSourceSpan(sourceFile);
+  analyzer_plugin.Location encode(LineInfo lineInfo, String filePath) {
+    final span = getRange(lineInfo);
 
     return analyzer_plugin.Location(
       filePath,
-      span.start.offset,
-      span.length,
-      span.start.line,
-      span.start.column,
-      endLine: span.end.line,
-      endColumn: span.end.column,
+      span.startOffset,
+      span.endOffset - span.startOffset,
+      // Removing -1 because lineNumber/columnNumber starts at 1 instead of 0
+      span.startLocation.lineNumber - 1,
+      span.startLocation.columnNumber - 1,
+      endLine: span.endLocation.lineNumber - 1,
+      endColumn: span.endLocation.columnNumber - 1,
     );
   }
 }

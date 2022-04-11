@@ -1,8 +1,69 @@
+import 'package:analyzer/source/line_info.dart';
 import 'package:custom_lint/src/protocol/public_protocol.dart';
-import 'package:source_span/source_span.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';
+
+TypeMatcher<SourceRange> isSourceChange({
+  int? startOffset,
+  int? endOffset,
+  int? startLine,
+  int? startColumn,
+  int? endLine,
+  int? endColumn,
+  CharacterLocation? startLocation,
+  CharacterLocation? endLocation,
+}) {
+  var matcher = isA<SourceRange>();
+  if (startOffset != null) {
+    matcher = matcher.having((e) => e.startOffset, 'startOffset', startOffset);
+  }
+  if (endOffset != null) {
+    matcher = matcher.having((e) => e.endOffset, 'endOffset', endOffset);
+  }
+  if (startLocation != null) {
+    matcher = matcher.having(
+      (e) => e.startLocation,
+      'startLocation',
+      startLocation,
+    );
+  }
+  if (endLocation != null) {
+    matcher = matcher.having((e) => e.endLocation, 'endLocation', endLocation);
+  }
+
+  if (startLine != null) {
+    matcher = matcher.having(
+      (e) => e.startLocation.lineNumber,
+      'startLocation.lineNumber',
+      startLine,
+    );
+  }
+  if (endLine != null) {
+    matcher = matcher.having(
+      (e) => e.endLocation.lineNumber,
+      'endLocation.lineNumber',
+      endLine,
+    );
+  }
+
+  if (startColumn != null) {
+    matcher = matcher.having(
+      (e) => e.startLocation.columnNumber,
+      'startLocation.columnNumber',
+      startColumn,
+    );
+  }
+  if (endColumn != null) {
+    matcher = matcher.having(
+      (e) => e.endLocation.columnNumber,
+      'endLocation.columnNumber',
+      endColumn,
+    );
+  }
+
+  return matcher;
+}
 
 void main() {
   group('LintSourceLocation', () {
@@ -33,20 +94,30 @@ void main() {
         );
       });
 
-      test('toSourceSpan', () {
-        final file = SourceFile.fromString('''
+      test('getRange', () {
+        final file = LineInfo.fromContent('''
 Hello
 Paris
 and
 London
 ''');
         expect(
-          LintLocation.fromOffsets(offset: 5, length: 8).toSourceSpan(file),
-          file.span(5, 13),
+          LintLocation.fromOffsets(offset: 5, length: 8).getRange(file),
+          isSourceChange(
+            startOffset: 5,
+            endOffset: 13,
+            startLocation: file.getLocation(5),
+            endLocation: file.getLocation(13),
+          ),
         );
         expect(
-          LintLocation.fromOffsets(offset: 5, endOffset: 15).toSourceSpan(file),
-          file.span(5, 15),
+          LintLocation.fromOffsets(offset: 5, endOffset: 15).getRange(file),
+          isSourceChange(
+            startOffset: 5,
+            endOffset: 15,
+            startLocation: file.getLocation(5),
+            endLocation: file.getLocation(15),
+          ),
         );
       });
     });
@@ -100,32 +171,47 @@ London
         );
       });
 
-      test('toSourceSpan', () {
-        final file = SourceFile.fromString('''
+      test('getRange', () {
+        final file = LineInfo.fromContent('''
 Hello
 Paris
 and
 London
 ''');
         expect(
-          LintLocation.fromLines(startLine: 1, endLine: 2).toSourceSpan(file),
-          file.span(6, 12),
+          LintLocation.fromLines(startLine: 1, endLine: 2).getRange(file),
+          isSourceChange(
+            startOffset: 6,
+            endOffset: 12,
+            startLocation: file.getLocation(6),
+            endLocation: file.getLocation(12),
+          ),
         );
         expect(
           LintLocation.fromLines(
             startLine: 1,
             endLine: 2,
             endColumn: 3,
-          ).toSourceSpan(file),
-          file.span(6, 15),
+          ).getRange(file),
+          isSourceChange(
+            startOffset: 6,
+            endOffset: 15,
+            startLocation: file.getLocation(6),
+            endLocation: file.getLocation(15),
+          ),
         );
         expect(
           LintLocation.fromLines(
             startLine: 1,
             startColumn: 3,
             endLine: 2,
-          ).toSourceSpan(file),
-          file.span(9, 12),
+          ).getRange(file),
+          isSourceChange(
+            startOffset: 9,
+            endOffset: 12,
+            startLocation: file.getLocation(9),
+            endLocation: file.getLocation(12),
+          ),
         );
       });
     });

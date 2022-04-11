@@ -1,5 +1,5 @@
+import 'package:analyzer/source/line_info.dart';
 import 'package:meta/meta.dart';
-import 'package:source_span/source_span.dart' as source_span;
 
 /// The severify of a [Lint]. This influences how the IDE shows the lint.
 enum LintSeverity {
@@ -53,9 +53,14 @@ class Lint {
 }
 
 /// Indications on where a [Lint] is placed within the source code
+///
+/// Subclassing or implementing this class is not supported.
 @immutable
+@sealed
 class LintLocation {
   /// Indications on where something in placed within the source code.
+  ///
+  /// Subclassing or implementing this class is not supported.
   LintLocation.fromOffsets({
     required int offset,
     int? length,
@@ -70,10 +75,14 @@ class LintLocation {
           endOffset == null || endOffset > offset,
           'endOffset must be greater than offset',
         ),
-        _toSourceSpan = ((sourceFile) {
-          return sourceFile.span(
-            offset,
-            length != null ? offset + length : endOffset!,
+        _toCharacterLocations = ((lineInfo) {
+          final actualEndOffset = length != null ? offset + length : endOffset!;
+
+          return SourceRange(
+            startOffset: offset,
+            startLocation: lineInfo.getLocation(offset),
+            endOffset: actualEndOffset,
+            endLocation: lineInfo.getLocation(actualEndOffset),
           );
         });
 
@@ -101,19 +110,51 @@ class LintLocation {
           endColumn == null || endColumn > 0,
           'endColumn must be positive',
         ),
-        _toSourceSpan = ((sourceFile) {
-          return sourceFile.span(
-            sourceFile.getOffset(startLine, startColumn),
-            sourceFile.getOffset(endLine, endColumn),
+        _toCharacterLocations = ((lineInfo) {
+          final startOffset =
+              lineInfo.getOffsetOfLine(startLine) + (startColumn ?? 0);
+          final endOffset =
+              lineInfo.getOffsetOfLine(endLine) + (endColumn ?? 0);
+
+          return SourceRange(
+            startOffset: startOffset,
+            startLocation: lineInfo.getLocation(startOffset),
+            endOffset: endOffset,
+            endLocation: lineInfo.getLocation(endOffset),
           );
         });
 
   // TODO use factory
-  final source_span.SourceSpan Function(source_span.SourceFile sourceFile)
-      _toSourceSpan;
+  final SourceRange Function(LineInfo lineInfo) _toCharacterLocations;
+}
 
-  /// Converts a [LintLocation] into a [source_span.SourceSpan].
-  source_span.SourceSpan toSourceSpan(source_span.SourceFile sourceFile) {
-    return _toSourceSpan(sourceFile);
-  }
+/// Internal usage only
+@visibleForTesting
+extension $LintLocationToRange on LintLocation {
+  /// Obtains lines/colums/offsets informations for a [LintLocation].
+  SourceRange getRange(LineInfo info) => _toCharacterLocations(info);
+}
+
+/// A representation of where a lint is location on a source file
+@visibleForTesting
+class SourceRange {
+  /// A representation of where a lint is location on a source file
+  SourceRange({
+    required this.startOffset,
+    required this.startLocation,
+    required this.endOffset,
+    required this.endLocation,
+  });
+
+  ///  The offset of where a lint starts
+  final int startOffset;
+
+  /// Lint informations on where the lint starts
+  final CharacterLocation startLocation;
+
+  ///  The offset of where a lint ends
+  final int endOffset;
+
+  /// Lint informations on where the lint ends
+  final CharacterLocation endLocation;
 }
