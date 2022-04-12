@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:analyzer/dart/analysis/context_locator.dart' as analyzer;
 import 'package:analyzer/dart/analysis/context_root.dart' as analyzer;
 import 'package:analyzer/dart/analysis/results.dart' as analyzer;
@@ -11,6 +13,8 @@ import 'package:analyzer_plugin/protocol/protocol_common.dart'
     as analyzer_plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart'
     as analyzer_plugin;
+import 'package:source_span/source_span.dart';
+import 'package:stack_trace/stack_trace.dart';
 
 import '../../custom_lint_builder.dart';
 import '../internal_protocol.dart';
@@ -75,21 +79,62 @@ class Client extends ClientPlugin {
 
     final ignoredCodes = _getAllIgnoredForFileCodes(analysisResult.content);
 
-    return analyzer_plugin.AnalysisErrorsParams(
-      analysisResult.path,
-      ignoredCodes.contains('type=lint')
-          // No need to run the plugin if lints are disabled in the file
-          ? const []
-          : plugin
-              .getLints(analysisResult.libraryElement)
-              .where(
-                (lint) =>
-                    !ignoredCodes.contains(lint.code) &&
-                    !_isIgnored(lint, lineInfo, source),
-              )
-              .map((e) => e.encode(lineInfo, analysisResult.path))
-              .toList(),
-    );
+    try {
+      return analyzer_plugin.AnalysisErrorsParams(
+        analysisResult.path,
+        ignoredCodes.contains('type=lint')
+            // No need to run the plugin if lints are disabled in the file
+            ? const []
+            : plugin
+                .getLints(analysisResult.libraryElement)
+                .where(
+                  (lint) =>
+                      !ignoredCodes.contains(lint.code) &&
+                      !_isIgnored(lint, lineInfo, source),
+                )
+                .map((e) => e.encode(lineInfo, analysisResult.path))
+                .toList(),
+      );
+    } catch (err, stack) {
+      // TODO test and handle all error cases
+      final trace = Trace.from(stack);
+
+      final errorOriginFrame = trace.frames.first;
+
+      final file = File.fromUri(errorOriginFrame.uri);
+      final sourceFile = SourceFile.fromString(file.readAsStringSync());
+
+      return analyzer_plugin.AnalysisErrorsParams(
+        analysisResult.path,
+        [
+          analyzer_plugin.AnalysisError(
+            analyzer_plugin.AnalysisErrorSeverity.ERROR,
+            analyzer_plugin.AnalysisErrorType.LINT,
+            LintLocation.fromLines(startLine: 0, endLine: 1)
+                .encode(lineInfo, analysisResult.path),
+            'A lint plugin threw an exception',
+            'custom_lint_get_lint_fail',
+            contextMessages: [
+              analyzer_plugin.DiagnosticMessage(
+                err.toString(),
+                analyzer_plugin.Location(
+                  // '/Users/remirousselet/dev/invertase/custom_lint/packages/example_lint/bin/custom_lint.dart',
+                  trace.frames.first.uri.toFilePath(),
+                  sourceFile.getOffset(
+                    // frame location indices start at 1 not 0 so removing -1
+                    (errorOriginFrame.line ?? 1) - 1,
+                    (errorOriginFrame.column ?? 1) - 1,
+                  ),
+                  0,
+                  errorOriginFrame.line ?? 1,
+                  errorOriginFrame.column ?? 1,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
   }
 
   @override
