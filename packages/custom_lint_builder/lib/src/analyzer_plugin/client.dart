@@ -28,10 +28,10 @@ class Client extends ClientPlugin {
   final PluginBase plugin;
 
   @override
-  List<String> get fileGlobsToAnalyze => ['*.g.dart'];
+  List<String> get fileGlobsToAnalyze => ['*.dart'];
 
   @override
-  String get name => 'foo';
+  String get name => 'custom_lint_client';
 
   @override
   String get version => '1.0.0-alpha.0';
@@ -81,7 +81,6 @@ class Client extends ClientPlugin {
           // No need to run the plugin if lints are disabled in the file
           ? const []
           : plugin
-              // TODO handle error
               .getLints(analysisResult.libraryElement)
               .where(
                 (lint) =>

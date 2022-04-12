@@ -9,3 +9,7 @@ dependencies:
   analyzer: ^3.3.1
   custom_lint_builder:
     path: ../custom_lint_builder
+
+dependency_overrides:
+  custom_lint:
+    path: ../custom_lint

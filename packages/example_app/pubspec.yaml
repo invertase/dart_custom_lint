@@ -10,6 +10,11 @@ dependencies:
 
 dev_dependencies:
   custom_lint:
-    path: ../packages/custom_lint
   example_lint:
-    path: ../packages/example_lint
+    path: ../example_lint
+
+dependency_overrides:
+  custom_lint:
+    path: ../custom_lint
+  custom_lint_builder:
+    path: ../custom_lint_builder

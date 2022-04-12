@@ -2,13 +2,14 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:analyzer_plugin/protocol/protocol_common.dart' as plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
-// ignore: implementation_imports
 import 'package:async/async.dart' show StreamGroup;
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:yaml/yaml.dart';
 
 import 'server_isolate_channel.dart';
 
@@ -33,7 +34,7 @@ final _pluginLinkProvider = FutureProvider.autoDispose
   ref.watch(_pluginSourceChangeProvider(pluginRootUri));
 
   final pluginName = ref
-      .watch(_pluginMetaProvider(pluginRootUri).select((value) => value.name));
+      .watch(pluginMetaProvider(pluginRootUri).select((value) => value.name));
 
   final receivePort = ReceivePort();
   ref.onDispose(receivePort.close);
@@ -90,9 +91,6 @@ class PluginLink {
   /// A channel for interacting with this plugin
   final ServerIsolateChannel channel;
 
-  /// The list of lints per Dart Library emitted by this plugin
-  final lintsForLibrary = <String, plugin.AnalysisErrorsParams>{};
-
   /// Close the plugin, killing the isolate
   Future<void> close() async {
     // TODO send pluginShutdown?
@@ -105,8 +103,8 @@ final versionCheckProvider =
     StateProvider<plugin.PluginVersionCheckParams?>((ref) => null);
 
 final _versionInitializedProvider =
-    FutureProvider.autoDispose.family<void, Uri>((ref, pluginUri) async {
-  final link = await ref.watch(_pluginLinkProvider(pluginUri).future);
+    FutureProvider.autoDispose.family<void, Uri>((ref, linkKey) async {
+  final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   final versionCheck = ref.watch(versionCheckProvider);
   if (versionCheck == null) {
@@ -118,18 +116,139 @@ final _versionInitializedProvider =
   await link.channel.sendRequest(versionCheck);
 });
 
-/// The list of active context roots
+final _pluginNotStartedLintProvider = Provider.autoDispose
+    .family<plugin.AnalysisErrorsParams?, Uri>((ref, linkKey) {
+  // unwrapPrevious to simplify the logic
+  final link = ref.watch(pluginLinkProvider(linkKey)).unwrapPrevious();
+
+  // The plugin has successfully started, so no lint.
+  if (link.hasValue) return null;
+
+  final pluginName = ref.watch(
+    pluginMetaProvider(linkKey).select((value) => value.name),
+  );
+  final rootsForPlugin = ref.watch(contextRootsForPluginProvider(linkKey));
+
+  for (final contextRoot in rootsForPlugin) {
+    final pubSpecFile = File(
+      p.join(contextRoot.root, 'pubspec.yaml'),
+    );
+    final pubSpecString = pubSpecFile.readAsStringSync();
+
+    final pubSpec = loadYamlNode(pubSpecString) as YamlMap;
+    final allDependencies = <YamlMap>[
+      if (pubSpec.nodes.containsKey('dependencies'))
+        pubSpec.nodes['dependencies']! as YamlMap,
+      if (pubSpec.nodes.containsKey('dev_dependencies'))
+        pubSpec.nodes['dev_dependencies']! as YamlMap,
+      if (pubSpec.nodes.containsKey('dependency_overrides'))
+        pubSpec.nodes['dependency_overrides']! as YamlMap,
+    ];
+
+    final pluginDependencyNode = allDependencies
+        .expand((map) => map.nodes.entries)
+        .firstWhere(
+          // keys may be a YamlScalar, so we strinfigy it instead
+          (entry) => entry.key.toString() == pluginName,
+        )
+        .key as YamlScalar;
+
+    final pluginLocationInsidePubspec = plugin.Location(
+      pubSpecFile.path,
+      pluginDependencyNode.span.start.offset,
+      pluginDependencyNode.span.length,
+      pluginDependencyNode.span.start.line,
+      pluginDependencyNode.span.start.column,
+      endLine: pluginDependencyNode.span.end.line,
+      endColumn: pluginDependencyNode.span.end.column,
+    );
+
+    return plugin.AnalysisErrorsParams(
+      pubSpecFile.path,
+      [
+        if (link.isLoading)
+          plugin.AnalysisError(
+            plugin.AnalysisErrorSeverity.WARNING,
+            plugin.AnalysisErrorType.LINT,
+            pluginLocationInsidePubspec,
+            'The plugin is currently starting',
+            'custom_lint_plugin_loading',
+          )
+        else if (link.hasError)
+          plugin.AnalysisError(
+            plugin.AnalysisErrorSeverity.ERROR,
+            plugin.AnalysisErrorType.LINT,
+            pluginLocationInsidePubspec,
+            'Failed to start plugin',
+            'custom_lint_plugin_error',
+            contextMessages: [
+              // Add informations on the error
+              plugin.DiagnosticMessage(
+                link.error.toString(),
+                plugin.Location(
+                  p.join(
+                    linkKey.toFilePath(),
+                    'bin',
+                    'custom_lint.dart',
+                  ),
+                  0,
+                  0,
+                  1,
+                  1,
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+});
+
+/// The list of lints per Dart Library emitted by a plugin
+final lintsForPluginProvider = StreamProvider.autoDispose
+    .family<Map<String, plugin.AnalysisErrorsParams>, Uri>(
+        (ref, linkKey) async* {
+  final pluginNotStartedLint =
+      ref.watch(_pluginNotStartedLintProvider(linkKey));
+
+  if (pluginNotStartedLint != null) {
+    yield* Stream.value({pluginNotStartedLint.file: pluginNotStartedLint});
+    // if somehow the plugin failed to start, there is no way the plugin will have lints
+    return;
+  }
+
+  final link = await ref.watch(_pluginLinkProvider(linkKey).future);
+
+  // TODO why are all files re-analyzed when a single file changes?
+  // TODO handle removed files or there is otherwise a memory leak
+
+  var lints = <String, plugin.AnalysisErrorsParams>{};
+
+  await for (final lint in link.channel.lints) {
+    if (lint.errors.isEmpty) {
+      // TODO is this enough to handle when files are deleted?
+      lints = Map.from(lints)..remove(lint.file);
+    } else {
+      lints = {...lints, lint.file: lint};
+    }
+
+    yield lints;
+  }
+});
+
+/// The context roots currently active
 final activeContextRootsProvider = StateProvider<List<plugin.ContextRoot>>(
   (ref) => [],
 );
 
-final _pluginMetaProvider =
-    Provider.autoDispose.family<Package, Uri>((ref, pluginUri) {
-  final contextRoot = ref.watch(contextRootsForPluginProvider(pluginUri)).first;
+/// Package informations for the plugin
+final pluginMetaProvider =
+    Provider.autoDispose.family<Package, Uri>((ref, linkKey) {
+  final contextRoot = ref.watch(contextRootsForPluginProvider(linkKey)).first;
 
   return ref
       .watch(pluginMetasForContextRootProvider(contextRoot))
-      .firstWhere((element) => element.root == pluginUri);
+      .firstWhere((element) => element.root == linkKey);
 });
 
 /// The list of plugins associated with a context root.
@@ -207,8 +326,8 @@ final contextRootsForPluginProvider =
 );
 
 final _contextRootInitializedProvider =
-    FutureProvider.autoDispose.family<void, Uri>((ref, pluginUri) async {
-  final link = await ref.watch(_pluginLinkProvider(pluginUri).future);
+    FutureProvider.autoDispose.family<void, Uri>((ref, linkKey) async {
+  final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   // TODO filter events if the previous/new values are the same
   // Call setContextRoots on the plugin with only the roots that have
@@ -218,7 +337,7 @@ final _contextRootInitializedProvider =
       ref
           .watch(activeContextRootsProvider)
           .where(
-            ref.watch(contextRootsForPluginProvider(pluginUri)).contains,
+            ref.watch(contextRootsForPluginProvider(linkKey)).contains,
           )
           .toList(),
     ),
@@ -230,8 +349,8 @@ final priorityFilesProvider =
     StateProvider<plugin.AnalysisSetPriorityFilesParams?>((ref) => null);
 
 final _priorityFilesInitializedProvider =
-    FutureProvider.autoDispose.family<void, Uri>((ref, pluginUri) async {
-  final link = await ref.watch(_pluginLinkProvider(pluginUri).future);
+    FutureProvider.autoDispose.family<void, Uri>((ref, linkKey) async {
+  final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   final priorityFilesRequest = ref.watch(priorityFilesProvider);
   if (priorityFilesRequest == null) return;
@@ -239,7 +358,7 @@ final _priorityFilesInitializedProvider =
   final priorityFilesForPlugin = priorityFilesRequest.files.where(
     (priorityFile) {
       return ref
-          .watch(contextRootsForPluginProvider(pluginUri))
+          .watch(contextRootsForPluginProvider(linkKey))
           .any((contextRoot) => p.isWithin(contextRoot.root, priorityFile));
     },
   ).toList();
@@ -251,18 +370,18 @@ final _priorityFilesInitializedProvider =
 
 /// A provider for obtaining for link of a specific plugin
 final pluginLinkProvider =
-    FutureProvider.autoDispose.family<PluginLink, Uri>((ref, pluginUri) async {
-  final link = await ref.watch(_pluginLinkProvider(pluginUri).future);
+    FutureProvider.autoDispose.family<PluginLink, Uri>((ref, linkKey) async {
+  final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   // TODO what if setContextRoot or priotity files changes while these
   // requests are pending?
 
   // TODO refresh lints, such that we don't see previous lints while plugins are rebuilding
-  await ref.watch(_versionInitializedProvider(pluginUri).future);
+  await ref.watch(_versionInitializedProvider(linkKey).future);
 
   await Future.wait([
-    ref.watch(_contextRootInitializedProvider(pluginUri).future),
-    ref.watch(_priorityFilesInitializedProvider(pluginUri).future),
+    ref.watch(_contextRootInitializedProvider(linkKey).future),
+    ref.watch(_priorityFilesInitializedProvider(linkKey).future),
   ]);
   return link;
 });
