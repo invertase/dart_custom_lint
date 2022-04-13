@@ -199,7 +199,6 @@ final contextRootsForPluginProvider =
         )
         .toList();
   },
-  cacheTime: const Duration(minutes: 5),
 );
 
 final _contextRootInitializedProvider =

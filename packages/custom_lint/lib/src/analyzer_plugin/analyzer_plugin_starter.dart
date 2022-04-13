@@ -1,26 +1,20 @@
 import 'dart:async';
 import 'dart:isolate';
 
-import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-
 import 'analyzer_plugin.dart';
 import 'client_isolate_channel.dart';
+import 'plugin_delegate.dart';
 
 /// Connects custom_lint to the analyzer server using the analyzer_plugin protocol
 void start(Iterable<String> _, SendPort sendPort) {
-  final channel = ClientIsolateChannel(sendPort);
+  CustomLintPlugin? server;
 
   runZonedGuarded(
     () {
-      final server = CustomLintPlugin();
-      server.start(channel);
+      final channel = ClientIsolateChannel(sendPort);
+      server = CustomLintPlugin(delegate: AnalyzerPluginCustomLintDelegate());
+      server!.start(channel);
     },
-    (err, stack) {
-      sendPort.send(
-        PluginErrorParams(false, err.toString(), stack.toString())
-            .toNotification()
-            .toJson(),
-      );
-    },
+    (err, stack) => server?.handleUncaughtError(err, stack),
   );
 }
