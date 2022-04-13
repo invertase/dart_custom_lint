@@ -69,7 +69,7 @@ void fn3() {}
     final runner = await startRunnerForApp(app);
 
     expect(
-      await runner.channel.lints.first,
+      await runner.channel.lintsExcludingBuiltIn.first,
       predicate<AnalysisErrorsParams>((value) {
         expect(value.file, join(app.path, 'lib', 'main.dart'));
         expect(value.errors.length, 3);
@@ -95,7 +95,7 @@ void fn3() {}
       }),
     );
 
-    expect(runner.channel.lints, emitsDone);
+    expect(runner.channel.lintsExcludingBuiltIn, emitsDone);
 
     // Closing so that previous error matchers relying on stream
     // closing can complete
@@ -131,7 +131,7 @@ void fn3() {}
     final runner = await startRunnerForApp(app);
 
     expect(
-      await runner.channel.lints.first,
+      await runner.channel.lintsExcludingBuiltIn.first,
       predicate<AnalysisErrorsParams>((value) {
         expect(value.file, join(app.path, 'lib', 'main.dart'));
         expect(value.errors.length, 2);
@@ -151,7 +151,7 @@ void fn3() {}
       }),
     );
 
-    expect(runner.channel.lints, emitsDone);
+    expect(runner.channel.lintsExcludingBuiltIn, emitsDone);
 
     // Closing so that previous error matchers relying on stream
     // closing can complete
@@ -186,16 +186,7 @@ void fn3() {}
 
     final runner = await startRunnerForApp(app);
 
-    expect(
-      await runner.channel.lints.first,
-      predicate<AnalysisErrorsParams>((value) {
-        expect(value.file, join(app.path, 'lib', 'main.dart'));
-        expect(value.errors, isEmpty);
-        return true;
-      }),
-    );
-
-    expect(runner.channel.lints, emitsDone);
+    expect(runner.channel.lintsExcludingBuiltIn, emitsDone);
 
     // Closing so that previous error matchers relying on stream
     // closing can complete

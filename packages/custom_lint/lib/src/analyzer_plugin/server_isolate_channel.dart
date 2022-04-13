@@ -7,6 +7,7 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show RequestParams;
 import 'package:async/async.dart';
+import 'package:meta/meta.dart';
 import 'package:uuid/uuid.dart';
 
 import '../protocol/internal_protocol.dart';
@@ -38,6 +39,23 @@ class ServerIsolateChannel {
   late final Stream<AnalysisErrorsParams> lints = notifications
       .where((e) => e.event == 'analysis.errors')
       .map(AnalysisErrorsParams.fromNotification);
+
+  /// Lints, excluding the built-in ones
+  @visibleForTesting
+  late final Stream<AnalysisErrorsParams> lintsExcludingBuiltIn = lints
+      // Skip the first few "pubspec" events
+      .skipWhile(
+        (event) => event.errors
+            .every((error) => error.code.startsWith('custom_lint_')),
+      )
+      .map(
+        (event) => AnalysisErrorsParams(
+          event.file,
+          event.errors
+              .where((error) => !error.code.startsWith('custom_lint_'))
+              .toList(),
+        ),
+      );
 
   /// The [Notification]s emitted by the plugin
   late final Stream<PrintNotification> messages = notifications

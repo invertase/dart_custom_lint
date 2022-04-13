@@ -31,12 +31,11 @@ class PeerProjectMeta {
       join(
         directory.path,
         '..',
-        '..',
         'example_app',
       ),
     );
 
-    final packagesPath = normalize(join(exampleAppDir.path, '..', 'packages'));
+    final packagesPath = normalize(join(exampleAppDir.path, '..'));
 
     final examplePackageConfigPath =
         join(packagesPath, 'example_lint', '.dart_tool', 'package_config.json');
