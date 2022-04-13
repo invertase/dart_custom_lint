@@ -2,15 +2,14 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:analyzer_plugin/protocol/protocol_common.dart' as plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
 import 'package:async/async.dart' show StreamGroup;
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:yaml/yaml.dart';
 
+import 'result.dart';
 import 'server_isolate_channel.dart';
 
 final _pluginSourceChangeProvider =
@@ -57,8 +56,6 @@ final _pluginLinkProvider = FutureProvider.autoDispose
     // TODO test error in main (outside of runZonedGuarded)
     onError: receivePort.sendPort,
   );
-
-  // TODO do we care about killing isolates before _listenIsolate completes?
 
   final link = PluginLink._(
     isolate,
@@ -114,132 +111,6 @@ final _versionInitializedProvider =
   }
 
   await link.channel.sendRequest(versionCheck);
-});
-
-final _pluginNotStartedLintProvider = Provider.autoDispose
-    .family<Map<String, plugin.AnalysisErrorsParams>, Uri>((ref, linkKey) {
-  // unwrapPrevious to simplify the logic
-  final link = ref.watch(pluginLinkProvider(linkKey)).unwrapPrevious();
-
-  // The plugin has successfully started, so no lint.
-  if (link.hasValue) return {};
-
-  final pluginName = ref.watch(
-    pluginMetaProvider(linkKey).select((value) => value.name),
-  );
-  final rootsForPlugin = ref.watch(contextRootsForPluginProvider(linkKey));
-
-  final errors = <String, plugin.AnalysisErrorsParams>{};
-
-  for (final contextRoot in rootsForPlugin) {
-    final pubSpecFile = File(
-      p.join(contextRoot.root, 'pubspec.yaml'),
-    );
-    final pubSpecString = pubSpecFile.readAsStringSync();
-
-    final pubSpec = loadYamlNode(pubSpecString) as YamlMap;
-    final allDependencies = <YamlMap>[
-      if (pubSpec.nodes.containsKey('dependencies'))
-        pubSpec.nodes['dependencies']! as YamlMap,
-      if (pubSpec.nodes.containsKey('dev_dependencies'))
-        pubSpec.nodes['dev_dependencies']! as YamlMap,
-      if (pubSpec.nodes.containsKey('dependency_overrides'))
-        pubSpec.nodes['dependency_overrides']! as YamlMap,
-    ];
-
-    final pluginDependencyNode = allDependencies
-        .expand((map) => map.nodes.entries)
-        .firstWhere(
-          // keys may be a YamlScalar, so we strinfigy it instead
-          (entry) => entry.key.toString() == pluginName,
-        )
-        .key as YamlScalar;
-
-    final pluginLocationInsidePubspec = plugin.Location(
-      pubSpecFile.path,
-      pluginDependencyNode.span.start.offset,
-      pluginDependencyNode.span.length,
-      pluginDependencyNode.span.start.line,
-      pluginDependencyNode.span.start.column,
-      endLine: pluginDependencyNode.span.end.line,
-      endColumn: pluginDependencyNode.span.end.column,
-    );
-
-    final errorForContext = plugin.AnalysisErrorsParams(
-      pubSpecFile.path,
-      [
-        if (link.isLoading)
-          plugin.AnalysisError(
-            plugin.AnalysisErrorSeverity.WARNING,
-            plugin.AnalysisErrorType.LINT,
-            pluginLocationInsidePubspec,
-            'The plugin is currently starting',
-            'custom_lint_plugin_loading',
-          )
-        else if (link.hasError)
-          plugin.AnalysisError(
-            plugin.AnalysisErrorSeverity.ERROR,
-            plugin.AnalysisErrorType.LINT,
-            pluginLocationInsidePubspec,
-            'Failed to start plugin',
-            'custom_lint_plugin_error',
-            contextMessages: [
-              // Add informations on the error
-              plugin.DiagnosticMessage(
-                link.error.toString(),
-                plugin.Location(
-                  p.join(
-                    linkKey.toFilePath(),
-                    'bin',
-                    'custom_lint.dart',
-                  ),
-                  0,
-                  0,
-                  1,
-                  1,
-                ),
-              ),
-            ],
-          ),
-      ],
-    );
-
-    errors[errorForContext.file] = errorForContext;
-  }
-
-  return errors;
-});
-
-/// The list of lints per Dart Library emitted by a plugin
-final lintsForPluginProvider = StreamProvider.autoDispose
-    .family<Map<String, plugin.AnalysisErrorsParams>, Uri>(
-        (ref, linkKey) async* {
-  final pluginNotStartedLint =
-      ref.watch(_pluginNotStartedLintProvider(linkKey));
-
-  if (pluginNotStartedLint.isNotEmpty) {
-    yield* Stream.value(pluginNotStartedLint);
-    // if somehow the plugin failed to start, there is no way the plugin will have lints
-    return;
-  }
-
-  final link = await ref.watch(_pluginLinkProvider(linkKey).future);
-
-  // TODO why are all files re-analyzed when a single file changes?
-  // TODO handle removed files or there is otherwise a memory leak
-
-  var lints = <String, plugin.AnalysisErrorsParams>{};
-
-  await for (final lint in link.channel.lints) {
-    if (lint.errors.isEmpty) {
-      // TODO is this enough to handle when files are deleted?
-      lints = Map.from(lints)..remove(lint.file);
-    } else {
-      lints = {...lints, lint.file: lint};
-    }
-
-    yield lints;
-  }
 });
 
 /// The context roots currently active
@@ -390,6 +261,39 @@ final pluginLinkProvider =
     ref.watch(_priorityFilesInitializedProvider(linkKey).future),
   ]);
   return link;
+});
+
+/// The unique key for all active plugins.
+final allPluginLinkKeysProvider = Provider.autoDispose<List<Uri>>((ref) {
+  final contextRoots = ref.watch(activeContextRootsProvider);
+
+  return contextRoots
+      .expand(
+        (contextRoot) =>
+            ref.watch(pluginMetasForContextRootProvider(contextRoot)),
+      )
+      .map((e) => e.root)
+      .toSet()
+      .toList();
+});
+
+/// The [PluginLink] of all active plugins.
+final allPluginLinksProvider =
+    FutureProvider.autoDispose<Map<Uri, Result<PluginLink>>>((ref) async {
+  final linkKeys = ref.watch(allPluginLinkKeysProvider);
+
+  final linkEntries = await Future.wait([
+    for (final linkKey in linkKeys)
+      ref
+          .watch(pluginLinkProvider(linkKey).future)
+          .then<Result<PluginLink>>(
+            Result<PluginLink>.data,
+            onError: Result<PluginLink>.error,
+          )
+          .then((e) => MapEntry(linkKey, e)),
+  ]);
+
+  return Map.fromEntries(linkEntries);
 });
 
 Pubspec _loadPubspecAt(String packagePath) {
