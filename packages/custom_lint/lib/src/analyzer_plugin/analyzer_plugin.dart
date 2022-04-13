@@ -111,7 +111,17 @@ class CustomLintPlugin extends ServerPlugin {
                 event.stackTrace,
               );
             })
-            ..notifications.listen(channel.sendNotification);
+            ..notifications.listen((notification) {
+              switch (notification.event) {
+                // Events handled separately
+                case PrintNotification.key:
+                case 'analysis.errors':
+                  break;
+                default:
+                  channel.sendNotification(notification);
+                  break;
+              }
+            });
         }
       },
       fireImmediately: true,
