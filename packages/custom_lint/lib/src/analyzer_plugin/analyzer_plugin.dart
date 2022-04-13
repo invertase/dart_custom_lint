@@ -1,5 +1,3 @@
-// ignore_for_file: public_member_api_docs
-
 import 'dart:async';
 import 'dart:io';
 
@@ -11,149 +9,19 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart' as plugin
     show RequestParams;
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:riverpod/riverpod.dart';
 
 import '../protocol/internal_protocol.dart';
-import 'my_server_plugin.dart';
+import 'lints.dart';
 import 'plugin_link.dart';
+import 'result.dart';
+import 'server_plugin.dart';
 
-@immutable
-class _Result<T> {
-  _Result.data(T value)
-      : map = <R>({required data, required error}) => data(value);
-
-  _Result.error(Object err, StackTrace stack)
-      : map = <R>({required data, required error}) => error(err, stack);
-
-  final R Function<R>({
-    required R Function(T value) data,
-    required R Function(Object err, StackTrace stackTrace) error,
-  }) map;
-
-  late final bool hasError = map(
-    data: (value) => false,
-    error: (err, stack) => true,
-  );
-
-  late final bool hasValue = map(
-    data: (value) => true,
-    error: (err, stack) => false,
-  );
-
-  late final T value = map(
-    data: (value) => value,
-    error: Error.throwWithStackTrace,
-  );
-
-  late final T? valueOrNull = map(
-    data: (value) => value,
-    error: (err, stack) => null,
-  );
-
-  late final Object? error = map(
-    data: (value) => null,
-    error: (err, _) => err,
-  );
-
-  late final StackTrace? stackTrace = map(
-    data: (value) => null,
-    error: (_, stackTrace) => stackTrace,
-  );
-
-  @override
-  bool operator ==(Object? other) {
-    return other is _Result<T> &&
-        other.error == error &&
-        other.stackTrace == stackTrace &&
-        other.value == value;
-  }
-
-  @override
-  int get hashCode => Object.hash(T, value, error, stackTrace);
-}
-
-final _allPluginLinkKeysProvider = Provider.autoDispose<List<Uri>>((ref) {
-  final contextRoots = ref.watch(activeContextRootsProvider);
-
-  return contextRoots
-      .expand(
-        (contextRoot) =>
-            ref.watch(pluginMetasForContextRootProvider(contextRoot)),
-      )
-      .map((e) => e.root)
-      .toSet()
-      .toList();
-});
-
-final _allPluginLinksProvider =
-    FutureProvider.autoDispose<Map<Uri, _Result<PluginLink>>>((ref) async {
-  final linkKeys = ref.watch(_allPluginLinkKeysProvider);
-
-  final linkEntries = await Future.wait([
-    for (final linkKey in linkKeys)
-      ref
-          .watch(pluginLinkProvider(linkKey).future)
-          .then<_Result<PluginLink>>(
-            _Result<PluginLink>.data,
-            onError: _Result<PluginLink>.error,
-          )
-          .then((e) => MapEntry(linkKey, e)),
-  ]);
-
-  return Map.fromEntries(linkEntries);
-});
-
-final _allLintsProvider =
-    Provider.autoDispose<Map<String, plugin.AnalysisErrorsParams>>((ref) {
-  final linkKeys = ref.watch(_allPluginLinkKeysProvider);
-
-  ref.state = {};
-
-  // Manually watching individual plugin lints to have the map
-  // only update changed keys instead of recreating all map values.
-  for (final linkKey in linkKeys) {
-    ref.listen<AsyncValue<Map<String, plugin.AnalysisErrorsParams>>>(
-      lintsForPluginProvider(linkKey),
-      (previous, next) {
-        final previousLints = previous?.asData?.value;
-        // We voluntarily treat "loading" as null, to clear lints during
-        // plugin restart
-        final lints = next.isLoading ? null : next.asData?.value;
-        final allFiles = {...?lints?.keys, ...?previousLints?.keys};
-
-        for (final fileToUpdate in allFiles) {
-          if (previousLints?[fileToUpdate] == lints?[fileToUpdate]) continue;
-
-          final lintsForFile = linkKeys.expand<plugin.AnalysisError>(
-            (link) {
-              final lintsForLink = ref.read(lintsForPluginProvider(link));
-
-              if (lintsForLink.isLoading) return const [];
-
-              return lintsForLink.asData?.value[fileToUpdate]?.errors ??
-                  const [];
-            },
-          ).toList();
-
-          ref.state = {
-            ...ref.state,
-            fileToUpdate:
-                plugin.AnalysisErrorsParams(fileToUpdate, lintsForFile),
-          };
-        }
-      },
-      // Needed to build the initial value
-      fireImmediately: true,
-    );
-  }
-
-  return ref.state;
-});
-
+/// An analyzer_plugin server that manages the various custom lint plugins
 class CustomLintPlugin extends ServerPlugin {
+  /// An analyzer_plugin server that manages the various custom lint plugins
   CustomLintPlugin({
     analyzer.ResourceProvider? resourceProvider,
   }) : super(resourceProvider);
@@ -174,7 +42,7 @@ class CustomLintPlugin extends ServerPlugin {
   late final ProviderContainer _container;
 
   /// An imperative anchor for reading the current list of plugins
-  late final ProviderSubscription<Future<Map<Uri, _Result<PluginLink>>>>
+  late final ProviderSubscription<Future<Map<Uri, Result<PluginLink>>>>
       _allPluginsSub;
 
   @override
@@ -183,7 +51,7 @@ class CustomLintPlugin extends ServerPlugin {
     _container = ProviderContainer(cacheTime: const Duration(minutes: 5));
 
     _container.listen<Map<String, plugin.AnalysisErrorsParams>>(
-        _allLintsProvider, (previous, next) {
+        allLintsProvider, (previous, next) {
       final changedFiles = {...next.keys, ...?previous?.keys};
 
       for (final changedFile in changedFiles) {
@@ -199,7 +67,7 @@ class CustomLintPlugin extends ServerPlugin {
     });
 
     _allPluginsSub = _container.listen(
-      _allPluginLinksProvider.future,
+      allPluginLinksProvider.future,
       (previousPlugins, currentPlugins) async {
         final previousLinks = await previousPlugins;
         final links = await currentPlugins;
@@ -259,7 +127,6 @@ class CustomLintPlugin extends ServerPlugin {
               (event) => pluginLog('${event.message}\n${event.stackTrace}'),
             )
             ..notifications.listen((notification) async {
-              // TODO try/catch
               switch (notification.event) {
                 // Events handled separately
                 case PrintNotification.key:

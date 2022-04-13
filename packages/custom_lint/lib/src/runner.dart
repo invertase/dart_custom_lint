@@ -8,8 +8,8 @@ import 'package:cli_util/cli_util.dart';
 import 'package:path/path.dart' as p;
 
 import 'analyzer_plugin/client_isolate_channel.dart';
-import 'analyzer_plugin/my_server_plugin.dart';
 import 'analyzer_plugin/server_isolate_channel.dart';
+import 'analyzer_plugin/server_plugin.dart';
 import 'analyzer_utils/analyzer_utils.dart';
 import 'protocol/internal_protocol.dart';
 
