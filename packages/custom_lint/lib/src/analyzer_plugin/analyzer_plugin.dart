@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:analyzer/file_system/file_system.dart' as analyzer;
 import 'package:analyzer_plugin/channel/channel.dart';
@@ -15,6 +14,7 @@ import 'package:riverpod/riverpod.dart';
 
 import '../protocol/internal_protocol.dart';
 import 'lints.dart';
+import 'plugin_delegate.dart';
 import 'plugin_link.dart';
 import 'result.dart';
 import 'server_plugin.dart';
@@ -24,7 +24,11 @@ class CustomLintPlugin extends ServerPlugin {
   /// An analyzer_plugin server that manages the various custom lint plugins
   CustomLintPlugin({
     analyzer.ResourceProvider? resourceProvider,
+    required this.delegate,
   }) : super(resourceProvider);
+
+  /// The delegate for handling events in a platform-specific way.
+  final CustomLintDelegate delegate;
 
   @override
   String get contactInfo =>
@@ -76,70 +80,39 @@ class CustomLintPlugin extends ServerPlugin {
           final previousLinkResult = previousLinks?[linkEntry.key];
           final linkResult = linkEntry.value;
 
-          if (linkResult == previousLinkResult) {
-            continue;
-          }
+          if (linkResult == previousLinkResult) continue;
 
           // TODO test initialization error into valid initialization (hot-restart)
           if (linkResult.hasError) {
-            channel.sendNotification(
-              plugin.PluginErrorParams(
-                false,
-                linkResult.error.toString(),
-                linkResult.stackTrace.toString(),
-              ).toNotification(),
+            delegate.pluginInitializationFail(
+              this,
+              _getPluginDetails(linkEntry.key),
+              linkResult.error!,
+              linkResult.stackTrace!,
             );
             continue;
           }
 
           final link = linkResult.value;
-
-          void pluginLog(String message) {
-            final file = File('${link.key.toFilePath()}/log.txt');
-            file.writeAsStringSync('$message\n', mode: FileMode.append);
-          }
-
-          // Initializing new plugins, calling version check + set context roots + initial priority files
-          // TODO use Future.wait
-          // TODO guard errors
-          // TODO close subscribption
+          // TODO do we need to close subscriptions if a plugin re-initialize?
           link.channel
             ..messages.listen((event) {
-              pluginLog(event.message);
-
-              final label = '[${link.name}]';
-
-              final message = event.message
-                  .split('\n')
-                  .map((e) => e.isEmpty ? label : '$label $e')
-                  .join('\n');
-
-              channel.sendNotification(
-                PrintNotification(message).toNotification(),
+              delegate.pluginMessage(
+                this,
+                _getPluginDetails(linkEntry.key),
+                event.message,
               );
             })
-            ..pluginErrors.listen(
-              (event) {
-                pluginLog('${event.message}\n${event.stackTrace}');
-              },
-            )
-            ..responseErrors.listen(
-              (event) => pluginLog('${event.message}\n${event.stackTrace}'),
-            )
-            ..notifications.listen((notification) async {
-              switch (notification.event) {
-                // Events handled separately
-                case PrintNotification.key:
-                case 'analysis.errors':
-                  break;
-                default:
-                  channel.sendNotification(notification);
-                  break;
-              }
-            });
+            ..pluginErrors.listen((event) {
+              delegate.pluginError(
+                this,
+                _getPluginDetails(linkEntry.key),
+                event.message,
+                event.stackTrace,
+              );
+            })
+            ..notifications.listen(channel.sendNotification);
         }
-
-        // TODO refresh lints, such that we don't see previous lints while plugins are rebuilding
       },
       fireImmediately: true,
       // No need for an onError since it'd never be reached as errors are caught by FutureProvider
@@ -167,44 +140,64 @@ class CustomLintPlugin extends ServerPlugin {
       links.entries
           // Don't request plugins that are known to be failing
           .where((link) => link.value.hasValue)
-          .map(
-        (link) {
-          return _requestPlugin(link.key, request).onError<Object>(
-            (error, stackTrace) {
-              channel.sendNotification(
-                plugin.PluginErrorParams(
-                  false,
-                  'The plugin ${link.key} failed with the error ${request.toRequest('42').method}:\n$error',
-                  stackTrace.toString(),
-                ).toNotification(),
-              );
-
-              // Rethrow the error only to capture it again later in `handleError`
-              // because `onError` expects us to return a valid value, which
-              // we are unable to do.
-              Error.throwWithStackTrace(error, stackTrace);
-            },
-          );
-        },
-      ),
+          .map((link) => _requestPlugin(link.key, request)),
     )
         // ignore: avoid_types_on_closure_parameters, see https://github.com/dart-lang/linter/issues/3330
         .handleError((Object err, StackTrace stack) {})
         .toList();
   }
 
+  PluginDetails _getPluginDetails(Uri linkKey) {
+    return PluginDetails(
+      name: _container.read(pluginMetaProvider(linkKey)).name,
+      root: linkKey,
+      contextRoots: _container.read(contextRootsForPluginProvider(linkKey)),
+    );
+  }
+
   Future<plugin.Response> _requestPlugin(
     Uri pluginKey,
     plugin.RequestParams request,
   ) async {
-    final links = await _allPluginsSub.read();
+    try {
+      final links = await _allPluginsSub.read();
 
-    assert(
-      links.containsKey(pluginKey),
-      'Bad state, plugin $pluginKey not found',
+      assert(
+        links.containsKey(pluginKey),
+        'Bad state, plugin $pluginKey not found',
+      );
+      final link = links[pluginKey]!;
+      return link.value.channel.sendRequest(request);
+    } on plugin.RequestFailure catch (err) {
+      delegate.requestError(
+        this,
+        _getPluginDetails(pluginKey),
+        request,
+        err.error,
+      );
+      rethrow;
+    }
+  }
+
+  /// An uncaught error was detected.
+  ///
+  /// This notify the analyzer_plugin server and log the error inside
+  /// active context roots.
+  void handleUncaughtError(Object err, StackTrace stackTrace) {
+    channel.sendNotification(
+      plugin.PluginErrorParams(
+        false,
+        err.toString(),
+        stackTrace.toString(),
+      ).toNotification(),
     );
-    final link = links[pluginKey]!;
-    return link.value.channel.sendRequest(request);
+
+    delegate.serverError(
+      this,
+      _container.read(activeContextRootsProvider),
+      err,
+      stackTrace,
+    );
   }
 
   @override

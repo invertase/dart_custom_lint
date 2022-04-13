@@ -25,6 +25,7 @@ void main(List<String> args, SendPort sendPort) {
 class _RiverpodLint extends PluginBase {
   @override
   Iterable<Lint> getLints(LibraryElement library) sync* {
+    print('This is a print');
     final providers = library.topLevelElements
         .whereType<VariableElement>()
         .where((e) => !e.isFinal)
@@ -32,6 +33,8 @@ class _RiverpodLint extends PluginBase {
         .toList();
 
     for (final provider in providers) {
+      if (provider.name == 'fail') throw StateError('Nani?');
+
       yield Lint(
         code: 'riverpod_final_provider',
         message: 'Providers should always be declared as final',

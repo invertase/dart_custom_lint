@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/context_locator.dart' as analyzer;
@@ -20,6 +21,24 @@ import '../../custom_lint_builder.dart';
 import '../internal_protocol.dart';
 import '../public_protocol.dart';
 import 'plugin_client.dart';
+
+/// An exception thrown during [PluginBase.getLints].
+class GetLintException implements Exception {
+  /// An exception thrown during [PluginBase.getLints].
+  GetLintException({required this.error, required this.filePath});
+
+  /// The thrown exception by [PluginBase.getLints].
+  final Object error;
+
+  /// The while that was being analyzed
+  final String filePath;
+
+  @override
+  String toString() {
+    return 'The following exception was thrown while trying to obtain lints for $filePath:\n'
+        '$error';
+  }
+}
 
 /// An internal client for connecting a custom_lint plugin to the server
 /// using the analyzer_plugin protocol
@@ -96,6 +115,17 @@ class Client extends ClientPlugin {
                 .toList(),
       );
     } catch (err, stack) {
+      // Sending the error back to the zone without rethrowing.
+      // This allows the server can correctly log the error, and the client to
+      // render the error at the top of the inspected file.
+      Zone.current.handleUncaughtError(
+        GetLintException(
+          error: err,
+          filePath: analysisResult.path,
+        ),
+        stack,
+      );
+
       // TODO test and handle all error cases
       final trace = Trace.from(stack);
 
