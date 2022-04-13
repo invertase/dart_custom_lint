@@ -25,7 +25,6 @@ void main(List<String> args, SendPort sendPort) {
 class _RiverpodLint extends PluginBase {
   @override
   Iterable<Lint> getLints(LibraryElement library) sync* {
-    throw StateError('fail');
     final providers = library.topLevelElements
         .whereType<VariableElement>()
         .where((e) => !e.isFinal)

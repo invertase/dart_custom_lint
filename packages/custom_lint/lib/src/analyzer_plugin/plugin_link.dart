@@ -117,17 +117,19 @@ final _versionInitializedProvider =
 });
 
 final _pluginNotStartedLintProvider = Provider.autoDispose
-    .family<plugin.AnalysisErrorsParams?, Uri>((ref, linkKey) {
+    .family<Map<String, plugin.AnalysisErrorsParams>, Uri>((ref, linkKey) {
   // unwrapPrevious to simplify the logic
   final link = ref.watch(pluginLinkProvider(linkKey)).unwrapPrevious();
 
   // The plugin has successfully started, so no lint.
-  if (link.hasValue) return null;
+  if (link.hasValue) return {};
 
   final pluginName = ref.watch(
     pluginMetaProvider(linkKey).select((value) => value.name),
   );
   final rootsForPlugin = ref.watch(contextRootsForPluginProvider(linkKey));
+
+  final errors = <String, plugin.AnalysisErrorsParams>{};
 
   for (final contextRoot in rootsForPlugin) {
     final pubSpecFile = File(
@@ -163,7 +165,7 @@ final _pluginNotStartedLintProvider = Provider.autoDispose
       endColumn: pluginDependencyNode.span.end.column,
     );
 
-    return plugin.AnalysisErrorsParams(
+    final errorForContext = plugin.AnalysisErrorsParams(
       pubSpecFile.path,
       [
         if (link.isLoading)
@@ -201,7 +203,11 @@ final _pluginNotStartedLintProvider = Provider.autoDispose
           ),
       ],
     );
+
+    errors[errorForContext.file] = errorForContext;
   }
+
+  return errors;
 });
 
 /// The list of lints per Dart Library emitted by a plugin
@@ -211,8 +217,8 @@ final lintsForPluginProvider = StreamProvider.autoDispose
   final pluginNotStartedLint =
       ref.watch(_pluginNotStartedLintProvider(linkKey));
 
-  if (pluginNotStartedLint != null) {
-    yield* Stream.value({pluginNotStartedLint.file: pluginNotStartedLint});
+  if (pluginNotStartedLint.isNotEmpty) {
+    yield* Stream.value(pluginNotStartedLint);
     // if somehow the plugin failed to start, there is no way the plugin will have lints
     return;
   }
