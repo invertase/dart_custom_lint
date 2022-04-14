@@ -1,5 +1,5 @@
 name: custom_lint
-version: 0.0.1
+version: 0.0.2
 description: A package to help writing custom linters
 repository: https://github.com/invertase/dart_custom_lint
 
