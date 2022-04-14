@@ -20,15 +20,8 @@ Future<int> main() async {
     );
 
     runner.channel
-      ..messages.listen((event) => stdout.writeln(event.message))
-      ..responseErrors.listen((event) {
-        code = -1;
-        stderr.writeln('${event.message} ${event.code}\n${event.stackTrace}');
-      })
-      ..pluginErrors.listen((event) {
-        code = -1;
-        stderr.writeln('${event.message}\n${event.stackTrace}');
-      });
+      ..responseErrors.listen((event) => code = -1)
+      ..pluginErrors.listen((event) => code = -1);
 
     try {
       await runner.initialize();

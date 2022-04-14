@@ -175,4 +175,88 @@ class AnalyzerPluginCustomLintDelegate
 /// Maps events to the console
 class CommandCustomLintDelegate
     with LogCustomLintDelegate
-    implements CustomLintDelegate {}
+    implements CustomLintDelegate {
+  @override
+  void pluginMessage(
+    ServerPlugin serverPlugin,
+    PluginDetails pluginDetails,
+    String message,
+  ) {
+    super.pluginMessage(serverPlugin, pluginDetails, message);
+
+    final label = '[${pluginDetails.name}]';
+
+    final msg = message
+        .split('\n')
+        .map((e) => e.isEmpty ? '$label\n' : '$label $e\n')
+        .join();
+
+    stdout.write(msg);
+  }
+
+  @override
+  void serverError(
+    ServerPlugin serverPlugin,
+    List<plugin.ContextRoot> contextRoots,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    super.serverError(serverPlugin, contextRoots, error, stackTrace);
+    stderr.writeln('$error\n$stackTrace');
+  }
+
+  @override
+  void pluginInitializationFail(
+    ServerPlugin serverPlugin,
+    PluginDetails pluginDetails,
+    Object err,
+    StackTrace stackTrace,
+  ) {
+    super.pluginInitializationFail(
+      serverPlugin,
+      pluginDetails,
+      err,
+      stackTrace,
+    );
+    stderr.writeln('$err\n$stackTrace');
+  }
+
+  @override
+  void pluginError(
+    ServerPlugin serverPlugin,
+    PluginDetails pluginDetails,
+    String err,
+    String stackTrace,
+  ) {
+    super.pluginError(
+      serverPlugin,
+      pluginDetails,
+      err,
+      stackTrace,
+    );
+    stderr.writeln('$err\n$stackTrace');
+  }
+
+  @override
+  void requestError(
+    ServerPlugin serverPlugin,
+    PluginDetails pluginDetails,
+    plugin.RequestParams request,
+    plugin.RequestError requestError,
+  ) {
+    super.requestError(
+      serverPlugin,
+      pluginDetails,
+      request,
+      requestError,
+    );
+    stderr.writeln(
+      '''
+The request ${request.toRequest('42').method} failed with the following error:
+${requestError.code}
+${requestError.message}
+at:
+${requestError.stackTrace}''',
+    );
+  }
+}
