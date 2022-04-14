@@ -423,6 +423,9 @@ abstract class ClientPlugin {
         contactInfo: contactInfo);
   }
 
+  /// Initialize configs
+  Future<SetConfigResult> handleSetConfig(SetConfigParams params);
+
   /// Return `true` if this plugin is compatible with an analysis server that is
   /// using the given version of the plugin API.
   bool isCompatibleWith(Version serverVersion) =>
@@ -531,6 +534,10 @@ abstract class ClientPlugin {
       case GetAnalysisErrorParams.key:
         final params = GetAnalysisErrorParams.fromRequest(request);
         result = await handleGetAnalysisErrors(params);
+        break;
+      case SetConfigParams.key:
+        final params = SetConfigParams.fromRequest(request);
+        result = await handleSetConfig(params);
         break;
       case ANALYSIS_REQUEST_GET_NAVIGATION:
         final params = AnalysisGetNavigationParams.fromRequest(request);

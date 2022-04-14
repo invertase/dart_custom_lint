@@ -12,7 +12,10 @@ Future<int> main() async {
 
   await runZonedGuarded(() async {
     final runner = CustomLintRunner(
-      CustomLintPlugin(delegate: CommandCustomLintDelegate()),
+      CustomLintPlugin(
+        delegate: CommandCustomLintDelegate(),
+        includeBuiltInLints: true,
+      ),
       Directory.current,
     );
 

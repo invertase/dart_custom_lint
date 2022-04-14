@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:riverpod/riverpod.dart';
 
+import '../protocol/internal_protocol.dart';
 import 'result.dart';
 import 'server_isolate_channel.dart';
 
@@ -244,17 +245,34 @@ final _priorityFilesInitializedProvider =
   );
 });
 
+/// Config on whether to include plugin status lints or not.
+final includeBuiltInLintsProvider = Provider<bool>(
+  (ref) => throw UnimplementedError(),
+);
+
+final _configInitializedProvider =
+    FutureProvider.autoDispose.family<void, Uri>((ref, linkKey) async {
+  final link = await ref.watch(_pluginLinkProvider(linkKey).future);
+
+  final includeBuiltInLints = ref.watch(includeBuiltInLintsProvider);
+
+  await link.channel.sendRequest(
+    SetConfigParams(includeBuiltInLints: includeBuiltInLints),
+  );
+});
+
 /// A provider for obtaining for link of a specific plugin
 final pluginLinkProvider =
     FutureProvider.autoDispose.family<PluginLink, Uri>((ref, linkKey) async {
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
-  // TODO what if setContextRoot or priotity files changes while these
-  // requests are pending?
+  await Future.wait([
+    ref.watch(_versionInitializedProvider(linkKey).future),
+    ref.watch(_configInitializedProvider(linkKey).future),
+  ]);
 
-  // TODO refresh lints, such that we don't see previous lints while plugins are rebuilding
-  await ref.watch(_versionInitializedProvider(linkKey).future);
-
+  // Making sure to initialize version/config before contextRoot/priority files,
+  // as context roots/priority files depends on the plugin being properly initialized
   await Future.wait([
     ref.watch(_contextRootInitializedProvider(linkKey).future),
     ref.watch(_priorityFilesInitializedProvider(linkKey).future),

@@ -25,10 +25,14 @@ class CustomLintPlugin extends ServerPlugin {
   CustomLintPlugin({
     analyzer.ResourceProvider? resourceProvider,
     required this.delegate,
+    required this.includeBuiltInLints,
   }) : super(resourceProvider);
 
   /// The delegate for handling events in a platform-specific way.
   final CustomLintDelegate delegate;
+
+  /// Whether to include lints made by custom_lint about the status of a plugin.
+  final bool includeBuiltInLints;
 
   @override
   String get contactInfo =>
@@ -52,7 +56,12 @@ class CustomLintPlugin extends ServerPlugin {
   @override
   void start(PluginCommunicationChannel channel) {
     super.start(channel);
-    _container = ProviderContainer(cacheTime: const Duration(minutes: 5));
+    _container = ProviderContainer(
+      overrides: [
+        includeBuiltInLintsProvider.overrideWithValue(includeBuiltInLints),
+      ],
+      cacheTime: const Duration(minutes: 5),
+    );
 
     _container.listen<Map<String, plugin.AnalysisErrorsParams>>(
         allLintsProvider, (previous, next) {
@@ -84,6 +93,13 @@ class CustomLintPlugin extends ServerPlugin {
 
           // TODO test initialization error into valid initialization (hot-restart)
           if (linkResult.hasError) {
+            channel.sendNotification(
+              plugin.PluginErrorParams(
+                false,
+                linkResult.error.toString(),
+                linkResult.stackTrace.toString(),
+              ).toNotification(),
+            );
             delegate.pluginInitializationFail(
               this,
               _getPluginDetails(linkEntry.key),

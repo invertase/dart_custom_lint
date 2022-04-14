@@ -137,3 +137,66 @@ class GetAnalysisErrorResult implements ResponseResult {
         const DeepCollectionEquality().hash(lints),
       );
 }
+
+/// {@template custom_lint.protocol.set_config_params}
+/// The request for initializing configs of a plugin.
+/// {@endtemplate}
+class SetConfigParams implements RequestParams {
+  /// {@macro custom_lint.protocol.set_config_params}
+  SetConfigParams({required this.includeBuiltInLints});
+
+  /// Decodes a [SetConfigParams] from a [Request].
+  factory SetConfigParams.fromRequest(Request request) {
+    assert(
+      request.method == key,
+      'Notification is not a $key notification',
+    );
+
+    return SetConfigParams(
+      includeBuiltInLints: request.params['include_built_in_lints']! as bool,
+    );
+  }
+
+  /// The unique [Request.method] for a [SetConfigParams].
+  static const key = 'custom_lint.set_config';
+
+  /// Whether to include custom_lint meta lints about the status of a plugin
+  final bool includeBuiltInLints;
+
+  @override
+  Map<String, Object> toJson() {
+    return {'include_built_in_lints': includeBuiltInLints};
+  }
+
+  @override
+  Request toRequest(String id) => Request(id, key, toJson());
+}
+
+/// The response to a [SetConfigParams].
+@immutable
+class SetConfigResult implements ResponseResult {
+  /// The response to a [SetConfigParams].
+  const SetConfigResult();
+
+  /// Decodes a [SetConfigResult] from a [Response].
+  // ignore: avoid_unused_constructor_parameters
+  factory SetConfigResult.fromResponse(Response response) =>
+      const SetConfigResult();
+
+  @override
+  Map<String, Object> toJson() => const {};
+
+  @override
+  Response toResponse(String id, int requestTime) {
+    return Response(id, requestTime, result: toJson());
+  }
+
+  @override
+  String toString() => json.encode(toJson());
+
+  @override
+  bool operator ==(Object? other) => runtimeType == other.runtimeType;
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+}

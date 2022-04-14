@@ -109,13 +109,15 @@ final _pluginNotStartedLintProvider = Provider.autoDispose
 final lintsForPluginProvider = StreamProvider.autoDispose
     .family<Map<String, plugin.AnalysisErrorsParams>, Uri>(
         (ref, linkKey) async* {
-  final pluginNotStartedLint =
-      ref.watch(_pluginNotStartedLintProvider(linkKey));
+  if (ref.watch(includeBuiltInLintsProvider)) {
+    final pluginNotStartedLint =
+        ref.watch(_pluginNotStartedLintProvider(linkKey));
 
-  if (pluginNotStartedLint.isNotEmpty) {
-    yield* Stream.value(pluginNotStartedLint);
-    // if somehow the plugin failed to start, there is no way the plugin will have lints
-    return;
+    if (pluginNotStartedLint.isNotEmpty) {
+      yield* Stream.value(pluginNotStartedLint);
+      // if somehow the plugin failed to start, there is no way the plugin will have lints
+      return;
+    }
   }
 
   final link = await ref.watch(pluginLinkProvider(linkKey).future);
