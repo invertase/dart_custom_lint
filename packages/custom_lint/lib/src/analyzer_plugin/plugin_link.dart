@@ -17,6 +17,10 @@ final _pluginSourceChangeProvider =
     StreamProvider.autoDispose.family<void, Uri>((ref, pluginRootUri) {
   final pluginRootPath = pluginRootUri.toFilePath();
 
+  /// Don't watch source unless in development.
+  // TODO test
+  if (pluginRootPath.contains('.pub-cache')) return const Stream.empty();
+
   return StreamGroup.merge([
     Directory(p.join(pluginRootPath, 'lib')).watch(recursive: true),
     Directory(p.join(pluginRootPath, 'bin')).watch(recursive: true),
