@@ -50,6 +50,8 @@ class Client extends ClientPlugin {
   /// The plugin that will be connected to the analyzer server
   final PluginBase plugin;
 
+  late bool _includeBuiltInLints;
+
   @override
   List<String> get fileGlobsToAnalyze => ['*.dart'];
 
@@ -115,16 +117,19 @@ class Client extends ClientPlugin {
                 .toList(),
       );
     } catch (err, stack) {
+      final rethrownError = GetLintException(
+        error: err,
+        filePath: analysisResult.path,
+      );
+
+      if (!_includeBuiltInLints) {
+        Error.throwWithStackTrace(rethrownError, stack);
+      }
+
       // Sending the error back to the zone without rethrowing.
       // This allows the server can correctly log the error, and the client to
       // render the error at the top of the inspected file.
-      Zone.current.handleUncaughtError(
-        GetLintException(
-          error: err,
-          filePath: analysisResult.path,
-        ),
-        stack,
-      );
+      Zone.current.handleUncaughtError(rethrownError, stack);
 
       // TODO test and handle all error cases
       final trace = Trace.from(stack);
@@ -197,6 +202,12 @@ class Client extends ClientPlugin {
           })
           .toList(),
     );
+  }
+
+  @override
+  Future<SetConfigResult> handleSetConfig(SetConfigParams params) async {
+    _includeBuiltInLints = params.includeBuiltInLints;
+    return const SetConfigResult();
   }
 }
 

@@ -12,7 +12,10 @@ void start(Iterable<String> _, SendPort sendPort) {
   runZonedGuarded(
     () {
       final channel = ClientIsolateChannel(sendPort);
-      server = CustomLintPlugin(delegate: AnalyzerPluginCustomLintDelegate());
+      server = CustomLintPlugin(
+        delegate: AnalyzerPluginCustomLintDelegate(),
+        includeBuiltInLints: true,
+      );
       server!.start(channel);
     },
     (err, stack) => server?.handleUncaughtError(err, stack),

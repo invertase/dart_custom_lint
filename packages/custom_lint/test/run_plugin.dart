@@ -21,7 +21,10 @@ Future<CustomLintRunner> startRunnerForApp(
   bool ignoreErrors = false,
 }) async {
   final runner = CustomLintRunner(
-    CustomLintPlugin(delegate: CommandCustomLintDelegate()),
+    CustomLintPlugin(
+      delegate: CommandCustomLintDelegate(),
+      includeBuiltInLints: false,
+    ),
     directory,
   );
   addTearDown(runner.close);
@@ -42,6 +45,6 @@ Future<CustomLintRunner> startRunnerForApp(
 
 extension LogFile on Directory {
   File get log {
-    return File(p.join(path, 'log.txt'));
+    return File(p.join(path, 'custom_lint.log'));
   }
 }
