@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:path/path.dart';
@@ -8,6 +6,7 @@ import 'package:test/test.dart';
 import 'cli_test.dart';
 import 'create_project.dart';
 import 'matchers.dart';
+import 'mock_fs.dart';
 import 'run_plugin.dart';
 
 void main() {
@@ -204,70 +203,72 @@ class _HelloWorldLint extends PluginBase {
       name: 'test_app',
     );
 
-    final runner = await startRunnerForApp(
-      app,
-      // Ignoring errors as we are handling them later
-      ignoreErrors: true,
-    );
+    await runWithIOOverride((out, err) async {
+      final runner = await startRunnerForApp(
+        app,
+        // Ignoring errors as we are handling them later
+        ignoreErrors: true,
+      );
 
-    // Plugin errors will be emitted as notifications, not as part of the response
-    expect(runner.channel.responseErrors, emitsDone);
+      // Plugin errors will be emitted as notifications, not as part of the response
+      expect(runner.channel.responseErrors, emitsDone);
 
-    // The error in our plugin will be reported as PluginErrorParams
-    expect(
-      runner.channel.pluginErrors.toList(),
-      completion([
-        predicate<PluginErrorParams>((value) {
-          expect(
-            value.message,
-            'The following exception was thrown while trying to obtain lints for ${app.path}/lib/another.dart:\n'
-            'Bad state: fail',
-          );
-          return true;
-        }),
-        // Since we are using getLints(), the lints will be requested twice per
-        // Dart file. So the error will be thrown twice
-        predicate<PluginErrorParams>((value) {
-          expect(
-            value.message,
-            'The following exception was thrown while trying to obtain lints for ${app.path}/lib/another.dart:\n'
-            'Bad state: fail',
-          );
-          return true;
-        }),
-      ]),
-    );
+      // The error in our plugin will be reported as PluginErrorParams
+      expect(
+        runner.channel.pluginErrors.toList(),
+        completion([
+          predicate<PluginErrorParams>((value) {
+            expect(
+              value.message,
+              'The following exception was thrown while trying to obtain lints for ${app.path}/lib/another.dart:\n'
+              'Bad state: fail',
+            );
+            return true;
+          }),
+          // Since we are using getLints(), the lints will be requested twice per
+          // Dart file. So the error will be thrown twice
+          predicate<PluginErrorParams>((value) {
+            expect(
+              value.message,
+              'The following exception was thrown while trying to obtain lints for ${app.path}/lib/another.dart:\n'
+              'Bad state: fail',
+            );
+            return true;
+          }),
+        ]),
+      );
 
-    final lints = await runner.getLints();
+      final lints = await runner.getLints();
 
-    expect(
-      lints.map((e) => e.file),
-      [
-        join(app.path, 'lib', 'another.dart'),
-        join(app.path, 'lib', 'main.dart'),
-      ],
-    );
+      expect(
+        lints.map((e) => e.file),
+        [
+          join(app.path, 'lib', 'another.dart'),
+          join(app.path, 'lib', 'main.dart'),
+        ],
+      );
 
-    expect(
-      lints.first.errors.map((e) => e.code),
-      unorderedEquals(<Object?>['oy']),
-    );
-    expect(
-      lints.last.errors.map((e) => e.code),
-      unorderedEquals(<Object?>['hello_world', 'oy']),
-    );
+      expect(
+        lints.first.errors.map((e) => e.code),
+        unorderedEquals(<Object?>['oy']),
+      );
+      expect(
+        lints.last.errors.map((e) => e.code),
+        unorderedEquals(<Object?>['hello_world', 'oy']),
+      );
 
-    expect(
-      app.log,
-      matchesLogGolden(
-        'test/goldens/server_test/redirect_logs.log',
-        paths: {plugin.uri: 'plugin', app.uri: 'app'},
-      ),
-    );
+      expect(
+        app.log,
+        matchesLogGolden(
+          'test/goldens/server_test/redirect_logs.log',
+          paths: {plugin.uri: 'plugin', app.uri: 'app'},
+        ),
+      );
 
-    // Closing so that previous error matchers relying on stream
-    // closing can complete
-    await runner.close();
+      // Closing so that previous error matchers relying on stream
+      // closing can complete
+      await runner.close();
+    });
   });
 
   group('hot-restart', () {
@@ -373,73 +374,75 @@ class _ReloaddLint extends PluginBase {
         name: 'test_app',
       );
 
-      final runner = await startRunnerForApp(app, ignoreErrors: true);
+      await runWithIOOverride((out, err) async {
+        final runner = await startRunnerForApp(app, ignoreErrors: true);
 
-      await expectLater(
-        runner.channel.lints,
-        emitsInOrder(<Object?>[
-          predicate<AnalysisErrorsParams>((value) {
-            expect(value.file, join(app.path, 'lib', 'main.dart'));
-            expect(value.errors.single.code, anyOf('hello_world', 'oy'));
-            return true;
-          }),
-          predicate<AnalysisErrorsParams>((value) {
-            expect(value.file, join(app.path, 'lib', 'main.dart'));
-            expect(
-              value.errors.map((e) => e.code),
-              unorderedEquals(<Object?>['hello_world', 'oy']),
-            );
-            return true;
-          }),
-        ]),
-      );
+        await expectLater(
+          runner.channel.lints,
+          emitsInOrder(<Object?>[
+            predicate<AnalysisErrorsParams>((value) {
+              expect(value.file, join(app.path, 'lib', 'main.dart'));
+              expect(value.errors.single.code, anyOf('hello_world', 'oy'));
+              return true;
+            }),
+            predicate<AnalysisErrorsParams>((value) {
+              expect(value.file, join(app.path, 'lib', 'main.dart'));
+              expect(
+                value.errors.map((e) => e.code),
+                unorderedEquals(<Object?>['hello_world', 'oy']),
+              );
+              return true;
+            }),
+          ]),
+        );
 
-      expect(plugin.log.existsSync(), false);
-      expect(plugin2.log.existsSync(), false);
+        expect(plugin.log.existsSync(), false);
+        expect(plugin2.log.existsSync(), false);
 
-      plugin.pluginMain.writeAsStringSync('''
+        plugin.pluginMain.writeAsStringSync('''
 invalid;
 ''');
 
-      // Plugin errors will be emitted as notifications, not as part of the response
-      expect(runner.channel.responseErrors, emitsDone);
+        // Plugin errors will be emitted as notifications, not as part of the response
+        expect(runner.channel.responseErrors, emitsDone);
 
-      // The error in our plugin will be reported as PluginErrorParams
-      // We don't immediately await it, as we could otherwise miss the lint update
+        // The error in our plugin will be reported as PluginErrorParams
+        // We don't immediately await it, as we could otherwise miss the lint update
 
-      final awaitError = expectLater(
-        runner.channel.pluginErrors,
-        emits(
-          isA<PluginErrorParams>().having((e) => e.message, 'message', '''
+        final awaitError = expectLater(
+          runner.channel.pluginErrors,
+          emits(
+            isA<PluginErrorParams>().having((e) => e.message, 'message', '''
 IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: \x1B[31mError: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
 Try adding the name of the type of the variable or the keyword 'var'.\x1B[39;49m
 invalid;
 ^^^^^^^'''),
-        ),
-      );
-      await expectLater(
-        runner.channel.lints,
-        emits(
-          predicate<AnalysisErrorsParams>((value) {
-            expect(value.file, join(app.path, 'lib', 'main.dart'));
-            // Clears lints previously emitted by the reloaded plugin
-            expect(value.errors.single.code, 'oy');
-            return true;
-          }),
-        ),
-      );
+          ),
+        );
+        await expectLater(
+          runner.channel.lints,
+          emits(
+            predicate<AnalysisErrorsParams>((value) {
+              expect(value.file, join(app.path, 'lib', 'main.dart'));
+              // Clears lints previously emitted by the reloaded plugin
+              expect(value.errors.single.code, 'oy');
+              return true;
+            }),
+          ),
+        );
 
-      await awaitError;
+        await awaitError;
 
-      expect(runner.channel.pluginErrors, emitsDone);
-      expect(runner.channel.lints, emitsDone);
+        expect(runner.channel.pluginErrors, emitsDone);
+        expect(runner.channel.lints, emitsDone);
 
-      // Closing so that previous error matchers relying on stream
-      // closing can complete
-      await runner.close();
+        // Closing so that previous error matchers relying on stream
+        // closing can complete
+        await runner.close();
 
-      expect(plugin.log.existsSync(), false);
-      expect(plugin2.log.existsSync(), false);
+        expect(plugin.log.existsSync(), false);
+        expect(plugin2.log.existsSync(), false);
+      });
     });
   });
 }
