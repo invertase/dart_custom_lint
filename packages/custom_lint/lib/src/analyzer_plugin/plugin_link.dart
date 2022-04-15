@@ -270,17 +270,19 @@ final pluginLinkProvider =
     FutureProvider.autoDispose.family<PluginLink, Uri>((ref, linkKey) async {
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
+  // Required initializations for the plugin to work, and performed only once
   await Future.wait([
     ref.watch(_versionInitializedProvider(linkKey).future),
     ref.watch(_configInitializedProvider(linkKey).future),
   ]);
 
-  // Making sure to initialize version/config before contextRoot/priority files,
-  // as context roots/priority files depends on the plugin being properly initialized
-  await Future.wait([
-    ref.watch(_contextRootInitializedProvider(linkKey).future),
-    ref.watch(_priorityFilesInitializedProvider(linkKey).future),
-  ]);
+  // "optional" initializations which may trigger multiple times and are not
+  // necessary to await
+  // We use listen as we don't want to rebuild dependents when
+  // roots or priority files changes, as the plugin link will stay the same.
+  ref.listen(_contextRootInitializedProvider(linkKey), (previous, next) {});
+  ref.listen(_priorityFilesInitializedProvider(linkKey), (previous, next) {});
+
   return link;
 });
 

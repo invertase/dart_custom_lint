@@ -246,7 +246,12 @@ class CustomLintPlugin extends ServerPlugin {
     plugin.PluginVersionCheckParams parameters,
   ) async {
     // TODO: parameters.bytePathStorePath should be unique to the plugin
-    _container.read(versionCheckProvider.notifier).state = parameters;
+    _container.read(versionCheckProvider.notifier).update((state) {
+      if (state != null) {
+        throw StateError('handlePluginVersionCheck received multiple times');
+      }
+      return parameters;
+    });
 
     final versionString = parameters.version;
     final serverVersion = Version.parse(versionString);
