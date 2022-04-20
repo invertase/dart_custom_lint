@@ -59,6 +59,7 @@ final _pluginLinkProvider = FutureProvider.autoDispose
       p.join(pluginRootPath, '.dart_tool', 'package_config.json'),
     ),
     // TODO test error in main (outside of runZonedGuarded)
+    debugName: pluginName,
     onError: receivePort.sendPort,
   );
 
