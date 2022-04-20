@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:path/path.dart';
