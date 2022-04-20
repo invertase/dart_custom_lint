@@ -280,6 +280,7 @@ final pluginLinkProvider =
   // necessary to await
   // We use listen as we don't want to rebuild dependents when
   // roots or priority files changes, as the plugin link will stay the same.
+  // TODO test
   ref.listen(_contextRootInitializedProvider(linkKey), (previous, next) {});
   ref.listen(_priorityFilesInitializedProvider(linkKey), (previous, next) {});
 

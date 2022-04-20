@@ -23,7 +23,7 @@ void saveLogGoldens(
   Map<Uri, String>? paths,
 }) {
   goldenPath.createSync(recursive: true);
-  goldenPath.writeAsString(_normalizeLog(content));
+  goldenPath.writeAsString(_normalizeLog(content, paths: paths));
 }
 
 final _logDateRegex = RegExp(r'^\[(.+?)\] \S+', multiLine: true);
