@@ -8,6 +8,7 @@ const oyPluginSource = '''
 import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
 
 void main(List<String> args, SendPort sendPort) {
   startPlugin(sendPort, _AnotherLint());
@@ -15,7 +16,8 @@ void main(List<String> args, SendPort sendPort) {
 
 class _AnotherLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(LibraryElement library) sync* {
+  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+    final library = resolvedUnitResult.libraryElement;
     yield Lint(
       code: 'oy',
       message: 'Oy',
@@ -32,6 +34,7 @@ const helloWordPluginSource = '''
 import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
 
 void main(List<String> args, SendPort sendPort) {
   startPlugin(sendPort, _HelloWorldLint());
@@ -39,7 +42,8 @@ void main(List<String> args, SendPort sendPort) {
 
 class _HelloWorldLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(LibraryElement library) sync* {
+  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+    final library = resolvedUnitResult.libraryElement;
     yield Lint(
       code: 'hello_world',
       message: 'Hello world',
@@ -62,6 +66,7 @@ void main() {
 import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
 
 void main(List<String> args, SendPort sendPort) {
   startPlugin(sendPort, _AnotherLint());
@@ -69,7 +74,7 @@ void main(List<String> args, SendPort sendPort) {
 
 class _AnotherLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(LibraryElement library) sync* {}
+  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {}
 }
 ''',
     );
@@ -199,6 +204,7 @@ int x = 'oy';
 import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
 
 void main(List<String> args, SendPort sendPort) {
   startPlugin(sendPort, _HelloWorldLint());
@@ -206,7 +212,8 @@ void main(List<String> args, SendPort sendPort) {
 
 class _HelloWorldLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(LibraryElement library) sync* {
+  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+    final library = resolvedUnitResult.libraryElement;
     if (library.topLevelElements.single.name == 'fail') {
       print('');
       print(' ');
@@ -264,7 +271,7 @@ class _HelloWorldLint extends PluginBase {
           completion(
             contains('''
 Bad state: fail
-#0      _HelloWorldLint.getLints (file://${plugin.path}/bin/custom_lint.dart:16:8)
+#0      _HelloWorldLint.getLints (file://${plugin.path}/bin/custom_lint.dart:18:8)
 '''),
           ),
         );

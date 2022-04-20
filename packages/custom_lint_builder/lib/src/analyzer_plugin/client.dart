@@ -107,7 +107,7 @@ class Client extends ClientPlugin {
             // No need to run the plugin if lints are disabled in the file
             ? const []
             : plugin
-                .getLints(analysisResult.libraryElement)
+                .getLints(analysisResult)
                 .where(
                   (lint) =>
                       !ignoredCodes.contains(lint.code) &&

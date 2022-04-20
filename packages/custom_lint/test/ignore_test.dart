@@ -10,6 +10,7 @@ const source = '''
 import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
 
 void main(List<String> args, SendPort sendPort) {
   startPlugin(sendPort, _HelloWorldLint());
@@ -17,7 +18,8 @@ void main(List<String> args, SendPort sendPort) {
 
 class _HelloWorldLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(LibraryElement library) sync* {
+  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+    final library = resolvedUnitResult.libraryElement;
     for (final variable in library.topLevelElements) {
       yield Lint(
         code: 'hello_world',

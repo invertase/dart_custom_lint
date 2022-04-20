@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:path/path.dart';
@@ -18,6 +20,7 @@ import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
 
 void main(List<String> args, SendPort sendPort) {
   startPlugin(sendPort, _HelloWorldLint());
@@ -25,7 +28,8 @@ void main(List<String> args, SendPort sendPort) {
 
 class _HelloWorldLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(LibraryElement library) sync* {
+  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+    final library = resolvedUnitResult.libraryElement;
     for (final variable in library.topLevelElements) {
       yield Lint(
         code: 'hello_world',
@@ -171,6 +175,7 @@ import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
 
 void main(List<String> args, SendPort sendPort) {
   startPlugin(sendPort, _HelloWorldLint());
@@ -178,7 +183,8 @@ void main(List<String> args, SendPort sendPort) {
 
 class _HelloWorldLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(LibraryElement library) sync* {
+  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+    final library = resolvedUnitResult.libraryElement;
     if (library.topLevelElements.single.name == 'fail') {
        print('Hello world');
        throw StateError('fail');
@@ -256,11 +262,23 @@ class _HelloWorldLint extends PluginBase {
         lints.last.errors.map((e) => e.code),
         unorderedEquals(<Object?>['hello_world', 'oy']),
       );
+      // saveLogGoldens(
+      //   File('test/goldens/server_test/redirect_logs.golden'),
+      //   app.log.readAsStringSync(),
+      //   paths: {plugin.uri: 'plugin', app.uri: 'app'},
+      // );
 
       expect(
         app.log,
         matchesLogGolden(
-          'test/goldens/server_test/redirect_logs.log',
+          'test/goldens/server_test/redirect_logs.golden',
+          paths: {plugin.uri: 'plugin', app.uri: 'app'},
+        ),
+      );
+      expect(
+        app.log,
+        matchesLogGolden(
+          'test/goldens/server_test/redirect_logs.golden',
           paths: {plugin.uri: 'plugin', app.uri: 'app'},
         ),
       );
@@ -311,6 +329,7 @@ import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
 
 void main(List<String> args, SendPort sendPort) {
   startPlugin(sendPort, _ReloaddLint());
@@ -318,7 +337,8 @@ void main(List<String> args, SendPort sendPort) {
 
 class _ReloaddLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(LibraryElement library) sync* {
+  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+    final library = resolvedUnitResult.libraryElement;
     yield Lint(
       code: 'hello_reload',
       message: 'Hello reload',

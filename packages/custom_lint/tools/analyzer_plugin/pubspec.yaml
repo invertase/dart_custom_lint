@@ -6,4 +6,5 @@ environment:
   sdk: ">=2.14.0 <3.0.0"
 
 dependencies:
-  custom_lint: 0.0.2
+  custom_lint:
+    path: /Users/remirousselet/dev/invertase/custom_lint/packages/custom_lint
