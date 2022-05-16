@@ -1,0 +1,1 @@
+`custom_lint_builder` is tested indirectly through `custom_lint`'s `test` folder
