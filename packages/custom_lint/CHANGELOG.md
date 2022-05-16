@@ -1,3 +1,7 @@
+## 0.0.3
+
+PluginBase.getLints now receive a `ResolvedUnitResult` instead of a `LibraryElement`.
+
 ## 0.0.2
 
 - Compilation errors are now visible within the `pubspec.yaml` of applications
