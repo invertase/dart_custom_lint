@@ -125,6 +125,7 @@ London
     group('fromLines', () {
       test('asserts parameters are positive', () {
         LintLocation.fromLines(startLine: 0, endLine: 0);
+        LintLocation.fromLines(startLine: 0, endLine: 0, startColumn: 0);
         LintLocation.fromLines(
           startLine: 0,
           startColumn: 5,

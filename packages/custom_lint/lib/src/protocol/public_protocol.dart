@@ -103,7 +103,7 @@ class LintLocation {
         ),
         assert(endLine >= 0, 'endLine must be positive'),
         assert(
-          startColumn == null || startColumn > 0,
+          startColumn == null || startColumn >= 0,
           'startColumn must be positive',
         ),
         assert(
