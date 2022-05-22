@@ -145,10 +145,10 @@ invalid;
 
         expect(code, -1);
         expect(out.join(), completion('''
-  lib/another.dart:0:5 • Hello world • hello_world
-  lib/another.dart:0:5 • Oy • oy
-  lib/main.dart:0:5 • Hello world • hello_world
-  lib/main.dart:0:5 • Oy • oy
+  lib/another.dart:1:6 • Hello world • hello_world
+  lib/another.dart:1:6 • Oy • oy
+  lib/main.dart:1:6 • Hello world • hello_world
+  lib/main.dart:1:6 • Oy • oy
 '''));
         expect(err, emitsDone);
       },
@@ -189,8 +189,8 @@ int x = 'oy';
           ),
         );
         expect(out.join(), completion('''
-  lib/another.dart:0:5 • Hello world • hello_world
-  lib/main.dart:0:5 • Hello world • hello_world
+  lib/another.dart:1:6 • Hello world • hello_world
+  lib/main.dart:1:6 • Hello world • hello_world
 '''));
       },
       currentDirectory: app,
@@ -258,9 +258,9 @@ class _HelloWorldLint extends PluginBase {
 '''),
               endsWith(
                 '''
-  lib/another.dart:0:5 • Oy • oy
-  lib/main.dart:0:0 • Hello world • hello_world
-  lib/main.dart:0:5 • Oy • oy
+  lib/another.dart:1:6 • Oy • oy
+  lib/main.dart:1:1 • Hello world • hello_world
+  lib/main.dart:1:6 • Oy • oy
 ''',
               ),
             ),
