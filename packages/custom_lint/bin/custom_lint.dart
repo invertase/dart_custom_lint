@@ -34,6 +34,13 @@ Future<int> main() async {
         final relativeFilePath = lintsForFile.relativeFilePath();
 
         lintsForFile.errors.sort((a, b) {
+          final lineCompare =
+              a.location.startLine.compareTo(b.location.startLine);
+          if (lineCompare != 0) return lineCompare;
+          final columnCompare =
+              a.location.startColumn.compareTo(b.location.startColumn);
+          if (columnCompare != 0) return columnCompare;
+
           final codeCompare = a.code.compareTo(b.code);
           if (codeCompare != 0) return codeCompare;
 

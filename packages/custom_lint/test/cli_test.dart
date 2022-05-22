@@ -57,8 +57,6 @@ class _HelloWorldLint extends PluginBase {
 ''';
 
 void main() {
-  // TODO move plugin main to bin/custom_lint.dart
-
   test('exits with 0 when no lint and no error are found', () async {
     final plugin = createPlugin(
       name: 'test_lint',
@@ -273,6 +271,118 @@ class _HelloWorldLint extends PluginBase {
 Bad state: fail
 #0      _HelloWorldLint.getLints (file://${plugin.path}/bin/custom_lint.dart:18:8)
 '''),
+          ),
+        );
+      },
+      currentDirectory: app,
+    );
+  });
+
+  test('Sorts lints by line then column the code', () async {
+    final plugin = createPlugin(
+      name: 'test_lint',
+      main: '''
+import 'dart:isolate';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
+
+void main(List<String> args, SendPort sendPort) {
+  startPlugin(sendPort, _HelloWorldLint());
+}
+
+class _HelloWorldLint extends PluginBase {
+  @override
+  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+    yield Lint(
+      message: 'x2',
+      code: 'x2',
+      location: LintLocation.fromLines(
+        startLine: 1,
+        endLine: 1,
+        startColumn: 1,
+        endColumn: 2,
+      ),
+    );
+    yield Lint(
+      message: 'a',
+      code: 'a',
+      location: LintLocation.fromLines(
+        startLine: 1,
+        endLine: 1,
+        startColumn: 1,
+        endColumn: 2,
+      ),
+    );
+    yield Lint(
+      message: 'x',
+      code: 'x',
+      location: LintLocation.fromLines(
+        startLine: 1,
+        endLine: 1,
+        startColumn: 1,
+        endColumn: 2,
+      ),
+    );
+    yield Lint(
+      message: 'y',
+      code: 'y',
+      location: LintLocation.fromLines(
+        startLine: 1,
+        endLine: 1,
+        startColumn: 0,
+        endColumn: 1,
+      ),
+    );
+    yield Lint(
+      message: 'z',
+      code: 'z',
+      location: LintLocation.fromLines(
+        startLine: 0,
+        endLine: 0,
+        startColumn: 0,
+        endColumn: 1,
+      ),
+    );
+  }
+}
+''',
+    );
+
+    final app = creatLintUsage(
+      source: {
+        'lib/main.dart': '''
+void main() {
+  print('hello world');
+}''',
+      },
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    await runWithIOOverride(
+      (out, err) async {
+        final code = await cli.main();
+
+        expect(code, -1);
+        expect(
+          err.join(),
+          completion(isEmpty),
+        );
+
+        expect(
+          out.join(),
+          completion(
+            predicate((value) {
+              expect(value, '''
+  lib/main.dart:1:1 • z • z
+  lib/main.dart:2:1 • y • y
+  lib/main.dart:2:2 • a • a
+  lib/main.dart:2:2 • x • x
+  lib/main.dart:2:2 • x2 • x2
+''');
+              return true;
+            }),
           ),
         );
       },
