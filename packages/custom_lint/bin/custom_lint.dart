@@ -50,7 +50,7 @@ Future<int> main() async {
         for (final lint in lintsForFile.errors) {
           code = -1;
           stdout.writeln(
-            '  $relativeFilePath:${lint.location.startLine + 1}:${lint.location.startColumn + 1}'
+            '  $relativeFilePath:${lint.location.startLine}:${lint.location.startColumn}'
             ' • ${lint.message} • ${lint.code}',
           );
         }
