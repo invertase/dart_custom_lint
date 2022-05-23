@@ -21,8 +21,8 @@ class _AnotherLint extends PluginBase {
     yield Lint(
       code: 'oy',
       message: 'Oy',
-      location: LintLocation.fromOffsets(
-        offset: library.topLevelElements.first.nameOffset,
+      location: resolvedUnitResult.lintLocationFromOffset(
+        library.topLevelElements.first.nameOffset,
         length: library.topLevelElements.first.nameLength,
       ),
     );
@@ -47,8 +47,8 @@ class _HelloWorldLint extends PluginBase {
     yield Lint(
       code: 'hello_world',
       message: 'Hello world',
-      location: LintLocation.fromOffsets(
-        offset: library.topLevelElements.first.nameOffset,
+      location: resolvedUnitResult.lintLocationFromOffset(
+        library.topLevelElements.first.nameOffset,
         length: library.topLevelElements.first.nameLength,
       ),
     );
@@ -221,7 +221,7 @@ class _HelloWorldLint extends PluginBase {
     yield Lint(
       message: 'Hello world',
       code: 'hello_world',
-      location: LintLocation.fromOffsets(offset: 0, length: 5),
+      location: resolvedUnitResult.lintLocationFromOffset(0, length: 5),
     );
   }
 }
@@ -297,51 +297,51 @@ class _HelloWorldLint extends PluginBase {
     yield Lint(
       message: 'x2',
       code: 'x2',
-      location: LintLocation.fromLines(
-        startLine: 1,
-        endLine: 1,
-        startColumn: 1,
-        endColumn: 2,
+      location: resolvedUnitResult.lintLocationFromLines(
+        startLine: 2,
+        endLine: 2,
+        startColumn: 2,
+        endColumn: 3,
       ),
     );
     yield Lint(
       message: 'a',
       code: 'a',
-      location: LintLocation.fromLines(
-        startLine: 1,
-        endLine: 1,
-        startColumn: 1,
-        endColumn: 2,
+      location: resolvedUnitResult.lintLocationFromLines(
+        startLine: 2,
+        endLine: 2,
+        startColumn: 2,
+        endColumn: 3,
       ),
     );
     yield Lint(
       message: 'x',
       code: 'x',
-      location: LintLocation.fromLines(
-        startLine: 1,
-        endLine: 1,
-        startColumn: 1,
-        endColumn: 2,
+      location: resolvedUnitResult.lintLocationFromLines(
+        startLine: 2,
+        endLine: 2,
+        startColumn: 2,
+        endColumn: 3,
       ),
     );
     yield Lint(
       message: 'y',
       code: 'y',
-      location: LintLocation.fromLines(
-        startLine: 1,
-        endLine: 1,
-        startColumn: 0,
-        endColumn: 1,
+      location: resolvedUnitResult.lintLocationFromLines(
+        startLine: 2,
+        endLine: 2,
+        startColumn: 1,
+        endColumn: 2,
       ),
     );
     yield Lint(
       message: 'z',
       code: 'z',
-      location: LintLocation.fromLines(
-        startLine: 0,
-        endLine: 0,
-        startColumn: 0,
-        endColumn: 1,
+      location: resolvedUnitResult.lintLocationFromLines(
+        startLine: 1,
+        endLine: 1,
+        startColumn: 1,
+        endColumn: 2,
       ),
     );
   }
