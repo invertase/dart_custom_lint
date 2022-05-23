@@ -19,7 +19,6 @@ import 'package:stack_trace/stack_trace.dart';
 
 import '../../custom_lint_builder.dart';
 import '../internal_protocol.dart';
-import '../public_protocol.dart';
 import 'plugin_client.dart';
 
 /// An exception thrown during [PluginBase.getLints].
@@ -113,7 +112,7 @@ class Client extends ClientPlugin {
                       !ignoredCodes.contains(lint.code) &&
                       !_isIgnored(lint, lineInfo, source),
                 )
-                .map((e) => e.encode(lineInfo, analysisResult.path))
+                .map((e) => e.encode())
                 .toList(),
       );
     } catch (err, stack) {
@@ -145,8 +144,15 @@ class Client extends ClientPlugin {
           analyzer_plugin.AnalysisError(
             analyzer_plugin.AnalysisErrorSeverity.ERROR,
             analyzer_plugin.AnalysisErrorType.LINT,
-            LintLocation.fromLines(startLine: 0, endLine: 1)
-                .encode(lineInfo, analysisResult.path),
+            LintLocation(
+              startLine: 1,
+              endLine: 1,
+              startColumn: 1,
+              endColumn: 2,
+              length: 1,
+              offset: 0,
+              filePath: analysisResult.path,
+            ).encode(),
             'A lint plugin threw an exception',
             'custom_lint_get_lint_fail',
             contextMessages: [
@@ -216,15 +222,14 @@ final _ignoreForFileRegex =
     RegExp(r'//\s*ignore_for_file\s*:(.+)$', multiLine: true);
 
 bool _isIgnored(Lint lint, LineInfo lineInfo, String source) {
-  final span = lint.location.getRange(lineInfo);
   // -1 because lines starts at 1 not 0
-  final line = span.startLocation.lineNumber - 1;
+  final line = lint.location.startLine - 1;
 
   if (line == 0) return false;
 
   final previousLine = source.substring(
     lineInfo.getOffsetOfLine(line - 1),
-    span.startOffset - 1,
+    lint.location.offset - 1,
   );
 
   final codeContent = _ignoreRegex.firstMatch(previousLine)?.group(1);
@@ -260,14 +265,11 @@ extension on analyzer_plugin.ContextRoot {
 }
 
 extension on Lint {
-  analyzer_plugin.AnalysisError encode(
-    LineInfo lineInfo,
-    String filePath,
-  ) {
+  analyzer_plugin.AnalysisError encode() {
     return analyzer_plugin.AnalysisError(
       severity.encode(),
       analyzer_plugin.AnalysisErrorType.LINT,
-      location.encode(lineInfo, filePath),
+      location.encode(),
       message,
       code,
       correction: correction,
@@ -291,18 +293,16 @@ extension on LintSeverity {
 }
 
 extension on LintLocation {
-  analyzer_plugin.Location encode(LineInfo lineInfo, String filePath) {
-    final span = getRange(lineInfo);
-
+  analyzer_plugin.Location encode() {
     return analyzer_plugin.Location(
       filePath,
-      span.startOffset,
-      span.endOffset - span.startOffset,
+      offset,
+      length,
       // Removing -1 because lineNumber/columnNumber starts at 1 instead of 0
-      span.startLocation.lineNumber - 1,
-      span.startLocation.columnNumber - 1,
-      endLine: span.endLocation.lineNumber - 1,
-      endColumn: span.endLocation.columnNumber - 1,
+      startLine,
+      startColumn,
+      endLine: endLine,
+      endColumn: endColumn,
     );
   }
 }

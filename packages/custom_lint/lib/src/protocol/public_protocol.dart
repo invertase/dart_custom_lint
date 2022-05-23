@@ -1,4 +1,6 @@
-import 'package:analyzer/source/line_info.dart';
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/element/element.dart';
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 /// The severify of a [Lint]. This influences how the IDE shows the lint.
@@ -52,109 +54,190 @@ class Lint {
   final String? url;
 }
 
+/// {@template custom_lint.lint_location}
 /// Indications on where a [Lint] is placed within the source code
 ///
+/// custom_lint also comes with various utilities to easily obtain a [LintLocation].
+/// This includes:
+///
+/// - creating a [LintLocation] from the name of an [Element]:
+///   ```dart
+///   Element someElement; // could be a ClassElement, VariableElement, ...
+///
+///   LintLocation location = someElement.nameLintLocation;
+///   ```
+///
+/// - creating a [LintLocation] from an offset and length:
+///   ```dart
+///   class MyLinter extends PluginBase {
+///     @override
+///     Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+///       LintLocation location =
+///           resolvedUnitResult.lintLocationFromOffset(42, length: 100);
+///     }
+///   }
+///   ```
+///
+/// - creating a [LintLocation] from line/column informations:
+///   ```dart
+///   class MyLinter extends PluginBase {
+///     @override
+///     Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+///       LintLocation location = resolvedUnitResult.lintLocationFromLines(
+///         startLine: 1,
+///         endLine: 2,
+///         startColumn: 5,
+///       );
+///     }
+///   }
+///   ```
+///
 /// Subclassing or implementing this class is not supported.
+/// {@endtemplate}
 @immutable
 @sealed
 class LintLocation {
-  /// Indications on where something in placed within the source code.
-  ///
-  /// Subclassing or implementing this class is not supported.
-  LintLocation.fromOffsets({
-    required int offset,
-    int? length,
-    int? endOffset,
-  })  : assert(
-          (length == null) ^ (endOffset == null),
-          'Must specify either length or endOffset',
-        ),
-        assert(offset >= 0, 'offset must be positivie'),
-        assert(length == null || length > 0, 'length must be positive'),
+  /// {@macro custom_lint.lint_location}
+  // ignore: prefer_const_constructors_in_immutables
+  LintLocation({
+    required this.startLine,
+    required this.startColumn,
+    required this.endLine,
+    required this.endColumn,
+    required this.filePath,
+    required this.offset,
+    required this.length,
+  })  : assert(startLine >= 1, 'startLine must be be >= 1'),
+        assert(startColumn >= 1, 'startColumn must be be >= 1'),
+        assert(endLine >= startLine, 'endLine must be after startLine'),
         assert(
-          endOffset == null || endOffset > offset,
-          'endOffset must be greater than offset',
+          endLine > startLine || endColumn > startColumn,
+          'endColumn must be after startColumn',
         ),
-        _toCharacterLocations = ((lineInfo) {
-          final actualEndOffset = length != null ? offset + length : endOffset!;
+        assert(length >= 1, 'length must be >= 1'),
+        assert(offset >= 0, 'offset must be >= 0');
 
-          return SourceRange(
-            startOffset: offset,
-            startLocation: lineInfo.getLocation(offset),
-            endOffset: actualEndOffset,
-            endLocation: lineInfo.getLocation(actualEndOffset),
-          );
-        });
+  /// The line where this lint begins
+  ///
+  /// Starts at 1
+  final int startLine;
 
-  /// Indications on where something in placed within the source code.
-  LintLocation.fromLines({
+  /// The column where this lint begins
+  ///
+  /// Starts at 1
+  final int startColumn;
+
+  /// The line where this lint ends
+  ///
+  /// Must be equal or greater than [startLine].
+  final int endLine;
+
+  /// The column where this lint ends
+  ///
+  /// Must be after [startColumn].
+  final int endColumn;
+
+  /// The path to the file that contains this lint.
+  ///
+  /// This path does not have to be the analyzed Dart file.
+  final String filePath;
+
+  /// The offset that points to the beginning of this lint.
+  ///
+  /// Starts at 0
+  final int offset;
+
+  /// The length of this lint
+  ///
+  /// Starts at 1
+  final int length;
+}
+
+/// Utilities to convert an [Element] into a [LintLocation]
+extension LineLocationUtils on Element {
+  /// The location of the element's name.
+  ///
+  /// If the location cannot be determined, such as if the element doesn't
+  /// have a name, will be null.
+  LintLocation? get nameLintLocation {
+    final nameOffset = this.nameOffset;
+    final nameLength = this.nameLength;
+    if (nameOffset < 0 || nameLength < 1) {
+      return null;
+    }
+
+    final librarySource = this.librarySource;
+    if (librarySource == null) return null;
+
+    final parsedUnit = tryGetParsedUnit();
+    if (parsedUnit == null) return null;
+
+    return parsedUnit.lintLocationFromOffset(nameOffset, length: nameLength);
+  }
+}
+
+/// Extennsions for obtainining a [LintLocation] from a [FileResult].
+extension LintLocationFileResultExtension on FileResult {
+  /// Creates a [LintLocation] from an offset + length.
+  LintLocation lintLocationFromOffset(int offset, {required int length}) {
+    final startLocation = lineInfo.getLocation(offset);
+    final endLocation = lineInfo.getLocation(offset + length);
+
+    return LintLocation(
+      offset: offset,
+      length: length,
+      startLine: startLocation.lineNumber,
+      startColumn: startLocation.columnNumber,
+      endLine: endLocation.lineNumber,
+      endColumn: endLocation.columnNumber,
+      filePath: path,
+    );
+  }
+
+  /// Creates a [LintLocation] from an line and column informations.
+  LintLocation lintLocationFromLines({
     required int startLine,
     int? startColumn,
     required int endLine,
     int? endColumn,
-  })  : assert(startLine <= endLine, 'endLine must be greater than startLine'),
-        assert(startLine >= 0, 'startLine must be positivie'),
-        assert(
-          startColumn == null ||
-              endColumn == null ||
-              startLine != endLine ||
-              startColumn < endColumn,
-          'When startLine == endLine, endColumn must be greater than startColumn',
-        ),
-        assert(endLine >= 0, 'endLine must be positive'),
-        assert(
-          startColumn == null || startColumn >= 0,
-          'startColumn must be positive',
-        ),
-        assert(
-          endColumn == null || endColumn > 0,
-          'endColumn must be positive',
-        ),
-        _toCharacterLocations = ((lineInfo) {
-          final startOffset =
-              lineInfo.getOffsetOfLine(startLine) + (startColumn ?? 0);
-          final endOffset =
-              lineInfo.getOffsetOfLine(endLine) + (endColumn ?? 0);
+  }) {
+    startColumn ??= 1;
+    endColumn ??= 1;
+    assert(
+      startLine > 0 && startColumn > 0 && endLine > 0 && endColumn > 0,
+      'lines/columns start at index 1',
+    );
 
-          return SourceRange(
-            startOffset: startOffset,
-            startLocation: lineInfo.getLocation(startOffset),
-            endOffset: endOffset,
-            endLocation: lineInfo.getLocation(endOffset),
-          );
-        });
+    final startOffset =
+        lineInfo.getOffsetOfLine(startLine - 1) + startColumn - 1;
+    final endOffset = lineInfo.getOffsetOfLine(endLine - 1) + endColumn - 1;
+    final startLocation = lineInfo.getLocation(startOffset);
+    final endLocation = lineInfo.getLocation(endOffset);
 
-  // TODO use factory
-  final SourceRange Function(LineInfo lineInfo) _toCharacterLocations;
+    return LintLocation(
+      filePath: path,
+      offset: startOffset,
+      length: endOffset - startOffset,
+      startLine: startLocation.lineNumber,
+      startColumn: startLocation.columnNumber,
+      endLine: endLocation.lineNumber,
+      endColumn: endLocation.columnNumber,
+    );
+  }
 }
 
-/// Internal usage only
-@visibleForTesting
-extension $LintLocationToRange on LintLocation {
-  /// Obtains lines/colums/offsets informations for a [LintLocation].
-  SourceRange getRange(LineInfo info) => _toCharacterLocations(info);
-}
+extension on Element {
+  ParsedUnitResult? tryGetParsedUnit() {
+    final library = this.library;
+    if (library == null) return null;
 
-/// A representation of where a lint is location on a source file
-@visibleForTesting
-class SourceRange {
-  /// A representation of where a lint is location on a source file
-  SourceRange({
-    required this.startOffset,
-    required this.startLocation,
-    required this.endOffset,
-    required this.endLocation,
-  });
+    final session = this.session;
+    if (session == null) return null;
 
-  ///  The offset of where a lint starts
-  final int startOffset;
+    final parsedLibrary = session.getParsedLibraryByElement(library);
+    if (parsedLibrary is! ParsedLibraryResult) return null;
 
-  /// Lint informations on where the lint starts
-  final CharacterLocation startLocation;
-
-  ///  The offset of where a lint ends
-  final int endOffset;
-
-  /// Lint informations on where the lint ends
-  final CharacterLocation endLocation;
+    return parsedLibrary.units
+        .firstWhereOrNull((element) => element.uri == library.source.uri);
+  }
 }

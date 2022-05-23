@@ -40,10 +40,7 @@ class _RiverpodLint extends PluginBase {
       yield Lint(
         code: 'riverpod_final_provider',
         message: 'Providers should always be declared as final',
-        location: LintLocation.fromOffsets(
-          offset: provider.nameOffset,
-          length: provider.nameLength,
-        ),
+        location: provider.nameLintLocation!,
       );
     }
   }
