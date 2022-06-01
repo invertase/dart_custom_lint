@@ -154,6 +154,8 @@ class CustomLintPlugin extends ServerPlugin {
     _container.read(activeContextRootsProvider.notifier).state =
         parameters.roots;
 
+    await _allPluginsSub.read();
+
     return plugin.AnalysisSetContextRootsResult();
   }
 
@@ -256,7 +258,8 @@ class CustomLintPlugin extends ServerPlugin {
     final versionString = parameters.version;
     final serverVersion = Version.parse(versionString);
 
-    // TODO does this needs to be deferred to plugins?
+    await _allPluginsSub.read();
+
     return plugin.PluginVersionCheckResult(
       isCompatibleWith(serverVersion),
       name,
@@ -281,6 +284,8 @@ class CustomLintPlugin extends ServerPlugin {
     plugin.AnalysisSetPriorityFilesParams parameters,
   ) async {
     _container.read(priorityFilesProvider.notifier).state = parameters;
+    await _allPluginsSub.read();
+
     return plugin.AnalysisSetPriorityFilesResult();
   }
 
@@ -341,26 +346,11 @@ class CustomLintPlugin extends ServerPlugin {
 
   /// Requests lints for specific files
   @override
-  Future<GetAnalysisErrorResult> handleGetAnalysisErrors(
-    GetAnalysisErrorParams parameters,
+  Future<AwaitAnalysisDoneResult> handleAwaitAnalysisDone(
+    AwaitAnalysisDoneParams parameters,
   ) async {
-    final response = await _requestAllPlugins(parameters);
-
-    return GetAnalysisErrorResult(
-      // TODO do we want to show failing plugins as "error" in the file?
-      response
-          .map(GetAnalysisErrorResult.fromResponse)
-          .expand((element) => element.lints)
-          // Merge plugin results if two plugins emit lints on the same file
-          .fold<Map<String, plugin.AnalysisErrorsParams>>({}, (acc, element) {
-            final params = acc[element.file] ??=
-                plugin.AnalysisErrorsParams(element.file, []);
-            params.errors.addAll(element.errors);
-            return acc;
-          })
-          .values
-          .toList(),
-    );
+    await _requestAllPlugins(parameters);
+    return const AwaitAnalysisDoneResult();
   }
 
   @override

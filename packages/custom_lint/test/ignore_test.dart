@@ -24,16 +24,16 @@ class _HelloWorldLint extends PluginBase {
       yield Lint(
         code: 'hello_world',
         message: 'Hello world',
-        location: LintLocation.fromOffsets(
-          offset: variable.nameOffset,
+        location: resolvedUnitResult.lintLocationFromOffset(
+          variable.nameOffset,
           length: variable.nameLength,
         ),
       );
       yield Lint(
         code: 'foo',
         message: 'Foo',
-        location: LintLocation.fromOffsets(
-          offset: variable.nameOffset,
+        location: resolvedUnitResult.lintLocationFromOffset(
+          variable.nameOffset,
           length: variable.nameLength,
         ),
       );
@@ -79,19 +79,19 @@ void fn3() {}
         expect(value.errors.first.code, 'hello_world');
         expect(
           value.errors.first.location,
-          Location(value.file, 5, 2, 0, 5, endColumn: 7, endLine: 0),
+          Location(value.file, 5, 2, 1, 6, endColumn: 8, endLine: 1),
         );
 
         expect(value.errors[1].code, 'foo');
         expect(
           value.errors[1].location,
-          Location(value.file, 5, 2, 0, 5, endColumn: 7, endLine: 0),
+          Location(value.file, 5, 2, 1, 6, endColumn: 8, endLine: 1),
         );
 
         expect(value.errors[2].code, 'foo');
         expect(
           value.errors[2].location,
-          Location(value.file, 68, 3, 3, 5, endColumn: 8, endLine: 3),
+          Location(value.file, 68, 3, 4, 6, endColumn: 9, endLine: 4),
         );
         return true;
       }),
@@ -141,13 +141,13 @@ void fn3() {}
         expect(value.errors.first.code, 'hello_world');
         expect(
           value.errors.first.location,
-          Location(value.file, 44, 2, 2, 5, endColumn: 7, endLine: 2),
+          Location(value.file, 44, 2, 3, 6, endColumn: 8, endLine: 3),
         );
 
         expect(value.errors[1].code, 'hello_world');
         expect(
           value.errors[1].location,
-          Location(value.file, 111, 3, 8, 5, endColumn: 8, endLine: 8),
+          Location(value.file, 111, 3, 9, 6, endColumn: 9, endLine: 9),
         );
         return true;
       }),

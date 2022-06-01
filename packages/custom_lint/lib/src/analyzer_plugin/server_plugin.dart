@@ -149,8 +149,8 @@ abstract class ServerPlugin {
   );
 
   /// Requests lints for specific files
-  Future<GetAnalysisErrorResult> handleGetAnalysisErrors(
-    GetAnalysisErrorParams parameters,
+  Future<AwaitAnalysisDoneResult> handleAwaitAnalysisDone(
+    AwaitAnalysisDoneParams parameters,
   );
 
   /// Handle a 'plugin.shutdown' request. Subclasses can override this method to
@@ -197,9 +197,9 @@ abstract class ServerPlugin {
   Future<Response?> _getResponse(Request request, int requestTime) async {
     ResponseResult? result;
     switch (request.method) {
-      case GetAnalysisErrorParams.key:
-        final params = GetAnalysisErrorParams.fromRequest(request);
-        result = await handleGetAnalysisErrors(params);
+      case AwaitAnalysisDoneParams.key:
+        final params = AwaitAnalysisDoneParams.fromRequest(request);
+        result = await handleAwaitAnalysisDone(params);
         break;
       case ANALYSIS_REQUEST_GET_NAVIGATION:
         final params = AnalysisGetNavigationParams.fromRequest(request);
