@@ -32,8 +32,8 @@ class _HelloWorldLint extends PluginBase {
       yield Lint(
         code: 'hello_world',
         message: 'Hello world',
-        location: LintLocation.fromOffsets(
-          offset: variable.nameOffset,
+        location: resolvedUnitResult.lintLocationFromOffset(
+          variable.nameOffset,
           length: variable.nameLength,
         ),
       );
@@ -78,10 +78,10 @@ void fn2() {}
                 join(app.path, 'lib', 'another.dart'),
                 5,
                 2,
-                0,
-                5,
-                endLine: 0,
-                endColumn: 7,
+                1,
+                6,
+                endLine: 1,
+                endColumn: 8,
               ),
             )
             .having((e) => e.message, 'message', 'Hello world'),
@@ -99,10 +99,10 @@ void fn2() {}
                 join(app.path, 'lib', 'main.dart'),
                 5,
                 2,
-                0,
-                5,
-                endLine: 0,
-                endColumn: 7,
+                1,
+                6,
+                endLine: 1,
+                endColumn: 8,
               ),
             )
             .having((e) => e.message, 'message', 'Hello world'),
@@ -115,10 +115,10 @@ void fn2() {}
                 join(app.path, 'lib', 'main.dart'),
                 19,
                 3,
-                2,
-                5,
-                endLine: 2,
-                endColumn: 8,
+                3,
+                6,
+                endLine: 3,
+                endColumn: 9,
               ),
             )
             .having((e) => e.message, 'message', 'Hello world'),
@@ -190,7 +190,7 @@ class _HelloWorldLint extends PluginBase {
     yield Lint(
       code: 'hello_world',
       message: 'Hello world',
-      location: LintLocation.fromOffsets(offset: 0, length: 1),
+      location: resolvedUnitResult.lintLocationFromOffset(0, length: 1),
     );
   }
 }
@@ -229,16 +229,6 @@ class _HelloWorldLint extends PluginBase {
             );
             return true;
           }),
-          // Since we are using getLints(), the lints will be requested twice per
-          // Dart file. So the error will be thrown twice
-          predicate<PluginErrorParams>((value) {
-            expect(
-              value.message,
-              'The following exception was thrown while trying to obtain lints for ${app.path}/lib/another.dart:\n'
-              'Bad state: fail',
-            );
-            return true;
-          }),
         ]),
       );
 
@@ -260,11 +250,14 @@ class _HelloWorldLint extends PluginBase {
         lints.last.errors.map((e) => e.code),
         unorderedEquals(<Object?>['hello_world', 'oy']),
       );
+      // uncomment when the golden needs update
       // saveLogGoldens(
       //   File('test/goldens/server_test/redirect_logs.golden'),
       //   app.log.readAsStringSync(),
       //   paths: {plugin.uri: 'plugin', app.uri: 'app'},
       // );
+      // await runner.close();
+      // return;
 
       expect(
         app.log,
@@ -340,8 +333,8 @@ class _ReloaddLint extends PluginBase {
     yield Lint(
       code: 'hello_reload',
       message: 'Hello reload',
-      location: LintLocation.fromOffsets(
-        offset: library.topLevelElements.first.nameOffset,
+      location: resolvedUnitResult.lintLocationFromOffset(
+        library.topLevelElements.first.nameOffset,
         length: library.topLevelElements.first.nameLength,
       ),
     );

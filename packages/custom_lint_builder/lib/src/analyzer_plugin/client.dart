@@ -144,22 +144,15 @@ class Client extends ClientPlugin {
           analyzer_plugin.AnalysisError(
             analyzer_plugin.AnalysisErrorSeverity.ERROR,
             analyzer_plugin.AnalysisErrorType.LINT,
-            LintLocation(
-              startLine: 1,
-              endLine: 1,
-              startColumn: 1,
-              endColumn: 2,
-              length: 1,
-              offset: 0,
-              filePath: analysisResult.path,
-            ).encode(),
+            analysisResult
+                .lintLocationFromLines(startLine: 0, endLine: 1)
+                .encode(),
             'A lint plugin threw an exception',
             'custom_lint_get_lint_fail',
             contextMessages: [
               analyzer_plugin.DiagnosticMessage(
                 err.toString(),
                 analyzer_plugin.Location(
-                  // '/Users/remirousselet/dev/invertase/custom_lint/packages/example_lint/bin/custom_lint.dart',
                   trace.frames.first.uri.toFilePath(),
                   sourceFile.getOffset(
                     // frame location indices start at 1 not 0 so removing -1
@@ -179,35 +172,18 @@ class Client extends ClientPlugin {
   }
 
   @override
-  Future<GetAnalysisErrorResult> handleGetAnalysisErrors(
-    GetAnalysisErrorParams parameters,
+  Future<AwaitAnalysisDoneResult> handleAwaitAnalysisDone(
+    AwaitAnalysisDoneParams parameters,
   ) async {
-    return GetAnalysisErrorResult(
-      await Stream.fromIterable(parameters.files)
-          .asyncMap((file) async {
-            final driver = driverForPath(file);
-            final unit = await driver?.getResult(file);
+    bool hasPendingDriver() {
+      return driverMap.values.any((driver) => driver.hasFilesToAnalyze);
+    }
 
-            if (unit is analyzer.ResolvedUnitResult) {
-              return unit;
-            }
-            return null;
-          })
-          .where((e) => e != null)
-          .cast<analyzer.ResolvedUnitResult>()
-          .asyncMap(_getAnalysisErrorsForUnit)
-          // ignore: avoid_types_on_closure_parameters, false positive because of implicit-dynamic
-          .handleError((Object err, StackTrace stack) {
-            channel.sendNotification(
-              analyzer_plugin.PluginErrorParams(
-                false,
-                err.toString(),
-                stack.toString(),
-              ).toNotification(),
-            );
-          })
-          .toList(),
-    );
+    while (hasPendingDriver()) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+
+    return const AwaitAnalysisDoneResult();
   }
 
   @override

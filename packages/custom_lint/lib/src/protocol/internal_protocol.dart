@@ -5,15 +5,9 @@ library custom_protocol;
 import 'dart:convert';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
-import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
-    show
-        REQUEST_ID_REFACTORING_KINDS,
-        RequestParams,
-        ResponseDecoder,
-        ResponseResult;
-import 'package:collection/collection.dart';
+    show RequestParams, ResponseResult;
 import 'package:meta/meta.dart';
 
 /// Notification for when a plugin invokes [print].
@@ -45,76 +39,47 @@ class PrintNotification {
 }
 
 /// {@template custom_lint.protocol.get_analysis_error_params}
-/// The request parameter for obtaining lints on a few specific files in
-/// a way that can be awaited by the manager of all plugins.
-///
-/// This request is used in particular when using the command line,
-/// to explicitly request lints for the known Dart files.
+/// Asks the client to notify the server when it is done analysing files for
+/// the moment.
 /// {@endtemplate}
-class GetAnalysisErrorParams implements RequestParams {
+class AwaitAnalysisDoneParams implements RequestParams {
   /// {@macro custom_lint.protocol.get_analysis_error_params}
-  GetAnalysisErrorParams(this.files);
+  const AwaitAnalysisDoneParams();
 
-  /// Decodes a [GetAnalysisErrorParams] from a [Request].
-  factory GetAnalysisErrorParams.fromRequest(Request request) {
+  /// Decodes a [AwaitAnalysisDoneParams] from a [Request].
+  factory AwaitAnalysisDoneParams.fromRequest(Request request) {
     assert(
       request.method == key,
       'Notification is not a $key notification',
     );
 
-    return GetAnalysisErrorParams(
-      List.from(request.params['files']! as List),
-    );
+    return const AwaitAnalysisDoneParams();
   }
 
-  /// The unique [Request.method] for a [GetAnalysisErrorParams].
-  static const key = 'custom_lint.get_analysis_errors';
-
-  /// The files for which the plugin client should return the list of lints.
-  final List<String> files;
+  /// The unique [Request.method] for a [AwaitAnalysisDoneParams].
+  static const key = 'custom_lint.await_analysis_done';
 
   @override
-  Map<String, Object> toJson() => {'files': files};
+  Map<String, Object> toJson() => {};
 
   @override
   Request toRequest(String id) => Request(id, key, toJson());
 }
 
-/// The response to a [GetAnalysisErrorParams] containing the list of lints
-/// for the requested files.
+/// Signals the server that the plugin is currently done analyzing.
 @immutable
-class GetAnalysisErrorResult implements ResponseResult {
-  /// The response to a [GetAnalysisErrorParams] containing the list of lints
-  /// for the requested files.
-  const GetAnalysisErrorResult(this.lints);
+class AwaitAnalysisDoneResult implements ResponseResult {
+  /// Signals the server that the plugin is currently done analyzing.
+  const AwaitAnalysisDoneResult();
 
-  /// Decodes a [GetAnalysisErrorResult] from a [Response].
-  factory GetAnalysisErrorResult.fromResponse(Response response) {
-    final lints =
-        response.result?['lints'] as List<Object?>? ?? const <String>[];
-
-    final decoder =
-        ResponseDecoder(REQUEST_ID_REFACTORING_KINDS.remove(response.id));
-
-    final errors = decoder.decodeList(
-      'lints',
-      lints,
-      (jsonPath, json) =>
-          AnalysisErrorsParams.fromJson(decoder, jsonPath, json),
-    );
-
-    return GetAnalysisErrorResult(errors);
+  /// Decodes a [AwaitAnalysisDoneResult] from a [Response].
+  factory AwaitAnalysisDoneResult.fromResponse(Response response) {
+    assert(response.result!.isEmpty, 'Response.result should be an empty map');
+    return const AwaitAnalysisDoneResult();
   }
-
-  /// The lints associated to the requested files.
-  final List<AnalysisErrorsParams> lints;
 
   @override
-  Map<String, Object> toJson() {
-    return {
-      'lints': lints.map((e) => e.toJson()).toList(),
-    };
-  }
+  Map<String, Object> toJson() => {};
 
   @override
   Response toResponse(String id, int requestTime) {
@@ -125,17 +90,10 @@ class GetAnalysisErrorResult implements ResponseResult {
   String toString() => json.encode(toJson());
 
   @override
-  bool operator ==(Object? other) {
-    return other is GetAnalysisErrorResult &&
-        runtimeType == other.runtimeType &&
-        const DeepCollectionEquality().equals(lints, other.lints);
-  }
+  bool operator ==(Object? other) => runtimeType == other.runtimeType;
 
   @override
-  int get hashCode => Object.hash(
-        runtimeType,
-        const DeepCollectionEquality().hash(lints),
-      );
+  int get hashCode => runtimeType.hashCode;
 }
 
 /// {@template custom_lint.protocol.set_config_params}

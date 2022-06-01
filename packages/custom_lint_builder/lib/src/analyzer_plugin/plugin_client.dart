@@ -23,6 +23,7 @@ import 'package:analyzer_plugin/src/protocol/protocol_internal.dart';
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/utilities/null_string_sink.dart';
 import 'package:analyzer_plugin/utilities/subscriptions/subscription_manager.dart';
+import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 import '../internal_protocol.dart';
@@ -109,7 +110,11 @@ abstract class ClientPlugin {
 
   /// Handle the fact that the file with the given [path] has been modified.
   void contentChanged(String path) {
-    driverForPath(path)?.addFile(path);
+    if (extension(path) == '.dart') {
+      driverForPath(path)
+        ?..addFile(path)
+        ..getResult(path);
+    }
   }
 
   /// Return the context root containing the file at the given [filePath].
@@ -225,9 +230,10 @@ abstract class ClientPlugin {
         final driver = createAnalysisDriver(contextRoot);
         driverMap[contextRoot] = driver;
         _addFilesToDriver(
-            driver,
-            resourceProvider.getResource(contextRoot.root),
-            contextRoot.exclude);
+          driver,
+          resourceProvider.getResource(contextRoot.root),
+          contextRoot.exclude,
+        );
       }
     }
     for (final contextRoot in oldRoots) {
@@ -390,8 +396,8 @@ abstract class ClientPlugin {
   }
 
   /// Requests lints for specific files
-  Future<GetAnalysisErrorResult> handleGetAnalysisErrors(
-    GetAnalysisErrorParams parameters,
+  Future<AwaitAnalysisDoneResult> handleAwaitAnalysisDone(
+    AwaitAnalysisDoneParams parameters,
   );
 
   /// Handle a 'plugin.shutdown' request. Subclasses can override this method to
@@ -508,13 +514,15 @@ abstract class ClientPlugin {
   /// Add all of the files contained in the given [resource] that are not in the
   /// list of [excluded] resources to the given [driver].
   void _addFilesToDriver(
-      AnalysisDriverGeneric driver, Resource resource, List<String> excluded) {
+      AnalysisDriver driver, Resource resource, List<String> excluded) {
     final path = resource.path;
     if (excluded.contains(path)) {
       return;
     }
-    if (resource is File) {
-      driver.addFile(path);
+    if (resource is File && extension(path) == '.dart') {
+      driver
+        ..addFile(path)
+        ..getResult(path);
     } else if (resource is Folder) {
       try {
         for (final child in resource.getChildren()) {
@@ -531,9 +539,9 @@ abstract class ClientPlugin {
   Future<Response?> _getResponse(Request request, int requestTime) async {
     ResponseResult? result;
     switch (request.method) {
-      case GetAnalysisErrorParams.key:
-        final params = GetAnalysisErrorParams.fromRequest(request);
-        result = await handleGetAnalysisErrors(params);
+      case AwaitAnalysisDoneParams.key:
+        final params = AwaitAnalysisDoneParams.fromRequest(request);
+        result = await handleAwaitAnalysisDone(params);
         break;
       case SetConfigParams.key:
         final params = SetConfigParams.fromRequest(request);
