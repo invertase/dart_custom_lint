@@ -1,3 +1,7 @@
+## 0.0.4
+
+- Fixed a bug where the command line could show IDE-only meant for debugging
+
 ## 0.0.3
 
 PluginBase.getLints now receive a `ResolvedUnitResult` instead of a `LibraryElement`.
