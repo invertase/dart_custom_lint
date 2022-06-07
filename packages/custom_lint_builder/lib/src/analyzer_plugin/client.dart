@@ -14,6 +14,7 @@ import 'package:analyzer_plugin/protocol/protocol_common.dart'
     as analyzer_plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart'
     as analyzer_plugin;
+import 'package:collection/collection.dart';
 import 'package:source_span/source_span.dart';
 import 'package:stack_trace/stack_trace.dart';
 
@@ -125,17 +126,23 @@ class Client extends ClientPlugin {
         Error.throwWithStackTrace(rethrownError, stack);
       }
 
+      // TODO test and handle all error cases
+      final trace = Trace.from(stack);
+
+      final firstFileFrame = trace.frames.firstWhereOrNull(
+        (frame) => frame.uri.scheme == 'file',
+      );
+
+      if (firstFileFrame == null) {
+        Error.throwWithStackTrace(rethrownError, stack);
+      }
+
       // Sending the error back to the zone without rethrowing.
       // This allows the server can correctly log the error, and the client to
       // render the error at the top of the inspected file.
       Zone.current.handleUncaughtError(rethrownError, stack);
 
-      // TODO test and handle all error cases
-      final trace = Trace.from(stack);
-
-      final errorOriginFrame = trace.frames.first;
-
-      final file = File.fromUri(errorOriginFrame.uri);
+      final file = File.fromUri(firstFileFrame.uri);
       final sourceFile = SourceFile.fromString(file.readAsStringSync());
 
       return analyzer_plugin.AnalysisErrorsParams(
@@ -145,7 +152,7 @@ class Client extends ClientPlugin {
             analyzer_plugin.AnalysisErrorSeverity.ERROR,
             analyzer_plugin.AnalysisErrorType.LINT,
             analysisResult
-                .lintLocationFromLines(startLine: 0, endLine: 1)
+                .lintLocationFromLines(startLine: 1, endLine: 2)
                 .encode(),
             'A lint plugin threw an exception',
             'custom_lint_get_lint_fail',
@@ -153,15 +160,15 @@ class Client extends ClientPlugin {
               analyzer_plugin.DiagnosticMessage(
                 err.toString(),
                 analyzer_plugin.Location(
-                  trace.frames.first.uri.toFilePath(),
+                  firstFileFrame.library,
                   sourceFile.getOffset(
                     // frame location indices start at 1 not 0 so removing -1
-                    (errorOriginFrame.line ?? 1) - 1,
-                    (errorOriginFrame.column ?? 1) - 1,
+                    (firstFileFrame.line ?? 1) - 1,
+                    (firstFileFrame.column ?? 1) - 1,
                   ),
                   0,
-                  errorOriginFrame.line ?? 1,
-                  errorOriginFrame.column ?? 1,
+                  firstFileFrame.line ?? 1,
+                  firstFileFrame.column ?? 1,
                 ),
               ),
             ],
