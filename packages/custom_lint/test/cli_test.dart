@@ -212,6 +212,7 @@ class _HelloWorldLint extends PluginBase {
   @override
   Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
     final library = resolvedUnitResult.libraryElement;
+    print('Oy');
     if (library.topLevelElements.single.name == 'fail') {
       print('');
       print(' ');
@@ -269,7 +270,7 @@ class _HelloWorldLint extends PluginBase {
           completion(
             contains('''
 Bad state: fail
-#0      _HelloWorldLint.getLints (file://${plugin.path}/bin/custom_lint.dart:18:8)
+#0      _HelloWorldLint.getLints (file://${plugin.path}/bin/custom_lint.dart:19:8)
 '''),
           ),
         );

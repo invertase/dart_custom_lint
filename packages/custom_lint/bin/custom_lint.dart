@@ -14,7 +14,7 @@ Future<int> main() async {
     final runner = CustomLintRunner(
       CustomLintPlugin(
         delegate: CommandCustomLintDelegate(),
-        includeBuiltInLints: true,
+        includeBuiltInLints: false,
       ),
       Directory.current,
     );
