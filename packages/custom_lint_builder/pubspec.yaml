@@ -1,5 +1,5 @@
 name: custom_lint_builder
-version: 0.0.4
+version: 0.0.5
 description: A package to help writing custom linters
 repository: https://github.com/invertase/dart_custom_lint
 
@@ -9,9 +9,10 @@ environment:
 dependencies:
   analyzer: ^4.0.0
   analyzer_plugin: ^0.10.0
+  collection: ^1.16.0
   # Using tight constraints as custom_lint_builder communicate with each-other
   # using a specific contract
-  custom_lint: 0.0.4
+  custom_lint: 0.0.5
   meta: ^1.7.0
   package_config: ^2.0.2
   path: ^1.8.0
