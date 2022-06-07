@@ -1,3 +1,8 @@
+## 0.0.5
+
+Fixed error reporting if a custom_lint plugin throws but the exception comes
+from a package instead of the plugin itself.
+
 ## 0.0.4
 
 - Fixed a bug where the command line could show IDE-only meant for debugging
