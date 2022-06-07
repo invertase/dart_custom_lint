@@ -298,21 +298,21 @@ class _HelloWorldLint extends PluginBase {
 
       await expectLater(
         runner.channel.lints,
-        emitsInOrder(<Object?>[
-          predicate<AnalysisErrorsParams>((value) {
-            expect(value.file, join(app.path, 'lib', 'main.dart'));
-            expect(value.errors.single.code, anyOf('hello_world', 'oy'));
-            return true;
-          }),
-          predicate<AnalysisErrorsParams>((value) {
-            expect(value.file, join(app.path, 'lib', 'main.dart'));
-            expect(
-              value.errors.map((e) => e.code),
-              unorderedEquals(<Object?>['hello_world', 'oy']),
-            );
-            return true;
-          }),
-        ]),
+        // Using emitsThrough as depending on how fast lints are emitted,
+        // the 2 lints can be received accross two events instead of one.
+        emitsThrough(
+          isA<AnalysisErrorsParams>()
+              .having(
+                (e) => e.file,
+                'file',
+                join(app.path, 'lib', 'main.dart'),
+              )
+              .having(
+                (e) => e.errors.map((e) => e.code),
+                'errors',
+                unorderedEquals(<Object?>['hello_world', 'oy']),
+              ),
+        ),
       );
 
       plugin.pluginMain.writeAsStringSync('''
@@ -390,21 +390,21 @@ class _ReloaddLint extends PluginBase {
 
         await expectLater(
           runner.channel.lints,
-          emitsInOrder(<Object?>[
-            predicate<AnalysisErrorsParams>((value) {
-              expect(value.file, join(app.path, 'lib', 'main.dart'));
-              expect(value.errors.single.code, anyOf('hello_world', 'oy'));
-              return true;
-            }),
-            predicate<AnalysisErrorsParams>((value) {
-              expect(value.file, join(app.path, 'lib', 'main.dart'));
-              expect(
-                value.errors.map((e) => e.code),
-                unorderedEquals(<Object?>['hello_world', 'oy']),
-              );
-              return true;
-            }),
-          ]),
+          // Using emitsThrough as depending on how fast lints are emitted,
+          // the 2 lints can be received accross two events instead of one.
+          emitsThrough(
+            isA<AnalysisErrorsParams>()
+                .having(
+                  (e) => e.file,
+                  'file',
+                  join(app.path, 'lib', 'main.dart'),
+                )
+                .having(
+                  (e) => e.errors.map((e) => e.code),
+                  'errors',
+                  unorderedEquals(<Object?>['hello_world', 'oy']),
+                ),
+          ),
         );
 
         expect(plugin.log.existsSync(), false);
