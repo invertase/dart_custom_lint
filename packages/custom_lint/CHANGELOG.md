@@ -1,4 +1,4 @@
-## [Unreleased patch]
+## 0.0.4
 
 - Fixed a bug where the command line could show IDE-only meant for debugging
 
