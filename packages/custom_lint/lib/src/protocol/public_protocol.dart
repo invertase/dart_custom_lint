@@ -71,7 +71,7 @@ class Lint {
 ///   ```dart
 ///   class MyLinter extends PluginBase {
 ///     @override
-///     Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+///     Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
 ///       LintLocation location =
 ///           resolvedUnitResult.lintLocationFromOffset(42, length: 100);
 ///     }
@@ -82,7 +82,7 @@ class Lint {
 ///   ```dart
 ///   class MyLinter extends PluginBase {
 ///     @override
-///     Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+///     Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
 ///       LintLocation location = resolvedUnitResult.lintLocationFromLines(
 ///         startLine: 1,
 ///         endLine: 2,

@@ -72,7 +72,7 @@ To create a custom lint, you will need two things:
   // This class is the one that will analyze Dart files and return lints
   class _ExampleLinter extends PluginBase {
     @override
-    Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+    Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
       // A basic lint that shows at the top of the file.
       yield Lint(
         code: 'my_custom_lint_code',

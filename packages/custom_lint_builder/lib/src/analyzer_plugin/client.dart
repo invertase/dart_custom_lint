@@ -75,11 +75,12 @@ class Client extends ClientPlugin {
     final context = builder.createContext(contextRoot: analyzerContextRoot);
 
 // TODO cancel sub
-    context.driver.results.listen((analysisResult) {
+    context.driver.results.listen((analysisResult) async {
       if (analysisResult is analyzer.ResolvedUnitResult) {
         if (analysisResult.exists) {
           channel.sendNotification(
-            _getAnalysisErrorsForUnit(analysisResult).toNotification(),
+            await _getAnalysisErrorsForUnit(analysisResult)
+                .then((e) => e.toNotification()),
           );
         }
       } else if (analysisResult is analyzer.ErrorsResult) {
@@ -92,9 +93,9 @@ class Client extends ClientPlugin {
     return context.driver;
   }
 
-  analyzer_plugin.AnalysisErrorsParams _getAnalysisErrorsForUnit(
+  Future<analyzer_plugin.AnalysisErrorsParams> _getAnalysisErrorsForUnit(
     analyzer.ResolvedUnitResult analysisResult,
-  ) {
+  ) async {
     final lineInfo = analysisResult.lineInfo;
     final source = analysisResult.content;
 
@@ -106,7 +107,8 @@ class Client extends ClientPlugin {
         ignoredCodes.contains('type=lint')
             // No need to run the plugin if lints are disabled in the file
             ? const []
-            : plugin
+            : await plugin
+                // TODO support cases where getLints is called again while the previous getLints is still pending
                 .getLints(analysisResult)
                 .where(
                   (lint) =>
@@ -281,7 +283,6 @@ extension on LintLocation {
       filePath,
       offset,
       length,
-      // Removing -1 because lineNumber/columnNumber starts at 1 instead of 0
       startLine,
       startColumn,
       endLine: endLine,
