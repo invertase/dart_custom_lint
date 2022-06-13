@@ -156,9 +156,7 @@ abstract class ClientPlugin {
   /// Return the driver being used to analyze the file with the given [path].
   AnalysisDriver? driverForPath(String path) {
     final contextRoot = contextRootContaining(path);
-    if (contextRoot == null) {
-      return null;
-    }
+    if (contextRoot == null) return null;
     return driverMap[contextRoot];
   }
 
@@ -171,13 +169,15 @@ abstract class ClientPlugin {
     if (driver is! AnalysisDriver) {
       // Return an error from the request.
       throw RequestFailure(
-          RequestErrorFactory.pluginError('Failed to analyze $path', null));
+        RequestErrorFactory.pluginError('Failed to analyze $path', null),
+      );
     }
     final result = await driver.getResult(path);
     if (result is! ResolvedUnitResult) {
       // Return an error from the request.
       throw RequestFailure(
-          RequestErrorFactory.pluginError('Failed to analyze $path', null));
+        RequestErrorFactory.pluginError('Failed to analyze $path', null),
+      );
     }
     return result;
   }
@@ -188,14 +188,18 @@ abstract class ClientPlugin {
   Future<AnalysisGetNavigationResult> handleAnalysisGetNavigation(
       AnalysisGetNavigationParams params) async {
     return AnalysisGetNavigationResult(
-        <String>[], <NavigationTarget>[], <NavigationRegion>[]);
+      <String>[],
+      <NavigationTarget>[],
+      <NavigationRegion>[],
+    );
   }
 
   /// Handle an 'analysis.handleWatchEvents' request.
   ///
   /// Throw a [RequestFailure] if the request could not be handled.
   Future<AnalysisHandleWatchEventsResult> handleAnalysisHandleWatchEvents(
-      AnalysisHandleWatchEventsParams parameters) async {
+    AnalysisHandleWatchEventsParams parameters,
+  ) async {
     for (final event in parameters.events) {
       switch (event.type) {
         case WatchEventType.ADD:
@@ -297,36 +301,14 @@ abstract class ClientPlugin {
       AnalysisUpdateContentParams parameters) async {
     final files = parameters.files;
     files.forEach((filePath, overlay) {
-      // Prepare the old overlay contents.
-      String? oldContents;
-      try {
-        if (resourceProvider.hasOverlay(filePath)) {
-          final file = resourceProvider.getFile(filePath);
-          oldContents = file.readAsStringSync();
-        }
-      } catch (_) {}
-
       // Prepare the new contents.
       String? newContents;
       if (overlay is AddContentOverlay) {
         newContents = overlay.content;
-      } else if (overlay is ChangeContentOverlay) {
-        if (oldContents == null) {
-          // The server should only send a ChangeContentOverlay if there is
-          // already an existing overlay for the source.
-          throw RequestFailure(
-              RequestErrorFactory.invalidOverlayChangeNoContent());
-        }
-        try {
-          newContents = SourceEdit.applySequence(oldContents, overlay.edits);
-          // ignore: avoid_catching_errors
-        } on RangeError {
-          throw RequestFailure(
-            RequestErrorFactory.invalidOverlayChangeInvalidEdit(),
-          );
-        }
       } else if (overlay is RemoveContentOverlay) {
         newContents = null;
+      } else {
+        throw UnsupportedError('Unknown message ${overlay.runtimeType}');
       }
 
       if (newContents != null) {
@@ -350,14 +332,18 @@ abstract class ClientPlugin {
   Future<CompletionGetSuggestionsResult> handleCompletionGetSuggestions(
       CompletionGetSuggestionsParams parameters) async {
     return CompletionGetSuggestionsResult(
-        -1, -1, const <CompletionSuggestion>[]);
+      -1,
+      -1,
+      const <CompletionSuggestion>[],
+    );
   }
 
   /// Handle an 'edit.getAssists' request.
   ///
   /// Throw a [RequestFailure] if the request could not be handled.
   Future<EditGetAssistsResult> handleEditGetAssists(
-      EditGetAssistsParams parameters) async {
+    EditGetAssistsParams parameters,
+  ) async {
     return EditGetAssistsResult(const <PrioritizedSourceChange>[]);
   }
 
@@ -367,7 +353,8 @@ abstract class ClientPlugin {
   ///
   /// Throw a [RequestFailure] if the request could not be handled.
   Future<EditGetAvailableRefactoringsResult> handleEditGetAvailableRefactorings(
-      EditGetAvailableRefactoringsParams parameters) async {
+    EditGetAvailableRefactoringsParams parameters,
+  ) async {
     return EditGetAvailableRefactoringsResult(const <RefactoringKind>[]);
   }
 
@@ -375,7 +362,8 @@ abstract class ClientPlugin {
   ///
   /// Throw a [RequestFailure] if the request could not be handled.
   Future<EditGetFixesResult> handleEditGetFixes(
-      EditGetFixesParams parameters) async {
+    EditGetFixesParams parameters,
+  ) async {
     return EditGetFixesResult(const <AnalysisErrorFixes>[]);
   }
 
@@ -414,19 +402,25 @@ abstract class ClientPlugin {
   ///
   /// Throw a [RequestFailure] if the request could not be handled.
   Future<PluginVersionCheckResult> handlePluginVersionCheck(
-      PluginVersionCheckParams parameters) async {
+    PluginVersionCheckParams parameters,
+  ) async {
     final byteStorePath = parameters.byteStorePath;
     final sdkPath = parameters.sdkPath;
     final versionString = parameters.version;
     final serverVersion = Version.parse(versionString);
     _byteStore = MemoryCachingByteStore(
-        FileByteStore(byteStorePath,
-            tempNameSuffix: DateTime.now().millisecondsSinceEpoch.toString()),
-        64 * M);
+      FileByteStore(byteStorePath,
+          tempNameSuffix: DateTime.now().millisecondsSinceEpoch.toString()),
+      64 * M,
+    );
     _sdkManager = DartSdkManager(sdkPath);
     return PluginVersionCheckResult(
-        isCompatibleWith(serverVersion), name, version, fileGlobsToAnalyze,
-        contactInfo: contactInfo);
+      isCompatibleWith(serverVersion),
+      name,
+      version,
+      fileGlobsToAnalyze,
+      contactInfo: contactInfo,
+    );
   }
 
   /// Initialize configs
@@ -485,7 +479,8 @@ abstract class ClientPlugin {
   /// changed and notifications need to be sent even when the specified files
   /// have already been analyzed.
   void sendNotificationsForSubscriptions(
-      Map<String, List<AnalysisService>> subscriptions) {
+    Map<String, List<AnalysisService>> subscriptions,
+  ) {
     subscriptions.forEach((path, services) {
       for (final service in services) {
         _sendNotificationForFile(path, service);
@@ -514,11 +509,12 @@ abstract class ClientPlugin {
   /// Add all of the files contained in the given [resource] that are not in the
   /// list of [excluded] resources to the given [driver].
   void _addFilesToDriver(
-      AnalysisDriver driver, Resource resource, List<String> excluded) {
+    AnalysisDriver driver,
+    Resource resource,
+    List<String> excluded,
+  ) {
     final path = resource.path;
-    if (excluded.contains(path)) {
-      return;
-    }
+    if (excluded.contains(path)) return;
     if (resource is File && extension(path) == '.dart') {
       driver
         ..addFile(path)

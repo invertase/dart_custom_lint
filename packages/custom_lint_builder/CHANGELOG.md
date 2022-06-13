@@ -1,3 +1,9 @@
+## 0.0.6
+
+feat!: getLints now is expected to return a `Stream<Lint>` instead of `Iterable<Lint>`
+
+fix: a bug where the lints shown by the IDE could get out of sync with the actual content of the file
+
 ## 0.0.4
 
 - Fixed a bug where the command line could show IDE-only meant for debugging

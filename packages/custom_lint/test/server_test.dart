@@ -26,7 +26,7 @@ void main(List<String> args, SendPort sendPort) {
 
 class _HelloWorldLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
     final library = resolvedUnitResult.libraryElement;
     for (final variable in library.topLevelElements) {
       yield Lint(
@@ -181,7 +181,7 @@ void main(List<String> args, SendPort sendPort) {
 
 class _HelloWorldLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
     final library = resolvedUnitResult.libraryElement;
     if (library.topLevelElements.single.name == 'fail') {
        print('Hello world');
@@ -328,7 +328,7 @@ void main(List<String> args, SendPort sendPort) {
 
 class _ReloaddLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
     final library = resolvedUnitResult.libraryElement;
     yield Lint(
       code: 'hello_reload',

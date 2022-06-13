@@ -18,7 +18,7 @@ void main(List<String> args, SendPort sendPort) {
 
 class _HelloWorldLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
     final library = resolvedUnitResult.libraryElement;
     for (final variable in library.topLevelElements) {
       yield Lint(

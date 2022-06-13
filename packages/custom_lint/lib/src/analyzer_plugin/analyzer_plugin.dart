@@ -47,6 +47,8 @@ class CustomLintPlugin extends ServerPlugin {
   @override
   String get version => '1.0.0-alpha.0';
 
+  final _overlays = <String, String>{};
+
   late final ProviderContainer _container;
 
   /// An imperative anchor for reading the current list of plugins
@@ -303,20 +305,71 @@ class CustomLintPlugin extends ServerPlugin {
   FutureOr<plugin.AnalysisUpdateContentResult> handleAnalysisUpdateContent(
     plugin.AnalysisUpdateContentParams parameters,
   ) async {
-    // TODO only update plugins that are enabled for the changed files
     // TODO why lints are emitted twice on file change?
+
+    // TODO write test for this (maybe send fake Overlay events?)
+    /// Imported from analyzer_plugin but stores the overlay result
+    /// locally instead of in the analyzer API.
+    /// We're computing the overlays on the server and caching the result
+    /// because plugins can unmount/remount at any time, so they need to
+    /// have access to the latest overlays.
+    parameters.files.forEach((filePath, overlay) {
+      // Prepare the old overlay contents.
+
+      // Prepare the new contents.
+      String? newContents;
+      if (overlay is plugin.AddContentOverlay) {
+        newContents = overlay.content;
+      } else if (overlay is plugin.ChangeContentOverlay) {
+        final oldContents = _overlays[filePath];
+        if (oldContents == null) {
+          // The server should only send a ChangeContentOverlay if there is
+          // already an existing overlay for the source.
+          throw plugin.RequestFailure(
+            plugin.RequestErrorFactory.invalidOverlayChangeNoContent(),
+          );
+        }
+        try {
+          newContents =
+              plugin.SourceEdit.applySequence(oldContents, overlay.edits);
+          // ignore: avoid_catching_errors
+        } on RangeError {
+          throw plugin.RequestFailure(
+            plugin.RequestErrorFactory.invalidOverlayChangeInvalidEdit(),
+          );
+        }
+      } else if (overlay is plugin.RemoveContentOverlay) {
+        newContents = null;
+      }
+
+      if (newContents != null) {
+        _overlays[filePath] = newContents;
+      } else {
+        _overlays.remove(filePath);
+      }
+    });
 
     final links = await _allPluginsSub.read();
     for (final link in links.entries) {
-      // TODO
+      // TODO test
       if (link.value.hasError) continue;
 
       final files = Map.fromEntries(
-        parameters.files.entries.where(
-          (entry) => _container
+        parameters.files.keys
+            // TODO test
+            .where(
+          (filePath) => _container
               .read(contextRootsForPluginProvider(link.key))
-              .any((contextRoot) => p.isWithin(contextRoot.root, entry.key)),
-        ),
+              .any((contextRoot) => p.isWithin(contextRoot.root, filePath)),
+        )
+            .map((filePath) {
+          final content = _overlays[filePath];
+          final message = content == null
+              ? plugin.RemoveContentOverlay()
+              : plugin.AddContentOverlay(content);
+
+          return MapEntry(filePath, message);
+        }),
       );
 
       // TODO is the "isNotEmpty" correct? Do we want to send empty arrays too?

@@ -25,7 +25,7 @@ void main(List<String> args, SendPort sendPort) {
 
 class _RiverpodLint extends PluginBase {
   @override
-  Iterable<Lint> getLints(ResolvedUnitResult resolvedUnitResult) sync* {
+  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
     final library = resolvedUnitResult.libraryElement;
     print('This is a print');
     final providers = library.topLevelElements
