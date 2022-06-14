@@ -1,18 +1,31 @@
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer_plugin/protocol/protocol_common.dart'
+    as analyzer_plugin;
+import 'package:analyzer_plugin/protocol/protocol_generated.dart'
+    as analyzer_plugin;
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 /// The severify of a [Lint]. This influences how the IDE shows the lint.
 enum LintSeverity {
-  /// A potential change that should be made to the code.
-  info,
+  ///  potential change that should be made to the code.
+  info._(analyzer_plugin.AnalysisErrorSeverity.INFO),
 
   /// A possible problem in the code.
-  warning,
+  warning._(analyzer_plugin.AnalysisErrorSeverity.WARNING),
 
   /// A problem in the code that is absolutely certain.
-  error
+  error._(analyzer_plugin.AnalysisErrorSeverity.ERROR);
+
+  const LintSeverity._(this._analysisErrorSeverity);
+
+  final analyzer_plugin.AnalysisErrorSeverity _analysisErrorSeverity;
+
+  /// Converts a [LintSeverity] into an [analyzer_plugin.AnalysisErrorSeverity].
+  analyzer_plugin.AnalysisErrorSeverity asAnalysisErrorSeverity() {
+    return _analysisErrorSeverity;
+  }
 }
 
 /// Informations on a possible problem/change that should be made in the user's code
@@ -26,7 +39,9 @@ class Lint {
     this.severity = LintSeverity.info,
     this.correction,
     this.url,
-  });
+    Stream<analyzer_plugin.AnalysisErrorFixes> Function(Lint lint)?
+        getAnalysisErrorFixes,
+  }) : _getAnalysisErrorFixes = getAnalysisErrorFixes;
 
   /// The severify of a [Lint]. This influences how the IDE shows the lint.
   final LintSeverity severity;
@@ -52,6 +67,28 @@ class Lint {
 
   /// The URL of a page containing documentation associated with this error.
   final String? url;
+
+  /// Converts a [Lint] into an [analyzer_plugin.AnalysisError]
+  analyzer_plugin.AnalysisError asAnalysisError() {
+    return analyzer_plugin.AnalysisError(
+      severity.asAnalysisErrorSeverity(),
+      analyzer_plugin.AnalysisErrorType.LINT,
+      location.asLocation(),
+      message,
+      code,
+      correction: correction,
+      url: url,
+      // TODO contextMessages & hasFix
+    );
+  }
+
+  final Stream<analyzer_plugin.AnalysisErrorFixes> Function(Lint self)?
+      _getAnalysisErrorFixes;
+
+  /// Obtains the list of fixes for this lint.
+  Stream<analyzer_plugin.AnalysisErrorFixes> handleGetAnalysisErrorFixes() {
+    return _getAnalysisErrorFixes?.call(this) ?? const Stream.empty();
+  }
 }
 
 /// {@template custom_lint.lint_location}
@@ -151,6 +188,19 @@ class LintLocation {
   ///
   /// Starts at 1
   final int length;
+
+  /// Converts a [LintLocation] into a [analyzer_plugin.Location].
+  analyzer_plugin.Location asLocation() {
+    return analyzer_plugin.Location(
+      filePath,
+      offset,
+      length,
+      startLine,
+      startColumn,
+      endLine: endLine,
+      endColumn: endColumn,
+    );
+  }
 }
 
 /// Utilities to convert an [Element] into a [LintLocation]

@@ -115,14 +115,13 @@ class Client extends ClientPlugin {
     if (fileIgnoredCodes.contains('type=lint')) return const Stream.empty();
 
     final analysisErrors = plugin
-        // TODO support cases where getLints is called again while the previous getLints is still pending
         .getLints(analysisResult)
         .where(
           (lint) =>
               !fileIgnoredCodes.contains(lint.code) &&
               !_isIgnored(lint, lineInfo, source),
         )
-        .map<analyzer_plugin.AnalysisError?>((e) => e.encode())
+        .map<analyzer_plugin.AnalysisError?>((e) => e.asAnalysisError())
         // ignore: avoid_types_on_closure_parameters
         .handleError((Object error, StackTrace stackTrace) =>
             _handleGetLintsError(analysisResult, error, stackTrace))
@@ -168,7 +167,9 @@ class Client extends ClientPlugin {
     return analyzer_plugin.AnalysisError(
       analyzer_plugin.AnalysisErrorSeverity.ERROR,
       analyzer_plugin.AnalysisErrorType.LINT,
-      analysisResult.lintLocationFromLines(startLine: 1, endLine: 2).encode(),
+      analysisResult
+          .lintLocationFromLines(startLine: 1, endLine: 2)
+          .asLocation(),
       'A lint plugin threw an exception',
       'custom_lint_get_lint_fail',
       contextMessages: [
@@ -188,6 +189,16 @@ class Client extends ClientPlugin {
         ),
       ],
     );
+  }
+
+  @override
+  Future<analyzer_plugin.EditGetFixesResult> handleEditGetFixes(
+    analyzer_plugin.EditGetFixesParams parameters,
+  ) async {
+    final result = await driverForPath(parameters.file)!
+        .getResult(parameters.file) as analyzer.ResolvedUnitResult;
+
+    return plugin.handleEditGetFixes(result, parameters.offset);
   }
 
   @override
@@ -290,47 +301,5 @@ extension on analyzer_plugin.ContextRoot {
     );
 
     return locator.single;
-  }
-}
-
-extension on Lint {
-  analyzer_plugin.AnalysisError encode() {
-    return analyzer_plugin.AnalysisError(
-      severity.encode(),
-      analyzer_plugin.AnalysisErrorType.LINT,
-      location.encode(),
-      message,
-      code,
-      correction: correction,
-      url: url,
-      // TODO contextMessages & hasFix
-    );
-  }
-}
-
-extension on LintSeverity {
-  analyzer_plugin.AnalysisErrorSeverity encode() {
-    switch (this) {
-      case LintSeverity.error:
-        return analyzer_plugin.AnalysisErrorSeverity.ERROR;
-      case LintSeverity.warning:
-        return analyzer_plugin.AnalysisErrorSeverity.WARNING;
-      case LintSeverity.info:
-        return analyzer_plugin.AnalysisErrorSeverity.INFO;
-    }
-  }
-}
-
-extension on LintLocation {
-  analyzer_plugin.Location encode() {
-    return analyzer_plugin.Location(
-      filePath,
-      offset,
-      length,
-      startLine,
-      startColumn,
-      endLine: endLine,
-      endColumn: endColumn,
-    );
   }
 }
