@@ -1,3 +1,7 @@
+## 0.0.7
+
+Fix a bug where the custom_lint command line may not list all lints
+
 ## 0.0.6
 
 feat!: getLints now is expected to return a `Stream<Lint>` instead of `Iterable<Lint>`

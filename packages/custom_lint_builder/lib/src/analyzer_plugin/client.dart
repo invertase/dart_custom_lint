@@ -61,6 +61,8 @@ class Client extends ClientPlugin {
   @override
   String get version => '1.0.0-alpha.0';
 
+  final _pendingGetLintsSubscriptions = <String, StreamSubscription>{};
+
   @override
   analyzer.AnalysisDriver createAnalysisDriver(
     analyzer_plugin.ContextRoot contextRoot,
@@ -75,109 +77,117 @@ class Client extends ClientPlugin {
     final context = builder.createContext(contextRoot: analyzerContextRoot);
 
 // TODO cancel sub
-    context.driver.results.listen((analysisResult) async {
-      if (analysisResult is analyzer.ResolvedUnitResult) {
-        if (analysisResult.exists) {
-          channel.sendNotification(
-            await _getAnalysisErrorsForUnit(analysisResult)
-                .then((e) => e.toNotification()),
-          );
-        }
-      } else if (analysisResult is analyzer.ErrorsResult) {
-        // TODO handle
-      } else {
-        throw UnsupportedError('Unknown result type $analysisResult');
+    context.driver.results.listen((analysisResult) {
+      if (analysisResult is! analyzer.ResolvedUnitResult ||
+          !analysisResult.exists) {
+        return;
       }
+      // TODO handle ErrorsResult
+
+      // TODO test that getLints stops being listened if a new Result is emitted
+      // before the previous getLints completes
+      _pendingGetLintsSubscriptions[analysisResult.path]?.cancel();
+
+      // ignore: cancel_subscriptions, the subscription is stored in the object and cancelled later
+      final sub = _getAnalysisErrors(analysisResult).listen(
+        (event) => channel.sendNotification(event.toNotification()),
+        onDone: () => _pendingGetLintsSubscriptions.remove(analysisResult.path),
+      );
+
+      _pendingGetLintsSubscriptions[analysisResult.path] = sub;
     });
 
     return context.driver;
   }
 
-  Future<analyzer_plugin.AnalysisErrorsParams> _getAnalysisErrorsForUnit(
+  /// Calls [PluginBase.getLints], applies `// ignore` & error handling,
+  /// and encode them.
+  ///
+  /// Using `async*` such that we can "cancel" the subscription to [PluginBase.getLints]
+  Stream<analyzer_plugin.AnalysisErrorsParams> _getAnalysisErrors(
     analyzer.ResolvedUnitResult analysisResult,
-  ) async {
+  ) {
     final lineInfo = analysisResult.lineInfo;
     final source = analysisResult.content;
+    final fileIgnoredCodes = _getAllIgnoredForFileCodes(analysisResult.content);
 
-    final ignoredCodes = _getAllIgnoredForFileCodes(analysisResult.content);
+    // Lints are disabled for the entire file, so no point to even execute `getLints`
+    if (fileIgnoredCodes.contains('type=lint')) return const Stream.empty();
 
-    try {
-      return analyzer_plugin.AnalysisErrorsParams(
-        analysisResult.path,
-        ignoredCodes.contains('type=lint')
-            // No need to run the plugin if lints are disabled in the file
-            ? const []
-            : await plugin
-                // TODO support cases where getLints is called again while the previous getLints is still pending
-                .getLints(analysisResult)
-                .where(
-                  (lint) =>
-                      !ignoredCodes.contains(lint.code) &&
-                      !_isIgnored(lint, lineInfo, source),
-                )
-                .map((e) => e.encode())
-                .toList(),
-      );
-    } catch (err, stack) {
-      final rethrownError = GetLintException(
-        error: err,
-        filePath: analysisResult.path,
-      );
+    final analysisErrors = plugin
+        // TODO support cases where getLints is called again while the previous getLints is still pending
+        .getLints(analysisResult)
+        .where(
+          (lint) =>
+              !fileIgnoredCodes.contains(lint.code) &&
+              !_isIgnored(lint, lineInfo, source),
+        )
+        .map<analyzer_plugin.AnalysisError?>((e) => e.encode())
+        // ignore: avoid_types_on_closure_parameters
+        .handleError((Object error, StackTrace stackTrace) =>
+            _handleGetLintsError(analysisResult, error, stackTrace))
+        .where((e) => e != null)
+        .cast<analyzer_plugin.AnalysisError>();
 
-      if (!_includeBuiltInLints) {
-        Error.throwWithStackTrace(rethrownError, stack);
-      }
+    return analysisErrors.toListStream().map((event) {
+      return analyzer_plugin.AnalysisErrorsParams(analysisResult.path, event);
+    });
+  }
 
-      // TODO test and handle all error cases
-      final trace = Trace.from(stack);
+  /// Re-maps uncaught errors by [PluginBase.getLints] and, if in the IDE,
+  /// shows a synthetic lint at the top of the file corresponding to the error.
+  analyzer_plugin.AnalysisError? _handleGetLintsError(
+    analyzer.ResolvedUnitResult analysisResult,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    final rethrownError = GetLintException(
+      error: error,
+      filePath: analysisResult.path,
+    );
 
-      final firstFileFrame = trace.frames.firstWhereOrNull(
-        (frame) => frame.uri.scheme == 'file',
-      );
+    // Sending the error back to the zone without rethrowing.
+    // This allows the server can correctly log the error, and the client to
+    // render the error at the top of the inspected file.
+    Zone.current.handleUncaughtError(rethrownError, stackTrace);
 
-      if (firstFileFrame == null) {
-        Error.throwWithStackTrace(rethrownError, stack);
-      }
+    if (!_includeBuiltInLints) return null;
 
-      // Sending the error back to the zone without rethrowing.
-      // This allows the server can correctly log the error, and the client to
-      // render the error at the top of the inspected file.
-      Zone.current.handleUncaughtError(rethrownError, stack);
+    // TODO test and handle all error cases
+    final trace = Trace.from(stackTrace);
 
-      final file = File.fromUri(firstFileFrame.uri);
-      final sourceFile = SourceFile.fromString(file.readAsStringSync());
+    final firstFileFrame = trace.frames.firstWhereOrNull(
+      (frame) => frame.uri.scheme == 'file',
+    );
 
-      return analyzer_plugin.AnalysisErrorsParams(
-        analysisResult.path,
-        [
-          analyzer_plugin.AnalysisError(
-            analyzer_plugin.AnalysisErrorSeverity.ERROR,
-            analyzer_plugin.AnalysisErrorType.LINT,
-            analysisResult
-                .lintLocationFromLines(startLine: 1, endLine: 2)
-                .encode(),
-            'A lint plugin threw an exception',
-            'custom_lint_get_lint_fail',
-            contextMessages: [
-              analyzer_plugin.DiagnosticMessage(
-                err.toString(),
-                analyzer_plugin.Location(
-                  firstFileFrame.library,
-                  sourceFile.getOffset(
-                    // frame location indices start at 1 not 0 so removing -1
-                    (firstFileFrame.line ?? 1) - 1,
-                    (firstFileFrame.column ?? 1) - 1,
-                  ),
-                  0,
-                  firstFileFrame.line ?? 1,
-                  firstFileFrame.column ?? 1,
-                ),
-              ),
-            ],
+    if (firstFileFrame == null) return null;
+
+    final file = File.fromUri(firstFileFrame.uri);
+    final sourceFile = SourceFile.fromString(file.readAsStringSync());
+
+    return analyzer_plugin.AnalysisError(
+      analyzer_plugin.AnalysisErrorSeverity.ERROR,
+      analyzer_plugin.AnalysisErrorType.LINT,
+      analysisResult.lintLocationFromLines(startLine: 1, endLine: 2).encode(),
+      'A lint plugin threw an exception',
+      'custom_lint_get_lint_fail',
+      contextMessages: [
+        analyzer_plugin.DiagnosticMessage(
+          error.toString(),
+          analyzer_plugin.Location(
+            firstFileFrame.library,
+            sourceFile.getOffset(
+              // frame location indices start at 1 not 0 so removing -1
+              (firstFileFrame.line ?? 1) - 1,
+              (firstFileFrame.column ?? 1) - 1,
+            ),
+            0,
+            firstFileFrame.line ?? 1,
+            firstFileFrame.column ?? 1,
           ),
-        ],
-      );
-    }
+        ),
+      ],
+    );
   }
 
   @override
@@ -188,7 +198,7 @@ class Client extends ClientPlugin {
       return driverMap.values.any((driver) => driver.hasFilesToAnalyze);
     }
 
-    while (hasPendingDriver()) {
+    while (hasPendingDriver() || _pendingGetLintsSubscriptions.isNotEmpty) {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
 
@@ -199,6 +209,40 @@ class Client extends ClientPlugin {
   Future<SetConfigResult> handleSetConfig(SetConfigParams params) async {
     _includeBuiltInLints = params.includeBuiltInLints;
     return const SetConfigResult();
+  }
+}
+
+extension<T> on Stream<T> {
+  /// Creates a [Stream] that emits a single event containing a list of all the
+  /// events from the passed stream.
+  ///
+  /// This is different from [Stream.toList] in that the returned [Stream]
+  /// supports pausing/cancelling.
+  /// In particular, if the returned stream stops being listened before the inner
+  /// stream completes, then the subscription to the inner stream will be closed.
+  Stream<List<T>> toListStream() {
+    late StreamSubscription<T> sub;
+
+    final controller = StreamController<List<T>>();
+    controller.onListen = () {
+      final ints = <T>[];
+      sub = listen(
+        ints.add,
+        onError: controller.addError,
+        onDone: () {
+          controller.add(ints);
+          controller.onCancel!();
+        },
+      );
+    };
+    controller.onPause = () => sub.pause();
+    controller.onResume = () => sub.resume();
+    controller.onCancel = () {
+      sub.cancel();
+      controller.close();
+    };
+
+    return controller.stream;
   }
 }
 
