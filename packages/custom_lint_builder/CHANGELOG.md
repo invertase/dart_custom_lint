@@ -1,3 +1,7 @@
+## 0.0.8
+
+Allow lints to emit fixes
+
 ## 0.0.7
 
 Fix a bug where the custom_lint command line may not list all lints
