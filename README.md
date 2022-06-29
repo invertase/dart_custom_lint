@@ -86,7 +86,9 @@ To create a custom lint, you will need two things:
       yield Lint(
         code: 'my_custom_lint_code',
         message: 'This is the description of our custom lint',
-        // where your lint will appear within the Dart file.
+        // Where your lint will appear within the Dart file.
+        // The following code will make appear at the top of the file (offset 0),
+        // and be 10 characters long.
         location: resolvedUnitResult.lintLocationFromOffset(0, length: 10),
       );
     }
