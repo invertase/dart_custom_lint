@@ -24,7 +24,7 @@ abstract class PluginBase {
       await getLints(resolvedUnitResult)
           .where((lint) =>
               offset >= lint.location.offset &&
-              offset < lint.location.offset + lint.location.length)
+              offset <= lint.location.offset + lint.location.length)
           .asyncExpand((lint) => lint.handleGetAnalysisErrorFixes())
           .toList(),
     );
