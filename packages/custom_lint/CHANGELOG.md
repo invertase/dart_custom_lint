@@ -1,3 +1,7 @@
+## Unreleased
+
+Lint fixes can now be used when placing the cursor on the last character of a lint
+
 ## 0.0.8
 
 Allow lints to emit fixes

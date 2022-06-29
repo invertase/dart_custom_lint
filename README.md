@@ -35,6 +35,15 @@ That includes:
   If your plugin somehow throws or print debug messages, custom_lint
   will generate a log file with the messages/errors.
 
+## Index
+
+- [About](#about)
+- [Index](#index)
+- [Usage](#usage)
+  - [Creating a custom lint package](#creating-a-custom-lint-package)
+  - [Using our custom lint package in an application](#using-our-custom-lint-package-in-an-application)
+  - [Obtaining the list of lints in the CI](#obtaining-the-list-of-lints-in-the-ci)
+
 ## Usage
 
 Using custom_lint is split in two parts:
@@ -123,7 +132,7 @@ see our custom lints in their Dart files:
 
 ![screenshot of our custom lints in the IDE](https://raw.githubusercontent.com/invertase/dart_custom_lint/main/resources/lint_showcase.png?token=GHSAT0AAAAAABKV7FKIJQP5CKCH3R74IPAYYSZFGZQ)
 
-#### Obtaining the list of lints in the CI
+### Obtaining the list of lints in the CI
 
 Unfortunately, running `dart analyze` does not pick up our newly defined lints.  
 We need a separate command for this.
