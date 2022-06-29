@@ -87,10 +87,7 @@ To create a custom lint, you will need two things:
         code: 'my_custom_lint_code',
         message: 'This is the description of our custom lint',
         // where your lint will appear within the Dart file.
-        location: LintLocation.fromOffsets(
-          offset: 0,
-          length: 10,
-        ),
+        location: resolvedUnitResult.lintLocationFromOffset(0, length: 10),
       );
     }
   }
