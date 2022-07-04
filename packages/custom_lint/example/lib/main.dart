@@ -1,7 +1,7 @@
 import 'package:riverpod/riverpod.dart';
 
 void main() {
-  print('hello wolrd');
+  print('hello world');
 }
 
 class Main {}
