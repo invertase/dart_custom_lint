@@ -1,0 +1,15 @@
+name: example_lint
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: '>=2.16.0 <3.0.0'
+
+dependencies:
+  analyzer: ^4.0.0
+  custom_lint_builder:
+    path: ../../../custom_lint_builder
+
+dependency_overrides:
+  custom_lint:
+    path: ../../../custom_lint

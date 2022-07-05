@@ -7,6 +7,15 @@
   <a href="https://github.com/invertase/dart_custom_lint/blob/main/LICENSE">License</a>
 </p>
 
+## Index
+
+- [About](#about)
+- [Index](#index)
+- [Usage](#usage)
+  - [Creating a custom lint package](#creating-a-custom-lint-package)
+  - [Using our custom lint package in an application](#using-our-custom-lint-package-in-an-application)
+  - [Obtaining the list of lints in the CI](#obtaining-the-list-of-lints-in-the-ci)
+
 ## About
 
 Lint rules are a powerful way to improve the maintainability of a project.
@@ -35,15 +44,6 @@ That includes:
   If your plugin somehow throws or print debug messages, custom_lint
   will generate a log file with the messages/errors.
 
-## Index
-
-- [About](#about)
-- [Index](#index)
-- [Usage](#usage)
-  - [Creating a custom lint package](#creating-a-custom-lint-package)
-  - [Using our custom lint package in an application](#using-our-custom-lint-package-in-an-application)
-  - [Obtaining the list of lints in the CI](#obtaining-the-list-of-lints-in-the-ci)
-
 ## Usage
 
 Using custom_lint is split in two parts:
@@ -61,7 +61,7 @@ To create a custom lint, you will need two things:
   # pubspec.yaml
   name: my_custom_lint_package
   environment:
-    sdk: ">=2.16.0 <3.0.0"
+    sdk: '>=2.16.0 <3.0.0'
 
   dependencies:
     # we will use analyzer for inspecting Dart files
@@ -118,7 +118,7 @@ For users to run custom_lint packages, there are a few steps:
   # The pubspec.yaml of an application using our lints
   name: example_app
   environment:
-    sdk: ">=2.16.0 <3.0.0"
+    sdk: '>=2.16.0 <3.0.0'
 
   dev_dependencies:
     custom_lint:
