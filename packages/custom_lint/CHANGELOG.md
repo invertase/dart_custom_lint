@@ -1,6 +1,7 @@
-## Unreleased
+## 0.0.9
 
-Lint fixes can now be used when placing the cursor on the last character of a lint
+- Lint fixes can now be used when placing the cursor on the last character of a lint
+- improve pub score
 
 ## 0.0.8
 
