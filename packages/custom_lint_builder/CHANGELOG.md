@@ -1,3 +1,7 @@
+## 0.0.9+1
+
+Update dependency
+
 ## 0.0.9
 
 - Lint fixes can now be used when placing the cursor on the last character of a lint
