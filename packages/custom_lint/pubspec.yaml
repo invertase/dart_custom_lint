@@ -1,5 +1,5 @@
 name: custom_lint
-version: 0.0.9
+version: 0.0.9+1
 description: Lint rules are a powerful way to improve the maintainability of a project. The more, the merrier! But while Dart offers a wide variety of lint rules by default, it cannot reasonably include every possible lint. For example, Dart does not include lints related to third-party packages. Custom_lint fixes that by allowing package authors to write custom lint rules.
 repository: https://github.com/invertase/dart_custom_lint
 
