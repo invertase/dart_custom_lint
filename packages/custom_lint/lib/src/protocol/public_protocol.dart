@@ -7,7 +7,7 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart'
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
-/// The severify of a [Lint]. This influences how the IDE shows the lint.
+/// The severity of a [Lint]. This influences how the IDE shows the lint.
 enum LintSeverity {
   ///  potential change that should be made to the code.
   info._(analyzer_plugin.AnalysisErrorSeverity.INFO),
@@ -28,10 +28,10 @@ enum LintSeverity {
   }
 }
 
-/// Informations on a possible problem/change that should be made in the user's code
+/// Information on a possible problem/change that should be made in the user's code
 @immutable
 class Lint {
-  /// Informations on a possible problem/change that should be made in the user's code
+  /// Information on a possible problem/change that should be made in the user's code
   const Lint({
     required this.code,
     required this.message,
@@ -43,7 +43,7 @@ class Lint {
         getAnalysisErrorFixes,
   }) : _getAnalysisErrorFixes = getAnalysisErrorFixes;
 
-  /// The severify of a [Lint]. This influences how the IDE shows the lint.
+  /// The severity of a [Lint]. This influences how the IDE shows the lint.
   final LintSeverity severity;
 
   /// The message to be displayed for this error. The message should indicate
@@ -226,7 +226,7 @@ extension LineLocationUtils on Element {
   }
 }
 
-/// Extennsions for obtainining a [LintLocation] from a [FileResult].
+/// Extensions for obtainining a [LintLocation] from a [FileResult].
 extension LintLocationFileResultExtension on FileResult {
   /// Creates a [LintLocation] from an offset + length.
   LintLocation lintLocationFromOffset(int offset, {required int length}) {
@@ -246,7 +246,7 @@ extension LintLocationFileResultExtension on FileResult {
     );
   }
 
-  /// Creates a [LintLocation] from an line and column informations.
+  /// Creates a [LintLocation] from a line and column.
   LintLocation lintLocationFromLines({
     required int startLine,
     int? startColumn,

@@ -16,7 +16,7 @@ import 'protocol/internal_protocol.dart';
 const _pluginName = 'custom_lint';
 const _analyzerPluginProtocolVersion = '1.0.0-alpha.0';
 
-/// A runner for programmatically interact with a plugin.
+/// A runner for programmatically interacting with a plugin.
 class CustomLintRunner {
   /// Creates a runner from a [ServerPlugin].
   CustomLintRunner(this._server, this._workingDirectory) {
@@ -31,7 +31,7 @@ class CustomLintRunner {
   late final _receivePort = ReceivePort();
   late final _clientChannel = ClientIsolateChannel(_receivePort.sendPort);
 
-  /// The connection between the server and pluginsÌ
+  /// The connection between the server and the plugin.
   late final channel = ServerIsolateChannel(_receivePort);
 
   late final _resourceProvider = _server.resourceProvider;
@@ -66,7 +66,7 @@ class CustomLintRunner {
   //     .map((file) => file.path)
   //     .toList();
 
-  /// Starts the plugin and send the necessary requests for initializing it.
+  /// Starts the plugin and sends the necessary requests for initializing it.
   Future<void> initialize() async {
     await channel.sendRequest(
       PluginVersionCheckParams(
@@ -87,7 +87,7 @@ class CustomLintRunner {
     );
   }
 
-  /// Obtains the list of lints for the current workspace
+  /// Obtains the list of lints for the current workspace.
   Future<List<AnalysisErrorsParams>> getLints() async {
     final result = <String, AnalysisErrorsParams>{};
 
