@@ -16,6 +16,10 @@
   - [Using our custom lint package in an application](#using-our-custom-lint-package-in-an-application)
   - [Obtaining the list of lints in the CI](#obtaining-the-list-of-lints-in-the-ci)
 
+## Tutorial
+
+You can read the latest [blog post](https://invertase.link/b18R) or watch the [advanced use case with custom_lint video](https://invertase.link/RNoz)
+
 ## About
 
 Lint rules are a powerful way to improve the maintainability of a project.
