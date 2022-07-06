@@ -1,6 +1,6 @@
 name: custom_lint
 version: 0.0.9
-description: Lint rules are a powerful way to improve the maintainability of a project. Custom_lint fixes that by allowing package authors to write custom lint rules.
+description: Lint rules are a powerful way to improve the maintainability of a project. Custom Lint allows package authors and developers to easily write custom lint rules.
 repository: https://github.com/invertase/dart_custom_lint
 
 environment:
