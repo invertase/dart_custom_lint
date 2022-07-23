@@ -322,15 +322,35 @@ final allPluginLinksProvider =
 });
 
 Pubspec _loadPubspecAt(String packagePath) {
-  final pubspecFile = File(p.join(packagePath, 'pubspec.yaml'));
-  if (!pubspecFile.existsSync()) {
-    throw StateError('No pubspec.yaml found at $packagePath.');
-  }
+  final pubspecFile = _loadRawPubspecAt(packagePath);
 
   return Pubspec.parse(
     pubspecFile.readAsStringSync(),
     sourceUrl: pubspecFile.uri,
   );
+}
+
+File _loadRawPubspecAt(String packagePath) {
+  final pubspecFile = File(p.join(packagePath, 'pubspec.yaml'));
+  if (pubspecFile.existsSync()) {
+    return pubspecFile;
+  }
+
+  final pathComponents = p.split(packagePath);
+  final pathsToCheck = List.generate(
+    pathComponents.length,
+    (index) => pathComponents.take(pathComponents.length - index),
+  );
+
+  for (final path in pathsToCheck) {
+    final pubspecPath = p.joinAll([...path, 'pubspec.yaml']);
+    final pfile = File(pubspecPath);
+    if (pfile.existsSync()) {
+      return pfile;
+    }
+  }
+
+  throw StateError('No pubspec.yaml found at $packagePath.');
 }
 
 extension on Pubspec {
