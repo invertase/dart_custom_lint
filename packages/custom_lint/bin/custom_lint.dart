@@ -68,7 +68,7 @@ Future<int> main() async {
     stdout.writeln('No issues found!');
   }
 
-  return code;
+  exit(code);
 }
 
 extension on AnalysisErrorsParams {
