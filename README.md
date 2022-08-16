@@ -144,7 +144,7 @@ To do that, users of our custom lint package can run inside the application the 
 
 ```sh
 $ dart run custom_lint
-  lib/main.dart:0:0 • This is the description of our custom lint • my_custom_lint_code
+  lib/main.dart:0:0 • This is the description of our custom lint • my_custom_lint_code • ERROR
 ```
 
 If you are working on a Flutter project, run `flutter pub run custom_lint` instead.

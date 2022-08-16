@@ -51,7 +51,7 @@ Future<int> main() async {
           code = -1;
           stdout.writeln(
             '  $relativeFilePath:${lint.location.startLine}:${lint.location.startColumn}'
-            ' • ${lint.message} • ${lint.code}',
+            ' • ${lint.message} • ${lint.code} • ${lint.severity.name}',
           );
         }
       }
