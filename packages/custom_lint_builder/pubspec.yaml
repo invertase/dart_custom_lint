@@ -9,10 +9,12 @@ environment:
 dependencies:
   analyzer: ^4.0.0
   analyzer_plugin: ^0.10.0
+  ansi_styles: ^0.3.2+1
   collection: ^1.16.0
   # Using tight constraints as custom_lint_builder communicate with each-other
   # using a specific contract
   custom_lint: 0.0.9+1
+  hotreloader: ^3.0.5
   meta: ^1.7.0
   package_config: ^2.0.2
   path: ^1.8.0
@@ -21,4 +23,5 @@ dependencies:
   recase: ^4.0.0
   source_span: ^1.8.0
   stack_trace: ^1.10.0
+  watcher: ^1.0.1
  
