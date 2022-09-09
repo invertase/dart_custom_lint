@@ -88,14 +88,13 @@ class CustomLintRunner {
   }
 
   /// Obtains the list of lints for the current workspace.
-  Future<List<AnalysisErrorsParams>> getLints() async {
+  Future<List<AnalysisErrorsParams>> getLints({required bool reload}) async {
     final result = <String, AnalysisErrorsParams>{};
 
     StreamSubscription? sub;
     try {
       sub = channel.lints.listen((event) => result[event.file] = event);
-
-      await channel.sendRequest(const AwaitAnalysisDoneParams());
+      await channel.sendRequest(AwaitAnalysisDoneParams(reload: reload));
 
       return result.values.toList()..sort((a, b) => a.file.compareTo(b.file));
     } finally {

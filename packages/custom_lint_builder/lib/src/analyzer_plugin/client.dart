@@ -62,12 +62,13 @@ class Client extends ClientPlugin {
   String get version => '1.0.0-alpha.0';
 
   final _pendingGetLintsSubscriptions = <String, StreamSubscription>{};
+  final _lastResolvedUnits = <String, analyzer.ResolvedUnitResult>{};
 
   @override
   analyzer.AnalysisDriver createAnalysisDriver(
     analyzer_plugin.ContextRoot contextRoot,
   ) {
-    final analyzerContextRoot = contextRoot.asAnalayzerContextRoot(
+    final analyzerContextRoot = contextRoot.asAnalyzerContextRoot(
       resourceProvider: resourceProvider,
     );
 
@@ -87,7 +88,7 @@ class Client extends ClientPlugin {
       // TODO test that getLints stops being listened if a new Result is emitted
       // before the previous getLints completes
       _pendingGetLintsSubscriptions[analysisResult.path]?.cancel();
-
+      _lastResolvedUnits[analysisResult.path] = analysisResult;
       // ignore: cancel_subscriptions, the subscription is stored in the object and cancelled later
       final sub = _getAnalysisErrors(analysisResult).listen(
         (event) => channel.sendNotification(event.toNotification()),
@@ -205,14 +206,20 @@ class Client extends ClientPlugin {
   Future<AwaitAnalysisDoneResult> handleAwaitAnalysisDone(
     AwaitAnalysisDoneParams parameters,
   ) async {
+    if (parameters.reload) {
+      print('Reloading lint results');
+      reLint();
+    }
     bool hasPendingDriver() {
       return driverMap.values.any((driver) => driver.hasFilesToAnalyze);
     }
 
     while (hasPendingDriver() || _pendingGetLintsSubscriptions.isNotEmpty) {
+      print('pending: $_pendingGetLintsSubscriptions');
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
 
+    print('Sending result');
     return const AwaitAnalysisDoneResult();
   }
 
@@ -220,6 +227,21 @@ class Client extends ClientPlugin {
   Future<SetConfigResult> handleSetConfig(SetConfigParams params) async {
     _includeBuiltInLints = params.includeBuiltInLints;
     return const SetConfigResult();
+  }
+
+  /// A hook to re-lint files when the linter itself has potentially changed due to hot-reload
+  @override
+  void reLint() {
+    for (final unit in _lastResolvedUnits.entries) {
+      print('analyzing ${unit.key}');
+      _pendingGetLintsSubscriptions[unit.key]?.cancel();
+      // ignore: cancel_subscriptions, the subscription is stored in the object and cancelled later
+      final sub = _getAnalysisErrors(unit.value).listen(
+        (event) => channel.sendNotification(event.toNotification()),
+        onDone: () => _pendingGetLintsSubscriptions.remove(unit.key),
+      );
+      _pendingGetLintsSubscriptions[unit.key] = sub;
+    }
   }
 }
 
@@ -290,7 +312,7 @@ Set<String> _getAllIgnoredForFileCodes(String source) {
 }
 
 extension on analyzer_plugin.ContextRoot {
-  analyzer.ContextRoot asAnalayzerContextRoot({
+  analyzer.ContextRoot asAnalyzerContextRoot({
     required analyzer.ResourceProvider resourceProvider,
   }) {
     final locator =

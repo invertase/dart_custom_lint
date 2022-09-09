@@ -153,6 +153,11 @@ abstract class ServerPlugin {
     AwaitAnalysisDoneParams parameters,
   );
 
+  /// Requests a forced reload
+  Future<ForceReloadResult> handleForcedReload(
+    ForceReload parameters,
+  );
+
   /// Handle a 'plugin.shutdown' request. Subclasses can override this method to
   /// perform any required clean-up, but cannot prevent the plugin from shutting
   /// down.
@@ -197,6 +202,10 @@ abstract class ServerPlugin {
   Future<Response?> _getResponse(Request request, int requestTime) async {
     ResponseResult? result;
     switch (request.method) {
+      case ForceReload.key:
+        final params = ForceReload.fromRequest(request);
+        result = await handleForcedReload(params);
+        break;
       case AwaitAnalysisDoneParams.key:
         final params = AwaitAnalysisDoneParams.fromRequest(request);
         result = await handleAwaitAnalysisDone(params);

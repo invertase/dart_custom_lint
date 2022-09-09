@@ -1,13 +1,6 @@
-import 'package:custom_lint_builder/test.dart';
+import 'dart:io';
+import 'package:custom_lint/basic_runner.dart';
 
-import 'custom_lint.dart';
-
-void main() {
-  runPlugin(
-    () => PluginConfiguration(
-      paths: ['../lib/main.dart'],
-      basePath: '../',
-      plugin: RiverpodLint(),
-    ),
-  );
+Future<int> main() {
+  return runCustomLintOnDirectory(Directory.current.parent);
 }

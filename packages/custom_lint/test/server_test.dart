@@ -232,7 +232,7 @@ class _HelloWorldLint extends PluginBase {
         ]),
       );
 
-      final lints = await runner.getLints();
+      final lints = await runner.getLints(reload: false);
 
       expect(
         lints.map((e) => e.file),

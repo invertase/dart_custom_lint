@@ -23,6 +23,7 @@ import 'package:analyzer_plugin/src/protocol/protocol_internal.dart';
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/utilities/null_string_sink.dart';
 import 'package:analyzer_plugin/utilities/subscriptions/subscription_manager.dart';
+import 'package:hotreloader/hotreloader.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 
@@ -501,10 +502,27 @@ abstract class ClientPlugin {
   }
 
   /// Start this plugin by listening to the given communication [channel].
-  void start(PluginCommunicationChannel channel) {
+  Future<void> start(PluginCommunicationChannel channel) async {
     _channel = channel;
     _channel.listen(_onRequest, onError: onError, onDone: onDone);
+
+// ignore: unnecessary_const, do_not_use_environment
+    const _release = const bool.fromEnvironment('dart.vm.product');
+    if (!_release) {
+      // Reloads the code
+      _reloader = await HotReloader.create(onAfterReload: (c) {
+        if (c.result == HotReloadResult.Succeeded) {
+          _channel.sendNotification(
+              const AutoReloadNotification().toNotification());
+        }
+      });
+    }
   }
+
+  late HotReloader _reloader;
+
+  /// A hook to re-lint files when the linter itself has potentially changed due to hot-reload
+  void reLint() {}
 
   /// Add all of the files contained in the given [resource] that are not in the
   /// list of [excluded] resources to the given [driver].
@@ -535,6 +553,10 @@ abstract class ClientPlugin {
   Future<Response?> _getResponse(Request request, int requestTime) async {
     ResponseResult? result;
     switch (request.method) {
+      case ForceReload.key:
+        await _reloader.reloadCode();
+        result = const ForceReloadResult();
+        break;
       case AwaitAnalysisDoneParams.key:
         final params = AwaitAnalysisDoneParams.fromRequest(request);
         result = await handleAwaitAnalysisDone(params);

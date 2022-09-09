@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
-import 'package:async/async.dart' show StreamGroup;
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -13,33 +12,10 @@ import '../protocol/internal_protocol.dart';
 import 'result.dart';
 import 'server_isolate_channel.dart';
 
-final _pluginSourceChangeProvider =
-    StreamProvider.autoDispose.family<void, Uri>((ref, pluginRootUri) {
-  final pluginRootPath = pluginRootUri.toFilePath();
-
-  /// Don't watch source unless in development.
-  // TODO test
-  if (pluginRootPath.contains('.pub-cache')) return const Stream.empty();
-
-  return StreamGroup.merge([
-    Directory(p.join(pluginRootPath, 'lib')).watch(recursive: true),
-    Directory(p.join(pluginRootPath, 'bin')).watch(recursive: true),
-    // watch package dir but not recursively, for pubspec/analysis changes
-    File(p.join(pluginRootPath, 'pubspec.yaml')).watch(recursive: true),
-    File(
-      p.join(pluginRootPath, '.dart_tool', 'package_config.json'),
-    ).watch(recursive: true),
-    // TODO possibly watch package dependencies too, for when working on custom_lint
-  ]);
-});
-
 final _pluginLinkProvider = FutureProvider.autoDispose
     .family<PluginLink, Uri>((ref, pluginRootUri) async {
-  ref.watch(_pluginSourceChangeProvider(pluginRootUri));
-
   final pluginName = ref
       .watch(pluginMetaProvider(pluginRootUri).select((value) => value.name));
-
   final receivePort = ReceivePort();
   ref.onDispose(receivePort.close);
 
