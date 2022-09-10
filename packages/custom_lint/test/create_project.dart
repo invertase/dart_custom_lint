@@ -44,7 +44,7 @@ dependencies:
   );
 }
 
-Directory creatLintUsage({
+Directory createLintUsage({
   Map<String, Uri> plugins = const {},
   Map<String, String> source = const {},
   required String name,

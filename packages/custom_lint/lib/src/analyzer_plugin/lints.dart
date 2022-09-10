@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:analyzer_plugin/protocol/protocol_common.dart' as plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
@@ -104,11 +105,18 @@ final _pluginNotStartedLintProvider = Provider.autoDispose
   return errors;
 });
 
+final invalidateLintsProvider =
+    Provider.autoDispose((ref) => Random().nextDouble());
+
 /// The list of lints per Dart Library emitted by a plugin, including
 /// built-in lints such as whether the plugin as started or not.
 final lintsForPluginProvider = StreamProvider.autoDispose
     .family<Map<String, plugin.AnalysisErrorsParams>, Uri>(
         (ref, linkKey) async* {
+  ref.watch(invalidateLintsProvider);
+
+  ref.state = const AsyncValue.loading();
+  print('Rebuilding');
   if (ref.watch(includeBuiltInLintsProvider)) {
     final pluginNotStartedLint =
         ref.watch(_pluginNotStartedLintProvider(linkKey));
@@ -155,9 +163,11 @@ final allLintsProvider =
         final previousLints = previous?.asData?.value;
         // We voluntarily treat "loading" as null, to clear lints during
         // plugin restart
-        final lints = next.isLoading ? null : next.asData?.value;
+        final lints =
+            next.isRefreshing || next.isLoading ? null : next.asData?.value;
         final allFiles = {...?lints?.keys, ...?previousLints?.keys};
 
+        print('Lints for file ${previous.runtimeType}');
         for (final fileToUpdate in allFiles) {
           if (previousLints?[fileToUpdate] == lints?[fileToUpdate]) continue;
 
@@ -172,6 +182,7 @@ final allLintsProvider =
             },
           ).toList();
 
+          print('Lints for file $fileToUpdate');
           ref.state = {
             ...ref.state,
             fileToUpdate:

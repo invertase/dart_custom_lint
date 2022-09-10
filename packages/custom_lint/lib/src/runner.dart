@@ -95,7 +95,6 @@ class CustomLintRunner {
     try {
       sub = channel.lints.listen((event) => result[event.file] = event);
       await channel.sendRequest(AwaitAnalysisDoneParams(reload: reload));
-
       return result.values.toList()..sort((a, b) => a.file.compareTo(b.file));
     } finally {
       await sub?.cancel();

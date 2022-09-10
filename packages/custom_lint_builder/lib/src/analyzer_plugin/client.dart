@@ -207,7 +207,6 @@ class Client extends ClientPlugin {
     AwaitAnalysisDoneParams parameters,
   ) async {
     if (parameters.reload) {
-      print('Reloading lint results');
       reLint();
     }
     bool hasPendingDriver() {
@@ -215,11 +214,9 @@ class Client extends ClientPlugin {
     }
 
     while (hasPendingDriver() || _pendingGetLintsSubscriptions.isNotEmpty) {
-      print('pending: $_pendingGetLintsSubscriptions');
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
 
-    print('Sending result');
     return const AwaitAnalysisDoneResult();
   }
 
@@ -233,11 +230,12 @@ class Client extends ClientPlugin {
   @override
   void reLint() {
     for (final unit in _lastResolvedUnits.entries) {
-      print('analyzing ${unit.key}');
       _pendingGetLintsSubscriptions[unit.key]?.cancel();
       // ignore: cancel_subscriptions, the subscription is stored in the object and cancelled later
       final sub = _getAnalysisErrors(unit.value).listen(
-        (event) => channel.sendNotification(event.toNotification()),
+        (event) {
+          channel.sendNotification(event.toNotification());
+        },
         onDone: () => _pendingGetLintsSubscriptions.remove(unit.key),
       );
       _pendingGetLintsSubscriptions[unit.key] = sub;

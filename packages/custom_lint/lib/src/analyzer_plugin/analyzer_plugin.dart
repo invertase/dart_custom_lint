@@ -402,6 +402,9 @@ class CustomLintPlugin extends ServerPlugin {
   Future<AwaitAnalysisDoneResult> handleAwaitAnalysisDone(
     AwaitAnalysisDoneParams parameters,
   ) async {
+    if (parameters.reload) {
+      _container.refresh(invalidateLintsProvider);
+    }
     await _requestAllPlugins(parameters);
     return const AwaitAnalysisDoneResult();
   }
@@ -412,6 +415,7 @@ class CustomLintPlugin extends ServerPlugin {
     ForceReload parameters,
   ) async {
     await _requestAllPlugins(parameters);
+
     return const ForceReloadResult();
   }
 

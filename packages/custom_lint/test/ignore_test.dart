@@ -49,7 +49,7 @@ void main() {
       main: source,
     );
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': '''
 void fn() {}
@@ -112,7 +112,7 @@ void fn3() {}
       main: source,
     );
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': '''
 // ignore_for_file: foo, some comment
@@ -168,7 +168,7 @@ void fn3() {}
       main: source,
     );
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': '''
 // ignore_for_file: type=lint, some comment
