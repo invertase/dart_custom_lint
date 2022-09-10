@@ -49,8 +49,7 @@ That includes:
   will generate a log file with the messages/errors.
 - Support for debugging with the `dart` debugger or command line with hot reload.
   This mode reports errors in the command line and keeps the analyzed files in memory.
-  It directly reloads your linter and test files, without having to restart a plugin. Currently it does not support
-  reporting lints to the IDE.
+  It directly reloads your linter and test files, without having to restart a plugin.
 
 ## Usage
 
@@ -83,11 +82,11 @@ To create a custom lint, you will need two things:
   ```dart
   // This is the entrypoint of our custom linter
   void main(List<String> args, SendPort sendPort) {
-    startPlugin(sendPort, ExampleLinter());
+    startPlugin(sendPort, _ExampleLinter());
   }
 
   // This class is the one that will analyze Dart files and return lints
-  class ExampleLinter extends PluginBase {
+  class _ExampleLinter extends PluginBase {
     @override
     Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
       // A basic lint that shows at the top of the file.
@@ -160,23 +159,19 @@ If you are working on a Flutter project, run `flutter pub run custom_lint` inste
 - create a `bin/custom_lint_debug.dart` file next to `bin/custom_lint.dart` with the following:
 
   ```dart
-  import 'package:custom_lint_builder/test.dart';
-
-  import 'custom_lint.dart';
+  import 'dart:io';
+  import 'package:custom_lint/basic_runner.dart';
 
   void main() {
-    runPlugin(
-      () => PluginConfiguration(
-        paths: ['../lib/main.dart'], // Path to a test file
-        basePath: '../', // Path to the root of the test files dart package
-        plugin: ExampleLinter(), // Your linter
-      ),
-    );
+    runCustomLintOnDirectory(Directory('/path/to/directory/to/run/linter/on'));
   }
 
   ```
-Now run via a normal dart run configuration or from the command line. 
-This will watch changes to both your linter code and test files and reanalyze / hot-reload your code as needed. 
+
+Now you can run/test the custom lints packages you are using: 
+ * Via a normal dart run configuration from your IDE
+ * From the command line with `dart --enable-vm-service path/to/custom_lint_debug.dart`  
+This will watch changes to both your linter code and test files and reanalyze / hot-reload your code as needed.
 Print/Exception statements will show in the console as well as a listing of the lints found in each of your files. 
 
 ---
