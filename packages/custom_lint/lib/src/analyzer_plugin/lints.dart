@@ -105,6 +105,7 @@ final _pluginNotStartedLintProvider = Provider.autoDispose
   return errors;
 });
 
+/// Causes the lint providers to recompute when the plugin has been hot-reloaded
 final invalidateLintsProvider =
     Provider.autoDispose((ref) => Random().nextDouble());
 
@@ -115,8 +116,6 @@ final lintsForPluginProvider = StreamProvider.autoDispose
         (ref, linkKey) async* {
   ref.watch(invalidateLintsProvider);
 
-  ref.state = const AsyncValue.loading();
-  print('Rebuilding');
   if (ref.watch(includeBuiltInLintsProvider)) {
     final pluginNotStartedLint =
         ref.watch(_pluginNotStartedLintProvider(linkKey));
@@ -163,11 +162,13 @@ final allLintsProvider =
         final previousLints = previous?.asData?.value;
         // We voluntarily treat "loading" as null, to clear lints during
         // plugin restart
-        final lints =
-            next.isRefreshing || next.isLoading ? null : next.asData?.value;
+        final lints = next.isRefreshing ||
+                next.isLoading ||
+                (previous?.isRefreshing ?? false)
+            ? null
+            : next.asData?.value;
         final allFiles = {...?lints?.keys, ...?previousLints?.keys};
 
-        print('Lints for file ${previous.runtimeType}');
         for (final fileToUpdate in allFiles) {
           if (previousLints?[fileToUpdate] == lints?[fileToUpdate]) continue;
 
@@ -182,7 +183,6 @@ final allLintsProvider =
             },
           ).toList();
 
-          print('Lints for file $fileToUpdate');
           ref.state = {
             ...ref.state,
             fileToUpdate:

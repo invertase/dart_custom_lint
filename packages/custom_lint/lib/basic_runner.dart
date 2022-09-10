@@ -88,7 +88,7 @@ Future<int> runCustomLintOnDirectory(Directory dir) async {
     runner.channel
       ..responseErrors.listen((event) => code = -1)
       ..pluginErrors.listen((event) => code = -1)
-      ..notifications.listen((event) {
+      ..notifications.listen((event) async {
         if (!_release) {
           switch (event.event) {
             case PrintNotification.key:
@@ -97,7 +97,9 @@ Future<int> runCustomLintOnDirectory(Directory dir) async {
               break;
             case AutoReloadNotification.key:
               stdout.writeln('Re-linting...');
-              lint();
+              await lint();
+              stdout.writeln(
+                  '\nCustom lint runner commands:\nr: Force re-lint\nq: Quit\n\n');
               break;
           }
         }
@@ -111,15 +113,13 @@ Future<int> runCustomLintOnDirectory(Directory dir) async {
       // Listen for reload on debug builds
       late StreamSubscription sub;
       sub = stdin.listen((d) async {
-        stdout.writeln(
-            '\nCustom lint runner commands:\nr: Force re-lint\nq: Quit\n\n');
         final input = utf8.decode(d);
         if (input.contains('r\n')) {
           stdout.writeln('Manual Reload...');
           await runner.channel.sendRequest(ForceReload());
         } else if (input.contains('q\n')) {
           await sub.cancel();
-          completer.complete(code);
+          exit(code);
         }
       });
 
