@@ -20,13 +20,14 @@ bool _isProvider(DartType type) {
 }
 
 void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, RiverpodLint());
+  startPlugin(sendPort, _RiverpodLint());
 }
 
-class RiverpodLint extends PluginBase {
+class _RiverpodLint extends PluginBase {
   @override
   Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
     final library = resolvedUnitResult.libraryElement;
+    print('This is a print');
     final providers = library.topLevelElements
         .whereType<VariableElement>()
         .where((e) => !e.isFinal)
@@ -34,7 +35,8 @@ class RiverpodLint extends PluginBase {
         .toList();
 
     for (final provider in providers) {
-      if (provider.name == 'othe2') throw StateError('Nani?');
+      if (provider.name == 'fail') throw StateError('Nani?');
+
       yield Lint(
         code: 'riverpod_final_provider',
         message: 'Providers should always be declared as final',
