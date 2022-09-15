@@ -50,14 +50,21 @@ final _pluginLinkProvider = FutureProvider.autoDispose
     p.join(pluginRootPath, 'bin', 'custom_lint.dart'),
   );
 
+  var packageConfigPath =
+      p.join(pluginRootPath, '.dart_tool', 'package_config.json');
+  if (!File(packageConfigPath).existsSync()) {
+    // Fall back to the packageConfig of the package depending on the custom lint (fixes the git dependency problem)
+    // Requires that all the dependencies of the custom lint are at least dev_dependencies of the package depending on it,
+    // which should be the case unless the custom lint is using a dev_dependency in its code that should be a regular dependency
+    packageConfigPath = p.join('.dart_tool', 'package_config.json');
+  }
+
   final isolate = await Isolate.spawnUri(
     mainUri,
     const [],
     receivePort.sendPort,
-    // TODO assert this file exists and show a nice error message if not
-    packageConfig: Uri.file(
-      p.join(pluginRootPath, '.dart_tool', 'package_config.json'),
-    ),
+
+    packageConfig: Uri.file(packageConfigPath),
     // TODO test error in main (outside of runZonedGuarded)
     debugName: pluginName,
     onError: receivePort.sendPort,
