@@ -1,3 +1,4 @@
+import 'package:analyzer/dart/analysis/context_locator.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/overlay_file_system.dart';
@@ -233,10 +234,13 @@ abstract class ClientPlugin {
         // has the side-effect of adding it to the analysis driver scheduler.
         final driver = createAnalysisDriver(contextRoot);
         driverMap[contextRoot] = driver;
+        final root = ContextLocator().locateRoots(
+            includedPaths: [contextRoot.root],
+            excludedPaths: contextRoot.exclude,
+            optionsFile: contextRoot.optionsFile);
         _addFilesToDriver(
           driver,
-          resourceProvider.getResource(contextRoot.root),
-          contextRoot.exclude,
+          root.first.analyzedFiles().toList(),
         );
       }
     }
@@ -510,22 +514,13 @@ abstract class ClientPlugin {
   /// list of [excluded] resources to the given [driver].
   void _addFilesToDriver(
     AnalysisDriver driver,
-    Resource resource,
-    List<String> excluded,
+    List<String> include,
   ) {
-    final path = resource.path;
-    if (excluded.contains(path)) return;
-    if (resource is File && extension(path) == '.dart') {
-      driver
-        ..addFile(path)
-        ..getResult(path);
-    } else if (resource is Folder) {
-      try {
-        for (final child in resource.getChildren()) {
-          _addFilesToDriver(driver, child, excluded);
-        }
-      } on FileSystemException {
-        // The folder does not exist, so ignore it.
+    for (final path in include) {
+      if (extension(path) == '.dart') {
+        driver
+          ..addFile(path)
+          ..getResult(path);
       }
     }
   }
