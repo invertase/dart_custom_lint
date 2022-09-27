@@ -140,7 +140,7 @@ see our custom lints in their Dart files:
 Unfortunately, running `dart analyze` does not pick up our newly defined lints.  
 We need a separate command for this.
 
-To do that, users of our custom lint package can run the following inside the application:
+To do that, users of our custom lint package can run the following inside their terminal:
 
 ```sh
 $ dart run custom_lint
