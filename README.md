@@ -18,7 +18,7 @@
 
 ## Tutorial
 
-You can read the latest [blog post](https://invertase.link/b18R) or watch the [advanced use case with custom_lint video](https://invertase.link/RNoz)
+You can read the latest [blog post](https://invertase.link/b18R) or watch the [advanced use case with custom_lint video](https://invertase.link/RNoz).
 
 ## About
 
@@ -37,14 +37,14 @@ That includes:
 
 - A command-line to obtain the list of lints in your CI
   without having to write a command line yourself.
-- A simplified project setup.  
+- A simplified project setup:  
   No need to deal with the `analyzer` server or error handling. Custom_lint
   takes care of that for you, so that you can focus on writing lints.
-- Support for hot-restart.  
+- Support for hot-restart:  
   Updating the source code of a linter plugin will dynamically restart it,
-  without having to restart your IDE/analyzer server
+  without having to restart your IDE/analyzer server.
 - Built-in support for `// ignore:` and `// ignore_for_file:`.
-- Support for `print(...)` and exceptions.  
+- Support for `print(...)` and exceptions:  
   If your plugin somehow throws or print debug messages, custom_lint
   will generate a log file with the messages/errors.
 
@@ -101,7 +101,7 @@ To create a custom lint, you will need two things:
 
 That's it for defining a custom lint package!
 
-Let's use it in an application now.
+Let's now use it in an application.
 
 ### Using our custom lint package in an application
 
@@ -140,7 +140,7 @@ see our custom lints in their Dart files:
 Unfortunately, running `dart analyze` does not pick up our newly defined lints.  
 We need a separate command for this.
 
-To do that, users of our custom lint package can run inside the application the following:
+To do that, users of our custom lint package can run the following inside their terminal:
 
 ```sh
 $ dart run custom_lint
