@@ -510,16 +510,20 @@ abstract class ClientPlugin {
     const _release = const bool.fromEnvironment('dart.vm.product');
     if (!_release) {
       // Reloads the code
-      _reloader = await HotReloader.create(onAfterReload: (c) {
-        if (c.result == HotReloadResult.Succeeded) {
-          _channel.sendNotification(
-              const AutoReloadNotification().toNotification());
-        }
-      });
+      try {
+        _reloader = await HotReloader.create(onAfterReload: (c) {
+          if (c.result == HotReloadResult.Succeeded) {
+            _channel.sendNotification(
+                const AutoReloadNotification().toNotification());
+          }
+        });
+      } catch (e) {
+        // ignore
+      }
     }
   }
 
-  late HotReloader _reloader;
+  HotReloader? _reloader;
 
   /// A hook to re-lint files when the linter itself has potentially changed due to hot-reload
   void reLint() {}
@@ -554,7 +558,7 @@ abstract class ClientPlugin {
     ResponseResult? result;
     switch (request.method) {
       case ForceReload.key:
-        await _reloader.reloadCode();
+        await _reloader?.reloadCode();
         result = const ForceReloadResult();
         break;
       case AwaitAnalysisDoneParams.key:

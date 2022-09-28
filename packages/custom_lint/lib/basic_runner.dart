@@ -24,7 +24,8 @@ const _release = const bool.fromEnvironment('dart.vm.product');
 /// In release mode
 /// * There is no hot-reload or watching so linting only happens once
 /// * The process exits with the most recent result of the linter
-Future<int> runCustomLintOnDirectory(Directory dir) async {
+Future<int> runCustomLintOnDirectory(Directory dir,
+    {bool hotReload = true}) async {
   final completer = Completer<int>();
 
   await runZonedGuarded(() async {
@@ -89,7 +90,7 @@ Future<int> runCustomLintOnDirectory(Directory dir) async {
       ..responseErrors.listen((event) => code = -1)
       ..pluginErrors.listen((event) => code = -1)
       ..notifications.listen((event) async {
-        if (!_release) {
+        if (!_release && hotReload) {
           switch (event.event) {
             case PrintNotification.key:
               final notification = PrintNotification.fromNotification(event);
@@ -109,7 +110,7 @@ Future<int> runCustomLintOnDirectory(Directory dir) async {
     await lint();
 
     // Listen for user input or get the first result depending on release mode
-    if (!_release) {
+    if (!_release && hotReload) {
       // Listen for reload on debug builds
       late StreamSubscription sub;
       sub = stdin.listen((d) async {
