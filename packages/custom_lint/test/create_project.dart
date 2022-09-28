@@ -14,6 +14,7 @@ Directory createPlugin({
   String? analysisOptions,
   String? main,
   Map<String, String>? sources,
+  bool omitPackageConfig = false,
 }) {
   return createDartProject(
     sources: {
@@ -27,7 +28,7 @@ version: 0.0.1
 publish_to: none
 
 environment:
-  sdk: ">=2.16.0 <3.0.0"
+  sdk: ">=2.17.0 <3.0.0"
 
 dependencies:
   analyzer: any
@@ -37,9 +38,9 @@ dependencies:
 '''
         : pubpsec,
     analysisOptions: analysisOptions,
-    packageConfig: pubpsec != _pluginDefaultPubspec
+    packageConfig: omitPackageConfig || pubpsec != _pluginDefaultPubspec
         ? null
-        : createPackageConfig(customLintBuilder: true, name: name),
+        : createPackageConfig(name: name),
     name: name,
   );
 }
@@ -68,7 +69,7 @@ version: 0.0.1
 publish_to: none
 
 environment:
-  sdk: ">=2.16.0 <3.0.0"
+  sdk: ">=2.17.0 <3.0.0"
 
 dependencies:
   analyzer: any
@@ -81,7 +82,6 @@ $pluginDevDependencies
 ''',
     packageConfig: createPackageConfig(
       plugins: plugins,
-      customLintBuilder: false,
       name: name,
     ),
     name: name,
@@ -90,7 +90,6 @@ $pluginDevDependencies
 
 String createPackageConfig({
   Map<String, Uri> plugins = const {},
-  required bool customLintBuilder,
   required String name,
 }) {
   return jsonEncode({
@@ -110,27 +109,28 @@ String createPackageConfig({
           'name': plugin.key,
           'rootUri': plugin.value.toFilePath(),
           'packageUri': 'lib/',
-          'languageVersion': '2.16'
+          'languageVersion': '2.17'
         },
       <String, String>{
         'name': name,
         'rootUri': '../',
         'packageUri': 'lib/',
-        'languageVersion': '2.16'
+        'languageVersion': '2.17'
       },
       <String, String>{
         'name': 'custom_lint',
         'rootUri': PeerProjectMeta.current.customLintPath,
         'packageUri': 'lib/',
-        'languageVersion': '2.16'
+        'languageVersion': '2.17'
       },
-      if (customLintBuilder)
-        <String, String>{
-          'name': 'custom_lint_builder',
-          'rootUri': PeerProjectMeta.current.customLintBuilderPath,
-          'packageUri': 'lib/',
-          'languageVersion': '2.16'
-        },
+      // Custom lint builder is always a transitive dev dependency if it is used,
+      // so it will be in the package config
+      <String, String>{
+        'name': 'custom_lint_builder',
+        'rootUri': PeerProjectMeta.current.customLintBuilderPath,
+        'packageUri': 'lib/',
+        'languageVersion': '2.17'
+      },
     ],
   });
 }

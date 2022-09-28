@@ -165,6 +165,49 @@ void fn2() {}''',
     );
   });
 
+  test('supports plugins without .package_config.json', () async {
+    final plugin = createPlugin(
+        name: 'test_lint',
+        main: helloWordPluginSource,
+        omitPackageConfig: true);
+    final plugin2 = createPlugin(
+        name: 'test_lint2', main: oyPluginSource, omitPackageConfig: true);
+
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': '''
+
+
+void fn() {}''',
+        'lib/another.dart': '''
+
+
+void fn2() {}''',
+      },
+      plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
+      name: 'test_app',
+    );
+
+    final lints = await runServerInCliModeForApp(app);
+
+    expect(
+      lints.map((e) => e.file),
+      [
+        join(app.path, 'lib', 'another.dart'),
+        join(app.path, 'lib', 'main.dart'),
+      ],
+    );
+
+    expect(
+      lints.first.errors.map((e) => e.code),
+      unorderedEquals(<Object?>['hello_world', 'oy']),
+    );
+    expect(
+      lints.last.errors.map((e) => e.code),
+      unorderedEquals(<Object?>['hello_world', 'oy']),
+    );
+  });
+
   test('redirect prints and errors to log files', () async {
     final plugin = createPlugin(
       name: 'test_lint',

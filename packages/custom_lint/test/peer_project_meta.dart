@@ -30,15 +30,14 @@ class PeerProjectMeta {
     final exampleAppDir = Directory(
       join(
         directory.path,
-        '..',
-        'example_app',
+        'example',
       ),
     );
 
-    final packagesPath = normalize(join(exampleAppDir.path, '..'));
+    final packagesPath = normalize(join(directory.path, '..'));
 
-    final examplePackageConfigPath =
-        join(packagesPath, 'example_lint', '.dart_tool', 'package_config.json');
+    final examplePackageConfigPath = join(normalize(exampleAppDir.path),
+        'example_lint', '.dart_tool', 'package_config.json');
     final exampleLintPackageConfigString =
         File(examplePackageConfigPath).readAsStringSync();
 
@@ -46,7 +45,8 @@ class PeerProjectMeta {
       customLintPath: join(packagesPath, 'custom_lint'),
       customLintBuilderPath: join(packagesPath, 'custom_lint_builder'),
       exampleAppPath: normalize(exampleAppDir.path),
-      exampleLintPath: join(packagesPath, 'example_lint'),
+      exampleLintPath:
+          join(packagesPath, 'custom_lint', 'example', 'example_lint'),
       exampleLintPackageConfigString: exampleLintPackageConfigString,
       exampleLintPackageConfig:
           jsonDecode(exampleLintPackageConfigString) as Map<String, Object?>,
