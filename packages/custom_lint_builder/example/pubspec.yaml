@@ -1,4 +1,4 @@
-name: example_app
+name: example_app_builder
 version: 0.0.1
 publish_to: none
 
@@ -10,7 +10,7 @@ dependencies:
 
 dev_dependencies:
   custom_lint:
-  example_lint:
+  example_lint_builder:
     path: ./example_lint
 
 dependency_overrides:
