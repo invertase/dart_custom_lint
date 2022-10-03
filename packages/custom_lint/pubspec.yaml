@@ -8,7 +8,7 @@ environment:
   sdk: '>=2.17.1 <3.0.0'
 
 dependencies:
-  analyzer: ^4.0.0
+  analyzer: ^4.6.0
   analyzer_plugin: ^0.10.0
   async: ^2.8.2
   cli_util: ^0.3.5
