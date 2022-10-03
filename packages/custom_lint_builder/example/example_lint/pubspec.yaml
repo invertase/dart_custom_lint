@@ -1,4 +1,4 @@
-name: example_lint
+name: custom_lint_builder_example_lint
 version: 0.0.1
 publish_to: none
 
