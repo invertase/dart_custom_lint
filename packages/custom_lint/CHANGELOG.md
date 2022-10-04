@@ -1,3 +1,7 @@
+## 0.0.10+1
+
+Update docs
+
 ## 0.0.10
 
 - Upgrade Riverpod to 2.0.0
