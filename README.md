@@ -162,15 +162,15 @@ If you are working on a Flutter project, run `flutter pub run custom_lint` inste
 
 ### Q. How do I get all the classes present in my source code?
 
-There are two ways of doing that. You can either use the `Element Tree` or the `Abstract Syntax Tree (ABS)` to find all the classes. Here's an example with each approach.
+There are two ways of doing that. You can either use the `Element Tree` or the `Abstract Syntax Tree (AST)` to find all the classes. Here's an example with each approach.
 
 - **Element Tree Approach**
 
   ```dart
   class _CustomLint extends PluginBase {
     @override
-    Stream<Lint> getLints(ResolvedUnitResult result) async* {
-      final library = result.libraryElement;
+    Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
+      final library = resolvedUnitResult.libraryElement;
       final classes = library.topLevelElements.whereType<ClassElement>();
       ....
       ....
@@ -199,7 +199,7 @@ There are two ways of doing that. You can either use the `Element Tree` or the `
 
   class _CustomLint extends PluginBase {
     @override
-    Stream<Lint> getLints(ResolvedUnitResult result) async* {
+    Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
       final classDeclarations = <ClassDeclaration>[];
       resolvedUnitResult.unit.visitChildren(
         ClassDeclarationVisitor(
