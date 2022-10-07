@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/overlay_file_system.dart';
@@ -245,7 +247,7 @@ abstract class ClientPlugin {
       final driver = driverMap.remove(contextRoot);
       // The `dispose` method has the side-effect of removing the driver from
       // the analysis driver scheduler.
-      driver?.dispose();
+      unawaited(driver?.dispose2());
     }
 
     final filesToFullyResolve = {

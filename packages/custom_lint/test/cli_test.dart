@@ -79,7 +79,7 @@ class _AnotherLint extends PluginBase {
 ''',
     );
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {'lib/main.dart': 'void fn() {}'},
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
@@ -102,7 +102,7 @@ No issues found!
   test('exits with -1 if only an error but no lint are found', () async {
     final plugin = createPlugin(name: 'test_lint', main: 'invalid;');
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {'lib/main.dart': 'void fn() {}'},
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
@@ -130,7 +130,7 @@ invalid;
     final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
     final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': 'void fn() {}',
         'lib/another.dart': 'void fail() {}',
@@ -163,7 +163,7 @@ invalid;
       main: "int x = 'oy';",
     );
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': 'void fn() {}',
         'lib/another.dart': 'void fail() {}',
@@ -233,7 +233,7 @@ class _HelloWorldLint extends PluginBase {
 
     final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': 'void fn() {}',
         'lib/another.dart': 'void fail() {}',
@@ -352,7 +352,7 @@ class _HelloWorldLint extends PluginBase {
 ''',
     );
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': '''
 void main() {
