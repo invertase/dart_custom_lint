@@ -5,9 +5,6 @@
       "label": "delete .plugin_manager",
       "command": "rm -rf ~/.dartServer/.plugin_manager/ ; echo ' ' > ./packages/target_lint/log.txt ; echo ' ' > ./packages/custom_lint/log.txt ; echo ' ' > ./packages/riverpod_lint/log.txt ; echo ' ' > ./packages/example_lint/log.txt",
       "type": "shell",
-      "presentation": {
-        "reveal": "silent",
-      }
     }
   ]
 }
