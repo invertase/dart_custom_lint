@@ -1,6 +1,7 @@
-## 0.0.9+1
+## 0.0.10
 
-Update dependency
+- Upgrade Riverpod to 2.0.0
+- Fix deprecation errors with analyzer
 
 ## 0.0.9
 
