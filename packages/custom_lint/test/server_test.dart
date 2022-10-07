@@ -167,11 +167,15 @@ void fn2() {}''',
 
   test('supports plugins without .package_config.json', () async {
     final plugin = createPlugin(
-        name: 'test_lint',
-        main: helloWordPluginSource,
-        omitPackageConfig: true);
+      name: 'test_lint',
+      main: helloWordPluginSource,
+      omitPackageConfig: true,
+    );
     final plugin2 = createPlugin(
-        name: 'test_lint2', main: oyPluginSource, omitPackageConfig: true);
+      name: 'test_lint2',
+      main: oyPluginSource,
+      omitPackageConfig: true,
+    );
 
     final app = createLintUsage(
       source: {

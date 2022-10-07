@@ -51,6 +51,13 @@ final _pluginLinkProvider = FutureProvider.autoDispose
   final packageConfig =
       ref.watch(packageConfigForPluginProvider(pluginRootUri));
 
+  if (packageConfig == null) {
+    throw StateError(
+      'Failed to find package_config.json for the plugin $pluginName',
+    );
+  }
+
+  // TODO configure that through build.yaml-like file
   final mainUri = Uri.file(
     p.join(pluginRootPath, 'bin', 'custom_lint.dart'),
   );
@@ -59,8 +66,13 @@ final _pluginLinkProvider = FutureProvider.autoDispose
     mainUri,
     const [],
     receivePort.sendPort,
-
-    packageConfig: packageConfig ?? mainUri,
+    // WHen published on pub or git, the plugin source often does not have a
+    // package_config.json. As such, we manually specify one based on the
+    // application that depends on the custom lint plugin.
+    // Since the application that uses the plugin depends on said plugin,
+    // the applications' package_config should contain everything that the plugin
+    // needs to work.
+    packageConfig: packageConfig,
     // TODO test error in main (outside of runZonedGuarded)
     debugName: pluginName,
     onError: receivePort.sendPort,
@@ -139,6 +151,13 @@ final pluginMetaProvider =
       .firstWhere((element) => element.root == linkKey);
 });
 
+/// The `package_config.json` location for a given plugin.
+///
+/// This isn't necesserily pointing to `plugin/.dart_tool/package_config.json`
+/// as plugins when published on pub or git often don't contain the `.dart_tool`
+/// folder.
+///
+/// In this scenario, the URI points to the application that uses the plugin instead.
 final packageConfigForPluginProvider =
     StateProvider.family<Uri?, Uri>((ref, uri) {
   return null;
@@ -195,6 +214,9 @@ final pluginMetasForContextRootProvider = Provider.autoDispose
       if (dependencyPubspec.hasDependency('custom_lint_builder')) {
         ref
             .read(packageConfigForPluginProvider(dependencyMeta.root).notifier)
+            // TODO if multiple applications depend on the same plugin
+            // but use different package_config configurations, something unexpected
+            // might happen.
             .state = packageConfigFile.uri;
         yield dependencyMeta;
         // TODO assert that they have the necessary configs
