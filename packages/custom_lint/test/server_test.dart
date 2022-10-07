@@ -43,7 +43,7 @@ class _HelloWorldLint extends PluginBase {
 ''',
     );
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': '''
 void fn() {}
@@ -130,7 +130,54 @@ void fn2() {}
     final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
     final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': '''
+
+
+void fn() {}''',
+        'lib/another.dart': '''
+
+
+void fn2() {}''',
+      },
+      plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
+      name: 'test_app',
+    );
+
+    final lints = await runServerInCliModeForApp(app);
+
+    expect(
+      lints.map((e) => e.file),
+      [
+        join(app.path, 'lib', 'another.dart'),
+        join(app.path, 'lib', 'main.dart'),
+      ],
+    );
+
+    expect(
+      lints.first.errors.map((e) => e.code),
+      unorderedEquals(<Object?>['hello_world', 'oy']),
+    );
+    expect(
+      lints.last.errors.map((e) => e.code),
+      unorderedEquals(<Object?>['hello_world', 'oy']),
+    );
+  });
+
+  test('supports plugins without .package_config.json', () async {
+    final plugin = createPlugin(
+      name: 'test_lint',
+      main: helloWordPluginSource,
+      omitPackageConfig: true,
+    );
+    final plugin2 = createPlugin(
+      name: 'test_lint2',
+      main: oyPluginSource,
+      omitPackageConfig: true,
+    );
+
+    final app = createLintUsage(
       source: {
         'lib/main.dart': '''
 
@@ -198,7 +245,7 @@ class _HelloWorldLint extends PluginBase {
     );
     final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': 'void fn() {}\n',
         'lib/another.dart': 'void fail() {}\n',
@@ -288,7 +335,7 @@ class _HelloWorldLint extends PluginBase {
       );
       final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
 
-      final app = creatLintUsage(
+      final app = createLintUsage(
         source: {'lib/main.dart': 'void fn() {}\n'},
         plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
         name: 'test_app',
@@ -379,7 +426,7 @@ class _ReloaddLint extends PluginBase {
       );
       final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
 
-      final app = creatLintUsage(
+      final app = createLintUsage(
         source: {'lib/main.dart': 'void fn() {}\n'},
         plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
         name: 'test_app',

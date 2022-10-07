@@ -1,3 +1,11 @@
+## [Unreleased fix]
+
+- Fix custom_lint plugins not working in release mode and when using git dependencies
+
+## 0.0.11
+
+Fix custom_lint not showing in the IDE
+
 ## 0.0.10+1
 
 Update docs
