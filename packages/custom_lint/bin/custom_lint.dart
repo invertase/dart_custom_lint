@@ -7,8 +7,8 @@ import 'package:custom_lint/src/analyzer_plugin/plugin_delegate.dart';
 import 'package:custom_lint/src/runner.dart';
 import 'package:path/path.dart' as p;
 
-Future<int> main() async {
-  var code = 0;
+Future<void> main() async {
+  exitCode = 0;
 
   await runZonedGuarded(() async {
     final runner = CustomLintRunner(
@@ -20,8 +20,8 @@ Future<int> main() async {
     );
 
     runner.channel
-      ..responseErrors.listen((event) => code = -1)
-      ..pluginErrors.listen((event) => code = -1);
+      ..responseErrors.listen((event) => exitCode = -1)
+      ..pluginErrors.listen((event) => exitCode = -1);
 
     try {
       await runner.initialize();
@@ -48,7 +48,7 @@ Future<int> main() async {
         });
 
         for (final lint in lintsForFile.errors) {
-          code = -1;
+          exitCode = -1;
           stdout.writeln(
             '  $relativeFilePath:${lint.location.startLine}:${lint.location.startColumn}'
             ' • ${lint.message} • ${lint.code}',
@@ -59,16 +59,14 @@ Future<int> main() async {
       await runner.close();
     }
   }, (err, stack) {
-    code = -1;
+    exitCode = -1;
     stderr.writeln('$err\n$stack');
   });
 
   // Since no problem happened, we print a message saying everything went well
-  if (code == 0) {
+  if (exitCode == 0) {
     stdout.writeln('No issues found!');
   }
-
-  return code;
 }
 
 extension on AnalysisErrorsParams {

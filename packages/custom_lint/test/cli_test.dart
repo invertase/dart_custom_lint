@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:test/test.dart';
 
 import '../bin/custom_lint.dart' as cli;
@@ -85,9 +87,9 @@ class _AnotherLint extends PluginBase {
 
     await runWithIOOverride(
       (out, err) async {
-        final code = await cli.main();
+        await cli.main();
 
-        expect(code, 0);
+        expect(exitCode, 0);
         expect(out.join(), completion('''
 No issues found!
 '''));
@@ -108,9 +110,9 @@ No issues found!
 
     await runWithIOOverride(
       (out, err) async {
-        final code = await cli.main();
+        await cli.main();
 
-        expect(code, -1);
+        expect(exitCode, -1);
         expect(err.join(), completion('''
 IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: \x1B[31mError: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
 Try adding the name of the type of the variable or the keyword 'var'.\x1B[39;49m
@@ -139,9 +141,9 @@ invalid;
 
     await runWithIOOverride(
       (out, err) async {
-        final code = await cli.main();
+        await cli.main();
 
-        expect(code, -1);
+        expect(exitCode, -1);
         expect(out.join(), completion('''
   lib/another.dart:1:6 • Hello world • hello_world
   lib/another.dart:1:6 • Oy • oy
@@ -172,9 +174,9 @@ invalid;
 
     await runWithIOOverride(
       (out, err) async {
-        final code = await cli.main();
+        await cli.main();
 
-        expect(code, -1);
+        expect(exitCode, -1);
         expect(
           err.join(),
           completion(
@@ -242,9 +244,9 @@ class _HelloWorldLint extends PluginBase {
 
     await runWithIOOverride(
       (out, err) async {
-        final code = await cli.main();
+        await cli.main();
 
-        expect(code, -1);
+        expect(exitCode, -1);
         expect(
           out.join(),
           completion(
@@ -363,9 +365,9 @@ void main() {
 
     await runWithIOOverride(
       (out, err) async {
-        final code = await cli.main();
+        await cli.main();
 
-        expect(code, -1);
+        expect(exitCode, -1);
         expect(
           err.join(),
           completion(isEmpty),
