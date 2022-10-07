@@ -1,4 +1,4 @@
-## [Unreleased fix]
+## 0.0.12
 
 - Fix custom_lint plugins not working in release mode and when using git dependencies (thanks to @TimWhiting)
 - Fix command line exit code not being set properly (thansk to @andrzejchm)
