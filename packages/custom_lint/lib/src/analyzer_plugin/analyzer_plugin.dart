@@ -62,7 +62,6 @@ class CustomLintPlugin extends ServerPlugin {
       overrides: [
         includeBuiltInLintsProvider.overrideWithValue(includeBuiltInLints),
       ],
-      cacheTime: const Duration(minutes: 5),
     );
 
     _container.listen<Map<String, plugin.AnalysisErrorsParams>>(

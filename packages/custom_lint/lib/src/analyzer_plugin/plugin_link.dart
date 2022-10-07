@@ -10,11 +10,13 @@ import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:riverpod/riverpod.dart';
 
 import '../protocol/internal_protocol.dart';
+import '../riverpod_utils.dart';
 import 'result.dart';
 import 'server_isolate_channel.dart';
 
 final _pluginSourceChangeProvider =
     StreamProvider.autoDispose.family<void, Uri>((ref, pluginRootUri) {
+  ref.cache5();
   final pluginRootPath = pluginRootUri.toFilePath();
 
   /// Don't watch source unless in development.
@@ -35,6 +37,7 @@ final _pluginSourceChangeProvider =
 
 final _pluginLinkProvider = FutureProvider.autoDispose
     .family<PluginLink, Uri>((ref, pluginRootUri) async {
+  ref.cache5();
   ref.watch(_pluginSourceChangeProvider(pluginRootUri));
 
   final pluginName = ref
@@ -107,6 +110,7 @@ final versionCheckProvider =
 
 final _versionInitializedProvider =
     FutureProvider.autoDispose.family<void, Uri>((ref, linkKey) async {
+  ref.cache5();
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   final versionCheck = ref.watch(versionCheckProvider);
@@ -127,6 +131,7 @@ final activeContextRootsProvider = StateProvider<List<plugin.ContextRoot>>(
 /// Package informations for the plugin
 final pluginMetaProvider =
     Provider.autoDispose.family<Package, Uri>((ref, linkKey) {
+  ref.cache5();
   final contextRoot = ref.watch(contextRootsForPluginProvider(linkKey)).first;
 
   return ref
@@ -142,6 +147,7 @@ final packageConfigForPluginProvider =
 /// The list of plugins associated with a context root.
 final pluginMetasForContextRootProvider = Provider.autoDispose
     .family<List<Package>, plugin.ContextRoot>((ref, contextRoot) {
+  ref.cache5();
   Iterable<Package> _getPluginsForContext(
     plugin.ContextRoot contextRoot,
   ) sync* {
@@ -203,6 +209,7 @@ final pluginMetasForContextRootProvider = Provider.autoDispose
 final contextRootsForPluginProvider =
     Provider.autoDispose.family<List<plugin.ContextRoot>, Uri>(
   (ref, packageUri) {
+    ref.cache5();
     final contextRoots = ref.watch(activeContextRootsProvider);
 
     return contextRoots
@@ -217,6 +224,7 @@ final contextRootsForPluginProvider =
 
 final _contextRootInitializedProvider =
     FutureProvider.autoDispose.family<void, Uri>((ref, linkKey) async {
+  ref.cache5();
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   // TODO filter events if the previous/new values are the same
@@ -240,6 +248,7 @@ final priorityFilesProvider =
 
 final _priorityFilesInitializedProvider =
     FutureProvider.autoDispose.family<void, Uri>((ref, linkKey) async {
+  ref.cache5();
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   final priorityFilesRequest = ref.watch(priorityFilesProvider);
@@ -265,6 +274,7 @@ final includeBuiltInLintsProvider = Provider<bool>(
 
 final _configInitializedProvider =
     FutureProvider.autoDispose.family<void, Uri>((ref, linkKey) async {
+  ref.cache5();
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   final includeBuiltInLints = ref.watch(includeBuiltInLintsProvider);
@@ -277,6 +287,7 @@ final _configInitializedProvider =
 /// A provider for obtaining for link of a specific plugin
 final pluginLinkProvider =
     FutureProvider.autoDispose.family<PluginLink, Uri>((ref, linkKey) async {
+  ref.cache5();
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   // Required initializations for the plugin to work, and performed only once
@@ -298,6 +309,7 @@ final pluginLinkProvider =
 
 /// The unique key for all active plugins.
 final allPluginLinkKeysProvider = Provider.autoDispose<List<Uri>>((ref) {
+  ref.cache5();
   final contextRoots = ref.watch(activeContextRootsProvider);
 
   return contextRoots
@@ -313,6 +325,7 @@ final allPluginLinkKeysProvider = Provider.autoDispose<List<Uri>>((ref) {
 /// The [PluginLink] of all active plugins.
 final allPluginLinksProvider =
     FutureProvider.autoDispose<Map<Uri, Result<PluginLink>>>((ref) async {
+  ref.cache5();
   final linkKeys = ref.watch(allPluginLinkKeysProvider);
 
   final linkEntries = await Future.wait([
