@@ -1,3 +1,7 @@
+## 0.0.11
+
+Fix custom_lint not showing in the IDE
+
 ## 0.0.10+1
 
 Update docs
