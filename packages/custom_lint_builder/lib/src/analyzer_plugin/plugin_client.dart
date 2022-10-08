@@ -1,5 +1,7 @@
-import 'package:analyzer/dart/analysis/context_locator.dart';
 import 'dart:async';
+
+import 'package:analyzer/dart/analysis/context_locator.dart';
+import 'package:analyzer/dart/analysis/context_root.dart' as analyzer;
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/file_system/file_system.dart';
@@ -70,8 +72,8 @@ abstract class ClientPlugin {
 
   /// A table mapping the current context roots to the analysis driver created
   /// for that root.
-  final Map<ContextRoot, AnalysisDriver> driverMap =
-      <ContextRoot, AnalysisDriver>{};
+  final Map<analyzer.ContextRoot, AnalysisDriver> driverMap =
+      <analyzer.ContextRoot, AnalysisDriver>{};
 
   /// The performance log used by any analysis drivers that are created.
   final PerformanceLog performanceLog = PerformanceLog(NullStringSink());
@@ -121,27 +123,10 @@ abstract class ClientPlugin {
   }
 
   /// Return the context root containing the file at the given [filePath].
-  ContextRoot? contextRootContaining(String filePath) {
-    final pathContext = resourceProvider.pathContext;
-
-    /// Return `true` if the given [child] is either the same as or within the
-    /// given [parent].
-    bool isOrWithin(String parent, String child) {
-      return parent == child || pathContext.isWithin(parent, child);
-    }
-
+  analyzer.ContextRoot? contextRootContaining(String filePath) {
     /// Return `true` if the given context [root] contains the target [file].
-    bool ownsFile(ContextRoot root) {
-      if (isOrWithin(root.root, filePath)) {
-        final excludedPaths = root.exclude;
-        for (final excludedPath in excludedPaths) {
-          if (isOrWithin(excludedPath, filePath)) {
-            return false;
-          }
-        }
-        return true;
-      }
-      return false;
+    bool ownsFile(analyzer.ContextRoot root) {
+      return root.analyzedFiles().contains(filePath);
     }
 
     for (final root in driverMap.keys) {
@@ -235,14 +220,14 @@ abstract class ClientPlugin {
         // The context is new, so we create a driver for it. Creating the driver
         // has the side-effect of adding it to the analysis driver scheduler.
         final driver = createAnalysisDriver(contextRoot);
-        driverMap[contextRoot] = driver;
         final root = ContextLocator().locateRoots(
             includedPaths: [contextRoot.root],
             excludedPaths: contextRoot.exclude,
-            optionsFile: contextRoot.optionsFile);
+            optionsFile: contextRoot.optionsFile).first;
+        driverMap[root] = driver;
         _addFilesToDriver(
           driver,
-          root.first.analyzedFiles().toList(),
+          root.analyzedFiles().toList(),
         );
       }
     }
