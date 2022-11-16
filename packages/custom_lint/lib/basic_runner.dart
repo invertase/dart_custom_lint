@@ -36,7 +36,7 @@ q: Quit
 /// Watch mode cannot be enabled if in release mode.
 Future<void> customLint(
   Directory workingDirectory, {
-  bool watchMode = false,
+  bool watchMode = true,
 }) async {
   if (_isReleaseMode && watchMode) {
     stderr.writeln(
