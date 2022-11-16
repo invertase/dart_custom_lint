@@ -219,9 +219,8 @@ class Client extends ClientPlugin {
   Future<AwaitAnalysisDoneResult> handleAwaitAnalysisDone(
     AwaitAnalysisDoneParams parameters,
   ) async {
-    if (parameters.reload) {
-      forcePluginRerun();
-    }
+    if (parameters.reload) _forcePluginRerun();
+
     bool hasPendingDriver() {
       return driverMap.values.any((driver) => driver.hasFilesToAnalyze);
     }
@@ -239,8 +238,8 @@ class Client extends ClientPlugin {
     return const SetConfigResult();
   }
 
-  /// A hook to re-lint files when the linter itself has potentially changed due to hot-reload
-  void forcePluginRerun() {
+  /// A function for requesting the linters to re-execute on analyzed files.
+  void _forcePluginRerun() {
     for (final driver in driverMap.values) {
       for (final knownFile in driver.knownFiles) {
         final contextRootForDriver =
