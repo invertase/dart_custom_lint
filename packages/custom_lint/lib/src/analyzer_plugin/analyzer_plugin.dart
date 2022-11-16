@@ -58,7 +58,6 @@ class CustomLintPlugin extends ServerPlugin {
   /// An imperative anchor for reading the current list of plugins
   late final ProviderSubscription<Future<Map<PluginKey, Result<PluginLink>>>>
       _allPluginsSub;
-  bool _invalidateLints = false;
   @override
   void start(PluginCommunicationChannel channel) {
     super.start(channel);
@@ -74,14 +73,13 @@ class CustomLintPlugin extends ServerPlugin {
       final changedFiles = {...next.keys, ...?previous?.keys};
 
       for (final changedFile in changedFiles) {
-        if (previous?[changedFile] != next[changedFile] || _invalidateLints) {
+        if (previous?[changedFile] != next[changedFile]) {
           channel.sendNotification(
             plugin.AnalysisErrorsParams(
               changedFile,
               next[changedFile]?.errors ?? const [],
             ).toNotification(),
           );
-          _invalidateLints = false;
         }
       }
     });
@@ -409,7 +407,6 @@ class CustomLintPlugin extends ServerPlugin {
   ) async {
     if (parameters.reload) {
       _container.refresh(invalidateLintsProvider);
-      _invalidateLints = true;
     }
     await _requestAllPlugins(parameters);
     return const AwaitAnalysisDoneResult();

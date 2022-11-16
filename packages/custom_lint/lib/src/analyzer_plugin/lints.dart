@@ -167,11 +167,7 @@ final allLintsProvider =
         final previousLints = previous?.asData?.value;
         // We voluntarily treat "loading" as null, to clear lints during
         // plugin restart
-        final lints = next.isRefreshing ||
-                next.isLoading ||
-                (previous?.isRefreshing ?? false)
-            ? null
-            : next.asData?.value;
+        final lints = next.isLoading ? null : next.asData?.value;
         final allFiles = {...?lints?.keys, ...?previousLints?.keys};
 
         for (final fileToUpdate in allFiles) {
