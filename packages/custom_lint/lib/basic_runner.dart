@@ -65,7 +65,9 @@ Future<void> customLint(
               stdout.writeln(notification.message);
               break;
             case DidHotReloadNotification.key:
-              stdout.writeln('Re-linting...');
+              stdout.writeln(
+                'Did hot-reload the sources of a plugin.\nRecomputing lints...',
+              );
               await _runPlugins(runner, reload: true);
               stdout.writeln(_help);
               break;
@@ -162,10 +164,7 @@ Future<void> _startWatchMode(CustomLintRunner runner) async {
       case 'r':
         // Reruning lints
         stdout.writeln('Manual Reload...');
-        await _runPlugins(
-          runner,
-          reload: true,
-        );
+        await _runPlugins(runner, reload: true);
         break;
       case 'q':
         // Let's quit the command line

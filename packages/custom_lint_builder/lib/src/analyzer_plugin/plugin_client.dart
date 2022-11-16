@@ -517,6 +517,14 @@ abstract class ClientPlugin {
   void _startHotReload() {
     unawaited(
       HotReloader.create(
+        onBeforeReload: (c) {
+          _channel.sendNotification(
+            const PrintNotification('Source change detected, hot-reloading...')
+                .toNotification(),
+          );
+          // Allow hot-reload to be performed
+          return true;
+        },
         onAfterReload: (c) {
           if (c.result == HotReloadResult.Succeeded) {
             _channel.sendNotification(
