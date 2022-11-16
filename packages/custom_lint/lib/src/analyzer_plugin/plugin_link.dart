@@ -55,6 +55,32 @@ final _pluginSourceChangeProvider =
   ]);
 });
 
+/// The `package_config.json` location for a given plugin.
+///
+/// This isn't necesserily pointing to `plugin/.dart_tool/package_config.json`
+/// as plugins when published on pub or git often don't contain the `.dart_tool`
+/// folder.
+///
+/// In this scenario, the URI points to the application that uses the plugin instead.
+Uri _findRootPackageConfigFromContextRoots(
+  List<plugin.ContextRoot> contextRoots, {
+  required String pluginName,
+}) {
+  // TODO(rrousselGit) if multiple applications depend on the same plugin
+  // but use different package_config configurations, something unexpected
+  // might happen.
+
+  if (contextRoots.isEmpty) {
+    throw StateError(
+      'Failed to find package_config.json for the plugin $pluginName',
+    );
+  }
+
+  return Uri.file(
+    p.join(contextRoots.first.root, '.dart_tool', 'package_config.json'),
+  );
+}
+
 final _pluginLinkProvider = FutureProvider.autoDispose
     .family<PluginLink, PluginKey>((ref, pluginRootUri) async {
   ref.cache5();
@@ -68,14 +94,10 @@ final _pluginLinkProvider = FutureProvider.autoDispose
 
   final pluginRootPath = pluginRootUri.uri.toFilePath();
 
-  final packageConfig =
-      ref.watch(packageConfigForPluginProvider(pluginRootUri));
-
-  if (packageConfig == null) {
-    throw StateError(
-      'Failed to find package_config.json for the plugin $pluginName',
-    );
-  }
+  final packageConfig = _findRootPackageConfigFromContextRoots(
+    ref.watch(contextRootsForPluginProvider(pluginRootUri)),
+    pluginName: pluginName,
+  );
 
   // TODO configure that through build.yaml-like file
   final mainUri = Uri.file(
@@ -171,18 +193,6 @@ final pluginMetaProvider =
       .firstWhere((element) => PluginKey(element.root) == linkKey);
 });
 
-/// The `package_config.json` location for a given plugin.
-///
-/// This isn't necesserily pointing to `plugin/.dart_tool/package_config.json`
-/// as plugins when published on pub or git often don't contain the `.dart_tool`
-/// folder.
-///
-/// In this scenario, the URI points to the application that uses the plugin instead.
-final packageConfigForPluginProvider =
-    StateProvider.family<Uri?, PluginKey>((ref, uri) {
-  return null;
-});
-
 /// The list of plugins associated with a context root.
 final pluginMetasForContextRootProvider = Provider.autoDispose
     .family<List<Package>, plugin.ContextRoot>((ref, contextRoot) {
@@ -230,16 +240,8 @@ final pluginMetasForContextRootProvider = Provider.autoDispose
       final dependencyPubspec =
           _loadPubspecAt(dependencyMeta.root.toFilePath());
 
-// TODO extract magic value
+      // TODO extract magic value
       if (dependencyPubspec.hasDependency('custom_lint_builder')) {
-        ref
-            .read(packageConfigForPluginProvider(
-              PluginKey(dependencyMeta.root),
-            ).notifier)
-            // TODO if multiple applications depend on the same plugin
-            // but use different package_config configurations, something unexpected
-            // might happen.
-            .state = packageConfigFile.uri;
         yield dependencyMeta;
         // TODO assert that they have the necessary configs
       }
