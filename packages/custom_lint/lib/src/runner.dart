@@ -52,22 +52,6 @@ class CustomLintRunner {
       )
       .toList();
 
-  // late final _foldersToAnalyze = _contextRoots
-  //     .expand((contextRoot) => [
-  //           p.join(contextRoot.root.path, 'lib'),
-  //           p.join(contextRoot.root.path, 'test'),
-  //         ])
-  //     .where((dir) => Directory(dir).existsSync())
-  //     .toList();
-
-  // late final _dartFilesToAnalyze = _foldersToAnalyze
-  //     .expand((folder) =>
-  //         Directory(folder).listSync(recursive: true, followLinks: false))
-  //     .whereType<File>()
-  //     .where((file) => p.extension(file.path) == '.dart')
-  //     .map((file) => file.path)
-  //     .toList();
-
   /// Starts the plugin and sends the necessary requests for initializing it.
   Future<void> initialize() async {
     await channel.sendRequest(

@@ -10,9 +10,6 @@ import 'src/analyzer_plugin/plugin_delegate.dart';
 import 'src/protocol/internal_protocol.dart';
 import 'src/runner.dart';
 
-// ignore: do_not_use_environment
-const _isReleaseMode = bool.fromEnvironment('dart.vm.product');
-
 const _help = '''
 
 Custom lint runner commands:
@@ -38,13 +35,6 @@ Future<void> customLint(
   Directory workingDirectory, {
   bool watchMode = true,
 }) async {
-  if (_isReleaseMode && watchMode) {
-    stderr.writeln(
-      'Tried running custom_lint in watch mode on release mode, which is unsupported. '
-      'Either disable watch mode or run custom_lint in debug mode',
-    );
-  }
-
   await runZonedGuarded(() async {
     final runner = CustomLintRunner(
       CustomLintPlugin(
