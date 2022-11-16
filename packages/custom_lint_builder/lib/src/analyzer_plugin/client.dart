@@ -62,7 +62,6 @@ class Client extends ClientPlugin {
   String get version => '1.0.0-alpha.0';
 
   final _pendingGetLintsSubscriptions = <String, StreamSubscription>{};
-  final _lastResolvedUnits = <String, analyzer.ResolvedUnitResult>{};
 
   @override
   analyzer.AnalysisDriver createAnalysisDriver(
@@ -83,22 +82,36 @@ class Client extends ClientPlugin {
           !analysisResult.exists) {
         return;
       }
-      // TODO handle ErrorsResult
-
-      // TODO test that getLints stops being listened if a new Result is emitted
-      // before the previous getLints completes
-      _pendingGetLintsSubscriptions[analysisResult.path]?.cancel();
-      _lastResolvedUnits[analysisResult.path] = analysisResult;
-      // ignore: cancel_subscriptions, the subscription is stored in the object and cancelled later
-      final sub = _getAnalysisErrors(analysisResult).listen(
-        (event) => channel.sendNotification(event.toNotification()),
-        onDone: () => _pendingGetLintsSubscriptions.remove(analysisResult.path),
-      );
-
-      _pendingGetLintsSubscriptions[analysisResult.path] = sub;
+      _handleAnalysisResult(analysisResult, context.contextRoot);
     });
 
     return context.driver;
+  }
+
+  void _handleAnalysisResult(
+    analyzer.SomeResolvedUnitResult analysisResult,
+    analyzer.ContextRoot contextRoot,
+  ) {
+    // TODO handle ErrorsResult
+    // TODO test that getLints stops being listened if a new Result is emitted
+    // before the previous getLints completes
+    if (analysisResult is! analyzer.ResolvedUnitResult ||
+        !analysisResult.exists) {
+      return;
+    }
+    if (!contextRoot.isAnalyzed(analysisResult.path)) {
+      return;
+    }
+
+    // TODO test that getLints stops being listened if a new Result is emitted
+    // before the previous getLints completes
+    _pendingGetLintsSubscriptions[analysisResult.path]?.cancel();
+    // ignore: cancel_subscriptions, the subscription is stored in the object and cancelled later
+    final sub = _getAnalysisErrors(analysisResult).listen(
+      (event) => channel.sendNotification(event.toNotification()),
+      onDone: () => _pendingGetLintsSubscriptions.remove(analysisResult.path),
+    );
+    _pendingGetLintsSubscriptions[analysisResult.path] = sub;
   }
 
   /// Calls [PluginBase.getLints], applies `// ignore` & error handling,
@@ -207,7 +220,7 @@ class Client extends ClientPlugin {
     AwaitAnalysisDoneParams parameters,
   ) async {
     if (parameters.reload) {
-      reLint();
+      forcePluginRerun();
     }
     bool hasPendingDriver() {
       return driverMap.values.any((driver) => driver.hasFilesToAnalyze);
@@ -227,18 +240,20 @@ class Client extends ClientPlugin {
   }
 
   /// A hook to re-lint files when the linter itself has potentially changed due to hot-reload
-  @override
-  void reLint() {
-    for (final unit in _lastResolvedUnits.entries) {
-      _pendingGetLintsSubscriptions[unit.key]?.cancel();
-      // ignore: cancel_subscriptions, the subscription is stored in the object and cancelled later
-      final sub = _getAnalysisErrors(unit.value).listen(
-        (event) {
-          channel.sendNotification(event.toNotification());
-        },
-        onDone: () => _pendingGetLintsSubscriptions.remove(unit.key),
-      );
-      _pendingGetLintsSubscriptions[unit.key] = sub;
+  void forcePluginRerun() {
+    for (final driver in driverMap.values) {
+      for (final knownFile in driver.knownFiles) {
+        final contextRootForDriver =
+            driver.currentSession.analysisContext.contextRoot;
+        // Although _handleAnalysisResult already checks whether the file path
+        // is one that plugins accepts or not, calling `getResult` is really expensive.
+        // So it's worth duplicating the logic to avoid the getResult call.
+        if (contextRootForDriver.isAnalyzed(knownFile)) {
+          driver
+              .getResult(knownFile)
+              .then((e) => _handleAnalysisResult(e, contextRootForDriver));
+        }
+      }
     }
   }
 }

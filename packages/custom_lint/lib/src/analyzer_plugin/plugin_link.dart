@@ -88,6 +88,7 @@ final _pluginLinkProvider = FutureProvider.autoDispose
 
   final pluginName = ref
       .watch(pluginMetaProvider(pluginRootUri).select((value) => value.name));
+
   final receivePort = ReceivePort();
   ref.onDispose(receivePort.close);
 

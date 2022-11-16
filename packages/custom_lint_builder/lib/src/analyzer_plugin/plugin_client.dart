@@ -544,9 +544,6 @@ abstract class ClientPlugin {
     }
   }
 
-  /// A hook to re-lint files when the linter itself has potentially changed due to hot-reload
-  void reLint() {}
-
   /// Add all of the files contained in the given [resource] that are not in the
   /// list of [excluded] resources to the given [driver].
   void _addFilesToDriver(

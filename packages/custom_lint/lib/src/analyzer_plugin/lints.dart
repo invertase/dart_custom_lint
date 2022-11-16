@@ -110,8 +110,9 @@ final _pluginNotStartedLintProvider = Provider.autoDispose
 });
 
 /// Causes the lint providers to recompute when the plugin has been hot-reloaded
-final invalidateLintsProvider =
-    Provider.autoDispose((ref) => Random().nextDouble());
+final invalidateLintsProvider = Provider.autoDispose(
+  (ref) => Random().nextDouble(),
+);
 
 /// The list of lints per Dart Library emitted by a plugin, including
 /// built-in lints such as whether the plugin as started or not.
