@@ -101,7 +101,7 @@ String createPackageConfig({
           .where(
             (e) =>
                 e['name'] != 'custom_lint' &&
-                e['name'] != 'example_lint' &&
+                e['name'] != 'custom_lint_example_lint' &&
                 e['name'] != 'custom_lint_builder',
           ),
       for (final plugin in plugins.entries)
