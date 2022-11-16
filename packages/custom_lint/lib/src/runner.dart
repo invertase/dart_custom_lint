@@ -19,12 +19,14 @@ const _analyzerPluginProtocolVersion = '1.0.0-alpha.0';
 /// A runner for programmatically interacting with a plugin.
 class CustomLintRunner {
   /// Creates a runner from a [ServerPlugin].
-  CustomLintRunner(this._server, this._workingDirectory) {
+  CustomLintRunner(this._server, this.workingDirectory) {
     _server.start(_clientChannel);
   }
 
   final ServerPlugin _server;
-  final Directory _workingDirectory;
+
+  /// The directory in which this command is exected in.
+  final Directory workingDirectory;
 
   var _closed = false;
 
@@ -40,7 +42,7 @@ class CustomLintRunner {
   late final _contextLocator =
       ContextLocator(resourceProvider: _resourceProvider);
   late final _allContextRoots = _contextLocator.locateRoots(
-    includedPaths: [_workingDirectory.path],
+    includedPaths: [workingDirectory.path],
   );
 
   late final _contextRoots = _allContextRoots

@@ -55,11 +55,6 @@ abstract class ClientPlugin {
   /// A megabyte.
   static const int M = 1024 * 1024;
 
-  /// In debug-mode only, an object for hot-reloading the source of plugins.
-  ///
-  /// Will be null if hot-reload failed to start
-  HotReloader? _debugHotReloader;
-
   /// The communication channel being used to communicate with the analysis
   /// server.
   late PluginCommunicationChannel _channel;
@@ -519,21 +514,18 @@ abstract class ClientPlugin {
     if (!_isReleaseMode) _startHotReload();
   }
 
-  Future<void> _startHotReload() async {
-    try {
-      _debugHotReloader = await HotReloader.create(
+  void _startHotReload() {
+    unawaited(
+      HotReloader.create(
         onAfterReload: (c) {
           if (c.result == HotReloadResult.Succeeded) {
             _channel.sendNotification(
-              const AutoReloadNotification().toNotification(),
+              const DidHotReloadNotification().toNotification(),
             );
           }
         },
-      );
-    } catch (e) {
-      // Failed to start hot-reload mode.
-      // There doesn't seem to be a more elegant wa
-    }
+      ),
+    );
   }
 
   /// A hook to re-lint files when the linter itself has potentially changed due to hot-reload
@@ -568,10 +560,6 @@ abstract class ClientPlugin {
   Future<Response?> _getResponse(Request request, int requestTime) async {
     ResponseResult? result;
     switch (request.method) {
-      case ForceReload.key:
-        await _debugHotReloader?.reloadCode();
-        result = const ForceReloadResult();
-        break;
       case AwaitAnalysisDoneParams.key:
         final params = AwaitAnalysisDoneParams.fromRequest(request);
         result = await handleAwaitAnalysisDone(params);

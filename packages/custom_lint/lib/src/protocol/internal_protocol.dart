@@ -162,84 +162,26 @@ class SetConfigResult implements ResponseResult {
   int get hashCode => runtimeType.hashCode;
 }
 
-/// {@template custom_lint.protocol.force_reload}
-/// The request for forcing a plugin to reload
-/// {@endtemplate}
-class ForceReload implements RequestParams {
-  /// {@macro custom_lint.protocol.force_reload}
-  ForceReload();
-
-  /// Decodes a [ForceReload] from a [Request].
-  factory ForceReload.fromRequest(Request request) {
-    assert(
-      request.method == key,
-      'Notification is not a $key notification',
-    );
-
-    return ForceReload();
-  }
-
-  /// The unique [Request.method] for a [ForceReload].
-  static const key = 'custom_lint.force_reload';
-
-  @override
-  Map<String, Object> toJson() {
-    return {};
-  }
-
-  @override
-  Request toRequest(String id) => Request(id, key, toJson());
-}
-
-/// The response to a [ForceReload].
-@immutable
-class ForceReloadResult implements ResponseResult {
-  /// The response to a [ForceReload].
-  const ForceReloadResult();
-
-  /// Decodes a [ForceReloadResult] from a [Response].
-  // ignore: avoid_unused_constructor_parameters
-  factory ForceReloadResult.fromResponse(Response response) =>
-      const ForceReloadResult();
-
-  @override
-  Map<String, Object> toJson() => const {};
-
-  @override
-  Response toResponse(String id, int requestTime) {
-    return Response(id, requestTime, result: toJson());
-  }
-
-  @override
-  String toString() => json.encode(toJson());
-
-  @override
-  bool operator ==(Object? other) => runtimeType == other.runtimeType;
-
-  @override
-  int get hashCode => runtimeType.hashCode;
-}
-
 /// Notifies the server that the linter code has changed.
 @immutable
-class AutoReloadNotification {
+class DidHotReloadNotification {
   /// Notifies the server that the linter code has changed.
-  const AutoReloadNotification();
+  const DidHotReloadNotification();
 
   /// Decodes a [PrintNotification] from a [Notification].
-  factory AutoReloadNotification.fromNotification(Notification notification) {
+  factory DidHotReloadNotification.fromNotification(Notification notification) {
     assert(
       notification.event == key,
       'Notification is not a $key notification',
     );
 
-    return const AutoReloadNotification();
+    return const DidHotReloadNotification();
   }
 
-  /// The unique [Notification.event] key for [AutoReloadNotification].
-  static const key = 'custom_lint.auto_reload';
+  /// The unique [Notification.event] key for [DidHotReloadNotification].
+  static const key = 'custom_lint.did_hot_reload';
 
-  /// Converts [AutoReloadNotification] to a [Notification].
+  /// Converts [DidHotReloadNotification] to a [Notification].
   Notification toNotification() {
     return Notification(key, {});
   }

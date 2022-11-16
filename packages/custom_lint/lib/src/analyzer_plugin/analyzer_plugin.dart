@@ -410,16 +410,6 @@ class CustomLintPlugin extends ServerPlugin {
     return const AwaitAnalysisDoneResult();
   }
 
-  /// Requests a forced reload on all plugins
-  @override
-  Future<ForceReloadResult> handleForcedReload(
-    ForceReload parameters,
-  ) async {
-    await _requestAllPlugins(parameters);
-
-    return const ForceReloadResult();
-  }
-
   @override
   FutureOr<plugin.EditGetAssistsResult> handleEditGetAssists(
     plugin.EditGetAssistsParams parameters,

@@ -64,10 +64,9 @@ Future<void> customLint(
               final notification = PrintNotification.fromNotification(event);
               stdout.writeln(notification.message);
               break;
-            case AutoReloadNotification.key:
+            case DidHotReloadNotification.key:
               stdout.writeln('Re-linting...');
-              await _runPlugins(runner,
-                  workingDirectory: workingDirectory, reload: true);
+              await _runPlugins(runner, reload: true);
               stdout.writeln(_help);
               break;
           }
@@ -75,8 +74,7 @@ Future<void> customLint(
       });
 
     await runner.initialize();
-    await _runPlugins(runner,
-        workingDirectory: workingDirectory, reload: false);
+    await _runPlugins(runner, reload: false);
 
     if (watchMode) {
       await _startWatchMode(runner);
@@ -89,7 +87,6 @@ Future<void> customLint(
 
 Future<void> _runPlugins(
   CustomLintRunner runner, {
-  required Directory workingDirectory,
   required bool reload,
 }) async {
   // Reset the code
@@ -102,7 +99,7 @@ Future<void> _runPlugins(
       exitCode = -1;
     }
 
-    _renderLints(lints, workingDirectory);
+    _renderLints(lints, workingDirectory: runner.workingDirectory);
   } catch (err, stack) {
     exitCode = -1;
     stderr.writeln('$err\n$stack');
@@ -114,13 +111,18 @@ Future<void> _runPlugins(
   }
 }
 
-void _renderLints(List<AnalysisErrorsParams> lints, Directory dir) {
+void _renderLints(
+  List<AnalysisErrorsParams> lints, {
+  required Directory workingDirectory,
+}) {
   lints.sort(
-    (a, b) => a.relativeFilePath(dir).compareTo(b.relativeFilePath(dir)),
+    (a, b) => a
+        .relativeFilePath(workingDirectory)
+        .compareTo(b.relativeFilePath(workingDirectory)),
   );
 
   for (final lintsForFile in lints) {
-    final relativeFilePath = lintsForFile.relativeFilePath(dir);
+    final relativeFilePath = lintsForFile.relativeFilePath(workingDirectory);
 
     lintsForFile.errors.sort((a, b) {
       final lineCompare = a.location.startLine.compareTo(b.location.startLine);
@@ -157,7 +159,10 @@ Future<void> _startWatchMode(CustomLintRunner runner) async {
       case 'r':
         // Reruning lints
         stdout.writeln('Manual Reload...');
-        await runner.channel.sendRequest(ForceReload());
+        await _runPlugins(
+          runner,
+          reload: true,
+        );
         break;
       case 'q':
         // Let's quit the command line
