@@ -4,13 +4,29 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:custom_lint/basic_runner.dart';
 
-Future<void> main(List<String> args) async {
+Future<void> main([List<String> args = const []]) async {
   final parser = ArgParser()
     ..addFlag(
-      'hot-reload',
-      defaultsTo: true,
-      help: 'Enables hot reload support',
+      'watch',
+      help: "Watches plugins' sources and perform a hot-reload on change",
+      negatable: false,
+    )
+    ..addFlag(
+      'help',
+      abbr: 'h',
+      negatable: false,
+      help: 'Prints command usage',
     );
-  final results = parser.parse(args)['hot-reload'] as bool;
-  await runCustomLintOnDirectory(Directory.current, hotReload: results);
+  final result = parser.parse(args);
+
+  final help = result['help'] as bool;
+  if (help) {
+    stdout.writeln('Usage: custom_lint [--watch]');
+    stdout.writeln(parser.usage);
+    return;
+  }
+
+  final watchMode = result['watch'] as bool;
+
+  await customLint(Directory.current, watchMode: watchMode);
 }

@@ -23,20 +23,27 @@ q: Quit
 
 /// Runs plugins with custom_lint.dart on the given directory
 ///
-/// In debug mode
+/// In watch mode:
 /// * This will run until the user types q to quit
 /// * The plugin will hot-reload when the user changes it's code, and will cause a re-lint
 /// * The exit code is the one from the last lint before quitting
 /// * The user can force a reload by typing r
 ///
-/// In release mode
+/// Otherwise:
 /// * There is no hot-reload or watching so linting only happens once
 /// * The process exits with the most recent result of the linter
-Future<void> runCustomLintOnDirectory(
-  Directory dir, {
-  bool hotReload = true,
+///
+/// Watch mode cannot be enabled if in release mode.
+Future<void> customLint(
+  Directory workingDirectory, {
+  bool watchMode = false,
 }) async {
-  final isInWatchMode = !_isReleaseMode && hotReload;
+  if (_isReleaseMode && watchMode) {
+    stderr.writeln(
+      'Tried running custom_lint in watch mode on release mode, which is unsupported. '
+      'Either disable watch mode or run custom_lint in debug mode',
+    );
+  }
 
   await runZonedGuarded(() async {
     final runner = CustomLintRunner(
@@ -44,14 +51,14 @@ Future<void> runCustomLintOnDirectory(
         delegate: CommandCustomLintDelegate(),
         includeBuiltInLints: false,
       ),
-      dir,
+      workingDirectory,
     );
 
     runner.channel
       ..responseErrors.listen((event) => exitCode = -1)
       ..pluginErrors.listen((event) => exitCode = -1)
       ..notifications.listen((event) async {
-        if (isInWatchMode) {
+        if (watchMode) {
           switch (event.event) {
             case PrintNotification.key:
               final notification = PrintNotification.fromNotification(event);
@@ -59,7 +66,8 @@ Future<void> runCustomLintOnDirectory(
               break;
             case AutoReloadNotification.key:
               stdout.writeln('Re-linting...');
-              await _runPlugins(runner, workingDirectory: dir, reload: true);
+              await _runPlugins(runner,
+                  workingDirectory: workingDirectory, reload: true);
               stdout.writeln(_help);
               break;
           }
@@ -67,9 +75,10 @@ Future<void> runCustomLintOnDirectory(
       });
 
     await runner.initialize();
-    await _runPlugins(runner, workingDirectory: dir, reload: false);
+    await _runPlugins(runner,
+        workingDirectory: workingDirectory, reload: false);
 
-    if (isInWatchMode) {
+    if (watchMode) {
       await _startWatchMode(runner);
     }
   }, (err, stack) {

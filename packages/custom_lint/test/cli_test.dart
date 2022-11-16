@@ -87,7 +87,7 @@ class _AnotherLint extends PluginBase {
 
     await runWithIOOverride(
       (out, err) async {
-        await cli.main(['--no-hot-reload']);
+        await cli.main();
 
         expect(exitCode, 0);
         expect(out.join(), completion('''
@@ -110,7 +110,7 @@ No issues found!
 
     await runWithIOOverride(
       (out, err) async {
-        await cli.main(['--no-hot-reload']);
+        await cli.main();
 
         expect(exitCode, -1);
         expect(err.join(), completion('''
@@ -141,7 +141,7 @@ invalid;
 
     await runWithIOOverride(
       (out, err) async {
-        await cli.main(['--no-hot-reload']);
+        await cli.main();
 
         expect(exitCode, -1);
         expect(out.join(), completion('''
@@ -174,7 +174,7 @@ invalid;
 
     await runWithIOOverride(
       (out, err) async {
-        await cli.main(['--no-hot-reload']);
+        await cli.main();
 
         expect(exitCode, -1);
         expect(
@@ -244,7 +244,7 @@ class _HelloWorldLint extends PluginBase {
 
     await runWithIOOverride(
       (out, err) async {
-        await cli.main(['--no-hot-reload']);
+        await cli.main();
 
         expect(exitCode, -1);
         expect(
@@ -365,7 +365,7 @@ void main() {
 
     await runWithIOOverride(
       (out, err) async {
-        await cli.main(['--no-hot-reload']);
+        await cli.main();
 
         expect(exitCode, -1);
         expect(
