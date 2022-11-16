@@ -7,6 +7,7 @@ import 'package:analyzer_plugin/src/protocol/protocol_internal.dart' as plugin
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 
+import 'plugin_link.dart';
 import 'server_plugin.dart';
 
 /// Informations about a plugin
@@ -19,7 +20,7 @@ class PluginDetails {
   });
 
   /// The unique key of the plugin
-  final Uri root;
+  final PluginKey root;
 
   /// The name of the plugin
   final String name;
