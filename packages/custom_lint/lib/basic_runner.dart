@@ -13,6 +13,14 @@ import 'src/runner.dart';
 // ignore: unnecessary_const, do_not_use_environment
 const _release = const bool.fromEnvironment('dart.vm.product');
 
+const _help = '''
+
+Custom lint runner commands:
+r: Force re-lint
+q: Quit
+
+''';
+
 /// Runs plugins with custom_lint.dart on the given directory
 ///
 /// In debug mode
@@ -24,24 +32,27 @@ const _release = const bool.fromEnvironment('dart.vm.product');
 /// In release mode
 /// * There is no hot-reload or watching so linting only happens once
 /// * The process exits with the most recent result of the linter
-Future<int> runCustomLintOnDirectory(Directory dir,
-    {bool hotReload = true}) async {
-  final completer = Completer<int>();
+Future<void> runCustomLintOnDirectory(
+  Directory dir, {
+  bool hotReload = true,
+}) async {
+  print(_release);
+
+  final completer = Completer<void>();
 
   await runZonedGuarded(() async {
     final runner = CustomLintRunner(
-        CustomLintPlugin(
-          delegate: CommandCustomLintDelegate(),
-          includeBuiltInLints: false,
-        ),
-        dir);
-
-    var code = 0;
+      CustomLintPlugin(
+        delegate: CommandCustomLintDelegate(),
+        includeBuiltInLints: false,
+      ),
+      dir,
+    );
 
     var first = true;
     Future<void> lint() async {
       // Reset the code
-      code = 0;
+      exitCode = 0;
 
       try {
         final lints = await runner.getLints(reload: !first);
@@ -68,7 +79,7 @@ Future<int> runCustomLintOnDirectory(Directory dir,
           });
 
           for (final lint in lintsForFile.errors) {
-            code = -1;
+            exitCode = -1;
             stdout.writeln(
               '  $relativeFilePath:${lint.location.startLine}:${lint.location.startColumn}'
               ' • ${lint.message} • ${lint.code}',
@@ -76,19 +87,19 @@ Future<int> runCustomLintOnDirectory(Directory dir,
           }
         }
       } catch (err, stack) {
-        code = -1;
+        exitCode = -1;
         stderr.writeln('$err\n$stack');
       }
 
       // Since no problem happened, we print a message saying everything went well
-      if (code == 0) {
+      if (exitCode == 0) {
         stdout.writeln('No issues found!');
       }
     }
 
     runner.channel
-      ..responseErrors.listen((event) => code = -1)
-      ..pluginErrors.listen((event) => code = -1)
+      ..responseErrors.listen((event) => exitCode = -1)
+      ..pluginErrors.listen((event) => exitCode = -1)
       ..notifications.listen((event) async {
         if (!_release && hotReload) {
           switch (event.event) {
@@ -99,8 +110,7 @@ Future<int> runCustomLintOnDirectory(Directory dir,
             case AutoReloadNotification.key:
               stdout.writeln('Re-linting...');
               await lint();
-              stdout.writeln(
-                  '\nCustom lint runner commands:\nr: Force re-lint\nq: Quit\n\n');
+              stdout.writeln(_help);
               break;
           }
         }
@@ -111,6 +121,9 @@ Future<int> runCustomLintOnDirectory(Directory dir,
 
     // Listen for user input or get the first result depending on release mode
     if (!_release && hotReload) {
+      // Let's not force user to have to press "enter" to input a command
+      stdin.lineMode = false;
+
       // Listen for reload on debug builds
       late StreamSubscription sub;
       sub = stdin.listen((d) async {
@@ -120,19 +133,19 @@ Future<int> runCustomLintOnDirectory(Directory dir,
           await runner.channel.sendRequest(ForceReload());
         } else if (input.contains('q\n')) {
           await sub.cancel();
-          exit(code);
+          completer.complete();
         }
       });
 
-      stdout.writeln(
-          '\nCustom lint runner commands:\nr: Force re-lint\nq: Quit\n\n');
+      stdout.writeln(_help);
     } else {
-      completer.complete(code);
+      completer.complete();
     }
   }, (err, stack) {
     stderr.writeln('$err\n$stack');
   });
-  return completer.future;
+
+  await completer.future;
 }
 
 extension on AnalysisErrorsParams {
