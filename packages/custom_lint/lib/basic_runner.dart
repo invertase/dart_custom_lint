@@ -38,8 +38,6 @@ Future<void> runCustomLintOnDirectory(
 }) async {
   final isInWatchMode = !_isReleaseMode && hotReload;
 
-  print(_isReleaseMode);
-
   await runZonedGuarded(() async {
     final runner = CustomLintRunner(
       CustomLintPlugin(

@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:custom_lint/basic_runner.dart';
 
-Future<int> main(List<String> args) {
+Future<void> main(List<String> args) async {
   final parser = ArgParser()
     ..addFlag(
       'hot-reload',
@@ -12,5 +12,5 @@ Future<int> main(List<String> args) {
       help: 'Enables hot reload support',
     );
   final results = parser.parse(args)['hot-reload'] as bool;
-  return runCustomLintOnDirectory(Directory.current, hotReload: results);
+  await runCustomLintOnDirectory(Directory.current, hotReload: results);
 }
