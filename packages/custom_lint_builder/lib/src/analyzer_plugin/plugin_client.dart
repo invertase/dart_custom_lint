@@ -31,9 +31,6 @@ import 'package:pub_semver/pub_semver.dart';
 
 import '../internal_protocol.dart';
 
-// ignore:  do_not_use_environment
-const _isReleaseMode = bool.fromEnvironment('dart.vm.product');
-
 /// The abstract superclass of any class implementing a plugin for the analysis
 /// server.
 ///
@@ -54,6 +51,9 @@ abstract class ClientPlugin {
 
   /// A megabyte.
   static const int M = 1024 * 1024;
+
+  /// Set when using watch mode
+  Future<HotReloader>? _hotReloader;
 
   /// The communication channel being used to communicate with the analysis
   /// server.
@@ -510,13 +510,21 @@ abstract class ClientPlugin {
   void start(PluginCommunicationChannel channel) {
     _channel = channel;
     _channel.listen(_onRequest, onError: onError, onDone: onDone);
-
-    if (!_isReleaseMode) _startHotReload();
   }
 
-  void _startHotReload() {
+  void _handleWatchModeConfig({required bool watchMode}) {
+    // On config change, cancel the previous reloader
     unawaited(
-      HotReloader.create(
+      _hotReloader?.then(
+        (value) => value.stop(),
+        // ignore: avoid_types_on_closure_parameters, false positive
+        onError: (Object err, StackTrace stack) {},
+      ),
+    );
+    _hotReloader = null;
+
+    if (watchMode) {
+      _hotReloader = HotReloader.create(
         onBeforeReload: (c) {
           _channel.sendNotification(
             const PrintNotification('Source change detected, hot-reloading...')
@@ -532,8 +540,8 @@ abstract class ClientPlugin {
             );
           }
         },
-      ),
-    );
+      );
+    }
   }
 
   /// A hook to re-lint files when the linter itself has potentially changed due to hot-reload
@@ -574,6 +582,7 @@ abstract class ClientPlugin {
         break;
       case SetConfigParams.key:
         final params = SetConfigParams.fromRequest(request);
+        _handleWatchModeConfig(watchMode: params.watchMode);
         result = await handleSetConfig(params);
         break;
       case ANALYSIS_REQUEST_GET_NAVIGATION:

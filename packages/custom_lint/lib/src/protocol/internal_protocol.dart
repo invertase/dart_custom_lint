@@ -104,7 +104,10 @@ class AwaitAnalysisDoneResult implements ResponseResult {
 /// {@endtemplate}
 class SetConfigParams implements RequestParams {
   /// {@macro custom_lint.protocol.set_config_params}
-  SetConfigParams({required this.includeBuiltInLints});
+  SetConfigParams({
+    required this.includeBuiltInLints,
+    required this.watchMode,
+  });
 
   /// Decodes a [SetConfigParams] from a [Request].
   factory SetConfigParams.fromRequest(Request request) {
@@ -115,6 +118,7 @@ class SetConfigParams implements RequestParams {
 
     return SetConfigParams(
       includeBuiltInLints: request.params['include_built_in_lints']! as bool,
+      watchMode: request.params['watch_mode']! as bool,
     );
   }
 
@@ -124,9 +128,15 @@ class SetConfigParams implements RequestParams {
   /// Whether to include custom_lint meta lints about the status of a plugin
   final bool includeBuiltInLints;
 
+  /// Whether the plugin was started in watch mode, and therefore should use hot-reload
+  final bool watchMode;
+
   @override
   Map<String, Object> toJson() {
-    return {'include_built_in_lints': includeBuiltInLints};
+    return {
+      'include_built_in_lints': includeBuiltInLints,
+      'watch_mode': watchMode,
+    };
   }
 
   @override

@@ -317,15 +317,21 @@ final includeBuiltInLintsProvider = Provider<bool>(
   (ref) => throw UnimplementedError(),
 );
 
+/// Config on whether to enable watch mode
+final watchModeProvider = Provider<bool>(
+  (ref) => throw UnimplementedError(),
+);
+
 final _configInitializedProvider =
     FutureProvider.autoDispose.family<void, PluginKey>((ref, linkKey) async {
   ref.cache5();
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
-  final includeBuiltInLints = ref.watch(includeBuiltInLintsProvider);
-
   await link.channel.sendRequest(
-    SetConfigParams(includeBuiltInLints: includeBuiltInLints),
+    SetConfigParams(
+      includeBuiltInLints: ref.watch(includeBuiltInLintsProvider),
+      watchMode: ref.watch(watchModeProvider),
+    ),
   );
 });
 

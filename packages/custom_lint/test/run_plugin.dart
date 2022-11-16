@@ -24,6 +24,7 @@ Future<CustomLintRunner> startRunnerForApp(
     CustomLintPlugin(
       delegate: CommandCustomLintDelegate(),
       includeBuiltInLints: false,
+      watchMode: false,
     ),
     directory,
   );

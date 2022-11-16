@@ -26,6 +26,7 @@ class CustomLintPlugin extends ServerPlugin {
     analyzer.ResourceProvider? resourceProvider,
     required this.delegate,
     required this.includeBuiltInLints,
+    required this.watchMode,
   }) : super(resourceProvider);
 
   /// The delegate for handling events in a platform-specific way.
@@ -33,6 +34,9 @@ class CustomLintPlugin extends ServerPlugin {
 
   /// Whether to include lints made by custom_lint about the status of a plugin.
   final bool includeBuiltInLints;
+
+  /// Whether to hot-restart plugins when their source changes.
+  final bool watchMode;
 
   @override
   String get contactInfo =>
@@ -61,6 +65,7 @@ class CustomLintPlugin extends ServerPlugin {
     _container = ProviderContainer(
       overrides: [
         includeBuiltInLintsProvider.overrideWithValue(includeBuiltInLints),
+        watchModeProvider.overrideWithValue(watchMode),
       ],
     );
 

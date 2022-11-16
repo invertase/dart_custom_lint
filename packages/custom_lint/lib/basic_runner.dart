@@ -40,6 +40,7 @@ Future<void> customLint(
       CustomLintPlugin(
         delegate: CommandCustomLintDelegate(),
         includeBuiltInLints: false,
+        watchMode: watchMode,
       ),
       workingDirectory,
     );
