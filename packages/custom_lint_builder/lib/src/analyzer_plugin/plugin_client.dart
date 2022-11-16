@@ -31,6 +31,9 @@ import 'package:pub_semver/pub_semver.dart';
 
 import '../internal_protocol.dart';
 
+// ignore:  do_not_use_environment
+const _isReleaseMode = bool.fromEnvironment('dart.vm.product');
+
 /// The abstract superclass of any class implementing a plugin for the analysis
 /// server.
 ///
@@ -51,6 +54,11 @@ abstract class ClientPlugin {
 
   /// A megabyte.
   static const int M = 1024 * 1024;
+
+  /// In debug-mode only, an object for hot-reloading the source of plugins.
+  ///
+  /// Will be null if hot-reload failed to start
+  HotReloader? _debugHotReloader;
 
   /// The communication channel being used to communicate with the analysis
   /// server.
@@ -504,28 +512,29 @@ abstract class ClientPlugin {
   }
 
   /// Start this plugin by listening to the given communication [channel].
-  Future<void> start(PluginCommunicationChannel channel) async {
+  void start(PluginCommunicationChannel channel) {
     _channel = channel;
     _channel.listen(_onRequest, onError: onError, onDone: onDone);
 
-// ignore: unnecessary_const, do_not_use_environment
-    const _release = const bool.fromEnvironment('dart.vm.product');
-    if (!_release) {
-      // Reloads the code
-      try {
-        _reloader = await HotReloader.create(onAfterReload: (c) {
-          if (c.result == HotReloadResult.Succeeded) {
-            _channel.sendNotification(
-                const AutoReloadNotification().toNotification());
-          }
-        });
-      } catch (e) {
-        // ignore
-      }
-    }
+    if (!_isReleaseMode) _startHotReload();
   }
 
-  HotReloader? _reloader;
+  Future<void> _startHotReload() async {
+    try {
+      _debugHotReloader = await HotReloader.create(
+        onAfterReload: (c) {
+          if (c.result == HotReloadResult.Succeeded) {
+            _channel.sendNotification(
+              const AutoReloadNotification().toNotification(),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      // Failed to start hot-reload mode.
+      // There doesn't seem to be a more elegant wa
+    }
+  }
 
   /// A hook to re-lint files when the linter itself has potentially changed due to hot-reload
   void reLint() {}
@@ -560,7 +569,7 @@ abstract class ClientPlugin {
     ResponseResult? result;
     switch (request.method) {
       case ForceReload.key:
-        await _reloader?.reloadCode();
+        await _debugHotReloader?.reloadCode();
         result = const ForceReloadResult();
         break;
       case AwaitAnalysisDoneParams.key:
