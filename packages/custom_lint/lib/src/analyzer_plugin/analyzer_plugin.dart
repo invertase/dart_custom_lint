@@ -52,7 +52,7 @@ class CustomLintPlugin extends ServerPlugin {
   late final ProviderContainer _container;
 
   /// An imperative anchor for reading the current list of plugins
-  late final ProviderSubscription<Future<Map<Uri, Result<PluginLink>>>>
+  late final ProviderSubscription<Future<Map<PluginKey, Result<PluginLink>>>>
       _allPluginsSub;
   bool _invalidateLints = false;
   @override
@@ -177,7 +177,7 @@ class CustomLintPlugin extends ServerPlugin {
         .toList();
   }
 
-  PluginDetails _getPluginDetails(Uri linkKey) {
+  PluginDetails _getPluginDetails(PluginKey linkKey) {
     return PluginDetails(
       name: _container.read(pluginMetaProvider(linkKey)).name,
       root: linkKey,
@@ -186,7 +186,7 @@ class CustomLintPlugin extends ServerPlugin {
   }
 
   Future<plugin.Response> _requestPlugin(
-    Uri pluginKey,
+    PluginKey pluginKey,
     plugin.RequestParams request,
   ) async {
     try {
