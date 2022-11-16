@@ -3,23 +3,58 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
+import 'package:async/async.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:riverpod/riverpod.dart';
 
 import '../protocol/internal_protocol.dart';
+import '../riverpod_utils.dart';
 import 'result.dart';
 import 'server_isolate_channel.dart';
 
+final _pluginSourceChangeProvider =
+    StreamProvider.autoDispose.family<void, Uri>((ref, pluginRootUri) {
+  ref.cache5();
+  final pluginRootPath = pluginRootUri.toFilePath();
+
+  /// Don't watch source unless in development.
+  // TODO test
+  if (pluginRootPath.contains('.pub-cache')) return const Stream.empty();
+
+  return StreamGroup.merge([
+    Directory(p.join(pluginRootPath, 'lib')).watch(recursive: true),
+    Directory(p.join(pluginRootPath, 'bin')).watch(recursive: true),
+    // watch package dir but not recursively, for pubspec/analysis changes
+    File(p.join(pluginRootPath, 'pubspec.yaml')).watch(recursive: true),
+    File(
+      p.join(pluginRootPath, '.dart_tool', 'package_config.json'),
+    ).watch(recursive: true),
+    // TODO possibly watch package dependencies too, for when working on custom_lint
+  ]);
+});
+
 final _pluginLinkProvider = FutureProvider.autoDispose
     .family<PluginLink, Uri>((ref, pluginRootUri) async {
+  ref.cache5();
+  ref.watch(_pluginSourceChangeProvider(pluginRootUri));
+
   final pluginName = ref
       .watch(pluginMetaProvider(pluginRootUri).select((value) => value.name));
   final receivePort = ReceivePort();
   ref.onDispose(receivePort.close);
 
   final pluginRootPath = pluginRootUri.toFilePath();
+
+  final packageConfig =
+      ref.watch(packageConfigForPluginProvider(pluginRootUri));
+
+  if (packageConfig == null) {
+    throw StateError(
+      'Failed to find package_config.json for the plugin $pluginName',
+    );
+  }
 
   // TODO configure that through build.yaml-like file
   final mainUri = Uri.file(
@@ -30,10 +65,13 @@ final _pluginLinkProvider = FutureProvider.autoDispose
     mainUri,
     const [],
     receivePort.sendPort,
-    // TODO assert this file exists and show a nice error message if not
-    packageConfig: Uri.file(
-      p.join(pluginRootPath, '.dart_tool', 'package_config.json'),
-    ),
+    // WHen published on pub or git, the plugin source often does not have a
+    // package_config.json. As such, we manually specify one based on the
+    // application that depends on the custom lint plugin.
+    // Since the application that uses the plugin depends on said plugin,
+    // the applications' package_config should contain everything that the plugin
+    // needs to work.
+    packageConfig: packageConfig,
     // TODO test error in main (outside of runZonedGuarded)
     debugName: pluginName,
     onError: receivePort.sendPort,
@@ -83,6 +121,7 @@ final versionCheckProvider =
 
 final _versionInitializedProvider =
     FutureProvider.autoDispose.family<void, Uri>((ref, linkKey) async {
+  ref.cache5();
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   final versionCheck = ref.watch(versionCheckProvider);
@@ -103,6 +142,7 @@ final activeContextRootsProvider = StateProvider<List<plugin.ContextRoot>>(
 /// Package informations for the plugin
 final pluginMetaProvider =
     Provider.autoDispose.family<Package, Uri>((ref, linkKey) {
+  ref.cache5();
   final contextRoot = ref.watch(contextRootsForPluginProvider(linkKey)).first;
 
   return ref
@@ -110,9 +150,22 @@ final pluginMetaProvider =
       .firstWhere((element) => element.root == linkKey);
 });
 
+/// The `package_config.json` location for a given plugin.
+///
+/// This isn't necesserily pointing to `plugin/.dart_tool/package_config.json`
+/// as plugins when published on pub or git often don't contain the `.dart_tool`
+/// folder.
+///
+/// In this scenario, the URI points to the application that uses the plugin instead.
+final packageConfigForPluginProvider =
+    StateProvider.family<Uri?, Uri>((ref, uri) {
+  return null;
+});
+
 /// The list of plugins associated with a context root.
 final pluginMetasForContextRootProvider = Provider.autoDispose
     .family<List<Package>, plugin.ContextRoot>((ref, contextRoot) {
+  ref.cache5();
   Iterable<Package> _getPluginsForContext(
     plugin.ContextRoot contextRoot,
   ) sync* {
@@ -158,6 +211,12 @@ final pluginMetasForContextRootProvider = Provider.autoDispose
 
 // TODO extract magic value
       if (dependencyPubspec.hasDependency('custom_lint_builder')) {
+        ref
+            .read(packageConfigForPluginProvider(dependencyMeta.root).notifier)
+            // TODO if multiple applications depend on the same plugin
+            // but use different package_config configurations, something unexpected
+            // might happen.
+            .state = packageConfigFile.uri;
         yield dependencyMeta;
         // TODO assert that they have the necessary configs
       }
@@ -171,6 +230,7 @@ final pluginMetasForContextRootProvider = Provider.autoDispose
 final contextRootsForPluginProvider =
     Provider.autoDispose.family<List<plugin.ContextRoot>, Uri>(
   (ref, packageUri) {
+    ref.cache5();
     final contextRoots = ref.watch(activeContextRootsProvider);
 
     return contextRoots
@@ -185,6 +245,7 @@ final contextRootsForPluginProvider =
 
 final _contextRootInitializedProvider =
     FutureProvider.autoDispose.family<void, Uri>((ref, linkKey) async {
+  ref.cache5();
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   // TODO filter events if the previous/new values are the same
@@ -208,6 +269,7 @@ final priorityFilesProvider =
 
 final _priorityFilesInitializedProvider =
     FutureProvider.autoDispose.family<void, Uri>((ref, linkKey) async {
+  ref.cache5();
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   final priorityFilesRequest = ref.watch(priorityFilesProvider);
@@ -233,6 +295,7 @@ final includeBuiltInLintsProvider = Provider<bool>(
 
 final _configInitializedProvider =
     FutureProvider.autoDispose.family<void, Uri>((ref, linkKey) async {
+  ref.cache5();
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   final includeBuiltInLints = ref.watch(includeBuiltInLintsProvider);
@@ -245,6 +308,7 @@ final _configInitializedProvider =
 /// A provider for obtaining for link of a specific plugin
 final pluginLinkProvider =
     FutureProvider.autoDispose.family<PluginLink, Uri>((ref, linkKey) async {
+  ref.cache5();
   final link = await ref.watch(_pluginLinkProvider(linkKey).future);
 
   // Required initializations for the plugin to work, and performed only once
@@ -266,6 +330,7 @@ final pluginLinkProvider =
 
 /// The unique key for all active plugins.
 final allPluginLinkKeysProvider = Provider.autoDispose<List<Uri>>((ref) {
+  ref.cache5();
   final contextRoots = ref.watch(activeContextRootsProvider);
 
   return contextRoots
@@ -281,6 +346,7 @@ final allPluginLinkKeysProvider = Provider.autoDispose<List<Uri>>((ref) {
 /// The [PluginLink] of all active plugins.
 final allPluginLinksProvider =
     FutureProvider.autoDispose<Map<Uri, Result<PluginLink>>>((ref) async {
+  ref.cache5();
   final linkKeys = ref.watch(allPluginLinkKeysProvider);
 
   final linkEntries = await Future.wait([
