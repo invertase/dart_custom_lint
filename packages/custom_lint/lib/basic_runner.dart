@@ -10,8 +10,8 @@ import 'src/analyzer_plugin/plugin_delegate.dart';
 import 'src/protocol/internal_protocol.dart';
 import 'src/runner.dart';
 
-// ignore: unnecessary_const, do_not_use_environment
-const _release = const bool.fromEnvironment('dart.vm.product');
+// ignore: do_not_use_environment
+const _isReleaseMode = bool.fromEnvironment('dart.vm.product');
 
 const _help = '''
 
@@ -36,9 +36,9 @@ Future<void> runCustomLintOnDirectory(
   Directory dir, {
   bool hotReload = true,
 }) async {
-  print(_release);
+  final isInWatchMode = !_isReleaseMode && hotReload;
 
-  final completer = Completer<void>();
+  print(_isReleaseMode);
 
   await runZonedGuarded(() async {
     final runner = CustomLintRunner(
@@ -49,59 +49,11 @@ Future<void> runCustomLintOnDirectory(
       dir,
     );
 
-    var first = true;
-    Future<void> lint() async {
-      // Reset the code
-      exitCode = 0;
-
-      try {
-        final lints = await runner.getLints(reload: !first);
-
-        first = false;
-        lints.sort((a, b) =>
-            a.relativeFilePath(dir).compareTo(b.relativeFilePath(dir)));
-
-        for (final lintsForFile in lints) {
-          final relativeFilePath = lintsForFile.relativeFilePath(dir);
-
-          lintsForFile.errors.sort((a, b) {
-            final lineCompare =
-                a.location.startLine.compareTo(b.location.startLine);
-            if (lineCompare != 0) return lineCompare;
-            final columnCompare =
-                a.location.startColumn.compareTo(b.location.startColumn);
-            if (columnCompare != 0) return columnCompare;
-
-            final codeCompare = a.code.compareTo(b.code);
-            if (codeCompare != 0) return codeCompare;
-
-            return a.message.compareTo(b.message);
-          });
-
-          for (final lint in lintsForFile.errors) {
-            exitCode = -1;
-            stdout.writeln(
-              '  $relativeFilePath:${lint.location.startLine}:${lint.location.startColumn}'
-              ' • ${lint.message} • ${lint.code}',
-            );
-          }
-        }
-      } catch (err, stack) {
-        exitCode = -1;
-        stderr.writeln('$err\n$stack');
-      }
-
-      // Since no problem happened, we print a message saying everything went well
-      if (exitCode == 0) {
-        stdout.writeln('No issues found!');
-      }
-    }
-
     runner.channel
       ..responseErrors.listen((event) => exitCode = -1)
       ..pluginErrors.listen((event) => exitCode = -1)
       ..notifications.listen((event) async {
-        if (!_release && hotReload) {
+        if (isInWatchMode) {
           switch (event.event) {
             case PrintNotification.key:
               final notification = PrintNotification.fromNotification(event);
@@ -109,7 +61,7 @@ Future<void> runCustomLintOnDirectory(
               break;
             case AutoReloadNotification.key:
               stdout.writeln('Re-linting...');
-              await lint();
+              await _runPlugins(runner, workingDirectory: dir, reload: true);
               stdout.writeln(_help);
               break;
           }
@@ -117,35 +69,97 @@ Future<void> runCustomLintOnDirectory(
       });
 
     await runner.initialize();
-    await lint();
+    await _runPlugins(runner, workingDirectory: dir, reload: false);
 
-    // Listen for user input or get the first result depending on release mode
-    if (!_release && hotReload) {
-      // Let's not force user to have to press "enter" to input a command
-      stdin.lineMode = false;
-
-      // Listen for reload on debug builds
-      late StreamSubscription sub;
-      sub = stdin.listen((d) async {
-        final input = utf8.decode(d);
-        if (input.contains('r\n')) {
-          stdout.writeln('Manual Reload...');
-          await runner.channel.sendRequest(ForceReload());
-        } else if (input.contains('q\n')) {
-          await sub.cancel();
-          completer.complete();
-        }
-      });
-
-      stdout.writeln(_help);
-    } else {
-      completer.complete();
+    if (isInWatchMode) {
+      await _startWatchMode(runner);
     }
   }, (err, stack) {
+    exitCode = -1;
     stderr.writeln('$err\n$stack');
   });
+}
 
-  await completer.future;
+Future<void> _runPlugins(
+  CustomLintRunner runner, {
+  required Directory workingDirectory,
+  required bool reload,
+}) async {
+  // Reset the code
+  exitCode = 0;
+
+  try {
+    final lints = await runner.getLints(reload: reload);
+
+    if (lints.any((lintsForFile) => lintsForFile.errors.isNotEmpty)) {
+      exitCode = -1;
+    }
+
+    _renderLints(lints, workingDirectory);
+  } catch (err, stack) {
+    exitCode = -1;
+    stderr.writeln('$err\n$stack');
+  }
+
+  // Since no problem happened, we print a message saying everything went well
+  if (exitCode == 0) {
+    stdout.writeln('No issues found!');
+  }
+}
+
+void _renderLints(List<AnalysisErrorsParams> lints, Directory dir) {
+  lints.sort(
+    (a, b) => a.relativeFilePath(dir).compareTo(b.relativeFilePath(dir)),
+  );
+
+  for (final lintsForFile in lints) {
+    final relativeFilePath = lintsForFile.relativeFilePath(dir);
+
+    lintsForFile.errors.sort((a, b) {
+      final lineCompare = a.location.startLine.compareTo(b.location.startLine);
+      if (lineCompare != 0) return lineCompare;
+      final columnCompare =
+          a.location.startColumn.compareTo(b.location.startColumn);
+      if (columnCompare != 0) return columnCompare;
+
+      final codeCompare = a.code.compareTo(b.code);
+      if (codeCompare != 0) return codeCompare;
+
+      return a.message.compareTo(b.message);
+    });
+
+    for (final lint in lintsForFile.errors) {
+      exitCode = -1;
+      stdout.writeln(
+        '  $relativeFilePath:${lint.location.startLine}:${lint.location.startColumn}'
+        ' • ${lint.message} • ${lint.code}',
+      );
+    }
+  }
+}
+
+Future<void> _startWatchMode(CustomLintRunner runner) async {
+  // Let's not force user to have to press "enter" to input a command
+  stdin.lineMode = false;
+
+  stdout.writeln(_help);
+
+  // Handle user inputs, forcing the command to continue until the user asks to "quit"
+  await for (final input in stdin.transform(utf8.decoder)) {
+    switch (input) {
+      case 'r':
+        // Reruning lints
+        stdout.writeln('Manual Reload...');
+        await runner.channel.sendRequest(ForceReload());
+        break;
+      case 'q':
+        // Let's quit the command line
+        // TODO(rrousselGit) Investigate why an "exit" is required and we can't simply "return"
+        exit(exitCode);
+      default:
+      // Unknown command. Nothing to do
+    }
+  }
 }
 
 extension on AnalysisErrorsParams {
