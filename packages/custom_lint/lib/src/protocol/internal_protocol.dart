@@ -44,7 +44,7 @@ class PrintNotification {
 /// {@endtemplate}
 class AwaitAnalysisDoneParams implements RequestParams {
   /// {@macro custom_lint.protocol.get_analysis_error_params}
-  const AwaitAnalysisDoneParams();
+  const AwaitAnalysisDoneParams({required this.reload});
 
   /// Decodes a [AwaitAnalysisDoneParams] from a [Request].
   factory AwaitAnalysisDoneParams.fromRequest(Request request) {
@@ -53,14 +53,17 @@ class AwaitAnalysisDoneParams implements RequestParams {
       'Notification is not a $key notification',
     );
 
-    return const AwaitAnalysisDoneParams();
+    return AwaitAnalysisDoneParams(reload: request.params['reload']! as bool);
   }
 
   /// The unique [Request.method] for a [AwaitAnalysisDoneParams].
   static const key = 'custom_lint.await_analysis_done';
 
+  /// Whether to invalidate / rerun the linting process due to reload
+  final bool reload;
+
   @override
-  Map<String, Object> toJson() => {};
+  Map<String, Object> toJson() => {'reload': reload};
 
   @override
   Request toRequest(String id) => Request(id, key, toJson());
@@ -101,7 +104,10 @@ class AwaitAnalysisDoneResult implements ResponseResult {
 /// {@endtemplate}
 class SetConfigParams implements RequestParams {
   /// {@macro custom_lint.protocol.set_config_params}
-  SetConfigParams({required this.includeBuiltInLints});
+  SetConfigParams({
+    required this.includeBuiltInLints,
+    required this.watchMode,
+  });
 
   /// Decodes a [SetConfigParams] from a [Request].
   factory SetConfigParams.fromRequest(Request request) {
@@ -112,6 +118,7 @@ class SetConfigParams implements RequestParams {
 
     return SetConfigParams(
       includeBuiltInLints: request.params['include_built_in_lints']! as bool,
+      watchMode: request.params['watch_mode']! as bool,
     );
   }
 
@@ -121,9 +128,15 @@ class SetConfigParams implements RequestParams {
   /// Whether to include custom_lint meta lints about the status of a plugin
   final bool includeBuiltInLints;
 
+  /// Whether the plugin was started in watch mode, and therefore should use hot-reload
+  final bool watchMode;
+
   @override
   Map<String, Object> toJson() {
-    return {'include_built_in_lints': includeBuiltInLints};
+    return {
+      'include_built_in_lints': includeBuiltInLints,
+      'watch_mode': watchMode,
+    };
   }
 
   @override
@@ -157,4 +170,29 @@ class SetConfigResult implements ResponseResult {
 
   @override
   int get hashCode => runtimeType.hashCode;
+}
+
+/// Notifies the server that the linter code has changed.
+@immutable
+class DidHotReloadNotification {
+  /// Notifies the server that the linter code has changed.
+  const DidHotReloadNotification();
+
+  /// Decodes a [PrintNotification] from a [Notification].
+  factory DidHotReloadNotification.fromNotification(Notification notification) {
+    assert(
+      notification.event == key,
+      'Notification is not a $key notification',
+    );
+
+    return const DidHotReloadNotification();
+  }
+
+  /// The unique [Notification.event] key for [DidHotReloadNotification].
+  static const key = 'custom_lint.did_hot_reload';
+
+  /// Converts [DidHotReloadNotification] to a [Notification].
+  Notification toNotification() {
+    return Notification(key, {});
+  }
 }
