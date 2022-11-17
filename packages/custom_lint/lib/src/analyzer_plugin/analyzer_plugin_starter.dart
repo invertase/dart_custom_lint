@@ -15,6 +15,8 @@ void start(Iterable<String> _, SendPort sendPort) {
       server = CustomLintPlugin(
         delegate: AnalyzerPluginCustomLintDelegate(),
         includeBuiltInLints: true,
+        // The necessary flags for hot-reload to work aren't set by analyzer_plugin
+        watchMode: false,
       );
       server!.start(channel);
     },
