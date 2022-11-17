@@ -1,6 +1,7 @@
 ## [Unreleased]
 
 - Add debugger and hot-reload support (Thanks to @TimWhiting)
+- Correctly respect `exclude` obtains from the analysis_options.yaml
 
 ## 0.0.12
 
