@@ -3,12 +3,15 @@ name: Build
 on:
   pull_request:
     paths-ignore:
-      - '**.md'
+      - "**.md"
   push:
     branches:
       - main
     paths-ignore:
-      - '**.md'
+      - "**.md"
+  schedule:
+    # runs the CI everyday at 10AM
+    - cron: "0 10 * * *"
 
 jobs:
   build:
@@ -47,7 +50,7 @@ jobs:
         run: flutter analyze
 
       - name: Run tests
-        run: melos exec --dir-exists=test "dart test"
+        run: melos exec --sdir-exists=test "dart test"
 
       - name: Upload coverage to codecov
         run: curl -s https://codecov.io/bash | bash
