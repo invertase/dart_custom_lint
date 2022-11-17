@@ -23,7 +23,7 @@ void start(Iterable<String> _, SendPort sendPort) {
             !stdin.hasTerminal &&
                 // In the CI, hasTerminal is often false. So let's explicitly disable
                 // "loading" lints for the CI too
-                ci.isCI,
+                !ci.isCI,
         // The necessary flags for hot-reload to work aren't set by analyzer_plugin
         watchMode: false,
       );
