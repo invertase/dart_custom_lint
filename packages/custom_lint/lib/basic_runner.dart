@@ -31,9 +31,9 @@ q: Quit
 /// * The process exits with the most recent result of the linter
 ///
 /// Watch mode cannot be enabled if in release mode.
-Future<void> customLint(
-  Directory workingDirectory, {
+Future<void> customLint({
   bool watchMode = true,
+  required Directory workingDirectory,
 }) async {
   await runZonedGuarded(() async {
     final runner = CustomLintRunner(
