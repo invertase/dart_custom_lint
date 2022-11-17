@@ -406,7 +406,7 @@ class CustomLintPlugin extends ServerPlugin {
     AwaitAnalysisDoneParams parameters,
   ) async {
     if (parameters.reload) {
-      _container.refresh(invalidateLintsProvider);
+      _container.invalidate(invalidateLintsProvider);
     }
     await _requestAllPlugins(parameters);
     return const AwaitAnalysisDoneResult();

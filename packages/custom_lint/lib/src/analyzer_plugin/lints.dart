@@ -108,7 +108,7 @@ final _pluginNotStartedLintProvider = Provider.autoDispose
   return errors;
 });
 
-/// Causes the lint providers to recompute when the plugin has been hot-reloaded
+/// A provider used to forcifly refresh the lints, by refreshing this provider.
 final invalidateLintsProvider = Provider.autoDispose((ref) => Object());
 
 /// The list of lints per Dart Library emitted by a plugin, including
