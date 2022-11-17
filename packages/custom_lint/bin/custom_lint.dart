@@ -28,5 +28,5 @@ Future<void> main([List<String> args = const []]) async {
 
   final watchMode = result['watch'] as bool;
 
-  await customLint(Directory.current, watchMode: watchMode);
+  await customLint(workingDirectory: Directory.current, watchMode: watchMode);
 }
