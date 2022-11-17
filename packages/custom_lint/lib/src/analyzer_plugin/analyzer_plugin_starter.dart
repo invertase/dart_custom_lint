@@ -15,9 +15,13 @@ void start(Iterable<String> _, SendPort sendPort) {
       final channel = ClientIsolateChannel(sendPort);
       server = CustomLintPlugin(
         delegate: AnalyzerPluginCustomLintDelegate(),
-        // Disable "loading" lints custom_lint is spawned from a terminal command;
-        // such as when using `dart analyze`
-        includeBuiltInLints: !stdin.hasTerminal,
+        includeBuiltInLints:
+            // Disable "loading" lints custom_lint is spawned from a terminal command;
+            // such as when using `dart analyze`
+            !stdin.hasTerminal &&
+                // In the CI, hasTerminal is often false. So let's explicitly disable
+                // "loading" lints for the CI too
+                !Platform.environment.containsKey('CI'),
         // The necessary flags for hot-reload to work aren't set by analyzer_plugin
         watchMode: false,
       );
