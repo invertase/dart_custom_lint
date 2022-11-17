@@ -13,6 +13,7 @@ dependencies:
   # Using tight constraints as custom_lint_builder communicate with each-other
   # using a specific contract
   custom_lint: 0.0.12
+  hotreloader: ^3.0.5
   meta: ^1.7.0
   package_config: ^2.0.2
   path: ^1.8.0
