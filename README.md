@@ -16,6 +16,7 @@
   - [Creating a custom lint package](#creating-a-custom-lint-package)
   - [Using our custom lint package in an application](#using-our-custom-lint-package-in-an-application)
   - [Obtaining the list of lints in the CI](#obtaining-the-list-of-lints-in-the-ci)
+  - [Using the Dart debugger and enabling hot-restart.](#using-the-dart-debugger-and-enabling-hot-restart)
 - [FAQs](#faqs)
   - [Q. How do I get all the classes present in my source code?](#q-how-do-i-get-all-the-classes-present-in-my-source-code)
   - [Q. How do I get all the global variables present in my source code?](#q-how-do-i-get-all-the-global-variables-present-in-my-source-code)
@@ -46,16 +47,15 @@ That includes:
 - A simplified project setup:  
   No need to deal with the `analyzer` server or error handling. Custom_lint
   takes care of that for you, so that you can focus on writing lints.
-- Support for hot-restart:  
+- Debugger support.  
+  Inspect your lints using the Dart debugger and place breakpoints.
+- Supports hot-reload/hot-restart:  
   Updating the source code of a linter plugin will dynamically restart it,
   without having to restart your IDE/analyzer server.
 - Built-in support for `// ignore:` and `// ignore_for_file:`.
 - Support for `print(...)` and exceptions:  
   If your plugin somehow throws or print debug messages, custom_lint
   will generate a log file with the messages/errors.
-- Support for debugging with the `dart` debugger or command line with hot reload.
-  This mode reports errors in the command line and keeps the analyzed files in memory.
-  It directly reloads your linter and test files, without having to restart a plugin.
 
 ## Usage
 
@@ -74,7 +74,7 @@ To create a custom lint, you will need two things:
   # pubspec.yaml
   name: my_custom_lint_package
   environment:
-    sdk: '>=2.16.0 <3.0.0'
+    sdk: ">=2.16.0 <3.0.0"
 
   dependencies:
     # we will use analyzer for inspecting Dart files
@@ -132,7 +132,7 @@ For users to run custom_lint packages, there are a few steps:
   # The pubspec.yaml of an application using our lints
   name: example_app
   environment:
-    sdk: '>=2.16.0 <3.0.0'
+    sdk: ">=2.16.0 <3.0.0"
 
   dev_dependencies:
     custom_lint:
@@ -143,7 +143,7 @@ That's all!
 After running `pub get` (and possibly restarting their IDE), users should now
 see our custom lints in their Dart files:
 
-![screenshot of our custom lints in the IDE](https://raw.githubusercontent.com/invertase/dart_custom_lint/main/resources/lint_showcase.png?token=GHSAT0AAAAAABKV7FKIJQP5CKCH3R74IPAYYSZFGZQ)
+![screenshot of our custom lints in the IDE](https://raw.githubusercontent.com/invertase/dart_custom_lint/main/resources/lint_showcase.png)
 
 ### Obtaining the list of lints in the CI
 
@@ -159,27 +159,39 @@ $ dart run custom_lint
 
 If you are working on a Flutter project, run `flutter pub run custom_lint` instead.
 
+### Using the Dart debugger and enabling hot-restart.
 
-### Debugging your custom lint plugin using hot-reload & dart debugger
+To enable hot-restart and use the Dart debugger, we'll want to start plugins using
+mechanism.
 
+First, create a `tools/custom_lint_debug.dart` file next to `tools/custom_lint.dart`
+with the following content:
 
-- create a `bin/custom_lint_debug.dart` file next to `bin/custom_lint.dart` with the following:
+```dart
+import 'dart:io';
+import 'package:custom_lint/basic_runner.dart';
 
-  ```dart
-  import 'dart:io';
-  import 'package:custom_lint/basic_runner.dart';
+void main() {
+  await customLint(workingDirectory: Directory.current.parent);
+}
 
-  void main() {
-    runCustomLintOnDirectory(Directory('/path/to/directory/to/run/linter/on'));
-  }
+```
 
-  ```
+Now you can run/test the custom lints packages you are using via:
 
-Now you can run/test the custom lints packages you are using: 
- * Via a normal dart run configuration from your IDE
- * From the command line with `dart --enable-vm-service path/to/custom_lint_debug.dart`  
-This will watch changes to both your linter code and test files and reanalyze / hot-reload your code as needed.
-Print/Exception statements will show in the console as well as a listing of the lints found in each of your files. 
+- Starting this main from your IDE (such as clicking on `debug` in VScode).
+  This will connect your IDE to the Dart debugger, allowing the usage of breakpoints.
+
+- From the command line with `dart --enable-vm-service path/to/custom_lint_debug.dart`  
+  The Dart debugger will not be enabled, but hot-reload still will be enabled.
+  Changing the source of your plugin would automatically show the update.
+
+**I have the following error when I run the program in my IDE: `Bad state: VM service not available! You need to run dart with --enable-vm-service.`**
+
+Chances are you didn't start your program in debug mode.  
+If using VScode, when starting your program, make sure to click on `debug` not `run`:
+
+![VScode's debug button](https://raw.githubusercontent.com/invertase/dart_custom_lint/main/resources/vscode_debug.jpg)
 
 ---
 
@@ -206,7 +218,7 @@ There are two ways of doing that. You can either use the `Element Tree` or the `
   The variable `classes` is of type `List<ClassElement>` and will contain all the ClassElements.
 
 - **AST Approach**
-  
+
   ```dart
   class ClassDeclarationVisitor extends GeneralizingAstVisitor<void> {
     ClassDeclarationVisitor({
