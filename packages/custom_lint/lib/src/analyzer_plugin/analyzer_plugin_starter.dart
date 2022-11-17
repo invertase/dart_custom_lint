@@ -12,6 +12,8 @@ void start(Iterable<String> _, SendPort sendPort) {
 
   runZonedGuarded(
     () {
+      print('Hello world hasTerminal: ${stdin.hasTerminal}');
+
       final channel = ClientIsolateChannel(sendPort);
       server = CustomLintPlugin(
         delegate: AnalyzerPluginCustomLintDelegate(),
