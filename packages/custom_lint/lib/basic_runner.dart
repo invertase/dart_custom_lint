@@ -35,6 +35,7 @@ Future<void> customLint({
   bool watchMode = true,
   required Directory workingDirectory,
 }) async {
+  var isDone = false;
   await runZonedGuarded(() async {
     final runner = CustomLintRunner(
       CustomLintPlugin(
@@ -73,9 +74,18 @@ Future<void> customLint({
       await _startWatchMode(runner);
     }
   }, (err, stack) {
+    if (isDone) {
+      throw StateError(
+        'Received an error after `runZonedGuarded` should have complete. Is an async process leaking?'
+        '\nThe error was: $err'
+        '\nat:\n$stack',
+      );
+    }
     exitCode = -1;
     stderr.writeln('$err\n$stack');
   });
+
+  isDone = true;
 }
 
 Future<void> _runPlugins(
