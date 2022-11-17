@@ -36,6 +36,12 @@ class PluginKey {
 
 final _pluginSourceChangeProvider =
     StreamProvider.autoDispose.family<void, PluginKey>((ref, pluginRootUri) {
+  if (ref.watch(watchModeProvider)) {
+    // Watch mode already takes care of reloading plugins. So doing a hot-restart
+    // on source change would only slow down hot-reload.
+    return const Stream.empty();
+  }
+
   ref.cache5();
   final pluginRootPath = pluginRootUri.uri.toFilePath();
 
