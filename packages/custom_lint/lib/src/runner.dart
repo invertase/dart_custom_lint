@@ -19,12 +19,14 @@ const _analyzerPluginProtocolVersion = '1.0.0-alpha.0';
 /// A runner for programmatically interacting with a plugin.
 class CustomLintRunner {
   /// Creates a runner from a [ServerPlugin].
-  CustomLintRunner(this._server, this._workingDirectory) {
+  CustomLintRunner(this._server, this.workingDirectory) {
     _server.start(_clientChannel);
   }
 
   final ServerPlugin _server;
-  final Directory _workingDirectory;
+
+  /// The directory in which this command is exected in.
+  final Directory workingDirectory;
 
   var _closed = false;
 
@@ -40,7 +42,7 @@ class CustomLintRunner {
   late final _contextLocator =
       ContextLocator(resourceProvider: _resourceProvider);
   late final _allContextRoots = _contextLocator.locateRoots(
-    includedPaths: [_workingDirectory.path],
+    includedPaths: [workingDirectory.path],
   );
 
   late final _contextRoots = _allContextRoots
@@ -49,22 +51,6 @@ class CustomLintRunner {
             File(p.join(contextRoot.root.path, 'pubspec.yaml')).existsSync(),
       )
       .toList();
-
-  // late final _foldersToAnalyze = _contextRoots
-  //     .expand((contextRoot) => [
-  //           p.join(contextRoot.root.path, 'lib'),
-  //           p.join(contextRoot.root.path, 'test'),
-  //         ])
-  //     .where((dir) => Directory(dir).existsSync())
-  //     .toList();
-
-  // late final _dartFilesToAnalyze = _foldersToAnalyze
-  //     .expand((folder) =>
-  //         Directory(folder).listSync(recursive: true, followLinks: false))
-  //     .whereType<File>()
-  //     .where((file) => p.extension(file.path) == '.dart')
-  //     .map((file) => file.path)
-  //     .toList();
 
   /// Starts the plugin and sends the necessary requests for initializing it.
   Future<void> initialize() async {
@@ -88,15 +74,13 @@ class CustomLintRunner {
   }
 
   /// Obtains the list of lints for the current workspace.
-  Future<List<AnalysisErrorsParams>> getLints() async {
+  Future<List<AnalysisErrorsParams>> getLints({required bool reload}) async {
     final result = <String, AnalysisErrorsParams>{};
 
     StreamSubscription? sub;
     try {
       sub = channel.lints.listen((event) => result[event.file] = event);
-
-      await channel.sendRequest(const AwaitAnalysisDoneParams());
-
+      await channel.sendRequest(AwaitAnalysisDoneParams(reload: reload));
       return result.values.toList()..sort((a, b) => a.file.compareTo(b.file));
     } finally {
       await sub?.cancel();

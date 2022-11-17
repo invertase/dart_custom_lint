@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'analyzer_plugin.dart';
@@ -14,7 +15,11 @@ void start(Iterable<String> _, SendPort sendPort) {
       final channel = ClientIsolateChannel(sendPort);
       server = CustomLintPlugin(
         delegate: AnalyzerPluginCustomLintDelegate(),
-        includeBuiltInLints: true,
+        // Disable "loading" lints custom_lint is spawned from a terminal command;
+        // such as when using `dart analyze`
+        includeBuiltInLints: !stdin.hasTerminal,
+        // The necessary flags for hot-reload to work aren't set by analyzer_plugin
+        watchMode: false,
       );
       server!.start(channel);
     },
