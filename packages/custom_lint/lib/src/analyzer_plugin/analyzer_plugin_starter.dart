@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:ci/ci.dart' as ci;
+
 import 'analyzer_plugin.dart';
 import 'client_isolate_channel.dart';
 import 'plugin_delegate.dart';
@@ -21,7 +23,7 @@ void start(Iterable<String> _, SendPort sendPort) {
             !stdin.hasTerminal &&
                 // In the CI, hasTerminal is often false. So let's explicitly disable
                 // "loading" lints for the CI too
-                !Platform.environment.containsKey('CI'),
+                ci.isCI,
         // The necessary flags for hot-reload to work aren't set by analyzer_plugin
         watchMode: false,
       );
