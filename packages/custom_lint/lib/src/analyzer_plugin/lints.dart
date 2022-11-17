@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:analyzer_plugin/protocol/protocol_common.dart' as plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
@@ -110,9 +109,7 @@ final _pluginNotStartedLintProvider = Provider.autoDispose
 });
 
 /// Causes the lint providers to recompute when the plugin has been hot-reloaded
-final invalidateLintsProvider = Provider.autoDispose(
-  (ref) => Random().nextDouble(),
-);
+final invalidateLintsProvider = Provider.autoDispose((ref) => Object());
 
 /// The list of lints per Dart Library emitted by a plugin, including
 /// built-in lints such as whether the plugin as started or not.
