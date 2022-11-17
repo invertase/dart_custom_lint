@@ -71,7 +71,7 @@ final _pluginNotStartedLintProvider = Provider.autoDispose
             plugin.AnalysisErrorSeverity.WARNING,
             plugin.AnalysisErrorType.LINT,
             pluginLocationInsidePubspec,
-            'The plugin is currently starting',
+            'The plugin is currently starting ${stdin.hasTerminal} // ${ref.watch(includeBuiltInLintsProvider)}',
             'custom_lint_plugin_loading',
           )
         else if (link.hasError)
