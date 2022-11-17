@@ -9,9 +9,6 @@ on:
       - main
     paths-ignore:
       - '**.md'
-  schedule:
-    # runs the CI everyday at 10AM
-    - cron: "0 10 * * *"
 
 jobs:
   build:
