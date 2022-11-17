@@ -50,7 +50,7 @@ jobs:
         run: flutter analyze
 
       - name: Run tests
-        run: melos exec --sdir-exists=test "dart test"
+        run: melos exec --dir-exists=test "dart test"
 
       - name: Upload coverage to codecov
         run: curl -s https://codecov.io/bash | bash
