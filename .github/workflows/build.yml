@@ -25,6 +25,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - run: "echo \"dependency_overrides:\n  custom_lint:\n    path: ${{github.workspace}}/packages/custom_lint\""
+
+
       - uses: subosito/flutter-action@v2
         with:
           channel: ${{ matrix.channel }}
@@ -36,6 +39,7 @@ jobs:
         run: echo "PUB_CACHE="$HOME/.pub-cache"" >> $GITHUB_ENV
 
       - run: dart pub global activate melos
+
 
       - name: Install dependencies
         run: melos bootstrap
