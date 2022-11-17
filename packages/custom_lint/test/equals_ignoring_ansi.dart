@@ -14,7 +14,7 @@ class _IsEqualIgnoringAnsi extends Matcher {
 
   @override
   bool matches(Object? object, Map<Object?, Object?> matchState) {
-    final description = (object! as String).strip;
+    final description = (object! as String).strip.replaceAll(';49m', '');
     if (_value != description) {
       matchState[_mismatchedValueKey] = description;
       return false;
