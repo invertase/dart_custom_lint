@@ -141,11 +141,13 @@ void _renderLints(
 }
 
 Future<void> _startWatchMode(CustomLintRunner runner) async {
-  stdin
-    // Let's not force user to have to press "enter" to input a command
-    ..lineMode = false
-    // Let's not pollute the output with whatever the user types
-    ..echoMode = false;
+  if (stdin.hasTerminal) {
+    stdin
+      // Let's not pollute the output with whatever the user types
+      ..echoMode = false
+      // Let's not force user to have to press "enter" to input a command
+      ..lineMode = false;
+  }
 
   stdout.writeln(_help);
 
