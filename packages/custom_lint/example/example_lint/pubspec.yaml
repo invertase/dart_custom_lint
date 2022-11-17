@@ -10,6 +10,9 @@ dependencies:
   custom_lint_builder:
     path: ../../../custom_lint_builder
 
+dev_dependencies:
+  custom_lint:
+
 dependency_overrides:
   custom_lint:
     path: ../../../custom_lint

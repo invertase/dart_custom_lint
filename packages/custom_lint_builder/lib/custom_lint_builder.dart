@@ -23,7 +23,7 @@ export 'src/public_protocol.dart'
 /// Starts a plugin and emits lints/fixes/...
 ///
 /// [startPlugin] will redirect errors and prints within [plugin]
-/// to a log file, as they would otherwise be unvisible.
+/// to a log file, as they would otherwise be invisible.
 ///
 /// See also [PluginBase].
 void startPlugin(SendPort sendPort, PluginBase plugin) {
@@ -34,7 +34,8 @@ void startPlugin(SendPort sendPort, PluginBase plugin) {
   runZonedGuarded(
     () {
       final client = Client(plugin);
-      client.start(ClientIsolateChannel(sendPort));
+      final channel = ClientIsolateChannel(sendPort);
+      client.start(channel);
     },
     (err, stack) {
       send(
