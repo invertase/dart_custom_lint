@@ -67,11 +67,15 @@ Future<void> customLint({
         }
       });
 
-    await runner.initialize();
-    await _runPlugins(runner, reload: false);
+    try {
+      await runner.initialize();
+      await _runPlugins(runner, reload: false);
 
-    if (watchMode) {
-      await _startWatchMode(runner);
+      if (watchMode) {
+        await _startWatchMode(runner);
+      }
+    } finally {
+      await runner.close();
     }
   }, (err, stack) {
     if (isDone) {
