@@ -1,3 +1,0 @@
-dependency_overrides:
-  custom_lint:
-    path: ../..
