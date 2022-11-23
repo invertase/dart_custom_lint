@@ -1,6 +1,8 @@
-## [Unreleased]
+## 0.0.13
 
 - Add debugger and hot-reload support (Thanks to @TimWhiting)
+- Correctly respect `exclude` obtains from the analysis_options.yaml
+- Fix `dart analyze` incorrectly failing due to showing the "plugin is starting" lint.
 
 ## 0.0.12
 
