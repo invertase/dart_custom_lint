@@ -4,7 +4,6 @@ import 'package:test/test.dart';
 
 import '../bin/custom_lint.dart' as cli;
 import 'create_project.dart';
-import 'equals_ignoring_ansi.dart';
 import 'mock_fs.dart';
 
 const oyPluginSource = '''
@@ -114,13 +113,13 @@ No issues found!
         await cli.main();
 
         expect(exitCode, -1);
-        expect(err.join(), completion(equalsIgnoringAnsi('''
-IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: Error: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
-Try adding the name of the type of the variable or the keyword 'var'.
+        expect(err.join(), completion('''
+IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: \x1B[31mError: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
+Try adding the name of the type of the variable or the keyword 'var'.\x1B[39;49m
 invalid;
 ^^^^^^^
 
-''')));
+'''));
         expect(out, emitsDone);
       },
       currentDirectory: app,
@@ -181,14 +180,12 @@ invalid;
         expect(
           err.join(),
           completion(
-            equalsIgnoringAnsi(
-              '''
-IsolateSpawnException: Unable to spawn isolate: ${plugin2.path}/bin/custom_lint.dart:1:9: Error: A value of type 'String' can't be assigned to a variable of type 'int'.
+            '''
+IsolateSpawnException: Unable to spawn isolate: ${plugin2.path}/bin/custom_lint.dart:1:9: \x1B[31mError: A value of type 'String' can't be assigned to a variable of type 'int'.\x1B[39;49m
 int x = 'oy';
         ^
 
 ''',
-            ),
           ),
         );
         expect(out.join(), completion('''
