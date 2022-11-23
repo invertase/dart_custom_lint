@@ -110,31 +110,38 @@ final _pluginLinkProvider = FutureProvider.autoDispose
     p.join(pluginRootPath, 'bin', 'custom_lint.dart'),
   );
 
-  final isolate = await Isolate.spawnUri(
-    mainUri,
-    const [],
-    receivePort.sendPort,
-    // WHen published on pub or git, the plugin source often does not have a
-    // package_config.json. As such, we manually specify one based on the
-    // application that depends on the custom lint plugin.
-    // Since the application that uses the plugin depends on said plugin,
-    // the applications' package_config should contain everything that the plugin
-    // needs to work.
-    packageConfig: packageConfig,
-    // TODO test error in main (outside of runZonedGuarded)
-    debugName: pluginName,
-    onError: receivePort.sendPort,
-  );
+  try {
+    final isolate = await Isolate.spawnUri(
+      mainUri,
+      const [],
+      receivePort.sendPort,
+      // WHen published on pub or git, the plugin source often does not have a
+      // package_config.json. As such, we manually specify one based on the
+      // application that depends on the custom lint plugin.
+      // Since the application that uses the plugin depends on said plugin,
+      // the applications' package_config should contain everything that the plugin
+      // needs to work.
+      packageConfig: packageConfig,
+      // TODO test error in main (outside of runZonedGuarded)
+      debugName: pluginName,
+      onError: receivePort.sendPort,
+    );
 
-  final link = PluginLink._(
-    isolate,
-    ServerIsolateChannel(receivePort),
-    pluginRootUri.uri,
-    pluginName,
-  );
-  ref.onDispose(link.close);
+    final link = PluginLink._(
+      isolate,
+      ServerIsolateChannel(receivePort),
+      pluginRootUri.uri,
+      pluginName,
+    );
+    ref.onDispose(link.close);
 
-  return link;
+    return link;
+  } on IsolateSpawnException catch (err, stack) {
+    Error.throwWithStackTrace(
+      'Failed to spawn plugin $pluginName: $err',
+      stack,
+    );
+  }
 });
 
 /// The interface for interacting with a plugin

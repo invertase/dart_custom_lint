@@ -53,6 +53,8 @@ class CustomLintPlugin extends ServerPlugin {
 
   final _overlays = <String, String>{};
 
+  bool _isDisposed = false;
+
   late final ProviderContainer _container;
 
   /// An imperative anchor for reading the current list of plugins
@@ -89,6 +91,7 @@ class CustomLintPlugin extends ServerPlugin {
       (previousPlugins, currentPlugins) async {
         final previousLinks = await previousPlugins;
         final links = await currentPlugins;
+        if (_isDisposed) return;
 
         for (final linkEntry in links.entries) {
           final previousLinkResult = previousLinks?[linkEntry.key];
@@ -465,11 +468,14 @@ class CustomLintPlugin extends ServerPlugin {
   FutureOr<plugin.PluginShutdownResult> handlePluginShutdown(
     plugin.PluginShutdownParams parameters,
   ) async {
+    assert(!_isDisposed, 'The plugin is already disposed');
     try {
       // TODO what if a plugin initialized, then context root changed and is now failing
       await _requestAllPlugins(parameters);
+
       return plugin.PluginShutdownResult();
     } finally {
+      _isDisposed = true;
       _container.dispose();
     }
   }
