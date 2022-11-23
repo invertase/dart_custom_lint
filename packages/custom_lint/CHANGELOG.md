@@ -1,3 +1,7 @@
+## 0.0.14
+
+- Fix custom_lint not working in the IDE
+
 ## 0.0.13
 
 - Add debugger and hot-reload support (Thanks to @TimWhiting)
