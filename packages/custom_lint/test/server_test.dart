@@ -5,7 +5,6 @@ import 'package:test/test.dart';
 
 import 'cli_test.dart';
 import 'create_project.dart';
-import 'equals_ignoring_ansi.dart';
 import 'matchers.dart';
 import 'mock_fs.dart';
 import 'run_plugin.dart';
@@ -471,15 +470,11 @@ invalid;
         final awaitError = expectLater(
           runner.channel.pluginErrors,
           emits(
-            isA<PluginErrorParams>().having(
-              (e) => e.message,
-              'message',
-              equalsIgnoringAnsi('''
-IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: Error: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
-Try adding the name of the type of the variable or the keyword 'var'.
+            isA<PluginErrorParams>().having((e) => e.message, 'message', '''
+IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: \x1B[31mError: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
+Try adding the name of the type of the variable or the keyword 'var'.\x1B[39;49m
 invalid;
 ^^^^^^^'''),
-            ),
           ),
         );
         await expectLater(
