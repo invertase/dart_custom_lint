@@ -7,3 +7,9 @@ environment:
 
 dependencies:
   custom_lint: 0.0.13
+
+# TODO: If you want to contribute to custom_lint, add a pubspec_overrides.yaml file
+# in this folder, containing the following:
+# dependency_overrides:
+#   custom_lint:
+#     path: /absolute/path/to/custom_lint/folder
