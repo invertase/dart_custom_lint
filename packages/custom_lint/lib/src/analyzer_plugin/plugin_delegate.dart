@@ -219,7 +219,11 @@ class CommandCustomLintDelegate
       err,
       stackTrace,
     );
-    stderr.writeln('$err\n$stackTrace');
+    try {
+      stderr.writeln('$err\n$stackTrace');
+    } catch (_) {
+      throw Exception('Threw while trying to print message: $err\n$stackTrace');
+    }
   }
 
   @override
