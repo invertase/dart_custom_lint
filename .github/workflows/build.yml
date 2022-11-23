@@ -49,8 +49,8 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Run tests
-        run: melos exec --dir-exists=test "dart test"
+      # - name: Run tests
+      #   run: melos exec --dir-exists=test "dart test"
 
-      - name: Upload coverage to codecov
-        run: curl -s https://codecov.io/bash | bash
+      # - name: Upload coverage to codecov
+      #   run: curl -s https://codecov.io/bash | bash
