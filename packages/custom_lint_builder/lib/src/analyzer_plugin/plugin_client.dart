@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/overlay_file_system.dart';
@@ -23,6 +25,7 @@ import 'package:analyzer_plugin/src/protocol/protocol_internal.dart';
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/utilities/null_string_sink.dart';
 import 'package:analyzer_plugin/utilities/subscriptions/subscription_manager.dart';
+import 'package:hotreloader/hotreloader.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 
@@ -48,6 +51,9 @@ abstract class ClientPlugin {
 
   /// A megabyte.
   static const int M = 1024 * 1024;
+
+  /// Set when using watch mode
+  Future<HotReloader>? _hotReloader;
 
   /// The communication channel being used to communicate with the analysis
   /// server.
@@ -245,7 +251,7 @@ abstract class ClientPlugin {
       final driver = driverMap.remove(contextRoot);
       // The `dispose` method has the side-effect of removing the driver from
       // the analysis driver scheduler.
-      driver?.dispose();
+      unawaited(driver?.dispose2());
     }
 
     final filesToFullyResolve = {
@@ -506,6 +512,38 @@ abstract class ClientPlugin {
     _channel.listen(_onRequest, onError: onError, onDone: onDone);
   }
 
+  void _handleWatchModeConfig({required bool watchMode}) {
+    // On config change, cancel the previous reloader
+    unawaited(
+      _hotReloader?.then(
+        (value) => value.stop(),
+        // ignore: avoid_types_on_closure_parameters, false positive
+        onError: (Object err, StackTrace stack) {},
+      ),
+    );
+    _hotReloader = null;
+
+    if (watchMode) {
+      _hotReloader = HotReloader.create(
+        onBeforeReload: (c) {
+          _channel.sendNotification(
+            const PrintNotification('Source change detected, hot-reloading...')
+                .toNotification(),
+          );
+          // Allow hot-reload to be performed
+          return true;
+        },
+        onAfterReload: (c) {
+          if (c.result == HotReloadResult.Succeeded) {
+            _channel.sendNotification(
+              const DidHotReloadNotification().toNotification(),
+            );
+          }
+        },
+      );
+    }
+  }
+
   /// Add all of the files contained in the given [resource] that are not in the
   /// list of [excluded] resources to the given [driver].
   void _addFilesToDriver(
@@ -541,6 +579,7 @@ abstract class ClientPlugin {
         break;
       case SetConfigParams.key:
         final params = SetConfigParams.fromRequest(request);
+        _handleWatchModeConfig(watchMode: params.watchMode);
         result = await handleSetConfig(params);
         break;
       case ANALYSIS_REQUEST_GET_NAVIGATION:

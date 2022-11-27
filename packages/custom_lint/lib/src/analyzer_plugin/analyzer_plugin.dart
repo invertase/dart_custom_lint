@@ -26,6 +26,7 @@ class CustomLintPlugin extends ServerPlugin {
     analyzer.ResourceProvider? resourceProvider,
     required this.delegate,
     required this.includeBuiltInLints,
+    required this.watchMode,
   }) : super(resourceProvider);
 
   /// The delegate for handling events in a platform-specific way.
@@ -33,6 +34,9 @@ class CustomLintPlugin extends ServerPlugin {
 
   /// Whether to include lints made by custom_lint about the status of a plugin.
   final bool includeBuiltInLints;
+
+  /// Whether to hot-restart plugins when their source changes.
+  final bool watchMode;
 
   @override
   String get contactInfo =>
@@ -52,17 +56,16 @@ class CustomLintPlugin extends ServerPlugin {
   late final ProviderContainer _container;
 
   /// An imperative anchor for reading the current list of plugins
-  late final ProviderSubscription<Future<Map<Uri, Result<PluginLink>>>>
+  late final ProviderSubscription<Future<Map<PluginKey, Result<PluginLink>>>>
       _allPluginsSub;
-
   @override
   void start(PluginCommunicationChannel channel) {
     super.start(channel);
     _container = ProviderContainer(
       overrides: [
         includeBuiltInLintsProvider.overrideWithValue(includeBuiltInLints),
+        watchModeProvider.overrideWithValue(watchMode),
       ],
-      cacheTime: const Duration(minutes: 5),
     );
 
     _container.listen<Map<String, plugin.AnalysisErrorsParams>>(
@@ -177,7 +180,7 @@ class CustomLintPlugin extends ServerPlugin {
         .toList();
   }
 
-  PluginDetails _getPluginDetails(Uri linkKey) {
+  PluginDetails _getPluginDetails(PluginKey linkKey) {
     return PluginDetails(
       name: _container.read(pluginMetaProvider(linkKey)).name,
       root: linkKey,
@@ -186,7 +189,7 @@ class CustomLintPlugin extends ServerPlugin {
   }
 
   Future<plugin.Response> _requestPlugin(
-    Uri pluginKey,
+    PluginKey pluginKey,
     plugin.RequestParams request,
   ) async {
     try {
@@ -402,6 +405,9 @@ class CustomLintPlugin extends ServerPlugin {
   Future<AwaitAnalysisDoneResult> handleAwaitAnalysisDone(
     AwaitAnalysisDoneParams parameters,
   ) async {
+    if (parameters.reload) {
+      _container.invalidate(invalidateLintsProvider);
+    }
     await _requestAllPlugins(parameters);
     return const AwaitAnalysisDoneResult();
   }

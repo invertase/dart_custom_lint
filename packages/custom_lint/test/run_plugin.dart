@@ -13,7 +13,7 @@ Future<List<AnalysisErrorsParams>> runServerInCliModeForApp(
   // to ignoreErrors as we cannot explictly handle errors
 ) async {
   final runner = await startRunnerForApp(directory);
-  return runner.getLints();
+  return runner.getLints(reload: false);
 }
 
 Future<CustomLintRunner> startRunnerForApp(
@@ -24,6 +24,7 @@ Future<CustomLintRunner> startRunnerForApp(
     CustomLintPlugin(
       delegate: CommandCustomLintDelegate(),
       includeBuiltInLints: false,
+      watchMode: false,
     ),
     directory,
   );

@@ -1,6 +1,25 @@
-## 0.0.9+1
+## 0.0.14
 
-Update dependency
+- Fix custom_lint not working in the IDE
+
+## 0.0.13
+
+- Add debugger and hot-reload support (Thanks to @TimWhiting)
+- Correctly respect `exclude` obtains from the analysis_options.yaml
+- Fix `dart analyze` incorrectly failing due to showing the "plugin is starting" lint.
+
+## 0.0.12
+
+Upgrade dependencies
+
+## 0.0.11
+
+Upgrade dependencies
+
+## 0.0.10
+
+- Upgrade Riverpod to 2.0.0
+- Fix deprecation errors with analyzer
 
 ## 0.0.9
 

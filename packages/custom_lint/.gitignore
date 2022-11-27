@@ -1,0 +1,3 @@
+# Ignoring the override file as it is useful for development only
+# and require an absolute file path – which is unique to the developer.
+tools/analyzer_plugin/pubspec_overrides.yaml

@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:test/test.dart';
 
 import '../bin/custom_lint.dart' as cli;
 import 'create_project.dart';
+import 'equals_ignoring_ansi.dart';
 import 'mock_fs.dart';
 
 const oyPluginSource = '''
@@ -77,7 +80,7 @@ class _AnotherLint extends PluginBase {
 ''',
     );
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {'lib/main.dart': 'void fn() {}'},
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
@@ -85,9 +88,9 @@ class _AnotherLint extends PluginBase {
 
     await runWithIOOverride(
       (out, err) async {
-        final code = await cli.main();
+        await cli.main();
 
-        expect(code, 0);
+        expect(exitCode, 0);
         expect(out.join(), completion('''
 No issues found!
 '''));
@@ -100,7 +103,7 @@ No issues found!
   test('exits with -1 if only an error but no lint are found', () async {
     final plugin = createPlugin(name: 'test_lint', main: 'invalid;');
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {'lib/main.dart': 'void fn() {}'},
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
@@ -108,16 +111,16 @@ No issues found!
 
     await runWithIOOverride(
       (out, err) async {
-        final code = await cli.main();
+        await cli.main();
 
-        expect(code, -1);
-        expect(err.join(), completion('''
-IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: \x1B[31mError: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
-Try adding the name of the type of the variable or the keyword 'var'.\x1B[39;49m
+        expect(exitCode, -1);
+        expect(err.join(), completion(equalsIgnoringAnsi('''
+IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: Error: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
+Try adding the name of the type of the variable or the keyword 'var'.
 invalid;
 ^^^^^^^
 
-'''));
+''')));
         expect(out, emitsDone);
       },
       currentDirectory: app,
@@ -128,7 +131,7 @@ invalid;
     final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
     final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': 'void fn() {}',
         'lib/another.dart': 'void fail() {}',
@@ -139,9 +142,9 @@ invalid;
 
     await runWithIOOverride(
       (out, err) async {
-        final code = await cli.main();
+        await cli.main();
 
-        expect(code, -1);
+        expect(exitCode, -1);
         expect(out.join(), completion('''
   lib/another.dart:1:6 • Hello world • hello_world
   lib/another.dart:1:6 • Oy • oy
@@ -161,7 +164,7 @@ invalid;
       main: "int x = 'oy';",
     );
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': 'void fn() {}',
         'lib/another.dart': 'void fail() {}',
@@ -172,18 +175,20 @@ invalid;
 
     await runWithIOOverride(
       (out, err) async {
-        final code = await cli.main();
+        await cli.main();
 
-        expect(code, -1);
+        expect(exitCode, -1);
         expect(
           err.join(),
           completion(
-            '''
-IsolateSpawnException: Unable to spawn isolate: ${plugin2.path}/bin/custom_lint.dart:1:9: \x1B[31mError: A value of type 'String' can't be assigned to a variable of type 'int'.\x1B[39;49m
+            equalsIgnoringAnsi(
+              '''
+IsolateSpawnException: Unable to spawn isolate: ${plugin2.path}/bin/custom_lint.dart:1:9: Error: A value of type 'String' can't be assigned to a variable of type 'int'.
 int x = 'oy';
         ^
 
 ''',
+            ),
           ),
         );
         expect(out.join(), completion('''
@@ -231,7 +236,7 @@ class _HelloWorldLint extends PluginBase {
 
     final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': 'void fn() {}',
         'lib/another.dart': 'void fail() {}',
@@ -242,9 +247,9 @@ class _HelloWorldLint extends PluginBase {
 
     await runWithIOOverride(
       (out, err) async {
-        final code = await cli.main();
+        await cli.main();
 
-        expect(code, -1);
+        expect(exitCode, -1);
         expect(
           out.join(),
           completion(
@@ -350,7 +355,7 @@ class _HelloWorldLint extends PluginBase {
 ''',
     );
 
-    final app = creatLintUsage(
+    final app = createLintUsage(
       source: {
         'lib/main.dart': '''
 void main() {
@@ -363,9 +368,9 @@ void main() {
 
     await runWithIOOverride(
       (out, err) async {
-        final code = await cli.main();
+        await cli.main();
 
-        expect(code, -1);
+        expect(exitCode, -1);
         expect(
           err.join(),
           completion(isEmpty),

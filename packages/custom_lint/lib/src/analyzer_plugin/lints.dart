@@ -7,11 +7,15 @@ import 'package:path/path.dart' as p;
 import 'package:riverpod/riverpod.dart';
 import 'package:yaml/yaml.dart';
 
+import '../riverpod_utils.dart';
 import 'plugin_link.dart';
 
 /// The plugin status on whether it successfully started or not
 final _pluginNotStartedLintProvider = Provider.autoDispose
-    .family<Map<String, plugin.AnalysisErrorsParams>, Uri>((ref, linkKey) {
+    .family<Map<String, plugin.AnalysisErrorsParams>, PluginKey>(
+        (ref, linkKey) {
+  ref.cache5();
+
   // unwrapPrevious to simplify the logic
   final link = ref.watch(pluginLinkProvider(linkKey)).unwrapPrevious();
 
@@ -83,7 +87,7 @@ final _pluginNotStartedLintProvider = Provider.autoDispose
                 link.error.toString(),
                 plugin.Location(
                   p.join(
-                    linkKey.toFilePath(),
+                    linkKey.uri.toFilePath(),
                     'bin',
                     'custom_lint.dart',
                   ),
@@ -104,11 +108,16 @@ final _pluginNotStartedLintProvider = Provider.autoDispose
   return errors;
 });
 
+/// A provider used to forcifly refresh the lints, by refreshing this provider.
+final invalidateLintsProvider = Provider.autoDispose((ref) => Object());
+
 /// The list of lints per Dart Library emitted by a plugin, including
 /// built-in lints such as whether the plugin as started or not.
 final lintsForPluginProvider = StreamProvider.autoDispose
-    .family<Map<String, plugin.AnalysisErrorsParams>, Uri>(
+    .family<Map<String, plugin.AnalysisErrorsParams>, PluginKey>(
         (ref, linkKey) async* {
+  ref.watch(invalidateLintsProvider);
+  ref.cache5();
   if (ref.watch(includeBuiltInLintsProvider)) {
     final pluginNotStartedLint =
         ref.watch(_pluginNotStartedLintProvider(linkKey));
@@ -142,6 +151,7 @@ final lintsForPluginProvider = StreamProvider.autoDispose
 /// The combination of all lints emitted by the currently active plugins
 final allLintsProvider =
     Provider.autoDispose<Map<String, plugin.AnalysisErrorsParams>>((ref) {
+  ref.cache5();
   final linkKeys = ref.watch(allPluginLinkKeysProvider);
 
   ref.state = {};

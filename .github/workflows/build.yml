@@ -1,0 +1,56 @@
+name: Build
+
+on:
+  pull_request:
+    paths-ignore:
+      - "**.md"
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+  schedule:
+    # runs the CI everyday at 10AM
+    - cron: "0 10 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        channel:
+          - stable
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ matrix.channel }}
+
+      - name: Add pub cache bin to PATH
+        run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
+
+      - name: Add pub cache to PATH
+        run: echo "PUB_CACHE="$HOME/.pub-cache"" >> $GITHUB_ENV
+
+      - name: Add pubspec_overrides to the analyzer_plugin starter
+        run: "echo \"dependency_overrides:\n  custom_lint:\n    path: ${{github.workspace}}/packages/custom_lint\" > packages/custom_lint/tools/analyzer_plugin/pubspec_overrides.yaml"
+
+      - run: dart pub global activate melos
+
+      - name: Install dependencies
+        run: melos bootstrap
+
+      - name: Check format
+        run: flutter format --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze
+
+      # - name: Run tests
+      #   run: melos exec --dir-exists=test "dart test"
+
+      # - name: Upload coverage to codecov
+      #   run: curl -s https://codecov.io/bash | bash
