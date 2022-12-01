@@ -8,7 +8,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 bool _isProvider(DartType type) {
   // TODO refactor to use TypeChecker
   // TODO is it safe?
-  final element = type.element2! as ClassElement;
+  final element = type.element! as ClassElement;
   final source = element.librarySource.uri;
 
   final isProviderBase = source.scheme == 'package' &&
