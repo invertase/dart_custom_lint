@@ -1,3 +1,7 @@
+## [Unreleased fix]
+
+- Upgrade analyzer/analzer_plugin
+
 ## 0.0.14
 
 - Fix custom_lint not working in the IDE
@@ -7,6 +11,7 @@
 - Add debugger and hot-reload support (Thanks to @TimWhiting)
 - Correctly respect `exclude` obtains from the analysis_options.yaml
 - Fix `dart analyze` incorrectly failing due to showing the "plugin is starting" lint.
+
 ## 0.0.12
 
 - Fix custom_lint plugins not working in release mode and when using git dependencies (thanks to @TimWhiting)
