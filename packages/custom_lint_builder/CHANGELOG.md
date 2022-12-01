@@ -1,3 +1,7 @@
+## [Unreleased fix]
+
+- Upgrade analyzer/analzer_plugin
+
 ## 0.0.14
 
 - Fix custom_lint not working in the IDE
