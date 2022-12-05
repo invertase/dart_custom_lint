@@ -230,7 +230,7 @@ extension LineLocationUtils on Element {
 extension LintLocationFileResultExtension on FileResult {
   /// Creates a [LintLocation] from an offset + length.
   LintLocation lintLocationFromOffset(int offset, {required int length}) {
-    assert(offset >= 0, 'offset must be positive');
+    assert(offset >= 0, 'offset must be positive. Received $offset');
     assert(length >= 1, 'length but be greater than 0');
     final startLocation = lineInfo.getLocation(offset);
     final endLocation = lineInfo.getLocation(offset + length);

@@ -68,6 +68,8 @@ class Client extends ServerPlugin {
   @override
   String get version => '1.0.0-alpha.0';
 
+  final List<Future<void>> _pendingAnalyzeFilesFutures = [];
+
   final _pendingGetLintsSubscriptions = <String, StreamSubscription>{};
 
   /// Calls [PluginBase.getLints], applies `// ignore` & error handling,
@@ -165,6 +167,10 @@ class Client extends ServerPlugin {
   Future<analyzer_plugin.EditGetFixesResult> handleEditGetFixes(
     analyzer_plugin.EditGetFixesParams parameters,
   ) async {
+    if (!_ownsPath(parameters.file)) {
+      return analyzer_plugin.EditGetFixesResult([]);
+    }
+
     final result = await getResolvedUnitResult(parameters.file);
 
     return plugin.handleEditGetFixes(result, parameters.offset);
@@ -175,17 +181,11 @@ class Client extends ServerPlugin {
   ) async {
     if (parameters.reload) _forcePluginRerun();
 
-    throw UnsupportedError('message');
-    // if (parameters.reload) _forcePluginRerun();
-
-    // bool hasPendingDriver() {
-    //   return driverMap.values.any((driver) => driver.hasFilesToAnalyze);
-    // }
-
-    // while (hasPendingDriver() || _pendingGetLintsSubscriptions.isNotEmpty) {
-    //   await Future<void>.delayed(const Duration(milliseconds: 100));
-    // }
-    // return const AwaitAnalysisDoneResult();
+    while (_pendingAnalyzeFilesFutures.isNotEmpty ||
+        _pendingGetLintsSubscriptions.isNotEmpty) {
+      await Future.wait(_pendingAnalyzeFilesFutures.toList());
+    }
+    return const AwaitAnalysisDoneResult();
   }
 
   Future<SetConfigResult> _handleSetConfig(SetConfigParams params) async {
@@ -218,11 +218,22 @@ class Client extends ServerPlugin {
     return null;
   }
 
+  bool _ownsPath(String path) {
+    if (!path.endsWith('.dart')) return false;
+
+    final context = contextCollection?.contextFor(path);
+    if (context == null) return false;
+
+    return context.contextRoot.isAnalyzed(path);
+  }
+
   @override
   Future<void> analyzeFile({
     required AnalysisContext analysisContext,
     required String path,
   }) async {
+    if (!_ownsPath(path)) return;
+
     // TODO test that getLints stops being listened if a new Result is emitted
     // before the previous getLints completes
     unawaited(_pendingGetLintsSubscriptions[path]?.cancel());
@@ -266,6 +277,28 @@ class Client extends ServerPlugin {
           }
         },
       );
+    }
+  }
+
+  @override
+  Future<void> analyzeFiles({
+    required AnalysisContext analysisContext,
+    required List<String> paths,
+  }) async {
+    // We override "analyzeFiles" to keep track of the pending analysis.
+
+    // Encapsulating super.analyzeFiles in a future to make sure it doesn't
+    // synchronously throw. This shouldn't be necessary but we're not supposed to
+    // know what the implementation is.
+    final analyzeFilesFuture = Future(
+      () => super.analyzeFiles(analysisContext: analysisContext, paths: paths),
+    );
+
+    try {
+      _pendingAnalyzeFilesFutures.add(analyzeFilesFuture);
+      await analyzeFilesFuture;
+    } finally {
+      _pendingAnalyzeFilesFutures.remove(analyzeFilesFuture);
     }
   }
 }
