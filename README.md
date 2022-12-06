@@ -17,6 +17,7 @@
   - [Using our custom lint package in an application](#using-our-custom-lint-package-in-an-application)
   - [Obtaining the list of lints in the CI](#obtaining-the-list-of-lints-in-the-ci)
   - [Using the Dart debugger and enabling hot-restart.](#using-the-dart-debugger-and-enabling-hot-restart)
+  - [Testing your plugins using expect\_lint](#testing-your-plugins-using-expect_lint)
 - [FAQs](#faqs)
   - [Q. How do I get all the classes present in my source code?](#q-how-do-i-get-all-the-classes-present-in-my-source-code)
   - [Q. How do I get all the global variables present in my source code?](#q-how-do-i-get-all-the-global-variables-present-in-my-source-code)
@@ -29,7 +30,7 @@ You can read the latest [blog post](https://invertase.link/b18R) or watch the [a
 
 ## About
 
-Lint rules are a powerful way to improve the maintainability of a project.
+Lint rules are a powerful way to improve the mainta∏inability of a project.
 The more, the merrier!  
 But while Dart offers a wide variety of lint rules by default, it cannot
 reasonably include every possible lint. For example, Dart does not
@@ -53,6 +54,7 @@ That includes:
   Updating the source code of a linter plugin will dynamically restart it,
   without having to restart your IDE/analyzer server.
 - Built-in support for `// ignore:` and `// ignore_for_file:`.
+- Built-in testing mechanism using `// expect_lint`. See [Testing your plugins using expect_lint](#testing-your-plugins-using-expect_lint)
 - Support for `print(...)` and exceptions:  
   If your plugin somehow throws or print debug messages, custom_lint
   will generate a log file with the messages/errors.
@@ -161,8 +163,8 @@ If you are working on a Flutter project, run `flutter pub run custom_lint` inste
 
 ### Using the Dart debugger and enabling hot-restart.
 
-To enable hot-restart and use the Dart debugger, we'll want to start plugins using
-mechanism.
+To enable hot-restart and use the Dart debugger, we'll want to start plugins in a
+slightly different way.
 
 First, create a `tools/custom_lint_debug.dart` file next to `tools/custom_lint.dart`
 with the following content:
@@ -192,6 +194,32 @@ Chances are you didn't start your program in debug mode.
 If using VScode, when starting your program, make sure to click on `debug` not `run`:
 
 ![VScode's debug button](https://raw.githubusercontent.com/invertase/dart_custom_lint/main/resources/vscode_debug.jpg)
+
+### Testing your plugins using expect_lint
+
+Custom_lint comes with an official testing mechanism for asserting that your
+plugins correctly work.
+
+Testing your plugins is straightforward: Simply write a file that should contain
+lints from your plugin (such as the example folder). Then, using a syntax
+similar to `// ignore`, write a `// expect_lint: code` in the line before
+your lint:
+
+```dart
+// expect_lint: riverpod_final_provider
+var provider = Provider(...);
+```
+
+When doing this, there are two possible cases:
+
+- The line after the `expect_lint` correctly contains the expected lint.  
+  In that case, the lint is ignored (similarly to if we used `// ignore`)
+- The next line does **not** contain the lint.
+  In that case, the `expect_lint` comment will have an error.
+
+This allows testing your plugins by simply running `custom_lint` on your test/example folder.
+Then, if any expected lint is missing, the command will fail. But if your plugin correctly
+emits the lint, the command will succeed.
 
 ---
 

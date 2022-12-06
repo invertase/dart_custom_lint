@@ -3,10 +3,13 @@ import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_common.dart' as plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
+import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:riverpod/riverpod.dart';
 import 'package:yaml/yaml.dart';
 
+import '../protocol/internal_protocol.dart';
 import '../riverpod_utils.dart';
 import 'plugin_link.dart';
 
@@ -114,7 +117,7 @@ final invalidateLintsProvider = Provider.autoDispose((ref) => Object());
 /// The list of lints per Dart Library emitted by a plugin, including
 /// built-in lints such as whether the plugin as started or not.
 final lintsForPluginProvider = StreamProvider.autoDispose
-    .family<Map<String, plugin.AnalysisErrorsParams>, PluginKey>(
+    .family<Map<String, CustomAnalysisNotification>, PluginKey>(
         (ref, linkKey) async* {
   ref.watch(invalidateLintsProvider);
   ref.cache5();
@@ -123,7 +126,10 @@ final lintsForPluginProvider = StreamProvider.autoDispose
         ref.watch(_pluginNotStartedLintProvider(linkKey));
 
     if (pluginNotStartedLint.isNotEmpty) {
-      yield* Stream.value(pluginNotStartedLint);
+      yield* Stream.value({
+        for (final entry in pluginNotStartedLint.entries)
+          entry.key: CustomAnalysisNotification(entry.value, []),
+      });
       // if somehow the plugin failed to start, there is no way the plugin will have lints
       return;
     }
@@ -134,19 +140,90 @@ final lintsForPluginProvider = StreamProvider.autoDispose
   // TODO why are all files re-analyzed when a single file changes?
   // TODO handle removed files or there is otherwise a memory leak
 
-  var lints = <String, plugin.AnalysisErrorsParams>{};
+  var lints = <String, CustomAnalysisNotification>{};
 
   await for (final lint in link.channel.lints) {
-    if (lint.errors.isEmpty) {
+    if (lint.lints.errors.isEmpty) {
       // TODO is this enough to handle when files are deleted?
-      lints = Map.from(lints)..remove(lint.file);
+      lints = Map.from(lints)..remove(lint.lints.file);
     } else {
-      lints = {...lints, lint.file: lint};
+      lints = {...lints, lint.lints.file: lint};
     }
 
     yield lints;
   }
 });
+
+@immutable
+class _ComparableExpectLintMeta {
+  const _ComparableExpectLintMeta(this.line, this.code);
+
+  final int line;
+  final String code;
+
+  @override
+  int get hashCode => Object.hash(line, code);
+
+  @override
+  bool operator ==(Object other) {
+    return other is _ComparableExpectLintMeta &&
+        other.code == code &&
+        other.line == line;
+  }
+}
+
+plugin.AnalysisErrorsParams _applyExpectLint(
+  List<CustomAnalysisNotification?> lintsForFile, {
+  required String filePath,
+}) {
+  final allExpectedLints = lintsForFile
+      .whereNotNull()
+      .expand((e) => e.expectLints)
+      .map((e) => _ComparableExpectLintMeta(e.line, e.code))
+      .toSet();
+
+  // The list of all the expect_lints codes that don't have a matching lint.
+  final unfulfilledExpectedLints =
+      lintsForFile.whereNotNull().expand((e) => e.expectLints).toList();
+
+  final lintsExcludingExpectedLints =
+      lintsForFile.whereNotNull().expand((e) => e.lints.errors).where((lint) {
+    final matchingExpectLintMeta = _ComparableExpectLintMeta(
+      // Lints use 1-based offsets but expectLints use 0-based offsets. So
+      // we remove 1 to have them on the same unit. Then we remove 1 again
+      // to access the line before the lint.
+      lint.location.startLine - 2,
+      lint.code,
+    );
+
+    if (allExpectedLints.contains(matchingExpectLintMeta)) {
+      // The lint has a matching expect_lint. Let's ignore the lint and mark
+      // the associated expect_lint as fulfilled.
+      unfulfilledExpectedLints.removeWhere(
+        (e) =>
+            e.line == matchingExpectLintMeta.line &&
+            e.code == matchingExpectLintMeta.code,
+      );
+      return false;
+    }
+    return true;
+  });
+
+  return plugin.AnalysisErrorsParams(filePath, [
+    ...lintsExcludingExpectedLints,
+    for (final unfulfilledExpectedLint in unfulfilledExpectedLints)
+      plugin.AnalysisError(
+        plugin.AnalysisErrorSeverity.INFO,
+        plugin.AnalysisErrorType.LINT,
+        unfulfilledExpectedLint.location.asLocation(),
+        'Expected to find the lint ${unfulfilledExpectedLint.code} on next line but none found.',
+        'unfulfilled_expect_lint',
+        correction:
+            'Either update the code such that it emits the lint ${unfulfilledExpectedLint.code} '
+            'or update the expect_lint clause to not include the code ${unfulfilledExpectedLint.code}.',
+      )
+  ]);
+}
 
 /// The combination of all lints emitted by the currently active plugins
 final allLintsProvider =
@@ -159,7 +236,7 @@ final allLintsProvider =
   // Manually watching individual plugin lints to have the map
   // only update changed keys instead of recreating all map values.
   for (final linkKey in linkKeys) {
-    ref.listen<AsyncValue<Map<String, plugin.AnalysisErrorsParams>>>(
+    ref.listen<AsyncValue<Map<String, CustomAnalysisNotification>>>(
       lintsForPluginProvider(linkKey),
       (previous, next) {
         final previousLints = previous?.asData?.value;
@@ -171,22 +248,21 @@ final allLintsProvider =
         for (final fileToUpdate in allFiles) {
           if (previousLints?[fileToUpdate] == lints?[fileToUpdate]) continue;
 
-          final lintsForFile = linkKeys.expand<plugin.AnalysisError>(
-            (link) {
-              final lintsForLink = ref.read(lintsForPluginProvider(link));
+          final unfilteredLintsForFile = linkKeys
+              .map(
+                (link) => ref
+                    .read(lintsForPluginProvider(link))
+                    .asData
+                    ?.value[fileToUpdate],
+              )
+              .toList();
 
-              if (lintsForLink.isLoading) return const [];
+          final filteredLintsForFile = _applyExpectLint(
+            unfilteredLintsForFile,
+            filePath: fileToUpdate,
+          );
 
-              return lintsForLink.asData?.value[fileToUpdate]?.errors ??
-                  const [];
-            },
-          ).toList();
-
-          ref.state = {
-            ...ref.state,
-            fileToUpdate:
-                plugin.AnalysisErrorsParams(fileToUpdate, lintsForFile),
-          };
+          ref.state = {...ref.state, fileToUpdate: filteredLintsForFile};
         }
       },
       // Needed to build the initial value

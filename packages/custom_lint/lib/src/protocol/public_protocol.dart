@@ -154,6 +154,22 @@ class LintLocation {
         assert(length >= 1, 'length must be >= 1'),
         assert(offset >= 0, 'offset must be >= 0');
 
+  /// Converts a [analyzer_plugin.Location] into a [LintLocation].
+  ///
+  /// The [analyzer_plugin.Location] must have all of its properties specified,
+  /// of else [LintLocation.fromLocation] will throw.
+  factory LintLocation.fromLocation(analyzer_plugin.Location location) {
+    return LintLocation(
+      startLine: location.startLine,
+      startColumn: location.startColumn,
+      endLine: location.endLine!,
+      endColumn: location.endColumn!,
+      filePath: location.file,
+      offset: location.offset,
+      length: location.length,
+    );
+  }
+
   /// The line where this lint begins
   ///
   /// Starts at 1
