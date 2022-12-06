@@ -2,13 +2,95 @@
 /// but that custom_lint defines
 library custom_protocol;
 
-import 'dart:convert';
+import 'dart:convert' show json;
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
+import 'package:analyzer_plugin/protocol/protocol_common.dart';
+import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 // ignore: implementation_imports
-import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
-    show RequestParams, ResponseResult;
+import 'package:analyzer_plugin/src/protocol/protocol_internal.dart';
 import 'package:meta/meta.dart';
+
+import 'public_protocol.dart';
+
+/// Information about an `// expect_lint: code` clause
+@immutable
+class ExpectLintMeta {
+  /// Information about an `// expect_lint: code` clause
+  const ExpectLintMeta({
+    required this.line,
+    required this.code,
+    required this.location,
+  }) : assert(line >= 0, 'line must be positive');
+
+  /// Decode [ExpectLintMeta] from a [Map].
+  factory ExpectLintMeta.fromJson(Map<String, Object?> json) {
+    return ExpectLintMeta(
+      line: json['line']! as int,
+      code: json['code']! as String,
+      location: LintLocation.fromLocation(
+        Location.fromJson(
+          ResponseDecoder(null),
+          'location',
+          json['location'],
+        ),
+      ),
+    );
+  }
+
+  /// A 0-based offset of the line having the expect_lint clause.
+  final int line;
+
+  /// The code expected.
+  final String code;
+
+  /// The location of the expected code.
+  final LintLocation location;
+
+  /// Serializes this object.
+  Map<String, Object?> toJson() {
+    return {
+      'line': line,
+      'code': code,
+      'location': location.asLocation().toJson()
+    };
+  }
+}
+
+/// A wrapper around [AnalysisErrorsParams] to include [ExpectLintMeta].
+class CustomAnalysisNotification {
+  /// A wrapper around [AnalysisErrorsParams] to include [ExpectLintMeta].
+  CustomAnalysisNotification(this.lints, this.expectLints);
+
+  /// Decode [CustomAnalysisNotification] from a [Notification].
+  factory CustomAnalysisNotification.fromNotification(
+    Notification notification,
+  ) {
+    return CustomAnalysisNotification(
+      AnalysisErrorsParams.fromNotification(notification),
+      (notification.params!['expect_lints'] as List?)
+              ?.cast<Map>()
+              .map((e) => ExpectLintMeta.fromJson(Map.from(e)))
+              .toList() ??
+          [],
+    );
+  }
+
+  /// The lints emitted, without any regards to expect_lint clauses.
+  final AnalysisErrorsParams lints;
+
+  /// The expect_lints clauses in the file.
+  final List<ExpectLintMeta> expectLints;
+
+  /// Encodes the object.
+  Map<String, Object> toJson() => {
+        ...lints.toJson(),
+        'expect_lints': expectLints.map((e) => e.toJson()).toList()
+      };
+
+  /// Converts the object into a [Notification].
+  Notification toNotification() => Notification('analysis.errors', toJson());
+}
 
 /// Notification for when a plugin invokes [print].
 @immutable

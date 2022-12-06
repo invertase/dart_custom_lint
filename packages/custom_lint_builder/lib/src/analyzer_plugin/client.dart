@@ -76,12 +76,17 @@ class Client extends ServerPlugin {
   /// and encode them.
   ///
   /// Using `async*` such that we can "cancel" the subscription to [PluginBase.getLints]
-  Stream<analyzer_plugin.AnalysisErrorsParams> _getAnalysisErrors(
+  Stream<CustomAnalysisNotification> _getAnalysisErrors(
     analyzer.ResolvedUnitResult analysisResult,
   ) {
     final lineInfo = analysisResult.lineInfo;
     final source = analysisResult.content;
     final fileIgnoredCodes = _getAllIgnoredForFileCodes(analysisResult.content);
+    final expectLints = _getAllExpectedLints(
+      analysisResult.content,
+      lineInfo,
+      filePath: analysisResult.path,
+    );
 
     // Lints are disabled for the entire file, so no point to even execute `getLints`
     if (fileIgnoredCodes.contains('type=lint')) return const Stream.empty();
@@ -101,7 +106,10 @@ class Client extends ServerPlugin {
         .cast<analyzer_plugin.AnalysisError>();
 
     return analysisErrors.toListStream().map((event) {
-      return analyzer_plugin.AnalysisErrorsParams(analysisResult.path, event);
+      return CustomAnalysisNotification(
+        analyzer_plugin.AnalysisErrorsParams(analysisResult.path, event),
+        expectLints,
+      );
     });
   }
 
@@ -338,8 +346,6 @@ extension<T> on Stream<T> {
 }
 
 final _ignoreRegex = RegExp(r'//\s*ignore\s*:(.+)$', multiLine: true);
-final _ignoreForFileRegex =
-    RegExp(r'//\s*ignore_for_file\s*:(.+)$', multiLine: true);
 
 bool _isIgnored(Lint lint, LineInfo lineInfo, String source) {
   // -1 because lines starts at 1 not 0
@@ -360,6 +366,9 @@ bool _isIgnored(Lint lint, LineInfo lineInfo, String source) {
   return codes.contains(lint.code) || codes.contains('type=lint');
 }
 
+final _ignoreForFileRegex =
+    RegExp(r'//\s*ignore_for_file\s*:(.+)$', multiLine: true);
+
 Set<String> _getAllIgnoredForFileCodes(String source) {
   return _ignoreForFileRegex
       .allMatches(source)
@@ -367,4 +376,46 @@ Set<String> _getAllIgnoredForFileCodes(String source) {
       .expand((e) => e.split(','))
       .map((e) => e.trim())
       .toSet();
+}
+
+final _expectLintRegex = RegExp(r'//\s*expect_lint\s*:(.+)$', multiLine: true);
+
+List<ExpectLintMeta> _getAllExpectedLints(
+  String source,
+  LineInfo lineInfo, {
+  required String filePath,
+}) {
+  final expectLints = _expectLintRegex.allMatches(source);
+
+  return expectLints.expand((expectLint) {
+    final lineNumber = lineInfo.getLocation(expectLint.start).lineNumber - 1;
+    final codesStartOffset = source.indexOf(':', expectLint.start) + 1;
+
+    final codes = expectLint.group(1)!.split(',');
+    var codeOffsetAcc = codesStartOffset;
+
+    return codes.map((rawCode) {
+      final codeOffset =
+          codeOffsetAcc + (rawCode.length - rawCode.trimLeft().length);
+      codeOffsetAcc += rawCode.length + 1;
+
+      final code = rawCode.trim();
+      final start = lineInfo.getLocation(codeOffset);
+      final end = lineInfo.getLocation(codeOffset + code.length);
+
+      return ExpectLintMeta(
+        line: lineNumber,
+        code: code,
+        location: LintLocation(
+          filePath: filePath,
+          offset: codeOffset,
+          startLine: start.lineNumber,
+          startColumn: start.columnNumber,
+          endLine: end.lineNumber,
+          endColumn: end.columnNumber,
+          length: code.length,
+        ),
+      );
+    });
+  }).toList();
 }
