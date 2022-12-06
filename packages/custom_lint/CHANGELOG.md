@@ -1,4 +1,4 @@
-## [Unreleased fix]
+## 0.0.15
 
 - Custom_lint now has a built-in mechanism for testing lints.
   Simply write a file that should contain lints for your plugin.
