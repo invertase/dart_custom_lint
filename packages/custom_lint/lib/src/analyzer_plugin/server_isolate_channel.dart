@@ -13,10 +13,8 @@ import '../protocol/internal_protocol.dart';
 
 const _uuid = Uuid();
 
-/// An interface for connecting the server with plugins
-class ServerIsolateChannel {
-  /// An interface for connecting the server with plugins
-  ServerIsolateChannel(this._receivePort);
+abstract class _BaseIsolateChannel {
+  _BaseIsolateChannel(this._receivePort);
 
   final ReceivePort _receivePort;
   late final Stream<Object?> _receivePortStream =
@@ -33,11 +31,6 @@ class ServerIsolateChannel {
       .map((e) => e! as Map)
       .where((e) => e.containsKey(Notification.EVENT))
       .map(Notification.fromJson);
-
-  /// Lints emitted by the plugin
-  late final Stream<AnalysisErrorsParams> lints = notifications
-      .where((e) => e.event == 'analysis.errors')
-      .map(AnalysisErrorsParams.fromNotification);
 
   /// The [Notification]s emitted by the plugin
   late final Stream<PrintNotification> messages = notifications
@@ -109,4 +102,26 @@ class ServerIsolateChannel {
 
     return response;
   }
+}
+
+/// An interface for interacting with the plugin server.
+class ServerIsolateChannel extends _BaseIsolateChannel {
+  /// An interface for interacting with the plugin server.
+  ServerIsolateChannel(super.receivePort);
+
+  /// Lints emitted by the plugin
+  late final Stream<AnalysisErrorsParams> lints = notifications
+      .where((e) => e.event == 'analysis.errors')
+      .map(AnalysisErrorsParams.fromNotification);
+}
+
+/// An interface for connecting plugins with the plugin server.
+class PluginIsolateChannel extends _BaseIsolateChannel {
+  /// An interface for connecting plugins with the plugin server.
+  PluginIsolateChannel(super.receivePort);
+
+  /// Lints emitted by the plugin
+  late final Stream<CustomAnalysisNotification> lints = notifications
+      .where((e) => e.event == 'analysis.errors')
+      .map(CustomAnalysisNotification.fromNotification);
 }
