@@ -143,7 +143,7 @@ final lintsForPluginProvider = StreamProvider.autoDispose
   var lints = <String, CustomAnalysisNotification>{};
 
   await for (final lint in link.channel.lints) {
-    if (lint.lints.errors.isEmpty) {
+    if (lint.lints.errors.isEmpty && lint.expectLints.isEmpty) {
       // TODO is this enough to handle when files are deleted?
       lints = Map.from(lints)..remove(lint.lints.file);
     } else {

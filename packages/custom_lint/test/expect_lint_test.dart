@@ -1,5 +1,6 @@
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:async/async.dart';
 import 'package:path/path.dart';
 import 'package:test/test.dart';
 
@@ -21,6 +22,8 @@ class _HelloWorldLint extends PluginBase {
   Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
     final library = resolvedUnitResult.libraryElement;
     for (final variable in library.topLevelElements) {
+      if (variable.name == 'ignore') continue;
+
       yield Lint(
         code: 'hello_world',
         message: 'Hello world',
@@ -51,6 +54,12 @@ void main() {
 
     final app = createLintUsage(
       source: {
+        'lib/empty.dart': '''
+// a file with no lint in it
+
+// expect_lint: some_lint
+void ignore() {}
+''',
         'lib/main.dart': '''
 void fn() {}
 
@@ -66,9 +75,10 @@ void fn3() {}
     );
 
     final runner = await startRunnerForApp(app);
+    final lints = StreamQueue(runner.channel.lints);
 
     expect(
-      await runner.channel.lints.first,
+      await lints.next,
       predicate<AnalysisErrorsParams>((value) {
         expect(value.file, join(app.path, 'lib', 'main.dart'));
         expect(value.errors.length, 4);
@@ -105,7 +115,27 @@ void fn3() {}
       }),
     );
 
-    expect(runner.channel.lints, emitsDone);
+    expect(
+      await lints.next,
+      predicate<AnalysisErrorsParams>((value) {
+        expect(value.file, join(app.path, 'lib', 'empty.dart'));
+        expect(value.errors.length, 1);
+
+        expect(value.errors[0].code, 'unfulfilled_expect_lint');
+        expect(
+          value.errors[0].message,
+          'Expected to find the lint some_lint on next line but none found.',
+        );
+        expect(
+          value.errors[0].location,
+          Location(value.file, 46, 9, 3, 17, endColumn: 26, endLine: 3),
+        );
+
+        return true;
+      }),
+    );
+
+    expect(lints.rest, emitsDone);
 
     // Closing so that previous error matchers relying on stream
     // closing can complete
