@@ -1,3 +1,7 @@
+## 0.0.16
+
+Fix `expect_lint` not working if the file doesn't contain any lint.
+
 ## 0.0.15
 
 - Custom_lint now has a built-in mechanism for testing lints.
