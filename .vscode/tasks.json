@@ -5,6 +5,9 @@
       "label": "delete .plugin_manager",
       "command": "rm -rf ~/.dartServer/.plugin_manager/",
       "type": "shell",
+      "presentation": {
+        "reveal": "never",
+      }
     }
   ]
 }

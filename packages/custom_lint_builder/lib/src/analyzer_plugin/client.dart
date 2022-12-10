@@ -1,20 +1,21 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/context_locator.dart' as analyzer;
-import 'package:analyzer/dart/analysis/context_root.dart' as analyzer;
+import 'package:analyzer/dart/analysis/analysis_context.dart';
 import 'package:analyzer/dart/analysis/results.dart' as analyzer;
 import 'package:analyzer/file_system/file_system.dart' as analyzer;
+import 'package:analyzer/file_system/physical_file_system.dart' as analyzer;
 import 'package:analyzer/source/line_info.dart';
 // ignore: implementation_imports
-import 'package:analyzer/src/dart/analysis/context_builder.dart' as analyzer;
-// ignore: implementation_imports
-import 'package:analyzer/src/dart/analysis/driver.dart' as analyzer;
+import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart'
     as analyzer_plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart'
     as analyzer_plugin;
+// ignore: implementation_imports
+import 'package:analyzer_plugin/src/protocol/protocol_internal.dart';
 import 'package:collection/collection.dart';
+import 'package:hotreloader/hotreloader.dart';
 import 'package:source_span/source_span.dart';
 import 'package:stack_trace/stack_trace.dart';
 
@@ -42,10 +43,16 @@ class GetLintException implements Exception {
 
 /// An internal client for connecting a custom_lint plugin to the server
 /// using the analyzer_plugin protocol
-class Client extends ClientPlugin {
+class Client extends ServerPlugin {
   /// An internal client for connecting a custom_lint plugin to the server
   /// using the analyzer_plugin protocol
-  Client(this.plugin, [analyzer.ResourceProvider? provider]) : super(provider);
+  Client(this.plugin, [analyzer.ResourceProvider? provider])
+      : super(
+          resourceProvider:
+              provider ?? analyzer.PhysicalResourceProvider.INSTANCE,
+        );
+
+  Future<HotReloader>? _hotReloader;
 
   /// The plugin that will be connected to the analyzer server
   final PluginBase plugin;
@@ -61,69 +68,25 @@ class Client extends ClientPlugin {
   @override
   String get version => '1.0.0-alpha.0';
 
+  final List<Future<void>> _pendingAnalyzeFilesFutures = [];
+
   final _pendingGetLintsSubscriptions = <String, StreamSubscription>{};
-
-  @override
-  analyzer.AnalysisDriver createAnalysisDriver(
-    analyzer_plugin.ContextRoot contextRoot,
-  ) {
-    final analyzerContextRoot = contextRoot.asAnalyzerContextRoot(
-      resourceProvider: resourceProvider,
-    );
-
-    final builder = analyzer.ContextBuilderImpl(
-      resourceProvider: resourceProvider,
-    );
-    final context = builder.createContext(contextRoot: analyzerContextRoot);
-
-// TODO cancel sub
-    context.driver.results.listen((analysisResult) {
-      if (analysisResult is! analyzer.ResolvedUnitResult ||
-          !analysisResult.exists) {
-        return;
-      }
-      _handleAnalysisResult(analysisResult, context.contextRoot);
-    });
-
-    return context.driver;
-  }
-
-  void _handleAnalysisResult(
-    analyzer.SomeResolvedUnitResult analysisResult,
-    analyzer.ContextRoot contextRoot,
-  ) {
-    // TODO handle ErrorsResult
-    // TODO test that getLints stops being listened if a new Result is emitted
-    // before the previous getLints completes
-    if (analysisResult is! analyzer.ResolvedUnitResult ||
-        !analysisResult.exists) {
-      return;
-    }
-    if (!contextRoot.isAnalyzed(analysisResult.path)) {
-      return;
-    }
-
-    // TODO test that getLints stops being listened if a new Result is emitted
-    // before the previous getLints completes
-    _pendingGetLintsSubscriptions[analysisResult.path]?.cancel();
-    // ignore: cancel_subscriptions, the subscription is stored in the object and cancelled later
-    final sub = _getAnalysisErrors(analysisResult).listen(
-      (event) => channel.sendNotification(event.toNotification()),
-      onDone: () => _pendingGetLintsSubscriptions.remove(analysisResult.path),
-    );
-    _pendingGetLintsSubscriptions[analysisResult.path] = sub;
-  }
 
   /// Calls [PluginBase.getLints], applies `// ignore` & error handling,
   /// and encode them.
   ///
   /// Using `async*` such that we can "cancel" the subscription to [PluginBase.getLints]
-  Stream<analyzer_plugin.AnalysisErrorsParams> _getAnalysisErrors(
+  Stream<CustomAnalysisNotification> _getAnalysisErrors(
     analyzer.ResolvedUnitResult analysisResult,
   ) {
     final lineInfo = analysisResult.lineInfo;
     final source = analysisResult.content;
     final fileIgnoredCodes = _getAllIgnoredForFileCodes(analysisResult.content);
+    final expectLints = _getAllExpectedLints(
+      analysisResult.content,
+      lineInfo,
+      filePath: analysisResult.path,
+    );
 
     // Lints are disabled for the entire file, so no point to even execute `getLints`
     if (fileIgnoredCodes.contains('type=lint')) return const Stream.empty();
@@ -143,7 +106,10 @@ class Client extends ClientPlugin {
         .cast<analyzer_plugin.AnalysisError>();
 
     return analysisErrors.toListStream().map((event) {
-      return analyzer_plugin.AnalysisErrorsParams(analysisResult.path, event);
+      return CustomAnalysisNotification(
+        analyzer_plugin.AnalysisErrorsParams(analysisResult.path, event),
+        expectLints,
+      );
     });
   }
 
@@ -209,50 +175,138 @@ class Client extends ClientPlugin {
   Future<analyzer_plugin.EditGetFixesResult> handleEditGetFixes(
     analyzer_plugin.EditGetFixesParams parameters,
   ) async {
-    final result = await driverForPath(parameters.file)!
-        .getResult(parameters.file) as analyzer.ResolvedUnitResult;
+    if (!_ownsPath(parameters.file)) {
+      return analyzer_plugin.EditGetFixesResult([]);
+    }
+
+    final result = await getResolvedUnitResult(parameters.file);
 
     return plugin.handleEditGetFixes(result, parameters.offset);
   }
 
-  @override
-  Future<AwaitAnalysisDoneResult> handleAwaitAnalysisDone(
+  Future<AwaitAnalysisDoneResult> _handleAwaitAnalysisDone(
     AwaitAnalysisDoneParams parameters,
   ) async {
     if (parameters.reload) _forcePluginRerun();
 
-    bool hasPendingDriver() {
-      return driverMap.values.any((driver) => driver.hasFilesToAnalyze);
+    while (_pendingAnalyzeFilesFutures.isNotEmpty ||
+        _pendingGetLintsSubscriptions.isNotEmpty) {
+      await Future.wait(_pendingAnalyzeFilesFutures.toList());
     }
-
-    while (hasPendingDriver() || _pendingGetLintsSubscriptions.isNotEmpty) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
-
     return const AwaitAnalysisDoneResult();
   }
 
-  @override
-  Future<SetConfigResult> handleSetConfig(SetConfigParams params) async {
+  Future<SetConfigResult> _handleSetConfig(SetConfigParams params) async {
     _includeBuiltInLints = params.includeBuiltInLints;
     return const SetConfigResult();
   }
 
   /// A function for requesting the linters to re-execute on analyzed files.
   void _forcePluginRerun() {
-    for (final driver in driverMap.values) {
-      for (final knownFile in driver.knownFiles) {
-        final contextRootForDriver =
-            driver.currentSession.analysisContext.contextRoot;
-        // Although _handleAnalysisResult already checks whether the file path
-        // is one that plugins accepts or not, calling `getResult` is really expensive.
-        // So it's worth duplicating the logic to avoid the getResult call.
-        if (contextRootForDriver.isAnalyzed(knownFile)) {
-          driver
-              .getResult(knownFile)
-              .then((e) => _handleAnalysisResult(e, contextRootForDriver));
-        }
-      }
+    final contextCollection = this.contextCollection;
+    if (contextCollection != null) {
+      afterNewContextCollection(contextCollection: contextCollection);
+    }
+  }
+
+  @override
+  FutureOr<ResponseResult?> handleCustomRequest(
+    Request request,
+    int requestTime,
+  ) async {
+    switch (request.method) {
+      case AwaitAnalysisDoneParams.key:
+        final params = AwaitAnalysisDoneParams.fromRequest(request);
+        return _handleAwaitAnalysisDone(params);
+      case SetConfigParams.key:
+        final params = SetConfigParams.fromRequest(request);
+        _handleWatchModeConfig(watchMode: params.watchMode);
+        return _handleSetConfig(params);
+    }
+    return null;
+  }
+
+  bool _ownsPath(String path) {
+    if (!path.endsWith('.dart')) return false;
+
+    final context = contextCollection?.contextFor(path);
+    if (context == null) return false;
+
+    return context.contextRoot.isAnalyzed(path);
+  }
+
+  @override
+  Future<void> analyzeFile({
+    required AnalysisContext analysisContext,
+    required String path,
+  }) async {
+    if (!_ownsPath(path)) return;
+
+    // TODO test that getLints stops being listened if a new Result is emitted
+    // before the previous getLints completes
+    unawaited(_pendingGetLintsSubscriptions[path]?.cancel());
+
+    final resolvedUnitResult = await getResolvedUnitResult(path);
+
+    // ignore: cancel_subscriptions, the subscription is stored in the object and cancelled later
+    final sub = _getAnalysisErrors(resolvedUnitResult).listen(
+      (event) => channel.sendNotification(event.toNotification()),
+      onDone: () => _pendingGetLintsSubscriptions.remove(path),
+    );
+    _pendingGetLintsSubscriptions[path] = sub;
+  }
+
+  void _handleWatchModeConfig({required bool watchMode}) {
+    // On config change, cancel the previous reloader
+    unawaited(
+      _hotReloader?.then(
+        (value) => value.stop(),
+        // ignore: avoid_types_on_closure_parameters, false positive
+        onError: (Object err, StackTrace stack) {},
+      ),
+    );
+    _hotReloader = null;
+
+    if (watchMode) {
+      _hotReloader = HotReloader.create(
+        onBeforeReload: (c) {
+          channel.sendNotification(
+            const PrintNotification('Source change detected, hot-reloading...')
+                .toNotification(),
+          );
+          // Allow hot-reload to be performed
+          return true;
+        },
+        onAfterReload: (c) {
+          if (c.result == HotReloadResult.Succeeded) {
+            channel.sendNotification(
+              const DidHotReloadNotification().toNotification(),
+            );
+          }
+        },
+      );
+    }
+  }
+
+  @override
+  Future<void> analyzeFiles({
+    required AnalysisContext analysisContext,
+    required List<String> paths,
+  }) async {
+    // We override "analyzeFiles" to keep track of the pending analysis.
+
+    // Encapsulating super.analyzeFiles in a future to make sure it doesn't
+    // synchronously throw. This shouldn't be necessary but we're not supposed to
+    // know what the implementation is.
+    final analyzeFilesFuture = Future(
+      () => super.analyzeFiles(analysisContext: analysisContext, paths: paths),
+    );
+
+    try {
+      _pendingAnalyzeFilesFutures.add(analyzeFilesFuture);
+      await analyzeFilesFuture;
+    } finally {
+      _pendingAnalyzeFilesFutures.remove(analyzeFilesFuture);
     }
   }
 }
@@ -292,8 +346,6 @@ extension<T> on Stream<T> {
 }
 
 final _ignoreRegex = RegExp(r'//\s*ignore\s*:(.+)$', multiLine: true);
-final _ignoreForFileRegex =
-    RegExp(r'//\s*ignore_for_file\s*:(.+)$', multiLine: true);
 
 bool _isIgnored(Lint lint, LineInfo lineInfo, String source) {
   // -1 because lines starts at 1 not 0
@@ -314,6 +366,9 @@ bool _isIgnored(Lint lint, LineInfo lineInfo, String source) {
   return codes.contains(lint.code) || codes.contains('type=lint');
 }
 
+final _ignoreForFileRegex =
+    RegExp(r'//\s*ignore_for_file\s*:(.+)$', multiLine: true);
+
 Set<String> _getAllIgnoredForFileCodes(String source) {
   return _ignoreForFileRegex
       .allMatches(source)
@@ -323,17 +378,44 @@ Set<String> _getAllIgnoredForFileCodes(String source) {
       .toSet();
 }
 
-extension on analyzer_plugin.ContextRoot {
-  analyzer.ContextRoot asAnalyzerContextRoot({
-    required analyzer.ResourceProvider resourceProvider,
-  }) {
-    final locator =
-        analyzer.ContextLocator(resourceProvider: resourceProvider).locateRoots(
-      includedPaths: [root],
-      excludedPaths: exclude,
-      optionsFile: optionsFile,
-    );
+final _expectLintRegex = RegExp(r'//\s*expect_lint\s*:(.+)$', multiLine: true);
 
-    return locator.single;
-  }
+List<ExpectLintMeta> _getAllExpectedLints(
+  String source,
+  LineInfo lineInfo, {
+  required String filePath,
+}) {
+  final expectLints = _expectLintRegex.allMatches(source);
+
+  return expectLints.expand((expectLint) {
+    final lineNumber = lineInfo.getLocation(expectLint.start).lineNumber - 1;
+    final codesStartOffset = source.indexOf(':', expectLint.start) + 1;
+
+    final codes = expectLint.group(1)!.split(',');
+    var codeOffsetAcc = codesStartOffset;
+
+    return codes.map((rawCode) {
+      final codeOffset =
+          codeOffsetAcc + (rawCode.length - rawCode.trimLeft().length);
+      codeOffsetAcc += rawCode.length + 1;
+
+      final code = rawCode.trim();
+      final start = lineInfo.getLocation(codeOffset);
+      final end = lineInfo.getLocation(codeOffset + code.length);
+
+      return ExpectLintMeta(
+        line: lineNumber,
+        code: code,
+        location: LintLocation(
+          filePath: filePath,
+          offset: codeOffset,
+          startLine: start.lineNumber,
+          startColumn: start.columnNumber,
+          endLine: end.lineNumber,
+          endColumn: end.columnNumber,
+          length: code.length,
+        ),
+      );
+    });
+  }).toList();
 }

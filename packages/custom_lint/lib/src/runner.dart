@@ -74,7 +74,9 @@ class CustomLintRunner {
   }
 
   /// Obtains the list of lints for the current workspace.
-  Future<List<AnalysisErrorsParams>> getLints({required bool reload}) async {
+  Future<List<AnalysisErrorsParams>> getLints({
+    required bool reload,
+  }) async {
     final result = <String, AnalysisErrorsParams>{};
 
     StreamSubscription? sub;

@@ -128,7 +128,7 @@ final _pluginLinkProvider = FutureProvider.autoDispose
 
   final link = PluginLink._(
     isolate,
-    ServerIsolateChannel(receivePort),
+    PluginIsolateChannel(receivePort),
     pluginRootUri.uri,
     pluginName,
   );
@@ -155,7 +155,7 @@ class PluginLink {
   final Uri key;
 
   /// A channel for interacting with this plugin
-  final ServerIsolateChannel channel;
+  final PluginIsolateChannel channel;
 
   /// Close the plugin, killing the isolate
   Future<void> close() async {

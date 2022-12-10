@@ -154,6 +154,22 @@ class LintLocation {
         assert(length >= 1, 'length must be >= 1'),
         assert(offset >= 0, 'offset must be >= 0');
 
+  /// Converts a [analyzer_plugin.Location] into a [LintLocation].
+  ///
+  /// The [analyzer_plugin.Location] must have all of its properties specified,
+  /// of else [LintLocation.fromLocation] will throw.
+  factory LintLocation.fromLocation(analyzer_plugin.Location location) {
+    return LintLocation(
+      startLine: location.startLine,
+      startColumn: location.startColumn,
+      endLine: location.endLine!,
+      endColumn: location.endColumn!,
+      filePath: location.file,
+      offset: location.offset,
+      length: location.length,
+    );
+  }
+
   /// The line where this lint begins
   ///
   /// Starts at 1
@@ -230,7 +246,7 @@ extension LineLocationUtils on Element {
 extension LintLocationFileResultExtension on FileResult {
   /// Creates a [LintLocation] from an offset + length.
   LintLocation lintLocationFromOffset(int offset, {required int length}) {
-    assert(offset >= 0, 'offset must be positive');
+    assert(offset >= 0, 'offset must be positive. Received $offset');
     assert(length >= 1, 'length but be greater than 0');
     final startLocation = lineInfo.getLocation(offset);
     final endLocation = lineInfo.getLocation(offset + length);
