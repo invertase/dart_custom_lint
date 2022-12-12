@@ -4,9 +4,6 @@
 
 import 'dart:async';
 
-import 'package:analyzer/file_system/file_system.dart';
-import 'package:analyzer/file_system/overlay_file_system.dart';
-import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer_plugin/channel/channel.dart';
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_constants.dart';
@@ -24,38 +21,13 @@ import '../protocol/internal_protocol.dart';
 /// Clients may not implement or mix-in this class, but are expected to extend
 /// it.
 abstract class ServerPlugin {
-  /// Initialize a newly created analysis server plugin. If a resource [provider]
-  /// is given, then it will be used to access the file system. Otherwise a
-  /// resource provider that accesses the physical file system will be used.
-  ServerPlugin([ResourceProvider? provider])
-      : resourceProvider = OverlayResourceProvider(
-          provider ?? PhysicalResourceProvider.INSTANCE,
-        );
-
-  /// A megabyte.
-  static const int M = 1024 * 1024;
-
   /// The communication channel being used to communicate with the analysis
   /// server.
   late PluginCommunicationChannel _channel;
 
-  /// The resource provider used to access the file system.
-  final OverlayResourceProvider resourceProvider;
-
   /// Return the communication channel being used to communicate with the
   /// analysis server, or `null` if the plugin has not been started.
   PluginCommunicationChannel get channel => _channel;
-
-  /// Return the user visible information about how to contact the plugin authors
-  /// with any problems that are found, or `null` if there is no contact info.
-  String? get contactInfo => null;
-
-  /// Return a list of glob patterns selecting the files that this plugin is
-  /// interested in analyzing.
-  List<String> get fileGlobsToAnalyze;
-
-  /// Return the user visible name of this plugin.
-  String get name;
 
   /// Return the version number of the plugin spec required by this plugin,
   /// encoded as a string.

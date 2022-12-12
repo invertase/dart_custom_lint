@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/context_locator.dart';
+import 'package:analyzer/file_system/overlay_file_system.dart';
+import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:cli_util/cli_util.dart';
 import 'package:path/path.dart' as p;
@@ -36,7 +38,10 @@ class CustomLintRunner {
   /// The connection between the server and the plugin.
   late final channel = ServerIsolateChannel(_receivePort);
 
-  late final _resourceProvider = _server.resourceProvider;
+  late final _resourceProvider = OverlayResourceProvider(
+    PhysicalResourceProvider.INSTANCE,
+  );
+
   late final _sdkPath = getSdkPath();
 
   late final _contextLocator =
