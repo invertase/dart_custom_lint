@@ -36,18 +36,12 @@ class CustomLintPlugin extends ServerPlugin {
   /// Whether to hot-restart plugins when their source changes.
   final bool watchMode;
 
-  @override
-  String get contactInfo =>
+  String get _contactInfo =>
       'https://github.com/invertase/dart_custom_lint/issues';
 
-  @override
-  List<String> get fileGlobsToAnalyze => const ['*.dart'];
+  List<String> get _fileGlobsToAnalyze => const ['*.dart'];
 
-  @override
-  String get name => 'custom_lint';
-
-  @override
-  String get version => '1.0.0-alpha.0';
+  String get _name => 'custom_lint';
 
   final _overlays = <String, String>{};
 
@@ -260,15 +254,16 @@ class CustomLintPlugin extends ServerPlugin {
 
     final versionString = parameters.version;
     final serverVersion = Version.parse(versionString);
+    final clientVersion = Version.parse('1.0.0-alpha.0');
 
     await _allPluginsSub.read();
 
     return plugin.PluginVersionCheckResult(
-      isCompatibleWith(serverVersion),
-      name,
-      version,
-      fileGlobsToAnalyze,
-      contactInfo: contactInfo,
+      serverVersion <= clientVersion,
+      _name,
+      clientVersion.toString(),
+      _fileGlobsToAnalyze,
+      contactInfo: _contactInfo,
     );
   }
 

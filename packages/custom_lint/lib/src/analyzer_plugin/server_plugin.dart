@@ -11,7 +11,6 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
-import 'package:pub_semver/pub_semver.dart';
 
 import '../protocol/internal_protocol.dart';
 
@@ -28,10 +27,6 @@ abstract class ServerPlugin {
   /// Return the communication channel being used to communicate with the
   /// analysis server, or `null` if the plugin has not been started.
   PluginCommunicationChannel get channel => _channel;
-
-  /// Return the version number of the plugin spec required by this plugin,
-  /// encoded as a string.
-  String get version;
 
   /// Handle an 'analysis.getNavigation' request.
   ///
@@ -142,11 +137,6 @@ abstract class ServerPlugin {
   FutureOr<PluginVersionCheckResult> handlePluginVersionCheck(
     PluginVersionCheckParams parameters,
   );
-
-  /// Return `true` if this plugin is compatible with an analysis server that is
-  /// using the given version of the plugin API.
-  bool isCompatibleWith(Version serverVersion) =>
-      serverVersion <= Version.parse(version);
 
   /// The method that is called when the analysis server closes the communication
   /// channel. This method will not be invoked under normal conditions because
