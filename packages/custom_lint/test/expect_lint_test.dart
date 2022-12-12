@@ -1,7 +1,9 @@
+import 'dart:io';
+
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:async/async.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
 import 'create_project.dart';
@@ -80,7 +82,7 @@ void fn3() {}
     expect(
       await lints.next,
       predicate<AnalysisErrorsParams>((value) {
-        expect(value.file, join(app.path, 'lib', 'main.dart'));
+        expect(value.file, path.join(app.path, 'lib', 'main.dart'));
         expect(value.errors.length, 4);
 
         expect(value.errors.first.code, 'hello_world');
@@ -118,7 +120,7 @@ void fn3() {}
     expect(
       await lints.next,
       predicate<AnalysisErrorsParams>((value) {
-        expect(value.file, join(app.path, 'lib', 'empty.dart'));
+        expect(value.file, path.join(app.path, 'lib', 'empty.dart'));
         expect(value.errors.length, 1);
 
         expect(value.errors[0].code, 'unfulfilled_expect_lint');
@@ -129,6 +131,89 @@ void fn3() {}
         expect(
           value.errors[0].location,
           Location(value.file, 46, 9, 3, 17, endColumn: 26, endLine: 3),
+        );
+
+        return true;
+      }),
+    );
+
+    expect(lints.rest, emitsDone);
+
+    // Closing so that previous error matchers relying on stream
+    // closing can complete
+    await runner.close();
+
+    expect(plugin.log.existsSync(), false);
+  });
+
+  test('// expect_lint update when the source code changes', () async {
+    final plugin = createPlugin(
+      name: 'test_lint',
+      main: source,
+    );
+
+    final app = createLintUsage(
+      source: {
+        'lib/empty.dart': '''
+// expect_lint: some_lint
+void ignore() {}
+''',
+      },
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    final runner = await startRunnerForApp(app);
+    final lints = StreamQueue(runner.channel.lints);
+
+    expect(
+      await lints.next,
+      predicate<AnalysisErrorsParams>((value) {
+        expect(value.file, path.join(app.path, 'lib', 'empty.dart'));
+        expect(value.errors.length, 1);
+
+        expect(value.errors[0].code, 'unfulfilled_expect_lint');
+        expect(
+          value.errors[0].message,
+          'Expected to find the lint some_lint on next line but none found.',
+        );
+        expect(
+          value.errors[0].location,
+          Location(value.file, 16, 9, 1, 17, endColumn: 26, endLine: 1),
+        );
+
+        return true;
+      }),
+    );
+
+    final sourceFile = File(path.join(app.path, 'lib', 'empty.dart'));
+
+    sourceFile.writeAsStringSync('''
+// Let's push the expect_lint a bit further down the file
+
+// expect_lint: some_lint
+void ignore() {}
+''');
+    await runner.channel.sendRequest(
+      AnalysisHandleWatchEventsParams([
+        WatchEvent(WatchEventType.MODIFY, sourceFile.path),
+      ]),
+    );
+
+    expect(
+      await lints.next,
+      predicate<AnalysisErrorsParams>((value) {
+        expect(value.file, path.join(app.path, 'lib', 'empty.dart'));
+        expect(value.errors.length, 1);
+
+        expect(value.errors[0].code, 'unfulfilled_expect_lint');
+        expect(
+          value.errors[0].message,
+          'Expected to find the lint some_lint on next line but none found.',
+        );
+        expect(
+          value.errors[0].location,
+          Location(value.file, 75, 9, 3, 17, endColumn: 26, endLine: 3),
         );
 
         return true;
