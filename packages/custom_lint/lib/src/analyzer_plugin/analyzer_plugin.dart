@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:analyzer/file_system/file_system.dart' as analyzer;
 import 'package:analyzer_plugin/channel/channel.dart';
 import 'package:analyzer_plugin/protocol/protocol.dart' as plugin;
 import 'package:analyzer_plugin/protocol/protocol_common.dart' as plugin;
@@ -23,11 +22,10 @@ import 'server_plugin.dart';
 class CustomLintPlugin extends ServerPlugin {
   /// An analyzer_plugin server that manages the various custom lint plugins
   CustomLintPlugin({
-    analyzer.ResourceProvider? resourceProvider,
     required this.delegate,
     required this.includeBuiltInLints,
     required this.watchMode,
-  }) : super(resourceProvider);
+  });
 
   /// The delegate for handling events in a platform-specific way.
   final CustomLintDelegate delegate;
