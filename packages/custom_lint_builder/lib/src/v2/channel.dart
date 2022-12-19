@@ -50,8 +50,6 @@ Future<void> runSocket(Map<String, PluginMain> pluginMains, int port) async {
   await runZonedGuarded(
     () async {
       final socket = JsonSocketChannel(await Socket.connect('localhost', port));
-      print('Hello from client');
-
       final registeredPlugins = <String, PluginBase>{};
       client.complete(
         CustomLintPluginClient(

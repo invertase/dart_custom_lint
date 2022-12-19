@@ -235,8 +235,6 @@ $dependencies
 
   @override
   Future<void> init() async {
-    print('Server socket started at ${(await _serverSocket).port}');
-
     _writePackageConfigForTempProject(
       _tempDirectory,
       _contextRoots.roots,
@@ -246,8 +244,6 @@ $dependencies
 
     final processFuture = _asyncRetry(retryCount: 5, () async {
       final unusedPort = await _findPossiblyUnusedPort();
-      print('Trying to start plugin with vm-service port: $unusedPort');
-
       return Process.start(
         'dart',
         [
@@ -259,21 +255,11 @@ $dependencies
       );
     });
 
-    unawaited(
-      processFuture.then(
-        _process.complete,
-        onError: _process.completeError,
-      ),
+    await processFuture.then(
+      _process.complete,
+      onError: _process.completeError,
     );
-
-    final process = await processFuture;
-
-    process.stdout.map(utf8.decode).listen((event) {
-      print('Client log: $event');
-    });
-    process.stderr.map(utf8.decode).listen((event) {
-      print('Client err: $event');
-    });
+    // TODO pipe process stdout/stderr to the log file
 
     await Future.wait([
       sendAnalyzerPluginRequest(_version.toRequest(const Uuid().v4())),

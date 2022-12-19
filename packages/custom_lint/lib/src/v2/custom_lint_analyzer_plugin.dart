@@ -43,7 +43,6 @@ class CustomLintServer {
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
 
   Future<void> _handleRequest(Request request) async {
-    print('Handle request ${request.id} // ${request.method}');
     final requestTime = DateTime.now().millisecondsSinceEpoch;
     void sendResponse({ResponseResult? data, RequestError? error}) {
       analyzerPluginClientChannel.sendJson(
@@ -140,7 +139,6 @@ class CustomLintServer {
 
   Future<void> _handlePluginShutdown() async {
     // TODO send shutdown to process
-    print('showDown');
 
     // The channel will be automatically closed on shutdown.
     // Closing it manually would prevent the follow-up logic to send a
@@ -217,10 +215,8 @@ class CustomLintServer {
           );
         }
       },
-      error: (event) {
-        print('${event.message}\n${event.stackTrace}');
-      },
-      print: (event) => print(event.message),
+      error: (event) => handlePrint('${event.message}\n${event.stackTrace}'),
+      print: (event) => handlePrint(event.message),
     );
   }
 }

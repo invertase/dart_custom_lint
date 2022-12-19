@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:developer' as dev;
+import 'dart:io';
 
 import 'package:analyzer/dart/analysis/analysis_context.dart';
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
@@ -37,7 +37,6 @@ class CustomLintPluginClient {
       resourceProvider: PhysicalResourceProvider.INSTANCE,
     );
     _hotReloader = _maybeStartHotLoad();
-    print('Client start at ${Directory.current}');
     final starter = ServerPluginStarter(_analyzerPlugin);
     starter.start(_channel.sendPort);
 
@@ -69,8 +68,6 @@ class CustomLintPluginClient {
 
   Future<HotReloader?> _maybeStartHotLoad() async {
     if (!await _isVmServiceEnabled()) return null;
-    print(
-        'Enabling hot-reload in dir: ${Directory.current.listSync().map((e) => basename(e.path))}');
     return HotReloader.create(
       onAfterReload: (_) {
         _analyzerPlugin.reAnalyze();
@@ -188,7 +185,6 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     AnalysisSetContextRootsParams parameters,
   ) {
     _lastContextRoots = parameters;
-    print('Hello ${parameters.roots.map((e) => e.root)}');
     return super.handleAnalysisSetContextRoots(parameters);
   }
 
@@ -210,7 +206,6 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       return;
     }
 
-    print('Analyzing: $path');
     final unit = await getResolvedUnitResult(path);
 
     final fileIgnoredCodes = _getAllIgnoredForFileCodes(unit.content);

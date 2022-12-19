@@ -55,7 +55,6 @@ void start(Iterable<String> _, SendPort sendPort) {
         // analyzerPluginChannel: AnalyzerPluginIsolateChannel(sendPort),
         analyzerPluginClientChannel: JsonSendPortChannel(sendPort),
       );
-      print('Hello world');
     },
     (err, stack) => server?.handleUncaughtError(err, stack),
     zoneSpecification: ZoneSpecification(
