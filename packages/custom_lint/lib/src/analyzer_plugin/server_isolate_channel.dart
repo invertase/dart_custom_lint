@@ -13,20 +13,13 @@ import '../protocol/internal_protocol.dart';
 
 const _uuid = Uuid();
 
-abstract class _BaseIsolateChannel {
-  _BaseIsolateChannel(this._receivePort);
-
-  final ReceivePort _receivePort;
-  late final Stream<Object?> _receivePortStream =
-      _receivePort.asBroadcastStream();
-
-  late final _sendPort = _receivePortStream
-      .where((event) => event is SendPort)
-      .cast<SendPort>()
-      .first;
+/// A base class for the protocol responsible with interacting with using the
+/// analyzer_plugin API
+mixin ChannelBase {
+  Stream<Object?> get _inputStream;
 
   /// The [Notification]s emitted by the plugin
-  late final Stream<Notification> notifications = _receivePortStream
+  late final Stream<Notification> notifications = _inputStream
       .where((e) => e is Map)
       .map((e) => e! as Map)
       .where((e) => e.containsKey(Notification.EVENT))
@@ -38,7 +31,7 @@ abstract class _BaseIsolateChannel {
       .map(PrintNotification.fromNotification);
 
   /// The [Response]s emitted by the plugin
-  late final Stream<Response> responses = _receivePortStream
+  late final Stream<Response> responses = _inputStream
       .where((event) => event is Map<String, Object?>)
       .map((event) => event! as Map<String, Object?>)
       .where((e) => e.containsKey(Response.ID))
@@ -54,10 +47,7 @@ abstract class _BaseIsolateChannel {
 
     // When the receivePort is passed to Isolate.onError, error events are
     // received as ["error", "stackTrace"]
-    _receivePortStream
-        .where((event) => event is List)
-        .cast<List>()
-        .map((event) {
+    _inputStream.where((event) => event is List).cast<List>().map((event) {
       // The plugin had an uncaught error.
       if (event.length != 2) {
         throw UnsupportedError(
@@ -76,9 +66,7 @@ abstract class _BaseIsolateChannel {
       responses.where((e) => e.error != null).map((e) => e.error!);
 
   /// Sends a json object to the plugin, without awaiting for an answer
-  Future<void> sendJson(Map<String, Object?> json) {
-    return _sendPort.then((value) => value.send(json));
-  }
+  Future<void> sendJson(Map<String, Object?> json);
 
   /// Send a request and obtains the associated response
   Future<Response> sendRequest(
@@ -102,12 +90,56 @@ abstract class _BaseIsolateChannel {
 
     return response;
   }
+
+  /// Send a request and obtains the associated response
+  Future<Response> sendRequestParams(
+    RequestParams requestParams,
+  ) async {
+    final id = _uuid.v4();
+
+    final request = requestParams.toRequest(id);
+    final responseFuture = responses.firstWhere(
+      (message) => message.id == id,
+      orElse: () => throw StateError(
+        'No response for request ${request.method} $id',
+      ),
+    );
+    await sendJson(request.toJson());
+    final response = await responseFuture;
+
+    if (response.error != null) {
+      throw RequestFailure(response.error!);
+    }
+
+    return response;
+  }
+}
+
+/// Mixin for Isolate-based channels
+mixin IsolateChannelBase on ChannelBase {
+  /// The [ReceivePort] responsible for listening to requests.
+  ReceivePort get receivePort;
+
+  @override
+  late final Stream<Object?> _inputStream = receivePort.asBroadcastStream();
+
+  /// The [SendPort] responsible for sending events to the isolate.
+  late final _sendPort =
+      _inputStream.where((event) => event is SendPort).cast<SendPort>().first;
+
+  @override
+  Future<void> sendJson(Map<String, Object?> json) {
+    return _sendPort.then((value) => value.send(json));
+  }
 }
 
 /// An interface for interacting with the plugin server.
-class ServerIsolateChannel extends _BaseIsolateChannel {
+class ServerIsolateChannel with ChannelBase, IsolateChannelBase {
   /// An interface for interacting with the plugin server.
-  ServerIsolateChannel(super.receivePort);
+  ServerIsolateChannel(this.receivePort);
+
+  @override
+  final ReceivePort receivePort;
 
   /// Lints emitted by the plugin
   late final Stream<AnalysisErrorsParams> lints = notifications
@@ -116,9 +148,12 @@ class ServerIsolateChannel extends _BaseIsolateChannel {
 }
 
 /// An interface for connecting plugins with the plugin server.
-class PluginIsolateChannel extends _BaseIsolateChannel {
+class PluginIsolateChannel with ChannelBase, IsolateChannelBase {
   /// An interface for connecting plugins with the plugin server.
-  PluginIsolateChannel(super.receivePort);
+  PluginIsolateChannel(this.receivePort);
+
+  @override
+  final ReceivePort receivePort;
 
   /// Lints emitted by the plugin
   late final Stream<CustomAnalysisNotification> lints = notifications

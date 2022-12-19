@@ -16,6 +16,9 @@ analyzer:
 
 linter:
   rules:
+    public_member_api_docs: false
+
+
     # temporarily disabled
     require_trailing_commas: false
 

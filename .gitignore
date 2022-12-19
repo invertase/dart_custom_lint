@@ -6,7 +6,9 @@ pubspec.lock
 # Ignoring generated files, as they pollute pull requests and can create merge conflicts
 *.g.dart
 *.freezed.dart
+# Including generated files from the lib folders, as these should be published on pub
 !packages/*/lib/**/*.freezed.dart
+!packages/*/lib/**/*.g.dart
 
 # Ignoring native folders of the example as they can be re-generated easily
 **/example/android/
