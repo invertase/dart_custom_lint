@@ -70,7 +70,7 @@ class Client extends ServerPlugin {
 
   final List<Future<void>> _pendingAnalyzeFilesFutures = [];
 
-  final _pendingGetLintsSubscriptions = <String, StreamSubscription>{};
+  final _pendingGetLintsSubscriptions = <String, StreamSubscription<void>>{};
 
   /// Calls [PluginBase.getLints], applies `// ignore` & error handling,
   /// and encode them.

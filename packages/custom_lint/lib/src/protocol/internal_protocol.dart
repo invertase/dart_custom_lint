@@ -69,7 +69,7 @@ class CustomAnalysisNotification {
     return CustomAnalysisNotification(
       AnalysisErrorsParams.fromNotification(notification),
       (notification.params!['expect_lints'] as List?)
-              ?.cast<Map>()
+              ?.cast<Map<Object?, Object?>>()
               .map((e) => ExpectLintMeta.fromJson(Map.from(e)))
               .toList() ??
           [],

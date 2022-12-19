@@ -50,7 +50,7 @@ class CustomLintPluginClient {
             handlePluginShutdown: () {
               _channelInputSub.cancel();
               _hotReloader
-                  .catchError((Object? _) => null)
+                  .catchError((_) => null)
                   .then((value) => value?.stop());
             },
             handleAnalysisSetContextRoots: _handleSetContextRoots,

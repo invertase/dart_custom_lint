@@ -47,7 +47,10 @@ mixin ChannelBase {
 
     // When the receivePort is passed to Isolate.onError, error events are
     // received as ["error", "stackTrace"]
-    _inputStream.where((event) => event is List).cast<List>().map((event) {
+    _inputStream
+        .where((event) => event is List)
+        .cast<List<Object?>>()
+        .map((event) {
       // The plugin had an uncaught error.
       if (event.length != 2) {
         throw UnsupportedError(

@@ -97,7 +97,7 @@ String createPackageConfig({
     'packages': <Object?>[
       ...(PeerProjectMeta.current.exampleLintPackageConfig['packages']!
               as List<Object?>)
-          .cast<Map>()
+          .cast<Map<Object?, Object?>>()
           .where(
             (e) =>
                 e['name'] != 'custom_lint' &&

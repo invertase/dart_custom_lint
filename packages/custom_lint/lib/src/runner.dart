@@ -84,7 +84,7 @@ class CustomLintRunner {
   }) async {
     final result = <String, AnalysisErrorsParams>{};
 
-    StreamSubscription? sub;
+    StreamSubscription<void>? sub;
     try {
       sub = channel.lints.listen((event) => result[event.file] = event);
       await channel.sendRequest(AwaitAnalysisDoneParams(reload: reload));
