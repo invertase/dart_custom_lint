@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:custom_lint/basic_runner.dart';
+import 'package:custom_lint/custom_lint.dart';
 
 Future<void> main([List<String> args = const []]) async {
   final parser = ArgParser()

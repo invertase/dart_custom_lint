@@ -137,6 +137,7 @@ _$_CustomLintEventError _$$_CustomLintEventErrorFromJson(
     _$_CustomLintEventError(
       json['message'] as String,
       json['stackTrace'] as String,
+      pluginName: json['pluginName'] as String?,
       $type: json['runtimeType'] as String?,
     );
 
@@ -145,6 +146,7 @@ Map<String, dynamic> _$$_CustomLintEventErrorToJson(
     <String, dynamic>{
       'message': instance.message,
       'stackTrace': instance.stackTrace,
+      'pluginName': instance.pluginName,
       'runtimeType': instance.$type,
     };
 
@@ -152,6 +154,7 @@ _$_CustomLintEventPrint _$$_CustomLintEventPrintFromJson(
         Map<String, dynamic> json) =>
     _$_CustomLintEventPrint(
       json['message'] as String,
+      pluginName: json['pluginName'] as String?,
       $type: json['runtimeType'] as String?,
     );
 
@@ -159,5 +162,6 @@ Map<String, dynamic> _$$_CustomLintEventPrintToJson(
         _$_CustomLintEventPrint instance) =>
     <String, dynamic>{
       'message': instance.message,
+      'pluginName': instance.pluginName,
       'runtimeType': instance.$type,
     };

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:isolate';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_constants.dart';
@@ -7,32 +7,26 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
-import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:uuid/uuid.dart';
 
-import '../analyzer_plugin/plugin_delegate.dart';
 import '../channels.dart';
+import '../plugin_delegate.dart';
 import '../request_extension.dart';
 import 'protocol.dart';
 import 'server_to_client_channel.dart';
 
 class CustomLintServer {
   CustomLintServer({
-    required this.delegate,
     required this.includeBuiltInLints,
     required this.watchMode,
-    required this.analyzerPluginClientChannel,
-  }) {
-    _requestSubscription = analyzerPluginClientChannel.messages
-        .map((e) => e! as Map<String, Object?>)
-        .map(Request.fromJson)
-        .listen(_handleRequest);
-  }
-
-  final JsonSendPortChannel analyzerPluginClientChannel;
+    required this.delegate,
+  });
 
   final CustomLintDelegate delegate;
+  late final AnalyzerPluginClientChannel _analyzerPluginClientChannel;
+
   final bool includeBuiltInLints;
   final bool watchMode;
 
@@ -42,10 +36,24 @@ class CustomLintServer {
   CustomLintServerToClientChannel? _clientChannel;
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
 
+  void start(SendPort sendPort) {
+    _analyzerPluginClientChannel = JsonSendPortChannel(sendPort);
+    _requestSubscription = _analyzerPluginClientChannel.messages
+        .map((e) => e! as Map<String, Object?>)
+        .map(Request.fromJson)
+        .listen(_handleRequest);
+  }
+
+  Future<void> awaitAnalysisDone() async {
+    await _clientChannel?.sendCustomLintRequest(
+      CustomLintRequest.awaitAnalysisDone(id: const Uuid().v4()),
+    );
+  }
+
   Future<void> _handleRequest(Request request) async {
     final requestTime = DateTime.now().millisecondsSinceEpoch;
     void sendResponse({ResponseResult? data, RequestError? error}) {
-      analyzerPluginClientChannel.sendJson(
+      _analyzerPluginClientChannel.sendJson(
         Response(
           request.id,
           requestTime,
@@ -65,13 +73,13 @@ class CustomLintServer {
             sendResponse(data: PluginShutdownResult());
             return null;
           } finally {
-            analyzerPluginClientChannel.close();
+            _analyzerPluginClientChannel.close();
           }
         },
         orElse: () async {
           final response =
               await _clientChannel!.sendAnalyzerPluginRequest(request);
-          analyzerPluginClientChannel.sendJson(response.toJson());
+          _analyzerPluginClientChannel.sendJson(response.toJson());
           return null;
         },
       );
@@ -88,53 +96,50 @@ class CustomLintServer {
           stackTrace: stack.toString(),
         ),
       );
-
-      await _logError(
-        err.toString(),
-        stack.toString(),
+      delegate.requestError(
+        this,
+        request,
+        RequestError(
+          RequestErrorCode.PLUGIN_ERROR,
+          err.toString(),
+          stackTrace: stack.toString(),
+        ),
+        allContextRoots: await _contextRoots.first.then((value) => value.roots),
       );
+
+      // await _logError(
+      //   err.toString(),
+      //   stack.toString(),
+      // );
     }
   }
 
   /// An uncaught error was detected (unrelated to requests).
   /// Logging the error and notifying the analyzer server
   Future<void> handleUncaughtError(Object error, StackTrace stackTrace) async {
-    analyzerPluginClientChannel.sendJson(
+    _analyzerPluginClientChannel.sendJson(
       PluginErrorParams(false, error.toString(), stackTrace.toString())
           .toNotification()
           .toJson(),
     );
 
-    await _logError(
-      error.toString(),
-      stackTrace.toString(),
+    delegate.serverError(
+      this,
+      error,
+      stackTrace,
+      allContextRoots: await _contextRoots.first.then((value) => value.roots),
     );
-  }
-
-  /// Write errors in the log files at the root of contextroots.
-  Future<void> _logError(
-    String error,
-    String stackTrace,
-  ) async {
-    final roots = await _contextRoots.first;
-
-    for (final root in roots.roots) {
-      final logFile = File(join(root.root, 'custom_lint.log'));
-      logFile.writeAsStringSync(
-        '$error\n$stackTrace\n',
-        mode: FileMode.append,
-      );
-    }
   }
 
   /// A print was detected. This will redirect it to a log file.
   Future<void> handlePrint(String message) async {
     final roots = await _contextRoots.first;
 
-    for (final root in roots.roots) {
-      final logFile = File(join(root.root, 'custom_lint.log'));
-      logFile.writeAsStringSync('$message\n', mode: FileMode.append);
-    }
+    delegate.serverMessage(
+      this,
+      message,
+      allContextRoots: roots.roots,
+    );
   }
 
   Future<void> _handlePluginShutdown() async {
@@ -203,20 +208,41 @@ class CustomLintServer {
 
   void _handleEvent(CustomLintEvent event) {
     event.map(
-      analyzerPluginNotification: (event) {
-        analyzerPluginClientChannel.sendJson(event.notification.toJson());
+      analyzerPluginNotification: (event) async {
+        _analyzerPluginClientChannel.sendJson(event.notification.toJson());
 
         final notification = event.notification;
         if (notification.event == PLUGIN_NOTIFICATION_ERROR) {
           final error = PluginErrorParams.fromNotification(notification);
-          _logError(
+          delegate.pluginError(
+            this,
             error.message,
             error.stackTrace,
+            pluginName: '<unknown plugin>',
+            pluginContextRoots:
+                await _contextRoots.first.then((value) => value.roots),
           );
         }
       },
-      error: (event) => handlePrint('${event.message}\n${event.stackTrace}'),
-      print: (event) => handlePrint(event.message),
+      error: (event) async {
+        delegate.pluginError(
+          this,
+          event.message,
+          event.stackTrace,
+          pluginName: event.pluginName ?? 'custom_lint client',
+          pluginContextRoots:
+              await _contextRoots.first.then((value) => value.roots),
+        );
+      },
+      print: (event) async {
+        delegate.pluginMessage(
+          this,
+          event.message,
+          pluginName: event.pluginName ?? 'custom_lint client',
+          pluginContextRoots:
+              await _contextRoots.first.then((value) => value.roots),
+        );
+      },
     );
   }
 }

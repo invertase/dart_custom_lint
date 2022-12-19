@@ -81,11 +81,17 @@ class CustomLintEvent with _$CustomLintEvent {
   // TOOD add source change event?
 
   /// A spontaneous error, unrelated to a request
-  factory CustomLintEvent.error(String message, String stackTrace) =
-      _CustomLintEventError;
+  factory CustomLintEvent.error(
+    String message,
+    String stackTrace, {
+    required String? pluginName,
+  }) = _CustomLintEventError;
 
   /// A log output
-  factory CustomLintEvent.print(String message) = _CustomLintEventPrint;
+  factory CustomLintEvent.print(
+    String message, {
+    required String? pluginName,
+  }) = _CustomLintEventPrint;
 
   factory CustomLintEvent.fromJson(Map<String, Object?> json) =>
       _$CustomLintEventFromJson(json);

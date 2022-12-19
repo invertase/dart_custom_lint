@@ -12,8 +12,6 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:analyzer_plugin/starter.dart';
 import 'package:collection/collection.dart';
 // ignore: implementation_imports
-import 'package:custom_lint/src/request_extension.dart';
-// ignore: implementation_imports
 import 'package:custom_lint/src/v2/protocol.dart';
 import 'package:hotreloader/hotreloader.dart';
 import 'package:meta/meta.dart';
@@ -40,27 +38,10 @@ class CustomLintPluginClient {
     final starter = ServerPluginStarter(_analyzerPlugin);
     starter.start(_channel.sendPort);
 
-    late StreamSubscription<void> _channelInputSub;
-    _channelInputSub = _channel.input.listen((event) {
-      event.map(
-        awaitAnalysisDone: (event) {},
-        analyzerPluginRequest: (event) {
-          event.request.when(
-            orElse: () {},
-            handlePluginShutdown: () {
-              // TODO the shutdown response should be delayed until this completes
-              _channelInputSub.cancel();
-              _hotReloader
-                  .catchError((_) => null)
-                  .then((value) => value?.stop());
-            },
-            handleAnalysisSetContextRoots: _handleSetContextRoots,
-          );
-        },
-      );
-    });
+    _channelInputSub = _channel.input.listen(_handleCustomLintRequest);
   }
 
+  late final StreamSubscription<void> _channelInputSub;
   late final Future<HotReloader?> _hotReloader;
   final CustomLintClientChannel _channel;
   late final _ClientAnalyzerPlugin _analyzerPlugin;
@@ -91,7 +72,34 @@ class CustomLintPluginClient {
     );
   }
 
-  void _handleSetContextRoots(AnalysisSetContextRootsParams params) {
+  Future<void> _handleCustomLintRequest(CustomLintRequest request) async {
+    try {
+      final response = await request.map<FutureOr<CustomLintResponse?>>(
+        // Analayzer_plugin requests are handles by the _analyzer_plugin client
+        analyzerPluginRequest: (_) => null,
+        awaitAnalysisDone: (_) async {
+          await _analyzerPlugin._awaitAnalysisDone();
+          return CustomLintResponse.awaitAnalysisDone(id: request.id);
+        },
+      );
+
+      if (response != null) {
+        _channel.sendResponse(response);
+      }
+    } catch (err, stack) {
+      _channel.sendResponse(
+        CustomLintResponse.error(
+          id: request.id,
+          message: err.toString(),
+          stackTrace: stack.toString(),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleSetContextRoots(
+    AnalysisSetContextRootsParams params,
+  ) async {
     _contextRootsForPlugin = {};
 
     for (final contextRoot in params.roots) {
@@ -125,12 +133,20 @@ class CustomLintPluginClient {
       CustomLintEvent.error(
         error.toString(),
         stackTrace.toString(),
+        pluginName: null,
       ),
     );
   }
 
   void handlePrint(String message) {
-    _channel.sendEvent(CustomLintEvent.print(message));
+    _channel.sendEvent(CustomLintEvent.print(message, pluginName: null));
+  }
+
+  Future<void> _handlePlugingShutdown() async {
+    await Future.wait<void>([
+      _channelInputSub.cancel(),
+      _hotReloader.catchError((_) => null).then((value) => value?.stop()),
+    ]);
   }
 }
 
@@ -154,6 +170,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   final CustomLintClientChannel _channel;
   final CustomLintPluginClient _client;
   AnalysisContextCollection? _contextCollection;
+  final _pendingAnalyzeFiles = <Future<void>>[];
 
   @override
   List<String> get fileGlobsToAnalyze => ['*.dart'];
@@ -191,37 +208,49 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       return;
     }
 
-    final unit = await getResolvedUnitResult(path);
+    final result = Future(() async {
+      final unit = await getResolvedUnitResult(path);
 
-    final fileIgnoredCodes = _getAllIgnoredForFileCodes(unit.content);
-    // Lints are disabled for the entire file, so no point to even execute `getLints`
-    if (fileIgnoredCodes.contains('type=lint')) return;
+      final fileIgnoredCodes = _getAllIgnoredForFileCodes(unit.content);
+      // Lints are disabled for the entire file, so no point to even execute `getLints`
+      if (fileIgnoredCodes.contains('type=lint')) return;
 
-    // TODO: cancel getLints if analyzeFile is reinvoked for path while
-    // the previous Stream is still pending.
-    final lints = await Future.wait([
-      for (final plugin in _channel.registeredPlugins.entries)
-        if (_client._isPluginActiveForContextRoot(analysisContext,
-            pluginName: plugin.key))
-          _getLintsForPlugin(plugin.value, unit, pluginName: plugin.key),
-    ]);
+      // TODO: cancel getLints if analyzeFile is reinvoked for path while
+      // the previous Stream is still pending.
+      final lints = await Future.wait([
+        for (final plugin in _channel.registeredPlugins.entries)
+          if (_client._isPluginActiveForContextRoot(analysisContext,
+              pluginName: plugin.key))
+            _getLintsForPlugin(plugin.value, unit, pluginName: plugin.key),
+      ]);
 
-    _channel.sendEvent(
-      CustomLintEvent.analyzerPluginNotification(
-        AnalysisErrorsParams(
-          path,
-          lints.flattened
-              // Applying ignore_for_file
-              .where((lint) => !fileIgnoredCodes.contains(lint.code))
-              .where((lint) => !_isIgnored(lint, unit))
-              // Applying `// expect_lint` after ignores, such that if a lint
-              // is ignored, expect_lint will fail
-              ._applyExpectLint(unit)
-              .map((e) => e.asAnalysisError())
-              .toList(),
-        ).toNotification(),
-      ),
-    );
+      _channel.sendEvent(
+        CustomLintEvent.analyzerPluginNotification(
+          AnalysisErrorsParams(
+            path,
+            lints.flattened
+                // Applying ignore_for_file
+                .where((lint) => !fileIgnoredCodes.contains(lint.code))
+                .where((lint) => !_isIgnored(lint, unit))
+                // Applying `// expect_lint` after ignores, such that if a lint
+                // is ignored, expect_lint will fail
+                ._applyExpectLint(unit)
+                .map((e) => e.asAnalysisError())
+                .toList(),
+          ).toNotification(),
+        ),
+      );
+    });
+
+    _pendingAnalyzeFiles.add(result);
+
+    await result;
+  }
+
+  Future<void> _awaitAnalysisDone() async {
+    while (_pendingAnalyzeFiles.isNotEmpty) {
+      await Future.wait(_pendingAnalyzeFiles.toList());
+    }
   }
 
   /// Execute [PluginBase.getLints], catching errors and redirecting logs.
@@ -244,7 +273,10 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
 
     void pluginLog(String message) {
       _channel.sendEvent(
-        CustomLintEvent.print(message.addLeading('[$pluginName] ')),
+        CustomLintEvent.print(
+          message.addLeading('[$pluginName] '),
+          pluginName: pluginName,
+        ),
       );
     }
 
@@ -274,12 +306,10 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     required String pluginName,
   }) {
     _channel.sendEvent(
-      CustomLintEvent.analyzerPluginNotification(
-        PluginErrorParams(
-          false,
-          'Plugin $pluginName threw while analyzing $path:\n$error',
-          stackTrace.toString(),
-        ).toNotification(),
+      CustomLintEvent.error(
+        'Plugin $pluginName threw while analyzing $path:\n$error',
+        stackTrace.toString(),
+        pluginName: pluginName,
       ),
     );
 
@@ -292,6 +322,22 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       message: 'A lint plugin threw an exception',
       code: 'custom_lint_get_lint_fail',
     );
+  }
+
+  @override
+  Future<AnalysisSetContextRootsResult> handleAnalysisSetContextRoots(
+    AnalysisSetContextRootsParams parameters,
+  ) async {
+    await _client._handleSetContextRoots(parameters);
+    return super.handleAnalysisSetContextRoots(parameters);
+  }
+
+  @override
+  Future<PluginShutdownResult> handlePluginShutdown(
+    PluginShutdownParams parameters,
+  ) async {
+    await _client._handlePlugingShutdown();
+    return super.handlePluginShutdown(parameters);
   }
 }
 

@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-import 'package:custom_lint/src/analyzer_plugin/analyzer_plugin.dart';
-import 'package:custom_lint/src/analyzer_plugin/plugin_delegate.dart';
+import 'package:custom_lint/src/plugin_delegate.dart';
 import 'package:custom_lint/src/runner.dart';
+import 'package:custom_lint/src/v2/custom_lint_analyzer_plugin.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -21,7 +21,7 @@ Future<CustomLintRunner> startRunnerForApp(
   bool ignoreErrors = false,
 }) async {
   final runner = CustomLintRunner(
-    CustomLintPlugin(
+    CustomLintServer(
       delegate: CommandCustomLintDelegate(),
       includeBuiltInLints: false,
       watchMode: false,

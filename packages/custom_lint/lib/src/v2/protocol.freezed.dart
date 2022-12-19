@@ -1569,24 +1569,28 @@ mixin _$CustomLintEvent {
     required TResult Function(
             @NotificationJsonConverter() Notification notification)
         analyzerPluginNotification,
-    required TResult Function(String message, String stackTrace) error,
-    required TResult Function(String message) print,
+    required TResult Function(
+            String message, String stackTrace, String? pluginName)
+        error,
+    required TResult Function(String message, String? pluginName) print,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(@NotificationJsonConverter() Notification notification)?
         analyzerPluginNotification,
-    TResult? Function(String message, String stackTrace)? error,
-    TResult? Function(String message)? print,
+    TResult? Function(String message, String stackTrace, String? pluginName)?
+        error,
+    TResult? Function(String message, String? pluginName)? print,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(@NotificationJsonConverter() Notification notification)?
         analyzerPluginNotification,
-    TResult Function(String message, String stackTrace)? error,
-    TResult Function(String message)? print,
+    TResult Function(String message, String stackTrace, String? pluginName)?
+        error,
+    TResult Function(String message, String? pluginName)? print,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -1723,8 +1727,10 @@ class _$_CustomLintEventAnalyzerPluginNotification
     required TResult Function(
             @NotificationJsonConverter() Notification notification)
         analyzerPluginNotification,
-    required TResult Function(String message, String stackTrace) error,
-    required TResult Function(String message) print,
+    required TResult Function(
+            String message, String stackTrace, String? pluginName)
+        error,
+    required TResult Function(String message, String? pluginName) print,
   }) {
     return analyzerPluginNotification(notification);
   }
@@ -1734,8 +1740,9 @@ class _$_CustomLintEventAnalyzerPluginNotification
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(@NotificationJsonConverter() Notification notification)?
         analyzerPluginNotification,
-    TResult? Function(String message, String stackTrace)? error,
-    TResult? Function(String message)? print,
+    TResult? Function(String message, String stackTrace, String? pluginName)?
+        error,
+    TResult? Function(String message, String? pluginName)? print,
   }) {
     return analyzerPluginNotification?.call(notification);
   }
@@ -1745,8 +1752,9 @@ class _$_CustomLintEventAnalyzerPluginNotification
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(@NotificationJsonConverter() Notification notification)?
         analyzerPluginNotification,
-    TResult Function(String message, String stackTrace)? error,
-    TResult Function(String message)? print,
+    TResult Function(String message, String stackTrace, String? pluginName)?
+        error,
+    TResult Function(String message, String? pluginName)? print,
     required TResult orElse(),
   }) {
     if (analyzerPluginNotification != null) {
@@ -1824,7 +1832,7 @@ abstract class _$$_CustomLintEventErrorCopyWith<$Res> {
           $Res Function(_$_CustomLintEventError) then) =
       __$$_CustomLintEventErrorCopyWithImpl<$Res>;
   @useResult
-  $Res call({String message, String stackTrace});
+  $Res call({String message, String stackTrace, String? pluginName});
 }
 
 /// @nodoc
@@ -1840,6 +1848,7 @@ class __$$_CustomLintEventErrorCopyWithImpl<$Res>
   $Res call({
     Object? message = null,
     Object? stackTrace = null,
+    Object? pluginName = freezed,
   }) {
     return _then(_$_CustomLintEventError(
       null == message
@@ -1850,6 +1859,10 @@ class __$$_CustomLintEventErrorCopyWithImpl<$Res>
           ? _value.stackTrace
           : stackTrace // ignore: cast_nullable_to_non_nullable
               as String,
+      pluginName: freezed == pluginName
+          ? _value.pluginName
+          : pluginName // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -1857,7 +1870,8 @@ class __$$_CustomLintEventErrorCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$_CustomLintEventError implements _CustomLintEventError {
-  _$_CustomLintEventError(this.message, this.stackTrace, {final String? $type})
+  _$_CustomLintEventError(this.message, this.stackTrace,
+      {required this.pluginName, final String? $type})
       : $type = $type ?? 'error';
 
   factory _$_CustomLintEventError.fromJson(Map<String, dynamic> json) =>
@@ -1867,13 +1881,15 @@ class _$_CustomLintEventError implements _CustomLintEventError {
   final String message;
   @override
   final String stackTrace;
+  @override
+  final String? pluginName;
 
   @JsonKey(name: 'runtimeType')
   final String $type;
 
   @override
   String toString() {
-    return 'CustomLintEvent.error(message: $message, stackTrace: $stackTrace)';
+    return 'CustomLintEvent.error(message: $message, stackTrace: $stackTrace, pluginName: $pluginName)';
   }
 
   @override
@@ -1883,12 +1899,14 @@ class _$_CustomLintEventError implements _CustomLintEventError {
             other is _$_CustomLintEventError &&
             (identical(other.message, message) || other.message == message) &&
             (identical(other.stackTrace, stackTrace) ||
-                other.stackTrace == stackTrace));
+                other.stackTrace == stackTrace) &&
+            (identical(other.pluginName, pluginName) ||
+                other.pluginName == pluginName));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, message, stackTrace);
+  int get hashCode => Object.hash(runtimeType, message, stackTrace, pluginName);
 
   @JsonKey(ignore: true)
   @override
@@ -1903,10 +1921,12 @@ class _$_CustomLintEventError implements _CustomLintEventError {
     required TResult Function(
             @NotificationJsonConverter() Notification notification)
         analyzerPluginNotification,
-    required TResult Function(String message, String stackTrace) error,
-    required TResult Function(String message) print,
+    required TResult Function(
+            String message, String stackTrace, String? pluginName)
+        error,
+    required TResult Function(String message, String? pluginName) print,
   }) {
-    return error(message, stackTrace);
+    return error(message, stackTrace, pluginName);
   }
 
   @override
@@ -1914,10 +1934,11 @@ class _$_CustomLintEventError implements _CustomLintEventError {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(@NotificationJsonConverter() Notification notification)?
         analyzerPluginNotification,
-    TResult? Function(String message, String stackTrace)? error,
-    TResult? Function(String message)? print,
+    TResult? Function(String message, String stackTrace, String? pluginName)?
+        error,
+    TResult? Function(String message, String? pluginName)? print,
   }) {
-    return error?.call(message, stackTrace);
+    return error?.call(message, stackTrace, pluginName);
   }
 
   @override
@@ -1925,12 +1946,13 @@ class _$_CustomLintEventError implements _CustomLintEventError {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(@NotificationJsonConverter() Notification notification)?
         analyzerPluginNotification,
-    TResult Function(String message, String stackTrace)? error,
-    TResult Function(String message)? print,
+    TResult Function(String message, String stackTrace, String? pluginName)?
+        error,
+    TResult Function(String message, String? pluginName)? print,
     required TResult orElse(),
   }) {
     if (error != null) {
-      return error(message, stackTrace);
+      return error(message, stackTrace, pluginName);
     }
     return orElse();
   }
@@ -1981,14 +2003,15 @@ class _$_CustomLintEventError implements _CustomLintEventError {
 }
 
 abstract class _CustomLintEventError implements CustomLintEvent {
-  factory _CustomLintEventError(final String message, final String stackTrace) =
-      _$_CustomLintEventError;
+  factory _CustomLintEventError(final String message, final String stackTrace,
+      {required final String? pluginName}) = _$_CustomLintEventError;
 
   factory _CustomLintEventError.fromJson(Map<String, dynamic> json) =
       _$_CustomLintEventError.fromJson;
 
   String get message;
   String get stackTrace;
+  String? get pluginName;
   @JsonKey(ignore: true)
   _$$_CustomLintEventErrorCopyWith<_$_CustomLintEventError> get copyWith =>
       throw _privateConstructorUsedError;
@@ -2000,7 +2023,7 @@ abstract class _$$_CustomLintEventPrintCopyWith<$Res> {
           $Res Function(_$_CustomLintEventPrint) then) =
       __$$_CustomLintEventPrintCopyWithImpl<$Res>;
   @useResult
-  $Res call({String message});
+  $Res call({String message, String? pluginName});
 }
 
 /// @nodoc
@@ -2015,12 +2038,17 @@ class __$$_CustomLintEventPrintCopyWithImpl<$Res>
   @override
   $Res call({
     Object? message = null,
+    Object? pluginName = freezed,
   }) {
     return _then(_$_CustomLintEventPrint(
       null == message
           ? _value.message
           : message // ignore: cast_nullable_to_non_nullable
               as String,
+      pluginName: freezed == pluginName
+          ? _value.pluginName
+          : pluginName // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -2028,7 +2056,8 @@ class __$$_CustomLintEventPrintCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$_CustomLintEventPrint implements _CustomLintEventPrint {
-  _$_CustomLintEventPrint(this.message, {final String? $type})
+  _$_CustomLintEventPrint(this.message,
+      {required this.pluginName, final String? $type})
       : $type = $type ?? 'print';
 
   factory _$_CustomLintEventPrint.fromJson(Map<String, dynamic> json) =>
@@ -2036,13 +2065,15 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
 
   @override
   final String message;
+  @override
+  final String? pluginName;
 
   @JsonKey(name: 'runtimeType')
   final String $type;
 
   @override
   String toString() {
-    return 'CustomLintEvent.print(message: $message)';
+    return 'CustomLintEvent.print(message: $message, pluginName: $pluginName)';
   }
 
   @override
@@ -2050,12 +2081,14 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$_CustomLintEventPrint &&
-            (identical(other.message, message) || other.message == message));
+            (identical(other.message, message) || other.message == message) &&
+            (identical(other.pluginName, pluginName) ||
+                other.pluginName == pluginName));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, message);
+  int get hashCode => Object.hash(runtimeType, message, pluginName);
 
   @JsonKey(ignore: true)
   @override
@@ -2070,10 +2103,12 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
     required TResult Function(
             @NotificationJsonConverter() Notification notification)
         analyzerPluginNotification,
-    required TResult Function(String message, String stackTrace) error,
-    required TResult Function(String message) print,
+    required TResult Function(
+            String message, String stackTrace, String? pluginName)
+        error,
+    required TResult Function(String message, String? pluginName) print,
   }) {
-    return print(message);
+    return print(message, pluginName);
   }
 
   @override
@@ -2081,10 +2116,11 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(@NotificationJsonConverter() Notification notification)?
         analyzerPluginNotification,
-    TResult? Function(String message, String stackTrace)? error,
-    TResult? Function(String message)? print,
+    TResult? Function(String message, String stackTrace, String? pluginName)?
+        error,
+    TResult? Function(String message, String? pluginName)? print,
   }) {
-    return print?.call(message);
+    return print?.call(message, pluginName);
   }
 
   @override
@@ -2092,12 +2128,13 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(@NotificationJsonConverter() Notification notification)?
         analyzerPluginNotification,
-    TResult Function(String message, String stackTrace)? error,
-    TResult Function(String message)? print,
+    TResult Function(String message, String stackTrace, String? pluginName)?
+        error,
+    TResult Function(String message, String? pluginName)? print,
     required TResult orElse(),
   }) {
     if (print != null) {
-      return print(message);
+      return print(message, pluginName);
     }
     return orElse();
   }
@@ -2148,12 +2185,14 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
 }
 
 abstract class _CustomLintEventPrint implements CustomLintEvent {
-  factory _CustomLintEventPrint(final String message) = _$_CustomLintEventPrint;
+  factory _CustomLintEventPrint(final String message,
+      {required final String? pluginName}) = _$_CustomLintEventPrint;
 
   factory _CustomLintEventPrint.fromJson(Map<String, dynamic> json) =
       _$_CustomLintEventPrint.fromJson;
 
   String get message;
+  String? get pluginName;
   @JsonKey(ignore: true)
   _$$_CustomLintEventPrintCopyWith<_$_CustomLintEventPrint> get copyWith =>
       throw _privateConstructorUsedError;

@@ -3,7 +3,15 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
-class JsonSendPortChannel {
+abstract class AnalyzerPluginClientChannel {
+  Stream<Object?> get messages;
+
+  void sendJson(Map<String, Object?> json);
+
+  void close();
+}
+
+class JsonSendPortChannel implements AnalyzerPluginClientChannel {
   JsonSendPortChannel(this._sendPort) : _receivePort = ReceivePort() {
     _sendPort.send(_receivePort.sendPort);
   }
@@ -11,18 +19,22 @@ class JsonSendPortChannel {
   final SendPort _sendPort;
   final ReceivePort _receivePort;
 
+  @override
   late final Stream<Object?> messages = _receivePort.asBroadcastStream();
 
+  @override
   void sendJson(Map<String, Object?> json) => _sendPort.send(json);
 
+  @override
   void close() => _receivePort.close();
 }
 
-class JsonSocketChannel {
+class JsonSocketChannel implements AnalyzerPluginClientChannel {
   JsonSocketChannel(this._socket);
 
   final Socket _socket;
 
+  @override
   late final Stream<Object?> messages = _socket
       .map(utf8.decode)
 
@@ -38,6 +50,7 @@ class JsonSocketChannel {
       .map<Object?>(jsonDecode)
       .asBroadcastStream();
 
+  @override
   void sendJson(Map<String, Object?> json) {
     _socket.add(
       utf8.encode(
@@ -48,4 +61,7 @@ class JsonSocketChannel {
       ),
     );
   }
+
+  @override
+  void close() {}
 }

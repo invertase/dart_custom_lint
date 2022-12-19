@@ -9,7 +9,7 @@ import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
 import 'package:async/async.dart';
 import 'package:uuid/uuid.dart';
 
-import '../protocol/internal_protocol.dart';
+import 'protocol/internal_protocol.dart';
 
 const _uuid = Uuid();
 
@@ -139,7 +139,7 @@ mixin IsolateChannelBase on ChannelBase {
 /// An interface for interacting with the plugin server.
 class ServerIsolateChannel with ChannelBase, IsolateChannelBase {
   /// An interface for interacting with the plugin server.
-  ServerIsolateChannel(this.receivePort);
+  ServerIsolateChannel() : receivePort = ReceivePort();
 
   @override
   final ReceivePort receivePort;
@@ -148,6 +148,8 @@ class ServerIsolateChannel with ChannelBase, IsolateChannelBase {
   late final Stream<AnalysisErrorsParams> lints = notifications
       .where((e) => e.event == 'analysis.errors')
       .map(AnalysisErrorsParams.fromNotification);
+
+  void close() => receivePort.close();
 }
 
 /// An interface for connecting plugins with the plugin server.

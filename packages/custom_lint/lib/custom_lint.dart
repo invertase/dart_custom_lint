@@ -5,10 +5,10 @@ import 'dart:io';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:path/path.dart' as p;
 
-import 'src/analyzer_plugin/analyzer_plugin.dart';
-import 'src/analyzer_plugin/plugin_delegate.dart';
+import 'src/plugin_delegate.dart';
 import 'src/protocol/internal_protocol.dart';
 import 'src/runner.dart';
+import 'src/v2/custom_lint_analyzer_plugin.dart';
 
 const _help = '''
 
@@ -37,10 +37,10 @@ Future<void> customLint({
 }) async {
   await runZonedGuarded(() async {
     final runner = CustomLintRunner(
-      CustomLintPlugin(
-        delegate: CommandCustomLintDelegate(),
+      CustomLintServer(
         includeBuiltInLints: false,
         watchMode: watchMode,
+        delegate: CommandCustomLintDelegate(),
       ),
       workingDirectory,
     );

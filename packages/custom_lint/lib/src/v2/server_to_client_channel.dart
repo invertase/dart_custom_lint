@@ -6,11 +6,10 @@ import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
-import 'package:riverpod/riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../analyzer_plugin/plugin_link.dart';
 import '../channels.dart';
+import '../plugin.dart';
 import 'protocol.dart';
 
 Future<int> _findPossiblyUnusedPort() {
@@ -110,31 +109,12 @@ therefore custom_lint does not know which one to pick.
   );
 }
 
-List<Package> _getPackageListForContextRoots(List<ContextRoot> contextRoots) {
-  final container = ProviderContainer();
-  try {
-    container.read(activeContextRootsProvider.notifier).state = contextRoots;
-
-    final keysSub = container.listen(
-      allPluginLinkKeysProvider,
-      (previous, next) {},
-    );
-
-    return keysSub
-        .read()
-        .map((e) => container.read(pluginMetaProvider(e)))
-        .toList();
-  } finally {
-    container.dispose();
-  }
-}
-
 class _SocketCustomLintServerToClientChannel
     implements CustomLintServerToClientChannel {
   _SocketCustomLintServerToClientChannel(
     this._version,
     this._contextRoots,
-  )   : _packages = _getPackageListForContextRoots(_contextRoots.roots),
+  )   : _packages = getPackageListForContextRoots(_contextRoots.roots),
         _serverSocket = _createServerSocket() {
     _socket = _serverSocket.then(
       (server) async => JsonSocketChannel(await server.first),
