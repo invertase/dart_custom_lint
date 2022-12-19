@@ -76,7 +76,7 @@ class CustomLintPluginClient {
   }
 
   bool _isPluginActiveForContextRoot(
-    ContextRoot contextRoot, {
+    AnalysisContext analysisContext, {
     required String pluginName,
   }) {
     final contextRootsForPlugin = _contextRootsForPlugin[pluginName];
@@ -85,7 +85,8 @@ class CustomLintPluginClient {
     }
 
     return contextRootsForPlugin.any(
-      (contextRootForPlugin) => contextRoot.root == contextRootForPlugin.root,
+      (contextRootForPlugin) =>
+          analysisContext.contextRoot.root.path == contextRootForPlugin.root,
     );
   }
 
@@ -151,7 +152,6 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
 
   final CustomLintClientChannel _channel;
   final CustomLintPluginClient _client;
-  AnalysisSetContextRootsParams? _lastContextRoots;
   AnalysisContextCollection? _contextCollection;
 
   @override
@@ -181,14 +181,6 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   }
 
   @override
-  Future<AnalysisSetContextRootsResult> handleAnalysisSetContextRoots(
-    AnalysisSetContextRootsParams parameters,
-  ) {
-    _lastContextRoots = parameters;
-    return super.handleAnalysisSetContextRoots(parameters);
-  }
-
-  @override
   Future<void> analyzeFile({
     required AnalysisContext analysisContext,
     required String path,
@@ -198,23 +190,17 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       return;
     }
 
-    final activeContextRoot = _lastContextRoots?.roots.firstWhereOrNull(
-      (root) => root.root == analysisContext.contextRoot.root.path,
-    );
-    if (activeContextRoot == null) {
-      // The analysisContext isn't part of the enabled ContextRoots
-      return;
-    }
-
     final unit = await getResolvedUnitResult(path);
 
     final fileIgnoredCodes = _getAllIgnoredForFileCodes(unit.content);
     // Lints are disabled for the entire file, so no point to even execute `getLints`
     if (fileIgnoredCodes.contains('type=lint')) return;
 
+    // TODO: cancel getLints if analyzeFile is reinvoked for path while
+    // the previous Stream is still pending.
     final lints = await Future.wait([
       for (final plugin in _channel.registeredPlugins.entries)
-        if (_client._isPluginActiveForContextRoot(activeContextRoot,
+        if (_client._isPluginActiveForContextRoot(analysisContext,
             pluginName: plugin.key))
           _getLintsForPlugin(plugin.value, unit, pluginName: plugin.key),
     ]);
@@ -295,6 +281,9 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
         ).toNotification(),
       ),
     );
+
+    // TODO add context message that points to the fir line of the stacktrace
+    // This involves knowing where a package points to, as a file path is needed
 
     return Lint(
       severity: LintSeverity.error,
