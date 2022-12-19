@@ -48,6 +48,7 @@ class CustomLintPluginClient {
           event.request.when(
             orElse: () {},
             handlePluginShutdown: () {
+              // TODO the shutdown response should be delayed until this completes
               _channelInputSub.cancel();
               _hotReloader
                   .catchError((_) => null)
