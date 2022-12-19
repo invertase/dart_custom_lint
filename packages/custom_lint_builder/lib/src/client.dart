@@ -21,8 +21,8 @@ import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 
 import '../../custom_lint_builder.dart';
-import '../internal_protocol.dart';
 import 'channel.dart';
+import 'internal_protocol.dart';
 
 Future<bool> _isVmServiceEnabled() async {
   final serviceInfo = await dev.Service.getInfo();
