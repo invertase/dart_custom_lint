@@ -22,7 +22,7 @@ Future<CustomLintRunner> startRunnerForApp(
 }) async {
   final runner = CustomLintRunner(
     // TODO use IO override to mock & test stdout/stderr
-    CustomLintServer.run(
+    CustomLintServer(
       delegate: CommandCustomLintDelegate(),
       watchMode: false,
     ),

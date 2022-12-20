@@ -18,12 +18,7 @@ import 'protocol.dart';
 import 'server_to_client_channel.dart';
 
 class CustomLintServer {
-  CustomLintServer._({
-    required this.watchMode,
-    required this.delegate,
-  });
-
-  static CustomLintServer run({
+  factory CustomLintServer({
     required bool watchMode,
     required CustomLintDelegate delegate,
   }) {
@@ -42,6 +37,11 @@ class CustomLintServer {
 
     return server;
   }
+
+  CustomLintServer._({
+    required this.watchMode,
+    required this.delegate,
+  });
 
   final CustomLintDelegate delegate;
   late final AnalyzerPluginClientChannel analyzerPluginClientChannel;
