@@ -27,19 +27,20 @@ Future<bool> _isVmServiceEnabled() async {
 }
 
 class CustomLintPluginClient {
-  CustomLintPluginClient(this._channel) {
+  CustomLintPluginClient(this._channel, {required this.watchMode}) {
     _analyzerPlugin = _ClientAnalyzerPlugin(
       _channel,
       this,
       resourceProvider: PhysicalResourceProvider.INSTANCE,
     );
-    _hotReloader = _maybeStartHotLoad();
+    _hotReloader = watchMode ? _maybeStartHotLoad() : Future.value();
     final starter = ServerPluginStarter(_analyzerPlugin);
     starter.start(_channel.sendPort);
 
     _channelInputSub = _channel.input.listen(_handleCustomLintRequest);
   }
 
+  final bool watchMode;
   late final StreamSubscription<void> _channelInputSub;
   late final Future<HotReloader?> _hotReloader;
   final CustomLintClientChannel _channel;

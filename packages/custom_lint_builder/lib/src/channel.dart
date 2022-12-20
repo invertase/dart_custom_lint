@@ -44,7 +44,11 @@ class StreamToSentPortAdapter {
 
 typedef PluginMain = PluginBase Function();
 
-Future<void> runSocket(Map<String, PluginMain> pluginMains, int port) async {
+Future<void> runSocket(
+  Map<String, PluginMain> pluginMains, {
+  required int port,
+  required bool watchMode,
+}) async {
   final client = Completer<CustomLintPluginClient>();
 
   await runZonedGuarded(
@@ -53,6 +57,7 @@ Future<void> runSocket(Map<String, PluginMain> pluginMains, int port) async {
       final registeredPlugins = <String, PluginBase>{};
       client.complete(
         CustomLintPluginClient(
+          watchMode: watchMode,
           _SocketCustomLintClientChannel(socket, registeredPlugins),
         ),
       );

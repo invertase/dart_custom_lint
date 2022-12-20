@@ -192,7 +192,11 @@ $imports
 void main(List<String> args) async {
   final port = int.parse(args.single);
 
-  runSocket({$plugins}, port);
+  runSocket(
+    port: port,
+    watchMode: ${_server.watchMode},
+    {$plugins},
+  );
 }
 ''');
   }
