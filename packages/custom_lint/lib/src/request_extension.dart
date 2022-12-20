@@ -2,8 +2,6 @@ import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_constants.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 
-import 'protocol/internal_protocol.dart';
-
 /// Handle an 'analysis.getNavigation' request.
 ///
 /// Throw a [RequestFailure] if the request could not be handled.
@@ -90,11 +88,6 @@ typedef HandleKytheGetKytheEntries<R> = R Function(
   KytheGetKytheEntriesParams parameters,
 );
 
-/// Requests lints for specific files
-typedef HandleAwaitAnalysisDone<R> = R Function(
-  AwaitAnalysisDoneParams parameters,
-);
-
 /// Handle a 'plugin.shutdown' request. Subclasses can override this method to
 /// perform clean-up, but cannot prevent the plugin from shutting
 /// down.
@@ -126,19 +119,11 @@ extension RequestX on Request {
     HandleEditGetFixes<R>? handleEditGetFixes,
     HandleEditGetRefactoring<R>? handleEditGetRefactoring,
     HandleKytheGetKytheEntries<R>? handleKytheGetKytheEntries,
-    HandleAwaitAnalysisDone<R>? handleAwaitAnalysisDone,
     HandlePluginVersionCheck<R>? handlePluginVersionCheck,
     HandlePluginShutdown<R>? handlePluginShutdown,
     required R Function() orElse,
   }) {
     switch (method) {
-      case AwaitAnalysisDoneParams.key:
-        if (handleAwaitAnalysisDone != null) {
-          final params = AwaitAnalysisDoneParams.fromRequest(this);
-          return handleAwaitAnalysisDone(params);
-        }
-        break;
-
       case ANALYSIS_REQUEST_GET_NAVIGATION:
         if (handleAnalysisGetNavigation != null) {
           final params = AnalysisGetNavigationParams.fromRequest(this);
