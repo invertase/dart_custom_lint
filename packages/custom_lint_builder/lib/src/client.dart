@@ -20,7 +20,6 @@ import 'package:pubspec_parse/pubspec_parse.dart';
 
 import '../../custom_lint_builder.dart';
 import 'channel.dart';
-import 'internal_protocol.dart';
 
 Future<bool> _isVmServiceEnabled() async {
   final serviceInfo = await dev.Service.getInfo();
@@ -384,6 +383,26 @@ extension on Iterable<Lint> {
   }
 }
 
+/// Information about an `// expect_lint: code` clause
+@immutable
+class _ExpectLintMeta {
+  /// Information about an `// expect_lint: code` clause
+  const _ExpectLintMeta({
+    required this.line,
+    required this.code,
+    required this.location,
+  }) : assert(line >= 0, 'line must be positive');
+
+  /// A 0-based offset of the line having the expect_lint clause.
+  final int line;
+
+  /// The code expected.
+  final String code;
+
+  /// The location of the expected code.
+  final LintLocation location;
+}
+
 @immutable
 class _ComparableExpectLintMeta {
   const _ComparableExpectLintMeta(this.line, this.code);
@@ -437,7 +456,7 @@ Set<String> _getAllIgnoredForFileCodes(String source) {
 
 final _expectLintRegex = RegExp(r'//\s*expect_lint\s*:(.+)$', multiLine: true);
 
-List<ExpectLintMeta> _getAllExpectedLints(
+List<_ExpectLintMeta> _getAllExpectedLints(
   String source,
   LineInfo lineInfo, {
   required String filePath,
@@ -460,7 +479,7 @@ List<ExpectLintMeta> _getAllExpectedLints(
       final start = lineInfo.getLocation(codeOffset);
       final end = lineInfo.getLocation(codeOffset + code.length);
 
-      return ExpectLintMeta(
+      return _ExpectLintMeta(
         line: lineNumber,
         code: code,
         location: LintLocation(

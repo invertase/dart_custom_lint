@@ -24,7 +24,6 @@ Future<CustomLintRunner> startRunnerForApp(
     // TODO use IO override to mock & test stdout/stderr
     CustomLintServer.run(
       delegate: CommandCustomLintDelegate(),
-      includeBuiltInLints: false,
       watchMode: false,
     ),
     directory,

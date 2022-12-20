@@ -19,13 +19,11 @@ import 'server_to_client_channel.dart';
 
 class CustomLintServer {
   CustomLintServer._({
-    required this.includeBuiltInLints,
     required this.watchMode,
     required this.delegate,
   });
 
   static CustomLintServer run({
-    required bool includeBuiltInLints,
     required bool watchMode,
     required CustomLintDelegate delegate,
   }) {
@@ -33,7 +31,6 @@ class CustomLintServer {
 
     runZonedGuarded(
       () => server = CustomLintServer._(
-        includeBuiltInLints: includeBuiltInLints,
         watchMode: watchMode,
         delegate: delegate,
       ),
@@ -49,7 +46,6 @@ class CustomLintServer {
   final CustomLintDelegate delegate;
   late final AnalyzerPluginClientChannel analyzerPluginClientChannel;
 
-  final bool includeBuiltInLints;
   final bool watchMode;
 
   late final StreamSubscription<void> _requestSubscription;

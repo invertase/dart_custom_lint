@@ -9,8 +9,6 @@ import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
 import 'package:async/async.dart';
 import 'package:uuid/uuid.dart';
 
-import 'protocol/internal_protocol.dart';
-
 const _uuid = Uuid();
 
 /// A base class for the protocol responsible with interacting with using the
@@ -24,11 +22,6 @@ mixin ChannelBase {
       .map((e) => e! as Map)
       .where((e) => e.containsKey(Notification.EVENT))
       .map(Notification.fromJson);
-
-  /// The [Notification]s emitted by the plugin
-  late final Stream<PrintNotification> messages = notifications
-      .where((e) => e.event == PrintNotification.key)
-      .map(PrintNotification.fromNotification);
 
   /// The [Response]s emitted by the plugin
   late final Stream<Response> responses = _inputStream
@@ -152,15 +145,4 @@ class ServerIsolateChannel extends IsolateChannelBase {
       .map(AnalysisErrorsParams.fromNotification);
 
   void close() => receivePort.close();
-}
-
-/// An interface for connecting plugins with the plugin server.
-class PluginIsolateChannel extends IsolateChannelBase {
-  /// An interface for connecting plugins with the plugin server.
-  PluginIsolateChannel(super.receivePort);
-
-  /// Lints emitted by the plugin
-  late final Stream<CustomAnalysisNotification> lints = notifications
-      .where((e) => e.event == 'analysis.errors')
-      .map(CustomAnalysisNotification.fromNotification);
 }

@@ -38,7 +38,6 @@ Future<void> customLint({
   exitCode = 0;
   final runner = CustomLintRunner(
     CustomLintServer.run(
-      includeBuiltInLints: false,
       watchMode: watchMode,
       delegate: CommandCustomLintDelegate(),
     ),
