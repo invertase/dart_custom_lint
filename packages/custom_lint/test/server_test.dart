@@ -15,15 +15,12 @@ void main() {
     final plugin = createPlugin(
       name: 'test_lint',
       main: '''
-import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _HelloWorldLint());
-}
+PluginBase createPlugin() => _HelloWorldLint();
 
 class _HelloWorldLint extends PluginBase {
   @override
@@ -217,15 +214,12 @@ void fn2() {}''',
     final plugin = createPlugin(
       name: 'test_lint',
       main: '''
-import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _HelloWorldLint());
-}
+PluginBase createPlugin() => _HelloWorldLint();
 
 class _HelloWorldLint extends PluginBase {
   @override
@@ -364,15 +358,12 @@ class _HelloWorldLint extends PluginBase {
       );
 
       plugin.pluginMain.writeAsStringSync('''
-import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _ReloaddLint());
-}
+PluginBase createPlugin() => _ReloaddLint();
 
 class _ReloaddLint extends PluginBase {
   @override

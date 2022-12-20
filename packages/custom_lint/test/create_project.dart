@@ -19,7 +19,7 @@ Directory createPlugin({
   return createDartProject(
     sources: {
       ...?sources,
-      if (main != null) 'bin/custom_lint.dart': main,
+      if (main != null) join('lib', '$name.dart'): main,
     },
     pubspec: pubpsec == _pluginDefaultPubspec
         ? '''

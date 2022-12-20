@@ -8,14 +8,11 @@ import 'equals_ignoring_ansi.dart';
 import 'mock_fs.dart';
 
 const oyPluginSource = '''
-import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _AnotherLint());
-}
+PluginBase createPlugin() => _AnotherLint();
 
 class _AnotherLint extends PluginBase {
   @override
@@ -34,14 +31,11 @@ class _AnotherLint extends PluginBase {
 ''';
 
 const helloWordPluginSource = '''
-import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _HelloWorldLint());
-}
+PluginBase createPlugin() => _HelloWorldLint();
 
 class _HelloWorldLint extends PluginBase {
   @override
@@ -64,14 +58,11 @@ void main() {
     final plugin = createPlugin(
       name: 'test_lint',
       main: '''
-import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _AnotherLint());
-}
+PluginBase createPlugin() => _AnotherLint();
 
 class _AnotherLint extends PluginBase {
   @override
@@ -204,14 +195,11 @@ int x = 'oy';
     final plugin = createPlugin(
       name: 'test_lint',
       main: r'''
-import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _HelloWorldLint());
-}
+PluginBase createPlugin() => _HelloWorldLint();
 
 class _HelloWorldLint extends PluginBase {
   @override
@@ -288,14 +276,11 @@ Bad state: fail
     final plugin = createPlugin(
       name: 'test_lint',
       main: '''
-import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _HelloWorldLint());
-}
+PluginBase createPlugin() => _HelloWorldLint();
 
 class _HelloWorldLint extends PluginBase {
   @override
