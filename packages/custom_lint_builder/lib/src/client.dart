@@ -150,16 +150,6 @@ class CustomLintPluginClient {
   }
 }
 
-extension on String {
-  String addLeading(String leading) {
-    return splitMapJoin(
-      '\n',
-      onMatch: (m) => '\n',
-      onNonMatch: (m) => '$leading$m',
-    );
-  }
-}
-
 class _ClientAnalyzerPlugin extends ServerPlugin {
   _ClientAnalyzerPlugin(
     this._channel,
@@ -243,8 +233,9 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     });
 
     _pendingAnalyzeFiles.add(result);
-
-    await result;
+    await result.whenComplete(
+      () => _pendingAnalyzeFiles.remove(result),
+    );
   }
 
   Future<void> _awaitAnalysisDone() async {
@@ -273,10 +264,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
 
     void pluginLog(String message) {
       _channel.sendEvent(
-        CustomLintEvent.print(
-          message.addLeading('[$pluginName] '),
-          pluginName: pluginName,
-        ),
+        CustomLintEvent.print(message, pluginName: pluginName),
       );
     }
 

@@ -29,4 +29,9 @@ Future<void> main([List<String> args = const []]) async {
   final watchMode = result['watch'] as bool;
 
   await customLint(workingDirectory: Directory.current, watchMode: watchMode);
+
+  // TODO(rrousselGit): find why this exit is necessary.
+  // There's likely a leaking async operation (maybe an unclosed streamsubscription?)
+  // Nothing shows-up in the CPU profiler though ¯\_(ツ)_/¯
+  exit(exitCode);
 }

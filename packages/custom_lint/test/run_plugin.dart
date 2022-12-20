@@ -21,7 +21,8 @@ Future<CustomLintRunner> startRunnerForApp(
   bool ignoreErrors = false,
 }) async {
   final runner = CustomLintRunner(
-    CustomLintServer(
+    // TODO use IO override to mock & test stdout/stderr
+    CustomLintServer.run(
       delegate: CommandCustomLintDelegate(),
       includeBuiltInLints: false,
       watchMode: false,

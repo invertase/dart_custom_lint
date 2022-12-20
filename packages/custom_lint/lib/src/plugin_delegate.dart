@@ -20,10 +20,8 @@ abstract class CustomLintDelegate {
   /// A plugin failed to start
   void pluginInitializationFail(
     CustomLintServer serverPlugin,
-    Object err,
-    StackTrace stackTrace, {
-    required String pluginName,
-    required List<ContextRoot> pluginContextRoots,
+    String message, {
+    required List<ContextRoot> allContextRoots,
   });
 
   /// The server emitted a message
@@ -44,8 +42,8 @@ abstract class CustomLintDelegate {
   /// A plugin threw outside of a request
   void pluginError(
     CustomLintServer serverPlugin,
-    String err,
-    String stackTrace, {
+    String err, {
+    required String? stackTrace,
     required String pluginName,
     required List<ContextRoot> pluginContextRoots,
   });
@@ -96,16 +94,10 @@ mixin LogCustomLintDelegate implements CustomLintDelegate {
   @override
   void pluginInitializationFail(
     CustomLintServer serverPlugin,
-    Object err,
-    StackTrace stackTrace, {
-    required String pluginName,
-    required List<ContextRoot> pluginContextRoots,
+    String message, {
+    required List<ContextRoot> allContextRoots,
   }) {
-    _log(
-      pluginContextRoots,
-      '$err\n$stackTrace',
-      pluginName: pluginName,
-    );
+    _log(allContextRoots, message, pluginName: null);
   }
 
   @override
@@ -160,16 +152,24 @@ ${requestError.stackTrace}
   @override
   void pluginError(
     CustomLintServer serverPlugin,
-    String err,
-    String stackTrace, {
+    String err, {
+    required String? stackTrace,
     required String pluginName,
     required List<ContextRoot> pluginContextRoots,
   }) {
-    _log(
-      pluginContextRoots,
-      '$err\n$stackTrace',
-      pluginName: pluginName,
-    );
+    if (stackTrace != null) {
+      _log(
+        pluginContextRoots,
+        '$err\n$stackTrace',
+        pluginName: pluginName,
+      );
+    } else {
+      _log(
+        pluginContextRoots,
+        err,
+        pluginName: pluginName,
+      );
+    }
   }
 }
 
@@ -213,6 +213,7 @@ class CommandCustomLintDelegate
     StackTrace stackTrace, {
     required List<ContextRoot> allContextRoots,
   }) {
+    exitCode = 1;
     super.serverError(
       serverPlugin,
       error,
@@ -225,37 +226,39 @@ class CommandCustomLintDelegate
   @override
   void pluginInitializationFail(
     CustomLintServer serverPlugin,
-    Object err,
-    StackTrace stackTrace, {
-    required String pluginName,
-    required List<ContextRoot> pluginContextRoots,
+    String message, {
+    required List<ContextRoot> allContextRoots,
   }) {
+    exitCode = 1;
     super.pluginInitializationFail(
       serverPlugin,
-      err,
-      stackTrace,
-      pluginName: pluginName,
-      pluginContextRoots: pluginContextRoots,
+      message,
+      allContextRoots: allContextRoots,
     );
-    stderr.writeln('$err\n$stackTrace');
+    stderr.writeln(message);
   }
 
   @override
   void pluginError(
     CustomLintServer serverPlugin,
-    String err,
-    String stackTrace, {
+    String err, {
+    required String? stackTrace,
     required String pluginName,
     required List<ContextRoot> pluginContextRoots,
   }) {
+    exitCode = 1;
     super.pluginError(
       serverPlugin,
       err,
-      stackTrace,
+      stackTrace: stackTrace,
       pluginName: pluginName,
       pluginContextRoots: pluginContextRoots,
     );
-    stderr.writeln('$err\n$stackTrace');
+    if (stackTrace != null) {
+      stderr.writeln('$err\n$stackTrace');
+    } else {
+      stderr.writeln(err);
+    }
   }
 
   @override
@@ -265,6 +268,7 @@ class CommandCustomLintDelegate
     RequestError requestError, {
     required List<ContextRoot> allContextRoots,
   }) {
+    exitCode = 1;
     super.requestError(
       serverPlugin,
       request,

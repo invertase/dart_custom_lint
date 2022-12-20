@@ -18,14 +18,36 @@ import 'protocol.dart';
 import 'server_to_client_channel.dart';
 
 class CustomLintServer {
-  CustomLintServer({
+  CustomLintServer._({
     required this.includeBuiltInLints,
     required this.watchMode,
     required this.delegate,
   });
 
+  static CustomLintServer run({
+    required bool includeBuiltInLints,
+    required bool watchMode,
+    required CustomLintDelegate delegate,
+  }) {
+    late CustomLintServer server;
+
+    runZonedGuarded(
+      () => server = CustomLintServer._(
+        includeBuiltInLints: includeBuiltInLints,
+        watchMode: watchMode,
+        delegate: delegate,
+      ),
+      (err, stack) => server.handleUncaughtError(err, stack),
+      zoneSpecification: ZoneSpecification(
+        print: (self, parent, zone, line) => server.handlePrint(line),
+      ),
+    );
+
+    return server;
+  }
+
   final CustomLintDelegate delegate;
-  late final AnalyzerPluginClientChannel _analyzerPluginClientChannel;
+  late final AnalyzerPluginClientChannel analyzerPluginClientChannel;
 
   final bool includeBuiltInLints;
   final bool watchMode;
@@ -37,8 +59,8 @@ class CustomLintServer {
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
 
   void start(SendPort sendPort) {
-    _analyzerPluginClientChannel = JsonSendPortChannel(sendPort);
-    _requestSubscription = _analyzerPluginClientChannel.messages
+    analyzerPluginClientChannel = JsonSendPortChannel(sendPort);
+    _requestSubscription = analyzerPluginClientChannel.messages
         .map((e) => e! as Map<String, Object?>)
         .map(Request.fromJson)
         .listen(_handleRequest);
@@ -53,7 +75,7 @@ class CustomLintServer {
   Future<void> _handleRequest(Request request) async {
     final requestTime = DateTime.now().millisecondsSinceEpoch;
     void sendResponse({ResponseResult? data, RequestError? error}) {
-      _analyzerPluginClientChannel.sendJson(
+      analyzerPluginClientChannel.sendJson(
         Response(
           request.id,
           requestTime,
@@ -73,13 +95,13 @@ class CustomLintServer {
             sendResponse(data: PluginShutdownResult());
             return null;
           } finally {
-            _analyzerPluginClientChannel.close();
+            analyzerPluginClientChannel.close();
           }
         },
         orElse: () async {
           final response =
               await _clientChannel!.sendAnalyzerPluginRequest(request);
-          _analyzerPluginClientChannel.sendJson(response.toJson());
+          analyzerPluginClientChannel.sendJson(response.toJson());
           return null;
         },
       );
@@ -117,7 +139,7 @@ class CustomLintServer {
   /// An uncaught error was detected (unrelated to requests).
   /// Logging the error and notifying the analyzer server
   Future<void> handleUncaughtError(Object error, StackTrace stackTrace) async {
-    _analyzerPluginClientChannel.sendJson(
+    analyzerPluginClientChannel.sendJson(
       PluginErrorParams(false, error.toString(), stackTrace.toString())
           .toNotification()
           .toJson(),
@@ -196,6 +218,7 @@ class CustomLintServer {
     }
 
     _clientChannel = CustomLintServerToClientChannel.spawn(
+      this,
       versionCheck,
       parameters,
     );
@@ -209,7 +232,7 @@ class CustomLintServer {
   void _handleEvent(CustomLintEvent event) {
     event.map(
       analyzerPluginNotification: (event) async {
-        _analyzerPluginClientChannel.sendJson(event.notification.toJson());
+        analyzerPluginClientChannel.sendJson(event.notification.toJson());
 
         final notification = event.notification;
         if (notification.event == PLUGIN_NOTIFICATION_ERROR) {
@@ -217,7 +240,7 @@ class CustomLintServer {
           delegate.pluginError(
             this,
             error.message,
-            error.stackTrace,
+            stackTrace: error.stackTrace,
             pluginName: '<unknown plugin>',
             pluginContextRoots:
                 await _contextRoots.first.then((value) => value.roots),
@@ -228,7 +251,7 @@ class CustomLintServer {
         delegate.pluginError(
           this,
           event.message,
-          event.stackTrace,
+          stackTrace: event.stackTrace,
           pluginName: event.pluginName ?? 'custom_lint client',
           pluginContextRoots:
               await _contextRoots.first.then((value) => value.roots),

@@ -76,10 +76,11 @@ mixin ChannelBase {
     RequestParams requestParams,
   ) async {
     final id = _uuid.v4();
-
     final request = requestParams.toRequest(id);
     final responseFuture = responses.firstWhere(
-      (message) => message.id == id,
+      (message) {
+        return message.id == id;
+      },
       orElse: () => throw StateError(
         'No response for request ${request.method} $id',
       ),
@@ -119,16 +120,20 @@ mixin ChannelBase {
 }
 
 /// Mixin for Isolate-based channels
-mixin IsolateChannelBase on ChannelBase {
+abstract class IsolateChannelBase with ChannelBase {
+  IsolateChannelBase(this.receivePort) {
+    _sendPort =
+        _inputStream.where((event) => event is SendPort).cast<SendPort>().first;
+  }
+
   /// The [ReceivePort] responsible for listening to requests.
-  ReceivePort get receivePort;
+  final ReceivePort receivePort;
 
   @override
   late final Stream<Object?> _inputStream = receivePort.asBroadcastStream();
 
   /// The [SendPort] responsible for sending events to the isolate.
-  late final _sendPort =
-      _inputStream.where((event) => event is SendPort).cast<SendPort>().first;
+  late final Future<SendPort> _sendPort;
 
   @override
   Future<void> sendJson(Map<String, Object?> json) {
@@ -137,12 +142,9 @@ mixin IsolateChannelBase on ChannelBase {
 }
 
 /// An interface for interacting with the plugin server.
-class ServerIsolateChannel with ChannelBase, IsolateChannelBase {
+class ServerIsolateChannel extends IsolateChannelBase {
   /// An interface for interacting with the plugin server.
-  ServerIsolateChannel() : receivePort = ReceivePort();
-
-  @override
-  final ReceivePort receivePort;
+  ServerIsolateChannel() : super(ReceivePort());
 
   /// Lints emitted by the plugin
   late final Stream<AnalysisErrorsParams> lints = notifications
@@ -153,12 +155,9 @@ class ServerIsolateChannel with ChannelBase, IsolateChannelBase {
 }
 
 /// An interface for connecting plugins with the plugin server.
-class PluginIsolateChannel with ChannelBase, IsolateChannelBase {
+class PluginIsolateChannel extends IsolateChannelBase {
   /// An interface for connecting plugins with the plugin server.
-  PluginIsolateChannel(this.receivePort);
-
-  @override
-  final ReceivePort receivePort;
+  PluginIsolateChannel(super.receivePort);
 
   /// Lints emitted by the plugin
   late final Stream<CustomAnalysisNotification> lints = notifications

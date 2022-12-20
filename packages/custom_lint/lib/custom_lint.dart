@@ -6,7 +6,6 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:path/path.dart' as p;
 
 import 'src/plugin_delegate.dart';
-import 'src/protocol/internal_protocol.dart';
 import 'src/runner.dart';
 import 'src/v2/custom_lint_analyzer_plugin.dart';
 
@@ -35,70 +34,43 @@ Future<void> customLint({
   bool watchMode = true,
   required Directory workingDirectory,
 }) async {
-  await runZonedGuarded(() async {
-    final runner = CustomLintRunner(
-      CustomLintServer(
-        includeBuiltInLints: false,
-        watchMode: watchMode,
-        delegate: CommandCustomLintDelegate(),
-      ),
-      workingDirectory,
-    );
+  // Reset the code
+  exitCode = 0;
+  final runner = CustomLintRunner(
+    CustomLintServer.run(
+      includeBuiltInLints: false,
+      watchMode: watchMode,
+      delegate: CommandCustomLintDelegate(),
+    ),
+    workingDirectory,
+  );
 
-    runner.channel
-      ..responseErrors.listen((event) => exitCode = -1)
-      ..pluginErrors.listen((event) => exitCode = -1)
-      ..notifications.listen((event) async {
-        if (watchMode) {
-          switch (event.event) {
-            case PrintNotification.key:
-              final notification = PrintNotification.fromNotification(event);
-              stdout.writeln(notification.message);
-              break;
-            case DidHotReloadNotification.key:
-              stdout.writeln(
-                'Did hot-reload the sources of a plugin.\nRecomputing lints...',
-              );
-              await _runPlugins(runner, reload: true);
-              stdout.writeln(_help);
-              break;
-          }
-        }
-      });
+  try {
+    await runner.initialize();
+    await _runPlugins(runner, reload: false);
 
-    try {
-      await runner.initialize();
-      await _runPlugins(runner, reload: false);
-
-      if (watchMode) {
-        await _startWatchMode(runner);
-      }
-    } finally {
-      await runner.close();
+    if (watchMode) {
+      await _startWatchMode(runner);
     }
-  }, (err, stack) {
-    exitCode = -1;
-    stderr.writeln('$err\n$stack');
-  });
+  } finally {
+    await runner.close();
+  }
 }
 
 Future<void> _runPlugins(
   CustomLintRunner runner, {
   required bool reload,
 }) async {
-  // Reset the code
-  exitCode = 0;
-
   try {
     final lints = await runner.getLints(reload: reload);
 
     if (lints.any((lintsForFile) => lintsForFile.errors.isNotEmpty)) {
-      exitCode = -1;
+      exitCode = 1;
     }
 
     _renderLints(lints, workingDirectory: runner.workingDirectory);
   } catch (err, stack) {
-    exitCode = -1;
+    exitCode = 1;
     stderr.writeln('$err\n$stack');
   }
 
@@ -135,7 +107,7 @@ void _renderLints(
     });
 
     for (final lint in lintsForFile.errors) {
-      exitCode = -1;
+      exitCode = 1;
       stdout.writeln(
         '  $relativeFilePath:${lint.location.startLine}:${lint.location.startColumn}'
         ' • ${lint.message} • ${lint.code}',

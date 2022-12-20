@@ -113,7 +113,7 @@ No issues found!
       (out, err) async {
         await cli.main();
 
-        expect(exitCode, -1);
+        expect(exitCode, 1);
         expect(err.join(), completion(equalsIgnoringAnsi('''
 IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: Error: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
 Try adding the name of the type of the variable or the keyword 'var'.
@@ -144,7 +144,7 @@ invalid;
       (out, err) async {
         await cli.main();
 
-        expect(exitCode, -1);
+        expect(exitCode, 1);
         expect(out.join(), completion('''
   lib/another.dart:1:6 • Hello world • hello_world
   lib/another.dart:1:6 • Oy • oy
@@ -177,7 +177,7 @@ invalid;
       (out, err) async {
         await cli.main();
 
-        expect(exitCode, -1);
+        expect(exitCode, 1);
         expect(
           err.join(),
           completion(
@@ -249,7 +249,7 @@ class _HelloWorldLint extends PluginBase {
       (out, err) async {
         await cli.main();
 
-        expect(exitCode, -1);
+        expect(exitCode, 1);
         expect(
           out.join(),
           completion(
@@ -370,7 +370,7 @@ void main() {
       (out, err) async {
         await cli.main();
 
-        expect(exitCode, -1);
+        expect(exitCode, 1);
         expect(
           err.join(),
           completion(isEmpty),

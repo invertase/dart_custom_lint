@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../channels.dart';
 import '../plugin.dart';
+import 'custom_lint_analyzer_plugin.dart';
 import 'protocol.dart';
 
 Future<int> _findPossiblyUnusedPort() {
@@ -112,6 +113,7 @@ therefore custom_lint does not know which one to pick.
 class _SocketCustomLintServerToClientChannel
     implements CustomLintServerToClientChannel {
   _SocketCustomLintServerToClientChannel(
+    this._server,
     this._version,
     this._contextRoots,
   )   : _packages = getPackageListForContextRoots(_contextRoots.roots),
@@ -121,6 +123,7 @@ class _SocketCustomLintServerToClientChannel
     );
   }
 
+  final CustomLintServer _server;
   final PluginVersionCheckParams _version;
   final List<Package> _packages;
   final Directory _tempDirectory = Directory.systemTemp.createTempSync();
@@ -183,7 +186,7 @@ class _SocketCustomLintServerToClientChannel
     mainFile.writeAsStringSync('''
 import 'dart:convert';
 import 'dart:io';
-import 'package:custom_lint_builder/src/v2/channel.dart';
+import 'package:custom_lint_builder/src/channel.dart';
 $imports
 
 void main(List<String> args) async {
@@ -224,7 +227,7 @@ $dependencies
 
     final processFuture = _asyncRetry(retryCount: 5, () async {
       final unusedPort = await _findPossiblyUnusedPort();
-      return Process.start(
+      final process = await Process.start(
         'dart',
         [
           '--enable-vm-service=$unusedPort',
@@ -233,18 +236,64 @@ $dependencies
         ],
         workingDirectory: _tempDirectory.path,
       );
+      return process;
     });
 
     await processFuture.then(
       _process.complete,
       onError: _process.completeError,
     );
-    // TODO pipe process stdout/stderr to the log file
+    final process = await processFuture;
+
+    await _checkInitializationFail(process);
+
+    process.stdout
+        .map(utf8.decode)
+        // Let's not log the VM service prints.
+        .skipWhile(
+          (element) =>
+              element.startsWith('The Dart VM service is listening on') ||
+              element.startsWith(
+                  'The Dart DevTools debugger and profiler is available at:'),
+        )
+        .listen(_server.handlePrint);
+    process.stderr
+        .map(utf8.decode)
+        .listen((e) => _server.handleUncaughtError(e, StackTrace.empty));
 
     await Future.wait([
       sendAnalyzerPluginRequest(_version.toRequest(const Uuid().v4())),
-      sendAnalyzerPluginRequest(_contextRoots.toRequest(const Uuid().v4())),
+      sendAnalyzerPluginRequest(_contextRoots.toRequest(const Uuid().v4()))
     ]);
+  }
+
+  Future<void> _checkInitializationFail(Process process) async {
+    var running = true;
+    try {
+      return await Future.any<void>([
+        _socket,
+        process.exitCode.then((exitCode) async {
+          // A socket was returned before the exitCode was obtained.
+          // As such, the process correctly started
+          if (!running) return;
+
+          _server.delegate.pluginInitializationFail(
+            _server,
+            await process.stderr.map(utf8.decode).join(),
+            allContextRoots: _contextRoots.roots,
+          );
+
+          _server.analyzerPluginClientChannel.sendJson(
+              PluginErrorParams(true, 'Failed to start plugins', '')
+                  .toNotification()
+                  .toJson());
+
+          throw StateError('Failed to start the plugins.');
+        }),
+      ]);
+    } finally {
+      running = false;
+    }
   }
 
   @override
@@ -277,9 +326,9 @@ $dependencies
   ) async {
     final matchingResponse = _responses.firstWhere((e) => e.id == request.id);
 
-    await _socket.then(
-      (socket) => socket.sendJson(request.toJson()),
-    );
+    await _socket.then((socket) {
+      socket.sendJson(request.toJson());
+    });
 
     final response = await matchingResponse;
 
@@ -328,6 +377,7 @@ class CustomLintRequestFailure implements Exception {
 /// custom_lint's analyzer_plugin -> custom_lint's plugin host
 abstract class CustomLintServerToClientChannel {
   factory CustomLintServerToClientChannel.spawn(
+    CustomLintServer server,
     PluginVersionCheckParams version,
     AnalysisSetContextRootsParams contextRoots,
   ) = _SocketCustomLintServerToClientChannel;

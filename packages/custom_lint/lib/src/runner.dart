@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:isolate';
 
 import 'package:analyzer/dart/analysis/context_locator.dart';
 import 'package:analyzer/file_system/overlay_file_system.dart';
@@ -20,9 +19,11 @@ const _analyzerPluginProtocolVersion = '1.0.0-alpha.0';
 class CustomLintRunner {
   /// A runner for programmatically interacting with a plugin.
   CustomLintRunner(this._server, this.workingDirectory)
-      : channel = ServerIsolateChannel();
+      : channel = ServerIsolateChannel() {
+    _server.start(channel.receivePort.sendPort);
+  }
 
-  SendPort get sendPort => channel.receivePort.sendPort;
+  // SendPort get sendPort => channel.receivePort.sendPort;
 
   /// The directory in which this command is exected in.
   final Directory workingDirectory;
