@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import 'src/plugin_delegate.dart';
 import 'src/runner.dart';
+import 'src/server_isolate_channel.dart';
 import 'src/v2/custom_lint_analyzer_plugin.dart';
 
 const _help = '''
@@ -36,12 +37,16 @@ Future<void> customLint({
 }) async {
   // Reset the code
   exitCode = 0;
+
+  final channel = ServerIsolateChannel();
   final runner = CustomLintRunner(
-    CustomLintServer(
+    CustomLintServer.start(
+      sendPort: channel.receivePort.sendPort,
       watchMode: watchMode,
       delegate: CommandCustomLintDelegate(),
     ),
     workingDirectory,
+    channel,
   );
 
   try {
@@ -137,7 +142,7 @@ Future<void> _startWatchMode(CustomLintRunner runner) async {
       case 'q':
         // Let's quit the command line
         // TODO(rrousselGit) Investigate why an "exit" is required and we can't simply "return"
-        exit(exitCode);
+        return;
       default:
       // Unknown command. Nothing to do
     }

@@ -205,9 +205,9 @@ void main(List<String> args) async {
     final dependencies =
         _packages.map((package) => '  ${package.name}: any').join();
 
-    final mainFile = File(join(_tempDirectory.path, 'pubspec.yaml'));
-    mainFile.createSync(recursive: true);
-    mainFile.writeAsStringSync('''
+    final pubspecFile = File(join(_tempDirectory.path, 'pubspec.yaml'));
+    pubspecFile.createSync(recursive: true);
+    pubspecFile.writeAsStringSync('''
 name: custom_lint_client
 version: 0.0.1
 publish_to: 'none'
@@ -232,7 +232,7 @@ $dependencies
     final processFuture = _asyncRetry(retryCount: 5, () async {
       final unusedPort = await _findPossiblyUnusedPort();
       final process = await Process.start(
-        'dart',
+        Platform.resolvedExecutable,
         [
           '--enable-vm-service=$unusedPort',
           join('lib', 'main.dart'),
@@ -249,8 +249,6 @@ $dependencies
     );
     final process = await processFuture;
 
-    await _checkInitializationFail(process);
-
     process.stdout
         .map(utf8.decode)
         // Let's not log the VM service prints.
@@ -264,6 +262,10 @@ $dependencies
     process.stderr
         .map(utf8.decode)
         .listen((e) => _server.handleUncaughtError(e, StackTrace.empty));
+
+    // Checking process failure _after_ piping stdout/stderr to the log files.
+    // This is so that if client failed to boot, logs in it should still be available
+    await _checkInitializationFail(process);
 
     await Future.wait([
       sendAnalyzerPluginRequest(_version.toRequest(const Uuid().v4())),
@@ -283,7 +285,7 @@ $dependencies
 
           _server.delegate.pluginInitializationFail(
             _server,
-            await process.stderr.map(utf8.decode).join(),
+            'Failed to start plugins',
             allContextRoots: _contextRoots.roots,
           );
 

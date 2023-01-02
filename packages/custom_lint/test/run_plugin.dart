@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint/src/plugin_delegate.dart';
 import 'package:custom_lint/src/runner.dart';
+import 'package:custom_lint/src/server_isolate_channel.dart';
 import 'package:custom_lint/src/v2/custom_lint_analyzer_plugin.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -20,13 +21,16 @@ Future<CustomLintRunner> startRunnerForApp(
   Directory directory, {
   bool ignoreErrors = false,
 }) async {
+  final channel = ServerIsolateChannel();
   final runner = CustomLintRunner(
     // TODO use IO override to mock & test stdout/stderr
-    CustomLintServer(
+    CustomLintServer.start(
+      sendPort: channel.receivePort.sendPort,
       delegate: CommandCustomLintDelegate(),
       watchMode: false,
     ),
     directory,
+    channel,
   );
   addTearDown(runner.close);
 

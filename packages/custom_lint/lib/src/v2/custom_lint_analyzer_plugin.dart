@@ -18,17 +18,22 @@ import 'protocol.dart';
 import 'server_to_client_channel.dart';
 
 class CustomLintServer {
-  factory CustomLintServer({
+  factory CustomLintServer.start({
+    required SendPort sendPort,
     required bool watchMode,
     required CustomLintDelegate delegate,
   }) {
     late CustomLintServer server;
 
     runZonedGuarded(
-      () => server = CustomLintServer._(
-        watchMode: watchMode,
-        delegate: delegate,
-      ),
+      () {
+        server = CustomLintServer._(
+          watchMode: watchMode,
+          delegate: delegate,
+        );
+
+        server._start(sendPort);
+      },
       (err, stack) => server.handleUncaughtError(err, stack),
       zoneSpecification: ZoneSpecification(
         print: (self, parent, zone, line) => server.handlePrint(line),
@@ -54,7 +59,7 @@ class CustomLintServer {
   CustomLintServerToClientChannel? _clientChannel;
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
 
-  void start(SendPort sendPort) {
+  void _start(SendPort sendPort) {
     analyzerPluginClientChannel = JsonSendPortChannel(sendPort);
     _requestSubscription = analyzerPluginClientChannel.messages
         .map((e) => e! as Map<String, Object?>)
@@ -124,11 +129,6 @@ class CustomLintServer {
         ),
         allContextRoots: await _contextRoots.first.then((value) => value.roots),
       );
-
-      // await _logError(
-      //   err.toString(),
-      //   stack.toString(),
-      // );
     }
   }
 

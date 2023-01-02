@@ -18,10 +18,7 @@ const _analyzerPluginProtocolVersion = '1.0.0-alpha.0';
 /// A runner for programmatically interacting with a plugin.
 class CustomLintRunner {
   /// A runner for programmatically interacting with a plugin.
-  CustomLintRunner(this._server, this.workingDirectory)
-      : channel = ServerIsolateChannel() {
-    _server.start(channel.receivePort.sendPort);
-  }
+  CustomLintRunner(this._server, this.workingDirectory, this.channel);
 
   // SendPort get sendPort => channel.receivePort.sendPort;
 

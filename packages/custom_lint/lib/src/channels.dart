@@ -23,7 +23,9 @@ class JsonSendPortChannel implements AnalyzerPluginClientChannel {
   late final Stream<Object?> messages = _receivePort.asBroadcastStream();
 
   @override
-  void sendJson(Map<String, Object?> json) => _sendPort.send(json);
+  void sendJson(Map<String, Object?> json) {
+    _sendPort.send(json);
+  }
 
   @override
   void close() => _receivePort.close();
