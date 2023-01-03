@@ -7,6 +7,14 @@
   <a href="https://github.com/invertase/dart_custom_lint/blob/main/LICENSE">License</a>
 </p>
 
+---
+
+ <a href="https://invertase.link/discord">
+   <img src="https://img.shields.io/discord/295953187817521152.svg?style=flat-square&colorA=7289da&label=Chat%20on%20Discord" alt="Chat on Discord">
+ </a>
+ 
+---
+
 ## Index
 
 - [Index](#index)
