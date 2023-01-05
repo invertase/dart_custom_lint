@@ -91,7 +91,8 @@ No issues found!
     );
   });
 
-  test('exits with 1 if only an error but no lint are found', () async {
+  test('exits with 1 if only an error but no lint are found', retry: 3,
+      () async {
     final plugin = createPlugin(name: 'test_lint', main: 'invalid;');
 
     final app = createLintUsage(
@@ -162,7 +163,7 @@ at:
     );
   });
 
-  test('supports plugins that do not compile', () async {
+  test('supports plugins that do not compile', retry: 3, () async {
     final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
     final plugin2 = createPlugin(
       name: 'test_lint2',

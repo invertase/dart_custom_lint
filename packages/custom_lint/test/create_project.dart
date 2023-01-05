@@ -171,7 +171,3 @@ Directory createTmpFolder(Map<String, String> files, String name) {
 
   return newFolder;
 }
-
-extension PluginDirX on Directory {
-  File get pluginMain => File(join(path, 'bin', 'custom_lint.dart'));
-}
