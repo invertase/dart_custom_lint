@@ -79,7 +79,7 @@ class _AnotherLint extends PluginBase {
 
     await runWithIOOverride(
       (out, err) async {
-        await cli.main();
+        await cli.entrypoint();
 
         expect(exitCode, 0);
         expect(out.join(), completion('''
@@ -103,7 +103,7 @@ No issues found!
 
     await runWithIOOverride(
       (out, err) async {
-        await cli.main();
+        await cli.entrypoint();
 
         expect(exitCode, 1);
         expect(
@@ -148,7 +148,7 @@ at:
 
     await runWithIOOverride(
       (out, err) async {
-        await cli.main();
+        await cli.entrypoint();
 
         expect(exitCode, 1);
         expect(out.join(), completion('''
@@ -181,7 +181,7 @@ at:
 
     await runWithIOOverride(
       (out, err) async {
-        await cli.main();
+        await cli.entrypoint();
 
         expect(exitCode, 1);
         expect(
@@ -257,7 +257,7 @@ class _HelloWorldLint extends PluginBase {
 
     await runWithIOOverride(
       (out, err) async {
-        await cli.main();
+        await cli.entrypoint();
 
         // out.listen(print);
         expect(exitCode, 1);
@@ -377,7 +377,7 @@ void main() {
 
     await runWithIOOverride(
       (out, err) async {
-        await cli.main();
+        await cli.entrypoint();
 
         expect(exitCode, 1);
         expect(

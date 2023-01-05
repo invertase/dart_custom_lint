@@ -35,7 +35,7 @@ abstract class CustomLintDelegate {
   void pluginMessage(
     CustomLintServer serverPlugin,
     String message, {
-    required String pluginName,
+    required String? pluginName,
     required List<ContextRoot> pluginContextRoots,
   });
 
@@ -65,12 +65,15 @@ mixin LogCustomLintDelegate implements CustomLintDelegate {
     required String? pluginName,
   }) {
     final now = DateTime.now();
-    final label = '[$pluginName] ${now.toIso8601String()}';
+    final label =
+        pluginName != null ? '[$pluginName] ${now.toIso8601String()}' : '';
 
-    final msg = message
-        .split('\n')
-        .map((e) => e.isEmpty ? '$label\n' : '$label $e\n')
-        .join();
+    final msg = label.isEmpty
+        ? message
+        : message
+            .split('\n')
+            .map((e) => e.isEmpty ? '$label\n' : '$label $e\n')
+            .join();
 
     for (final contextRoot in contextRoots) {
       final file = File(join(contextRoot.root, 'custom_lint.log'));
@@ -119,7 +122,7 @@ mixin LogCustomLintDelegate implements CustomLintDelegate {
   void pluginMessage(
     CustomLintServer serverPlugin,
     String message, {
-    required String pluginName,
+    required String? pluginName,
     required List<ContextRoot> pluginContextRoots,
   }) {
     _log(
@@ -186,7 +189,7 @@ class CommandCustomLintDelegate
   void pluginMessage(
     CustomLintServer serverPlugin,
     String message, {
-    required String pluginName,
+    required String? pluginName,
     required List<ContextRoot> pluginContextRoots,
   }) {
     super.pluginMessage(
@@ -196,12 +199,14 @@ class CommandCustomLintDelegate
       pluginContextRoots: pluginContextRoots,
     );
 
-    final label = '[$pluginName]';
+    final label = pluginName == null ? '' : '[$pluginName]';
 
-    final msg = message
-        .split('\n')
-        .map((e) => e.isEmpty ? '$label\n' : '$label $e\n')
-        .join();
+    final msg = label.isEmpty
+        ? message
+        : message
+            .split('\n')
+            .map((e) => e.isEmpty ? '$label\n' : '$label $e\n')
+            .join();
 
     stdout.write(msg);
   }

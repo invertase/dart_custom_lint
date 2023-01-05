@@ -36,7 +36,10 @@ class CustomLintServer {
       },
       (err, stack) => server.handleUncaughtError(err, stack),
       zoneSpecification: ZoneSpecification(
-        print: (self, parent, zone, line) => server.handlePrint(line),
+        print: (self, parent, zone, line) => server.handlePrint(
+          line,
+          isClientMessage: false,
+        ),
       ),
     );
 
@@ -64,7 +67,10 @@ class CustomLintServer {
       cb,
       handleUncaughtError,
       zoneSpecification: ZoneSpecification(
-        print: (self, parent, zone, line) => handlePrint(line),
+        print: (self, parent, zone, line) => handlePrint(
+          line,
+          isClientMessage: false,
+        ),
       ),
     );
   }
@@ -173,14 +179,26 @@ class CustomLintServer {
   }
 
   /// A print was detected. This will redirect it to a log file.
-  Future<void> handlePrint(String message) async {
+  Future<void> handlePrint(
+    String message, {
+    required bool isClientMessage,
+  }) async {
     final roots = await _contextRoots.first;
 
-    delegate.serverMessage(
-      this,
-      message,
-      allContextRoots: roots.roots,
-    );
+    if (!isClientMessage) {
+      delegate.serverMessage(
+        this,
+        message,
+        allContextRoots: roots.roots,
+      );
+    } else {
+      delegate.pluginMessage(
+        this,
+        message,
+        pluginName: null,
+        pluginContextRoots: roots.roots,
+      );
+    }
   }
 
   Future<void> _handlePluginShutdown() async {

@@ -229,12 +229,13 @@ $dependencies
     _writePubspec();
     _writeMain();
 
+    late int port;
     final processFuture = _asyncRetry(retryCount: 5, () async {
-      final unusedPort = await _findPossiblyUnusedPort();
+      port = await _findPossiblyUnusedPort();
       final process = await Process.start(
         Platform.resolvedExecutable,
         [
-          '--enable-vm-service=$unusedPort',
+          '--enable-vm-service=$port',
           join('lib', 'main.dart'),
           await _serverSocket.then((value) => value.port.toString())
         ],
@@ -249,16 +250,18 @@ $dependencies
     );
     final process = await processFuture;
 
-    process.stdout
-        .map(utf8.decode)
-        // Let's not log the VM service prints.
-        .skipWhile(
-          (element) =>
-              element.startsWith('The Dart VM service is listening on') ||
-              element.startsWith(
-                  'The Dart DevTools debugger and profiler is available at:'),
-        )
-        .listen(_server.handlePrint);
+    var out = process.stdout.map(utf8.decode);
+    // Let's not log the VM service prints unless in watch mode
+    if (!_server.watchMode) {
+      out = out.skipWhile(
+        (element) =>
+            element.startsWith('The Dart VM service is listening on') ||
+            element.startsWith(
+                'The Dart DevTools debugger and profiler is available at:'),
+      );
+    }
+
+    out.listen((event) => _server.handlePrint(event, isClientMessage: true));
     process.stderr
         .map(utf8.decode)
         .listen((e) => _server.handleUncaughtError(e, StackTrace.empty));
