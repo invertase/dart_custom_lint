@@ -53,16 +53,17 @@ class _StdoutOverride implements Stdout {
   }
 
   @override
-  Future addStream(Stream<List<int>> stream) => throw UnimplementedError();
+  Future<void> addStream(Stream<List<int>> stream) =>
+      throw UnimplementedError();
 
   @override
-  Future close() => _controller.close();
+  Future<void> close() => _controller.close();
 
   @override
-  Future get done => throw UnimplementedError();
+  Future<void> get done => throw UnimplementedError();
 
   @override
-  Future flush() => throw UnimplementedError();
+  Future<void> flush() => throw UnimplementedError();
 
   @override
   bool get hasTerminal => _stdout.hasTerminal;
@@ -85,7 +86,7 @@ class _StdoutOverride implements Stdout {
   }
 
   @override
-  void writeAll(Iterable objects, [String sep = '']) {
+  void writeAll(Iterable<Object?> objects, [String sep = '']) {
     _controller.add(objects.join(sep));
   }
 

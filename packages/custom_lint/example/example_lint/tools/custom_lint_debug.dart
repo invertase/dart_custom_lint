@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:custom_lint/basic_runner.dart';
+import 'package:custom_lint/custom_lint.dart';
 
 Future<void> main() async {
   await customLint(workingDirectory: Directory.current.parent);

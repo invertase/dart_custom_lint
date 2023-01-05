@@ -1,3 +1,28 @@
+## Unreleased major
+
+- **Breaking**: The plugin entrypoint has moved.  
+  Plugins no-longer should define a `/bin/custom_lint.dart` file.
+  Instead they should define a `/lib/<my_package_name>.dart`
+
+- **Breaking**: The plugin entrypoint is modified. Plugins no-longer
+  define a "main", but instead define a `createPlugin` function:
+
+  Before:
+
+  ```dart
+  // /bin/custom_lint.dart
+  void main(List<String> args, SendPort sendPort) {
+    startPlugin(sendPort, MyPlugin());
+  }
+  ```
+
+  After:
+
+  ```dart
+  // /lib/<my_package_name.dart
+  MyPlugin createPlugin() => MyPlugin();
+  ```
+
 ## 0.0.16
 
 Fix `expect_lint` not working if the file doesn't contain any lint.

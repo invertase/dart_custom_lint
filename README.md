@@ -7,6 +7,14 @@
   <a href="https://github.com/invertase/dart_custom_lint/blob/main/LICENSE">License</a>
 </p>
 
+---
+
+ <a href="https://invertase.link/discord">
+   <img src="https://img.shields.io/discord/295953187817521152.svg?style=flat-square&colorA=7289da&label=Chat%20on%20Discord" alt="Chat on Discord">
+ </a>
+ 
+---
+
 ## Index
 
 - [Index](#index)
@@ -16,7 +24,7 @@
   - [Creating a custom lint package](#creating-a-custom-lint-package)
   - [Using our custom lint package in an application](#using-our-custom-lint-package-in-an-application)
   - [Obtaining the list of lints in the CI](#obtaining-the-list-of-lints-in-the-ci)
-  - [Using the Dart debugger and enabling hot-restart.](#using-the-dart-debugger-and-enabling-hot-restart)
+  - [Using the Dart debugger](#using-the-dart-debugger)
   - [Testing your plugins using expect\_lint](#testing-your-plugins-using-expect_lint)
 - [FAQs](#faqs)
   - [Q. How do I get all the classes present in my source code?](#q-how-do-i-get-all-the-classes-present-in-my-source-code)
@@ -90,9 +98,7 @@ To create a custom lint, you will need two things:
 
   ```dart
   // This is the entrypoint of our custom linter
-  void main(List<String> args, SendPort sendPort) {
-    startPlugin(sendPort, _ExampleLinter());
-  }
+  MyPlugin createPlugin() => MyPlugin();
 
   // This class is the one that will analyze Dart files and return lints
   class _ExampleLinter extends PluginBase {
@@ -161,39 +167,30 @@ $ dart run custom_lint
 
 If you are working on a Flutter project, run `flutter pub run custom_lint` instead.
 
-### Using the Dart debugger and enabling hot-restart.
+### Using the Dart debugger
 
-To enable hot-restart and use the Dart debugger, we'll want to start plugins in a
-slightly different way.
+To debug plugins in custom_lint, you need to connect to plugins using "attach"
+mode in your IDE (`cmd+shift+p` + `Debug: attach to Dart process` in VSCode).
 
-First, create a `tools/custom_lint_debug.dart` file next to `tools/custom_lint.dart`
-with the following content:
+When using this command, you will need a VM service URI provided by custom_lint.
 
-```dart
-import 'dart:io';
-import 'package:custom_lint/basic_runner.dart';
+There are two possible ways to obtain one:
 
-void main() {
-  await customLint(workingDirectory: Directory.current.parent);
-}
+- if you started your plugin using `custom_lint --watch`, it should be visible
+  in the console output.
+- if your plugin is started by your IDE, you can open the `custom_lint.log` file
+  that custom_lint created next to the `pubspec.yaml` of your analyzed projects.
+
+In both cases, what you're looking for is logs similar to:
 
 ```
+The Dart VM service is listening on http://127.0.0.1:60671/9DS43lRMY90=/
+The Dart DevTools debugger and profiler is available at: http://127.0.0.1:60671/9DS43lRMY90=/devtools/#/?uri=ws%3A%2F%2F127.0.0.1%3A60671%2F9DS43lRMY90%3D%2Fws
+```
 
-Now you can run/test the custom lints packages you are using via:
-
-- Starting this main from your IDE (such as clicking on `debug` in VScode).
-  This will connect your IDE to the Dart debugger, allowing the usage of breakpoints.
-
-- From the command line with `dart --enable-vm-service path/to/custom_lint_debug.dart`  
-  The Dart debugger will not be enabled, but hot-reload still will be enabled.
-  Changing the source of your plugin would automatically show the update.
-
-**I have the following error when I run the program in my IDE: `Bad state: VM service not available! You need to run dart with --enable-vm-service.`**
-
-Chances are you didn't start your program in debug mode.  
-If using VScode, when starting your program, make sure to click on `debug` not `run`:
-
-![VScode's debug button](https://raw.githubusercontent.com/invertase/dart_custom_lint/main/resources/vscode_debug.jpg)
+What you'll want is the first URI. In this example, that is `http://127.0.0.1:60671/9DS43lRMY90=/`.
+You can then pass this to your IDE, which should now be able to attach to the
+plugin.
 
 ### Testing your plugins using expect_lint
 

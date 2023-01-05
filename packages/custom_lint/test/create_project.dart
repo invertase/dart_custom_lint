@@ -19,7 +19,7 @@ Directory createPlugin({
   return createDartProject(
     sources: {
       ...?sources,
-      if (main != null) 'bin/custom_lint.dart': main,
+      if (main != null) join('lib', '$name.dart'): main,
     },
     pubspec: pubpsec == _pluginDefaultPubspec
         ? '''
@@ -97,7 +97,7 @@ String createPackageConfig({
     'packages': <Object?>[
       ...(PeerProjectMeta.current.exampleLintPackageConfig['packages']!
               as List<Object?>)
-          .cast<Map>()
+          .cast<Map<Object?, Object?>>()
           .where(
             (e) =>
                 e['name'] != 'custom_lint' &&
@@ -170,8 +170,4 @@ Directory createTmpFolder(Map<String, String> files, String name) {
   }
 
   return newFolder;
-}
-
-extension PluginDirX on Directory {
-  File get pluginMain => File(join(path, 'bin', 'custom_lint.dart'));
 }
