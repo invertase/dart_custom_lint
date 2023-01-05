@@ -65,7 +65,7 @@ void fn3() {}
       name: 'test_app',
     );
 
-    final runner = await startRunnerForApp(app);
+    final runner = startRunnerForApp(app);
 
     expect(
       await runner.channel.lints.first,
@@ -127,7 +127,7 @@ void fn3() {}
       name: 'test_app',
     );
 
-    final runner = await startRunnerForApp(app);
+    final runner = startRunnerForApp(app);
 
     expect(
       await runner.channel.lints.first,
@@ -183,7 +183,8 @@ void fn3() {}
       name: 'test_app',
     );
 
-    final runner = await startRunnerForApp(app);
+    final runner = startRunnerForApp(app);
+    await runner.initialize;
 
     expect(runner.channel.lints, emitsDone);
 

@@ -11,8 +11,12 @@ class CustomLintRequest with _$CustomLintRequest {
     required String id,
   }) = CustomLintRequestAnalyzerPluginRequest;
 
-  factory CustomLintRequest.awaitAnalysisDone({required String id}) =
-      _CustomLintRequestAwaitAnalysisDone;
+  factory CustomLintRequest.awaitAnalysisDone({
+    required String id,
+    required bool reload,
+  }) = _CustomLintRequestAwaitAnalysisDone;
+
+  factory CustomLintRequest.ping({required String id}) = _CustomLintRequestPing;
 
   factory CustomLintRequest.fromJson(Map<String, Object?> json) =>
       _$CustomLintRequestFromJson(json);
@@ -30,6 +34,9 @@ class CustomLintResponse with _$CustomLintResponse {
 
   factory CustomLintResponse.awaitAnalysisDone({required String id}) =
       _CustomLintResponseAwaitAnalysisDone;
+
+  factory CustomLintResponse.pong({required String id}) =
+      _CustomLintResponsePong;
 
   factory CustomLintResponse.error({
     required String id,

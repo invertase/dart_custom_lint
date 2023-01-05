@@ -13,14 +13,14 @@ Future<List<AnalysisErrorsParams>> runServerInCliModeForApp(
   Directory directory,
   // to ignoreErrors as we cannot explictly handle errors
 ) async {
-  final runner = await startRunnerForApp(directory);
+  final runner = startRunnerForApp(directory);
   return runner.getLints(reload: false);
 }
 
-Future<CustomLintRunner> startRunnerForApp(
+CustomLintRunner startRunnerForApp(
   Directory directory, {
   bool ignoreErrors = false,
-}) async {
+}) {
   final channel = ServerIsolateChannel();
   final runner = CustomLintRunner(
     // TODO use IO override to mock & test stdout/stderr
@@ -44,7 +44,8 @@ Future<CustomLintRunner> startRunnerForApp(
       });
   }
 
-  await runner.initialize();
+  unawaited(runner.initialize);
+
   return runner;
 }
 

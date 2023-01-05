@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
+import 'package:analyzer_plugin/protocol/protocol_constants.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
@@ -14,17 +15,18 @@ const _uuid = Uuid();
 /// A base class for the protocol responsible with interacting with using the
 /// analyzer_plugin API
 mixin ChannelBase {
-  Stream<Object?> get _inputStream;
+  /// The stream containing any message from the client
+  Stream<Object?> get inputStream;
 
   /// The [Notification]s emitted by the plugin
-  late final Stream<Notification> notifications = _inputStream
+  late final Stream<Notification> notifications = inputStream
       .where((e) => e is Map)
       .map((e) => e! as Map)
       .where((e) => e.containsKey(Notification.EVENT))
       .map(Notification.fromJson);
 
   /// The [Response]s emitted by the plugin
-  late final Stream<Response> responses = _inputStream
+  late final Stream<Response> responses = inputStream
       .where((event) => event is Map<String, Object?>)
       .map((event) => event! as Map<String, Object?>)
       .where((e) => e.containsKey(Response.ID))
@@ -35,22 +37,15 @@ mixin ChannelBase {
       StreamGroup.mergeBroadcast([
     // Manual error notifications from the plugin
     notifications
-        .where((e) => e.event == 'plugin.error')
+        .where((e) => e.event == PLUGIN_NOTIFICATION_ERROR)
         .map(PluginErrorParams.fromNotification),
 
     // When the receivePort is passed to Isolate.onError, error events are
     // received as ["error", "stackTrace"]
-    _inputStream
+    inputStream
         .where((event) => event is List)
         .cast<List<Object?>>()
         .map((event) {
-      // The plugin had an uncaught error.
-      if (event.length != 2) {
-        throw UnsupportedError(
-          'Only ["error", "stackTrace"] list messages are supported',
-        );
-      }
-
       final error = event.first.toString();
       final stackTrace = event.last.toString();
       return PluginErrorParams(false, error, stackTrace);
@@ -82,7 +77,7 @@ mixin ChannelBase {
     final response = await responseFuture;
 
     if (response.error != null) {
-      throw RequestFailure(response.error!);
+      throw _PrettyRequestFailure(response.error!);
     }
 
     return response;
@@ -105,10 +100,19 @@ mixin ChannelBase {
     final response = await responseFuture;
 
     if (response.error != null) {
-      throw RequestFailure(response.error!);
+      throw _PrettyRequestFailure(response.error!);
     }
 
     return response;
+  }
+}
+
+class _PrettyRequestFailure extends RequestFailure {
+  _PrettyRequestFailure(super.error);
+
+  @override
+  String toString() {
+    return '_PrettyRequestFailure: $error';
   }
 }
 
@@ -116,14 +120,14 @@ mixin ChannelBase {
 abstract class IsolateChannelBase with ChannelBase {
   IsolateChannelBase(this.receivePort) {
     _sendPort =
-        _inputStream.where((event) => event is SendPort).cast<SendPort>().first;
+        inputStream.where((event) => event is SendPort).cast<SendPort>().first;
   }
 
   /// The [ReceivePort] responsible for listening to requests.
   final ReceivePort receivePort;
 
   @override
-  late final Stream<Object?> _inputStream = receivePort.asBroadcastStream();
+  late final Stream<Object?> inputStream = receivePort.asBroadcastStream();
 
   /// The [SendPort] responsible for sending events to the isolate.
   late final Future<SendPort> _sendPort;
@@ -141,7 +145,7 @@ class ServerIsolateChannel extends IsolateChannelBase {
 
   /// Lints emitted by the plugin
   late final Stream<AnalysisErrorsParams> lints = notifications
-      .where((e) => e.event == 'analysis.errors')
+      .where((e) => e.event == ANALYSIS_NOTIFICATION_ERRORS)
       .map(AnalysisErrorsParams.fromNotification);
 
   void close() => receivePort.close();

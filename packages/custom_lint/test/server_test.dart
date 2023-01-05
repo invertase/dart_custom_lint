@@ -250,7 +250,7 @@ class _HelloWorldLint extends PluginBase {
     );
 
     await runWithIOOverride((out, err) async {
-      final runner = await startRunnerForApp(
+      final runner = startRunnerForApp(
         app,
         // Ignoring errors as we are handling them later
         ignoreErrors: true,
@@ -266,7 +266,7 @@ class _HelloWorldLint extends PluginBase {
           predicate<PluginErrorParams>((value) {
             expect(
               value.message,
-              'The following exception was thrown while trying to obtain lints for ${app.path}/lib/another.dart:\n'
+              'Plugin test_lint threw while analyzing ${app.path}/lib/another.dart:\n'
               'Bad state: fail',
             );
             return true;
@@ -286,7 +286,7 @@ class _HelloWorldLint extends PluginBase {
 
       expect(
         lints.first.errors.map((e) => e.code),
-        unorderedEquals(<Object?>['oy']),
+        unorderedEquals(<Object?>['custom_lint_get_lint_fail', 'oy']),
       );
       expect(
         lints.last.errors.map((e) => e.code),
@@ -336,7 +336,7 @@ class _HelloWorldLint extends PluginBase {
         name: 'test_app',
       );
 
-      final runner = await startRunnerForApp(app);
+      final runner = startRunnerForApp(app);
 
       await expectLater(
         runner.channel.lints,
@@ -425,7 +425,7 @@ class _ReloaddLint extends PluginBase {
       );
 
       await runWithIOOverride((out, err) async {
-        final runner = await startRunnerForApp(app, ignoreErrors: true);
+        final runner = startRunnerForApp(app, ignoreErrors: true);
 
         await expectLater(
           runner.channel.lints,

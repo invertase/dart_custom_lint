@@ -340,6 +340,7 @@ $dependencies
 
     response.map(
       awaitAnalysisDone: (_) {},
+      pong: (_) {},
       analyzerPluginResponse: (response) {
         final error = response.response.error;
         if (error != null) {

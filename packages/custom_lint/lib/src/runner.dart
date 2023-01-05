@@ -28,6 +28,8 @@ class CustomLintRunner {
   /// The connection between the server and the plugin.
   final ServerIsolateChannel channel;
   final CustomLintServer _server;
+  final _accumulatedLints = <String, AnalysisErrorsParams>{};
+  StreamSubscription<void>? _lintSubscription;
 
   var _closed = false;
 
@@ -51,7 +53,11 @@ class CustomLintRunner {
       .toList();
 
   /// Starts the plugin and sends the necessary requests for initializing it.
-  Future<void> initialize() async {
+  late final initialize = Future(() async {
+    _lintSubscription = channel.lints.listen((event) {
+      _accumulatedLints[event.file] = event;
+    });
+
     await channel.sendRequest(
       PluginVersionCheckParams(
         _resourceProvider.getByteStorePath(_pluginName),
@@ -69,22 +75,16 @@ class CustomLintRunner {
           ),
       ]),
     );
-  }
+  });
 
   /// Obtains the list of lints for the current workspace.
-  Future<List<AnalysisErrorsParams>> getLints({
-    required bool reload,
-  }) async {
-    final result = <String, AnalysisErrorsParams>{};
+  Future<List<AnalysisErrorsParams>> getLints({required bool reload}) async {
+    if (reload) _accumulatedLints.clear();
 
-    StreamSubscription<void>? sub;
-    try {
-      sub = channel.lints.listen((event) => result[event.file] = event);
-      await _server.awaitAnalysisDone();
-      return result.values.toList()..sort((a, b) => a.file.compareTo(b.file));
-    } finally {
-      await sub?.cancel();
-    }
+    await _server.awaitAnalysisDone(reload: reload);
+
+    return _accumulatedLints.values.toList()
+      ..sort((a, b) => a.file.compareTo(b.file));
   }
 
   /// Stop the command runner, sending a [PluginShutdownParams] request in the process.
@@ -96,6 +96,7 @@ class CustomLintRunner {
       await channel.sendRequest(PluginShutdownParams());
     } finally {
       channel.close();
+      await _lintSubscription?.cancel();
     }
   }
 }

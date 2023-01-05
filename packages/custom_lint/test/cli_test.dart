@@ -91,7 +91,7 @@ No issues found!
     );
   });
 
-  test('exits with -1 if only an error but no lint are found', () async {
+  test('exits with 1 if only an error but no lint are found', () async {
     final plugin = createPlugin(name: 'test_lint', main: 'invalid;');
 
     final app = createLintUsage(
@@ -105,13 +105,27 @@ No issues found!
         await cli.main();
 
         expect(exitCode, 1);
-        expect(err.join(), completion(equalsIgnoringAnsi('''
-IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: Error: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
+        expect(
+          err.join(),
+          completion(
+            matchIgnoringAnsi(startsWith, '''
+${plugin.path}/lib/test_lint.dart:1:1: Error: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
 Try adding the name of the type of the variable or the keyword 'var'.
 invalid;
 ^^^^^^^
+lib/main.dart:13:29: Error: Undefined name 'createPlugin'.
+    {'test_lint': test_lint.createPlugin,
+                            ^^^^^^^^^^^^
 
-''')));
+
+Failed to start plugins
+The request analysis.setContextRoots failed with the following error:
+RequestErrorCode.PLUGIN_ERROR
+Bad state: Failed to start the plugins.
+at:
+'''),
+          ),
+        );
         expect(out, emitsDone);
       },
       currentDirectory: app,
@@ -172,20 +186,27 @@ invalid;
         expect(
           err.join(),
           completion(
-            equalsIgnoringAnsi(
+            matchIgnoringAnsi(
+              startsWith,
               '''
-IsolateSpawnException: Unable to spawn isolate: ${plugin2.path}/bin/custom_lint.dart:1:9: Error: A value of type 'String' can't be assigned to a variable of type 'int'.
+lib/main.dart:15:26: Error: Undefined name 'createPlugin'.
+'test_lint2': test_lint2.createPlugin,
+                         ^^^^^^^^^^^^
+${plugin2.path}/lib/test_lint2.dart:1:9: Error: A value of type 'String' can't be assigned to a variable of type 'int'.
 int x = 'oy';
         ^
 
+
+Failed to start plugins
+The request analysis.setContextRoots failed with the following error:
+RequestErrorCode.PLUGIN_ERROR
+Bad state: Failed to start the plugins.
+at:
 ''',
             ),
           ),
         );
-        expect(out.join(), completion('''
-  lib/another.dart:1:6 • Hello world • hello_world
-  lib/main.dart:1:6 • Hello world • hello_world
-'''));
+        expect(out.join(), completion(isEmpty));
       },
       currentDirectory: app,
     );
@@ -237,6 +258,7 @@ class _HelloWorldLint extends PluginBase {
       (out, err) async {
         await cli.main();
 
+        // out.listen(print);
         expect(exitCode, 1);
         expect(
           out.join(),
@@ -262,8 +284,9 @@ class _HelloWorldLint extends PluginBase {
           err.join(),
           completion(
             contains('''
+Plugin test_lint threw while analyzing ${app.path}/lib/another.dart:
 Bad state: fail
-#0      _HelloWorldLint.getLints (file://${plugin.path}/bin/custom_lint.dart:19:8)
+#0      _HelloWorldLint.getLints (package:test_lint/test_lint.dart:16:8)
 '''),
           ),
         );

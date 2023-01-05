@@ -39,26 +39,27 @@ Future<void> customLint({
   exitCode = 0;
 
   final channel = ServerIsolateChannel();
-  final runner = CustomLintRunner(
-    CustomLintServer.start(
-      sendPort: channel.receivePort.sendPort,
-      watchMode: watchMode,
-      delegate: CommandCustomLintDelegate(),
-    ),
-    workingDirectory,
-    channel,
+  final customLintServer = CustomLintServer.start(
+    sendPort: channel.receivePort.sendPort,
+    watchMode: watchMode,
+    delegate: CommandCustomLintDelegate(),
   );
+  final runner = CustomLintRunner(customLintServer, workingDirectory, channel);
 
-  try {
-    await runner.initialize();
-    await _runPlugins(runner, reload: false);
+  await customLintServer.run(() async {
+    try {
+      await runner.initialize;
+      await _runPlugins(runner, reload: false);
 
-    if (watchMode) {
-      await _startWatchMode(runner);
+      if (watchMode) {
+        await _startWatchMode(runner);
+      }
+    } catch (err) {
+      exitCode = 1;
+    } finally {
+      await runner.close();
     }
-  } finally {
-    await runner.close();
-  }
+  });
 }
 
 Future<void> _runPlugins(
@@ -142,7 +143,7 @@ Future<void> _startWatchMode(CustomLintRunner runner) async {
       case 'q':
         // Let's quit the command line
         // TODO(rrousselGit) Investigate why an "exit" is required and we can't simply "return"
-        return;
+        exit(exitCode);
       default:
       // Unknown command. Nothing to do
     }

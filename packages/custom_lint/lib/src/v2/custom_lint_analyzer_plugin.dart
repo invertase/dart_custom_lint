@@ -56,8 +56,18 @@ class CustomLintServer {
   late final StreamSubscription<void> _requestSubscription;
   final _versionCheck = Completer<PluginVersionCheckParams>();
 
-  CustomLintServerToClientChannel? _clientChannel;
+  final _clientChannel = BehaviorSubject<CustomLintServerToClientChannel>();
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
+
+  T? run<T>(T Function() cb) {
+    return runZonedGuarded(
+      cb,
+      handleUncaughtError,
+      zoneSpecification: ZoneSpecification(
+        print: (self, parent, zone, line) => handlePrint(line),
+      ),
+    );
+  }
 
   void _start(SendPort sendPort) {
     analyzerPluginClientChannel = JsonSendPortChannel(sendPort);
@@ -67,9 +77,21 @@ class CustomLintServer {
         .listen(_handleRequest);
   }
 
-  Future<void> awaitAnalysisDone() async {
-    await _clientChannel?.sendCustomLintRequest(
-      CustomLintRequest.awaitAnalysisDone(id: const Uuid().v4()),
+  Future<void> awaitAnalysisDone({
+    required bool reload,
+  }) async {
+    final clientChannel = await _clientChannel.first;
+
+    await clientChannel.sendCustomLintRequest(
+      CustomLintRequest.awaitAnalysisDone(
+        id: const Uuid().v4(),
+        reload: reload,
+      ),
+    );
+
+    // Pinging the client to flush events. This should ensure notifications are handled
+    await clientChannel.sendCustomLintRequest(
+      CustomLintRequest.ping(id: const Uuid().v4()),
     );
   }
 
@@ -100,8 +122,9 @@ class CustomLintServer {
           }
         },
         orElse: () async {
+          final clientChannel = await _clientChannel.first;
           final response =
-              await _clientChannel!.sendAnalyzerPluginRequest(request);
+              await clientChannel.sendAnalyzerPluginRequest(request);
           analyzerPluginClientChannel.sendJson(response.toJson());
           return null;
         },
@@ -167,8 +190,11 @@ class CustomLintServer {
     // Closing it manually would prevent the follow-up logic to send a
     // response to the shutdown request.
 
-    _clientChannel?.close();
-    await _requestSubscription.cancel();
+    _clientChannel.valueOrNull?.close();
+    await Future.wait([
+      _clientChannel.close(),
+      _requestSubscription.cancel(),
+    ]);
   }
 
   FutureOr<PluginVersionCheckResult> _handlePluginVersionCheck(
@@ -207,22 +233,22 @@ class CustomLintServer {
   ) async {
     final versionCheck = await _versionCheck.future;
 
-    final clientChannel = _clientChannel;
+    var clientChannel = _clientChannel.valueOrNull;
     if (clientChannel != null) {
       await clientChannel.setContextRoots(parameters);
       return;
     }
 
-    _clientChannel = CustomLintServerToClientChannel.spawn(
+    clientChannel = CustomLintServerToClientChannel.spawn(
       this,
       versionCheck,
       parameters,
     );
+    _clientChannel.add(clientChannel);
 
     // Listening to event before init, to make sure messages during the init are handled.
-    _clientChannel!.events.listen(_handleEvent);
-
-    await _clientChannel?.init();
+    clientChannel.events.listen(_handleEvent);
+    await clientChannel.init();
   }
 
   void _handleEvent(CustomLintEvent event) {
@@ -233,6 +259,7 @@ class CustomLintServer {
         final notification = event.notification;
         if (notification.event == PLUGIN_NOTIFICATION_ERROR) {
           final error = PluginErrorParams.fromNotification(notification);
+          analyzerPluginClientChannel.sendJson(error.toNotification().toJson());
           delegate.pluginError(
             this,
             error.message,
@@ -244,6 +271,11 @@ class CustomLintServer {
         }
       },
       error: (event) async {
+        analyzerPluginClientChannel.sendJson(
+          PluginErrorParams(false, event.message, event.stackTrace)
+              .toNotification()
+              .toJson(),
+        );
         delegate.pluginError(
           this,
           event.message,

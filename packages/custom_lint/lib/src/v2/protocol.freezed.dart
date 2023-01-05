@@ -20,6 +20,8 @@ CustomLintRequest _$CustomLintRequestFromJson(Map<String, dynamic> json) {
       return CustomLintRequestAnalyzerPluginRequest.fromJson(json);
     case 'awaitAnalysisDone':
       return _CustomLintRequestAwaitAnalysisDone.fromJson(json);
+    case 'ping':
+      return _CustomLintRequestPing.fromJson(json);
 
     default:
       throw CheckedFromJsonException(json, 'runtimeType', 'CustomLintRequest',
@@ -33,19 +35,22 @@ mixin _$CustomLintRequest {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(Request request, String id) analyzerPluginRequest,
-    required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id, bool reload) awaitAnalysisDone,
+    required TResult Function(String id) ping,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Request request, String id)? analyzerPluginRequest,
-    TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id, bool reload)? awaitAnalysisDone,
+    TResult? Function(String id)? ping,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Request request, String id)? analyzerPluginRequest,
-    TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id, bool reload)? awaitAnalysisDone,
+    TResult Function(String id)? ping,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -55,6 +60,7 @@ mixin _$CustomLintRequest {
         analyzerPluginRequest,
     required TResult Function(_CustomLintRequestAwaitAnalysisDone value)
         awaitAnalysisDone,
+    required TResult Function(_CustomLintRequestPing value) ping,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -63,6 +69,7 @@ mixin _$CustomLintRequest {
         analyzerPluginRequest,
     TResult? Function(_CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult? Function(_CustomLintRequestPing value)? ping,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -71,6 +78,7 @@ mixin _$CustomLintRequest {
         analyzerPluginRequest,
     TResult Function(_CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult Function(_CustomLintRequestPing value)? ping,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -204,7 +212,8 @@ class _$CustomLintRequestAnalyzerPluginRequest
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(Request request, String id) analyzerPluginRequest,
-    required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id, bool reload) awaitAnalysisDone,
+    required TResult Function(String id) ping,
   }) {
     return analyzerPluginRequest(request, id);
   }
@@ -213,7 +222,8 @@ class _$CustomLintRequestAnalyzerPluginRequest
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Request request, String id)? analyzerPluginRequest,
-    TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id, bool reload)? awaitAnalysisDone,
+    TResult? Function(String id)? ping,
   }) {
     return analyzerPluginRequest?.call(request, id);
   }
@@ -222,7 +232,8 @@ class _$CustomLintRequestAnalyzerPluginRequest
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Request request, String id)? analyzerPluginRequest,
-    TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id, bool reload)? awaitAnalysisDone,
+    TResult Function(String id)? ping,
     required TResult orElse(),
   }) {
     if (analyzerPluginRequest != null) {
@@ -238,6 +249,7 @@ class _$CustomLintRequestAnalyzerPluginRequest
         analyzerPluginRequest,
     required TResult Function(_CustomLintRequestAwaitAnalysisDone value)
         awaitAnalysisDone,
+    required TResult Function(_CustomLintRequestPing value) ping,
   }) {
     return analyzerPluginRequest(this);
   }
@@ -249,6 +261,7 @@ class _$CustomLintRequestAnalyzerPluginRequest
         analyzerPluginRequest,
     TResult? Function(_CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult? Function(_CustomLintRequestPing value)? ping,
   }) {
     return analyzerPluginRequest?.call(this);
   }
@@ -260,6 +273,7 @@ class _$CustomLintRequestAnalyzerPluginRequest
         analyzerPluginRequest,
     TResult Function(_CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult Function(_CustomLintRequestPing value)? ping,
     required TResult orElse(),
   }) {
     if (analyzerPluginRequest != null) {
@@ -304,7 +318,7 @@ abstract class _$$_CustomLintRequestAwaitAnalysisDoneCopyWith<$Res>
       __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id});
+  $Res call({String id, bool reload});
 }
 
 /// @nodoc
@@ -321,12 +335,17 @@ class __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
+    Object? reload = null,
   }) {
     return _then(_$_CustomLintRequestAwaitAnalysisDone(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
+      reload: null == reload
+          ? _value.reload
+          : reload // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -335,7 +354,8 @@ class __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>
 @JsonSerializable()
 class _$_CustomLintRequestAwaitAnalysisDone
     implements _CustomLintRequestAwaitAnalysisDone {
-  _$_CustomLintRequestAwaitAnalysisDone({required this.id, final String? $type})
+  _$_CustomLintRequestAwaitAnalysisDone(
+      {required this.id, required this.reload, final String? $type})
       : $type = $type ?? 'awaitAnalysisDone';
 
   factory _$_CustomLintRequestAwaitAnalysisDone.fromJson(
@@ -344,13 +364,15 @@ class _$_CustomLintRequestAwaitAnalysisDone
 
   @override
   final String id;
+  @override
+  final bool reload;
 
   @JsonKey(name: 'runtimeType')
   final String $type;
 
   @override
   String toString() {
-    return 'CustomLintRequest.awaitAnalysisDone(id: $id)';
+    return 'CustomLintRequest.awaitAnalysisDone(id: $id, reload: $reload)';
   }
 
   @override
@@ -358,12 +380,13 @@ class _$_CustomLintRequestAwaitAnalysisDone
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$_CustomLintRequestAwaitAnalysisDone &&
-            (identical(other.id, id) || other.id == id));
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.reload, reload) || other.reload == reload));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id);
+  int get hashCode => Object.hash(runtimeType, id, reload);
 
   @JsonKey(ignore: true)
   @override
@@ -377,29 +400,32 @@ class _$_CustomLintRequestAwaitAnalysisDone
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(Request request, String id) analyzerPluginRequest,
-    required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id, bool reload) awaitAnalysisDone,
+    required TResult Function(String id) ping,
   }) {
-    return awaitAnalysisDone(id);
+    return awaitAnalysisDone(id, reload);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Request request, String id)? analyzerPluginRequest,
-    TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id, bool reload)? awaitAnalysisDone,
+    TResult? Function(String id)? ping,
   }) {
-    return awaitAnalysisDone?.call(id);
+    return awaitAnalysisDone?.call(id, reload);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Request request, String id)? analyzerPluginRequest,
-    TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id, bool reload)? awaitAnalysisDone,
+    TResult Function(String id)? ping,
     required TResult orElse(),
   }) {
     if (awaitAnalysisDone != null) {
-      return awaitAnalysisDone(id);
+      return awaitAnalysisDone(id, reload);
     }
     return orElse();
   }
@@ -411,6 +437,7 @@ class _$_CustomLintRequestAwaitAnalysisDone
         analyzerPluginRequest,
     required TResult Function(_CustomLintRequestAwaitAnalysisDone value)
         awaitAnalysisDone,
+    required TResult Function(_CustomLintRequestPing value) ping,
   }) {
     return awaitAnalysisDone(this);
   }
@@ -422,6 +449,7 @@ class _$_CustomLintRequestAwaitAnalysisDone
         analyzerPluginRequest,
     TResult? Function(_CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult? Function(_CustomLintRequestPing value)? ping,
   }) {
     return awaitAnalysisDone?.call(this);
   }
@@ -433,6 +461,7 @@ class _$_CustomLintRequestAwaitAnalysisDone
         analyzerPluginRequest,
     TResult Function(_CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult Function(_CustomLintRequestPing value)? ping,
     required TResult orElse(),
   }) {
     if (awaitAnalysisDone != null) {
@@ -451,8 +480,9 @@ class _$_CustomLintRequestAwaitAnalysisDone
 
 abstract class _CustomLintRequestAwaitAnalysisDone
     implements CustomLintRequest {
-  factory _CustomLintRequestAwaitAnalysisDone({required final String id}) =
-      _$_CustomLintRequestAwaitAnalysisDone;
+  factory _CustomLintRequestAwaitAnalysisDone(
+      {required final String id,
+      required final bool reload}) = _$_CustomLintRequestAwaitAnalysisDone;
 
   factory _CustomLintRequestAwaitAnalysisDone.fromJson(
           Map<String, dynamic> json) =
@@ -460,11 +490,181 @@ abstract class _CustomLintRequestAwaitAnalysisDone
 
   @override
   String get id;
+  bool get reload;
   @override
   @JsonKey(ignore: true)
   _$$_CustomLintRequestAwaitAnalysisDoneCopyWith<
           _$_CustomLintRequestAwaitAnalysisDone>
       get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$_CustomLintRequestPingCopyWith<$Res>
+    implements $CustomLintRequestCopyWith<$Res> {
+  factory _$$_CustomLintRequestPingCopyWith(_$_CustomLintRequestPing value,
+          $Res Function(_$_CustomLintRequestPing) then) =
+      __$$_CustomLintRequestPingCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String id});
+}
+
+/// @nodoc
+class __$$_CustomLintRequestPingCopyWithImpl<$Res>
+    extends _$CustomLintRequestCopyWithImpl<$Res, _$_CustomLintRequestPing>
+    implements _$$_CustomLintRequestPingCopyWith<$Res> {
+  __$$_CustomLintRequestPingCopyWithImpl(_$_CustomLintRequestPing _value,
+      $Res Function(_$_CustomLintRequestPing) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+  }) {
+    return _then(_$_CustomLintRequestPing(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$_CustomLintRequestPing implements _CustomLintRequestPing {
+  _$_CustomLintRequestPing({required this.id, final String? $type})
+      : $type = $type ?? 'ping';
+
+  factory _$_CustomLintRequestPing.fromJson(Map<String, dynamic> json) =>
+      _$$_CustomLintRequestPingFromJson(json);
+
+  @override
+  final String id;
+
+  @JsonKey(name: 'runtimeType')
+  final String $type;
+
+  @override
+  String toString() {
+    return 'CustomLintRequest.ping(id: $id)';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$_CustomLintRequestPing &&
+            (identical(other.id, id) || other.id == id));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, id);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$_CustomLintRequestPingCopyWith<_$_CustomLintRequestPing> get copyWith =>
+      __$$_CustomLintRequestPingCopyWithImpl<_$_CustomLintRequestPing>(
+          this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(Request request, String id) analyzerPluginRequest,
+    required TResult Function(String id, bool reload) awaitAnalysisDone,
+    required TResult Function(String id) ping,
+  }) {
+    return ping(id);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(Request request, String id)? analyzerPluginRequest,
+    TResult? Function(String id, bool reload)? awaitAnalysisDone,
+    TResult? Function(String id)? ping,
+  }) {
+    return ping?.call(id);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(Request request, String id)? analyzerPluginRequest,
+    TResult Function(String id, bool reload)? awaitAnalysisDone,
+    TResult Function(String id)? ping,
+    required TResult orElse(),
+  }) {
+    if (ping != null) {
+      return ping(id);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(CustomLintRequestAnalyzerPluginRequest value)
+        analyzerPluginRequest,
+    required TResult Function(_CustomLintRequestAwaitAnalysisDone value)
+        awaitAnalysisDone,
+    required TResult Function(_CustomLintRequestPing value) ping,
+  }) {
+    return ping(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(CustomLintRequestAnalyzerPluginRequest value)?
+        analyzerPluginRequest,
+    TResult? Function(_CustomLintRequestAwaitAnalysisDone value)?
+        awaitAnalysisDone,
+    TResult? Function(_CustomLintRequestPing value)? ping,
+  }) {
+    return ping?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(CustomLintRequestAnalyzerPluginRequest value)?
+        analyzerPluginRequest,
+    TResult Function(_CustomLintRequestAwaitAnalysisDone value)?
+        awaitAnalysisDone,
+    TResult Function(_CustomLintRequestPing value)? ping,
+    required TResult orElse(),
+  }) {
+    if (ping != null) {
+      return ping(this);
+    }
+    return orElse();
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$_CustomLintRequestPingToJson(
+      this,
+    );
+  }
+}
+
+abstract class _CustomLintRequestPing implements CustomLintRequest {
+  factory _CustomLintRequestPing({required final String id}) =
+      _$_CustomLintRequestPing;
+
+  factory _CustomLintRequestPing.fromJson(Map<String, dynamic> json) =
+      _$_CustomLintRequestPing.fromJson;
+
+  @override
+  String get id;
+  @override
+  @JsonKey(ignore: true)
+  _$$_CustomLintRequestPingCopyWith<_$_CustomLintRequestPing> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 CustomLintResponse _$CustomLintResponseFromJson(Map<String, dynamic> json) {
@@ -473,6 +673,8 @@ CustomLintResponse _$CustomLintResponseFromJson(Map<String, dynamic> json) {
       return _CustomLintResponseAnalyzerPluginResponse.fromJson(json);
     case 'awaitAnalysisDone':
       return _CustomLintResponseAwaitAnalysisDone.fromJson(json);
+    case 'pong':
+      return _CustomLintResponsePong.fromJson(json);
     case 'error':
       return _CustomLintResponseError.fromJson(json);
 
@@ -490,6 +692,7 @@ mixin _$CustomLintResponse {
     required TResult Function(Response response, String id)
         analyzerPluginResponse,
     required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id) pong,
     required TResult Function(String id, String message, String stackTrace)
         error,
   }) =>
@@ -498,6 +701,7 @@ mixin _$CustomLintResponse {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Response response, String id)? analyzerPluginResponse,
     TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id)? pong,
     TResult? Function(String id, String message, String stackTrace)? error,
   }) =>
       throw _privateConstructorUsedError;
@@ -505,6 +709,7 @@ mixin _$CustomLintResponse {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Response response, String id)? analyzerPluginResponse,
     TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id)? pong,
     TResult Function(String id, String message, String stackTrace)? error,
     required TResult orElse(),
   }) =>
@@ -515,6 +720,7 @@ mixin _$CustomLintResponse {
         analyzerPluginResponse,
     required TResult Function(_CustomLintResponseAwaitAnalysisDone value)
         awaitAnalysisDone,
+    required TResult Function(_CustomLintResponsePong value) pong,
     required TResult Function(_CustomLintResponseError value) error,
   }) =>
       throw _privateConstructorUsedError;
@@ -524,6 +730,7 @@ mixin _$CustomLintResponse {
         analyzerPluginResponse,
     TResult? Function(_CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult? Function(_CustomLintResponsePong value)? pong,
     TResult? Function(_CustomLintResponseError value)? error,
   }) =>
       throw _privateConstructorUsedError;
@@ -533,6 +740,7 @@ mixin _$CustomLintResponse {
         analyzerPluginResponse,
     TResult Function(_CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult Function(_CustomLintResponsePong value)? pong,
     TResult Function(_CustomLintResponseError value)? error,
     required TResult orElse(),
   }) =>
@@ -670,6 +878,7 @@ class _$_CustomLintResponseAnalyzerPluginResponse
     required TResult Function(Response response, String id)
         analyzerPluginResponse,
     required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id) pong,
     required TResult Function(String id, String message, String stackTrace)
         error,
   }) {
@@ -681,6 +890,7 @@ class _$_CustomLintResponseAnalyzerPluginResponse
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Response response, String id)? analyzerPluginResponse,
     TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id)? pong,
     TResult? Function(String id, String message, String stackTrace)? error,
   }) {
     return analyzerPluginResponse?.call(response, id);
@@ -691,6 +901,7 @@ class _$_CustomLintResponseAnalyzerPluginResponse
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Response response, String id)? analyzerPluginResponse,
     TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id)? pong,
     TResult Function(String id, String message, String stackTrace)? error,
     required TResult orElse(),
   }) {
@@ -707,6 +918,7 @@ class _$_CustomLintResponseAnalyzerPluginResponse
         analyzerPluginResponse,
     required TResult Function(_CustomLintResponseAwaitAnalysisDone value)
         awaitAnalysisDone,
+    required TResult Function(_CustomLintResponsePong value) pong,
     required TResult Function(_CustomLintResponseError value) error,
   }) {
     return analyzerPluginResponse(this);
@@ -719,6 +931,7 @@ class _$_CustomLintResponseAnalyzerPluginResponse
         analyzerPluginResponse,
     TResult? Function(_CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult? Function(_CustomLintResponsePong value)? pong,
     TResult? Function(_CustomLintResponseError value)? error,
   }) {
     return analyzerPluginResponse?.call(this);
@@ -731,6 +944,7 @@ class _$_CustomLintResponseAnalyzerPluginResponse
         analyzerPluginResponse,
     TResult Function(_CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult Function(_CustomLintResponsePong value)? pong,
     TResult Function(_CustomLintResponseError value)? error,
     required TResult orElse(),
   }) {
@@ -852,6 +1066,7 @@ class _$_CustomLintResponseAwaitAnalysisDone
     required TResult Function(Response response, String id)
         analyzerPluginResponse,
     required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id) pong,
     required TResult Function(String id, String message, String stackTrace)
         error,
   }) {
@@ -863,6 +1078,7 @@ class _$_CustomLintResponseAwaitAnalysisDone
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Response response, String id)? analyzerPluginResponse,
     TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id)? pong,
     TResult? Function(String id, String message, String stackTrace)? error,
   }) {
     return awaitAnalysisDone?.call(id);
@@ -873,6 +1089,7 @@ class _$_CustomLintResponseAwaitAnalysisDone
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Response response, String id)? analyzerPluginResponse,
     TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id)? pong,
     TResult Function(String id, String message, String stackTrace)? error,
     required TResult orElse(),
   }) {
@@ -889,6 +1106,7 @@ class _$_CustomLintResponseAwaitAnalysisDone
         analyzerPluginResponse,
     required TResult Function(_CustomLintResponseAwaitAnalysisDone value)
         awaitAnalysisDone,
+    required TResult Function(_CustomLintResponsePong value) pong,
     required TResult Function(_CustomLintResponseError value) error,
   }) {
     return awaitAnalysisDone(this);
@@ -901,6 +1119,7 @@ class _$_CustomLintResponseAwaitAnalysisDone
         analyzerPluginResponse,
     TResult? Function(_CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult? Function(_CustomLintResponsePong value)? pong,
     TResult? Function(_CustomLintResponseError value)? error,
   }) {
     return awaitAnalysisDone?.call(this);
@@ -913,6 +1132,7 @@ class _$_CustomLintResponseAwaitAnalysisDone
         analyzerPluginResponse,
     TResult Function(_CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult Function(_CustomLintResponsePong value)? pong,
     TResult Function(_CustomLintResponseError value)? error,
     required TResult orElse(),
   }) {
@@ -946,6 +1166,183 @@ abstract class _CustomLintResponseAwaitAnalysisDone
   _$$_CustomLintResponseAwaitAnalysisDoneCopyWith<
           _$_CustomLintResponseAwaitAnalysisDone>
       get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$_CustomLintResponsePongCopyWith<$Res>
+    implements $CustomLintResponseCopyWith<$Res> {
+  factory _$$_CustomLintResponsePongCopyWith(_$_CustomLintResponsePong value,
+          $Res Function(_$_CustomLintResponsePong) then) =
+      __$$_CustomLintResponsePongCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String id});
+}
+
+/// @nodoc
+class __$$_CustomLintResponsePongCopyWithImpl<$Res>
+    extends _$CustomLintResponseCopyWithImpl<$Res, _$_CustomLintResponsePong>
+    implements _$$_CustomLintResponsePongCopyWith<$Res> {
+  __$$_CustomLintResponsePongCopyWithImpl(_$_CustomLintResponsePong _value,
+      $Res Function(_$_CustomLintResponsePong) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+  }) {
+    return _then(_$_CustomLintResponsePong(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$_CustomLintResponsePong implements _CustomLintResponsePong {
+  _$_CustomLintResponsePong({required this.id, final String? $type})
+      : $type = $type ?? 'pong';
+
+  factory _$_CustomLintResponsePong.fromJson(Map<String, dynamic> json) =>
+      _$$_CustomLintResponsePongFromJson(json);
+
+  @override
+  final String id;
+
+  @JsonKey(name: 'runtimeType')
+  final String $type;
+
+  @override
+  String toString() {
+    return 'CustomLintResponse.pong(id: $id)';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$_CustomLintResponsePong &&
+            (identical(other.id, id) || other.id == id));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, id);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$_CustomLintResponsePongCopyWith<_$_CustomLintResponsePong> get copyWith =>
+      __$$_CustomLintResponsePongCopyWithImpl<_$_CustomLintResponsePong>(
+          this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(Response response, String id)
+        analyzerPluginResponse,
+    required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id) pong,
+    required TResult Function(String id, String message, String stackTrace)
+        error,
+  }) {
+    return pong(id);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(Response response, String id)? analyzerPluginResponse,
+    TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id)? pong,
+    TResult? Function(String id, String message, String stackTrace)? error,
+  }) {
+    return pong?.call(id);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(Response response, String id)? analyzerPluginResponse,
+    TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id)? pong,
+    TResult Function(String id, String message, String stackTrace)? error,
+    required TResult orElse(),
+  }) {
+    if (pong != null) {
+      return pong(id);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(_CustomLintResponseAnalyzerPluginResponse value)
+        analyzerPluginResponse,
+    required TResult Function(_CustomLintResponseAwaitAnalysisDone value)
+        awaitAnalysisDone,
+    required TResult Function(_CustomLintResponsePong value) pong,
+    required TResult Function(_CustomLintResponseError value) error,
+  }) {
+    return pong(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(_CustomLintResponseAnalyzerPluginResponse value)?
+        analyzerPluginResponse,
+    TResult? Function(_CustomLintResponseAwaitAnalysisDone value)?
+        awaitAnalysisDone,
+    TResult? Function(_CustomLintResponsePong value)? pong,
+    TResult? Function(_CustomLintResponseError value)? error,
+  }) {
+    return pong?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(_CustomLintResponseAnalyzerPluginResponse value)?
+        analyzerPluginResponse,
+    TResult Function(_CustomLintResponseAwaitAnalysisDone value)?
+        awaitAnalysisDone,
+    TResult Function(_CustomLintResponsePong value)? pong,
+    TResult Function(_CustomLintResponseError value)? error,
+    required TResult orElse(),
+  }) {
+    if (pong != null) {
+      return pong(this);
+    }
+    return orElse();
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$_CustomLintResponsePongToJson(
+      this,
+    );
+  }
+}
+
+abstract class _CustomLintResponsePong implements CustomLintResponse {
+  factory _CustomLintResponsePong({required final String id}) =
+      _$_CustomLintResponsePong;
+
+  factory _CustomLintResponsePong.fromJson(Map<String, dynamic> json) =
+      _$_CustomLintResponsePong.fromJson;
+
+  @override
+  String get id;
+  @override
+  @JsonKey(ignore: true)
+  _$$_CustomLintResponsePongCopyWith<_$_CustomLintResponsePong> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
@@ -1048,6 +1445,7 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
     required TResult Function(Response response, String id)
         analyzerPluginResponse,
     required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id) pong,
     required TResult Function(String id, String message, String stackTrace)
         error,
   }) {
@@ -1059,6 +1457,7 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Response response, String id)? analyzerPluginResponse,
     TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id)? pong,
     TResult? Function(String id, String message, String stackTrace)? error,
   }) {
     return error?.call(id, message, stackTrace);
@@ -1069,6 +1468,7 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Response response, String id)? analyzerPluginResponse,
     TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id)? pong,
     TResult Function(String id, String message, String stackTrace)? error,
     required TResult orElse(),
   }) {
@@ -1085,6 +1485,7 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
         analyzerPluginResponse,
     required TResult Function(_CustomLintResponseAwaitAnalysisDone value)
         awaitAnalysisDone,
+    required TResult Function(_CustomLintResponsePong value) pong,
     required TResult Function(_CustomLintResponseError value) error,
   }) {
     return error(this);
@@ -1097,6 +1498,7 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
         analyzerPluginResponse,
     TResult? Function(_CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult? Function(_CustomLintResponsePong value)? pong,
     TResult? Function(_CustomLintResponseError value)? error,
   }) {
     return error?.call(this);
@@ -1109,6 +1511,7 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
         analyzerPluginResponse,
     TResult Function(_CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
+    TResult Function(_CustomLintResponsePong value)? pong,
     TResult Function(_CustomLintResponseError value)? error,
     required TResult orElse(),
   }) {

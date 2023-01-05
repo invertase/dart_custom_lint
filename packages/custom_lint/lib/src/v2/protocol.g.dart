@@ -27,11 +27,27 @@ _$_CustomLintRequestAwaitAnalysisDone
     _$$_CustomLintRequestAwaitAnalysisDoneFromJson(Map<String, dynamic> json) =>
         _$_CustomLintRequestAwaitAnalysisDone(
           id: json['id'] as String,
+          reload: json['reload'] as bool,
           $type: json['runtimeType'] as String?,
         );
 
 Map<String, dynamic> _$$_CustomLintRequestAwaitAnalysisDoneToJson(
         _$_CustomLintRequestAwaitAnalysisDone instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'reload': instance.reload,
+      'runtimeType': instance.$type,
+    };
+
+_$_CustomLintRequestPing _$$_CustomLintRequestPingFromJson(
+        Map<String, dynamic> json) =>
+    _$_CustomLintRequestPing(
+      id: json['id'] as String,
+      $type: json['runtimeType'] as String?,
+    );
+
+Map<String, dynamic> _$$_CustomLintRequestPingToJson(
+        _$_CustomLintRequestPing instance) =>
     <String, dynamic>{
       'id': instance.id,
       'runtimeType': instance.$type,
@@ -64,6 +80,20 @@ _$_CustomLintResponseAwaitAnalysisDone
 
 Map<String, dynamic> _$$_CustomLintResponseAwaitAnalysisDoneToJson(
         _$_CustomLintResponseAwaitAnalysisDone instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'runtimeType': instance.$type,
+    };
+
+_$_CustomLintResponsePong _$$_CustomLintResponsePongFromJson(
+        Map<String, dynamic> json) =>
+    _$_CustomLintResponsePong(
+      id: json['id'] as String,
+      $type: json['runtimeType'] as String?,
+    );
+
+Map<String, dynamic> _$$_CustomLintResponsePongToJson(
+        _$_CustomLintResponsePong instance) =>
     <String, dynamic>{
       'id': instance.id,
       'runtimeType': instance.$type,

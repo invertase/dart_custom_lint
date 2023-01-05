@@ -17,6 +17,7 @@ import 'package:hotreloader/hotreloader.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:rxdart/subjects.dart';
 
 import '../../custom_lint_builder.dart';
 import 'channel.dart';
@@ -77,8 +78,9 @@ class CustomLintPluginClient {
       final response = await request.map<FutureOr<CustomLintResponse?>>(
         // Analayzer_plugin requests are handles by the _analyzer_plugin client
         analyzerPluginRequest: (_) => null,
-        awaitAnalysisDone: (_) async {
-          await _analyzerPlugin._awaitAnalysisDone();
+        ping: (param) => CustomLintResponse.pong(id: request.id),
+        awaitAnalysisDone: (param) async {
+          await _analyzerPlugin._awaitAnalysisDone(reload: param.reload);
           return CustomLintResponse.awaitAnalysisDone(id: request.id);
         },
       );
@@ -159,8 +161,8 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
 
   final CustomLintClientChannel _channel;
   final CustomLintPluginClient _client;
-  AnalysisContextCollection? _contextCollection;
-  final _pendingAnalyzeFiles = <Future<void>>[];
+  final _contextCollection = BehaviorSubject<AnalysisContextCollection>();
+  final _pendingOperations = <Future<void>>[];
 
   @override
   List<String> get fileGlobsToAnalyze => ['*.dart'];
@@ -172,20 +174,32 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   String get version => '1.0.0-alpha.0';
 
   void reAnalyze() {
-    final contextCollection = _contextCollection;
+    final contextCollection = _contextCollection.valueOrNull;
     if (contextCollection != null) {
       afterNewContextCollection(contextCollection: contextCollection);
     }
   }
 
   @override
+  Future<AnalysisSetContextRootsResult> handleAnalysisSetContextRoots(
+    AnalysisSetContextRootsParams params,
+  ) {
+    return _runOperation(() async {
+      await _client._handleSetContextRoots(params);
+      return super.handleAnalysisSetContextRoots(params);
+    });
+  }
+
+  @override
   Future<void> afterNewContextCollection({
     required AnalysisContextCollection contextCollection,
   }) {
-    _contextCollection = contextCollection;
-    return super.afterNewContextCollection(
-      contextCollection: contextCollection,
-    );
+    _contextCollection.add(contextCollection);
+    return _runOperation(() {
+      return super.afterNewContextCollection(
+        contextCollection: contextCollection,
+      );
+    });
   }
 
   @override
@@ -198,7 +212,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       return;
     }
 
-    final result = Future(() async {
+    await _runOperation(() async {
       final unit = await getResolvedUnitResult(path);
 
       final fileIgnoredCodes = _getAllIgnoredForFileCodes(unit.content);
@@ -231,16 +245,29 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
         ),
       );
     });
-
-    _pendingAnalyzeFiles.add(result);
-    await result.whenComplete(
-      () => _pendingAnalyzeFiles.remove(result),
-    );
   }
 
-  Future<void> _awaitAnalysisDone() async {
-    while (_pendingAnalyzeFiles.isNotEmpty) {
-      await Future.wait(_pendingAnalyzeFiles.toList());
+  /// Queue an operation to be awaited by [_awaitAnalysisDone]
+  Future<T> _runOperation<T>(FutureOr<T> Function() cb) async {
+    final future = Future(cb);
+    _pendingOperations.add(future);
+
+    try {
+      return await future;
+    } finally {
+      _pendingOperations.remove(future);
+    }
+  }
+
+  Future<void> _awaitAnalysisDone({required bool reload}) async {
+    /// First, we wait for the plugin to be initialized. Otherwise there's
+    /// obviously no pending operation
+    final contextCollection = await _contextCollection.first;
+    if (reload) {
+      await afterNewContextCollection(contextCollection: contextCollection);
+    }
+    while (_pendingOperations.isNotEmpty) {
+      await Future.wait([..._pendingOperations]);
     }
   }
 
@@ -306,18 +333,10 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
 
     return Lint(
       severity: LintSeverity.error,
-      location: analysisResult.lintLocationFromLines(startLine: 1, endLine: 2),
+      location: analysisResult.lintLocationFromLines(startLine: 1, endLine: 1),
       message: 'A lint plugin threw an exception',
       code: 'custom_lint_get_lint_fail',
     );
-  }
-
-  @override
-  Future<AnalysisSetContextRootsResult> handleAnalysisSetContextRoots(
-    AnalysisSetContextRootsParams parameters,
-  ) async {
-    await _client._handleSetContextRoots(parameters);
-    return super.handleAnalysisSetContextRoots(parameters);
   }
 
   @override

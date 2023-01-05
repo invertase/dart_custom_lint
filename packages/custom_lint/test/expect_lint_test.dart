@@ -73,7 +73,7 @@ void fn3() {}
       name: 'test_app',
     );
 
-    final runner = await startRunnerForApp(app);
+    final runner = startRunnerForApp(app);
     final lints = StreamQueue(runner.channel.lints);
 
     expect(
@@ -160,7 +160,7 @@ void ignore() {}
       name: 'test_app',
     );
 
-    final runner = await startRunnerForApp(app);
+    final runner = startRunnerForApp(app);
     final lints = StreamQueue(runner.channel.lints);
 
     expect(
