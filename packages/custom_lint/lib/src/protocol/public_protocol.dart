@@ -78,7 +78,7 @@ class Lint {
       code,
       correction: correction,
       url: url,
-      // TODO contextMessages & hasFix
+      // TODO hasFix
     );
   }
 

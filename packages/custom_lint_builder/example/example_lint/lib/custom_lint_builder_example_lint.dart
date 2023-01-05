@@ -1,5 +1,3 @@
-import 'dart:isolate';
-
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
@@ -19,9 +17,7 @@ bool _isProvider(DartType type) {
   return isProviderBase || element.allSupertypes.any(_isProvider);
 }
 
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _RiverpodLint());
-}
+PluginBase createPlugin() => _RiverpodLint();
 
 class _RiverpodLint extends PluginBase {
   @override
