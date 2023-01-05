@@ -7,14 +7,11 @@ import 'create_project.dart';
 import 'run_plugin.dart';
 
 const source = '''
-import 'dart:isolate';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 
-void main(List<String> args, SendPort sendPort) {
-  startPlugin(sendPort, _HelloWorldLint());
-}
+PluginBase createPlugin() => _HelloWorldLint();
 
 class _HelloWorldLint extends PluginBase {
   @override
@@ -68,7 +65,7 @@ void fn3() {}
       name: 'test_app',
     );
 
-    final runner = await startRunnerForApp(app);
+    final runner = startRunnerForApp(app);
 
     expect(
       await runner.channel.lints.first,
@@ -130,7 +127,7 @@ void fn3() {}
       name: 'test_app',
     );
 
-    final runner = await startRunnerForApp(app);
+    final runner = startRunnerForApp(app);
 
     expect(
       await runner.channel.lints.first,
@@ -186,7 +183,8 @@ void fn3() {}
       name: 'test_app',
     );
 
-    final runner = await startRunnerForApp(app);
+    final runner = startRunnerForApp(app);
+    await runner.initialize;
 
     expect(runner.channel.lints, emitsDone);
 

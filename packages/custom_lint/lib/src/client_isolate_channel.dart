@@ -22,7 +22,7 @@ class ClientIsolateChannel implements PluginCommunicationChannel {
   late final ReceivePort _receivePort;
 
   /// The subscription that needs to be cancelled when the channel is closed.
-  StreamSubscription? _subscription;
+  StreamSubscription<void>? _subscription;
 
   @override
   void close() {

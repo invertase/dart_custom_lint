@@ -1,6 +1,6 @@
 [test_lint] 1990-01-01T00:00:00.000 Hello world
-[test_lint] 1990-01-01T00:00:00.000 The following exception was thrown while trying to obtain lints for app/lib/another.dart:
+[test_lint] 1990-01-01T00:00:00.000 Plugin test_lint threw while analyzing app/lib/another.dart:
 [test_lint] 1990-01-01T00:00:00.000 Bad state: fail
-[test_lint] 1990-01-01T00:00:00.000 #0      _HelloWorldLint.getLints (plugin/bin/custom_lint.dart:17:8)
+[test_lint] 1990-01-01T00:00:00.000 #0      _HelloWorldLint.getLints (package:test_lint/test_lint.dart:14:8)
 [test_lint] 1990-01-01T00:00:00.000 <asynchronous suspension>
 [test_lint] 1990-01-01T00:00:00.000
