@@ -98,7 +98,7 @@ To create a custom lint, you will need two things:
 
   ```dart
   // This is the entrypoint of our custom linter
-  MyPlugin createPlugin() => MyPlugin();
+  _ExampleLinter createPlugin() => _ExampleLinter();
 
   // This class is the one that will analyze Dart files and return lints
   class _ExampleLinter extends PluginBase {
