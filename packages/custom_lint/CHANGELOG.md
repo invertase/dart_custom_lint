@@ -23,6 +23,26 @@
   MyPlugin createPlugin() => MyPlugin();
   ```
 
+- Add assist support.
+  Inside your plugins, you can now override `handleGetAssists`:
+
+  ```dart
+  import 'package:analyzer_plugin/protocol/protocol_generated.dart'
+    as analyzer_plugin;
+
+  class MyPlugin extends PluginBase {
+    // ...
+
+    Future<analyzer_plugin.EditGetAssistsResult> handleGetAssists(
+      ResolvedUnitResult resolvedUnitResult, {
+      required int offset,
+      required int length,
+    }) async {
+        // TODO return some assists for the given offset
+    }
+  }
+  ```
+
 ## 0.0.16
 
 Fix `expect_lint` not working if the file doesn't contain any lint.

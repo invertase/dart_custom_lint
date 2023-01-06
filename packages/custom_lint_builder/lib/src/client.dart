@@ -203,6 +203,62 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   }
 
   @override
+  Future<EditGetAssistsResult> handleEditGetAssists(
+    EditGetAssistsParams parameters,
+  ) async {
+    // TODO test
+    final contextCollection = await _contextCollection.first;
+    final analysisContext = contextCollection.contextFor(parameters.file);
+    final resolvedUnit = await getResolvedUnitResult(parameters.file);
+
+    final results = await Future.wait([
+      for (final plugin
+          in _pluginsForFile(parameters.file, analysisContext).values)
+        plugin.handleGetAssists(
+          resolvedUnit,
+          offset: parameters.offset,
+          length: parameters.length,
+        )
+    ]);
+
+    return EditGetAssistsResult(
+      results.expand((element) => element.assists).toList(),
+    );
+  }
+
+  @override
+  Future<EditGetFixesResult> handleEditGetFixes(
+    EditGetFixesParams parameters,
+  ) async {
+    // TODO test
+    final contextCollection = await _contextCollection.first;
+    final analysisContext = contextCollection.contextFor(parameters.file);
+    final resolvedUnit = await getResolvedUnitResult(parameters.file);
+
+    final results = await Future.wait([
+      for (final plugin
+          in _pluginsForFile(parameters.file, analysisContext).values)
+        plugin.handleEditGetFixes(resolvedUnit, parameters.offset)
+    ]);
+
+    return EditGetFixesResult(
+      results.expand((element) => element.fixes).toList(),
+    );
+  }
+
+  Map<String, PluginBase> _pluginsForFile(
+    String file,
+    AnalysisContext analysisContext,
+  ) {
+    return <String, PluginBase>{
+      for (final plugin in _channel.registeredPlugins.entries)
+        if (_client._isPluginActiveForContextRoot(analysisContext,
+            pluginName: plugin.key))
+          plugin.key: plugin.value,
+    };
+  }
+
+  @override
   Future<void> analyzeFile({
     required AnalysisContext analysisContext,
     required String path,
@@ -222,10 +278,8 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       // TODO: cancel getLints if analyzeFile is reinvoked for path while
       // the previous Stream is still pending.
       final lints = await Future.wait([
-        for (final plugin in _channel.registeredPlugins.entries)
-          if (_client._isPluginActiveForContextRoot(analysisContext,
-              pluginName: plugin.key))
-            _getLintsForPlugin(plugin.value, unit, pluginName: plugin.key),
+        for (final plugin in _pluginsForFile(path, analysisContext).entries)
+          _getLintsForPlugin(plugin.value, unit, pluginName: plugin.key),
       ]);
 
       _channel.sendEvent(

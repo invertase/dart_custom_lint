@@ -22,11 +22,24 @@ abstract class PluginBase {
   ) async {
     return analyzer_plugin.EditGetFixesResult(
       await getLints(resolvedUnitResult)
+          // Silence getLints errors. They should already be logged separately
           .where((lint) =>
               offset >= lint.location.offset &&
               offset <= lint.location.offset + lint.location.length)
+          .handleError((_) {})
           .asyncExpand((lint) => lint.handleGetAnalysisErrorFixes())
           .toList(),
     );
+  }
+
+  /// Obtains the list of assists for a given selected text.
+  ///
+  /// Defaults to returning an empty list of assists.
+  Future<analyzer_plugin.EditGetAssistsResult> handleGetAssists(
+    ResolvedUnitResult resolvedUnitResult, {
+    required int offset,
+    required int length,
+  }) async {
+    return analyzer_plugin.EditGetAssistsResult([]);
   }
 }
