@@ -1,3 +1,48 @@
+## 0.1.0
+
+- **Breaking**: The plugin entrypoint has moved.  
+  Plugins no-longer should define a `/bin/custom_lint.dart` file.
+  Instead they should define a `/lib/<my_package_name>.dart`
+
+- **Breaking**: The plugin entrypoint is modified. Plugins no-longer
+  define a "main", but instead define a `createPlugin` function:
+
+  Before:
+
+  ```dart
+  // /bin/custom_lint.dart
+  void main(List<String> args, SendPort sendPort) {
+    startPlugin(sendPort, MyPlugin());
+  }
+  ```
+
+  After:
+
+  ```dart
+  // /lib/<my_package_name.dart
+  MyPlugin createPlugin() => MyPlugin();
+  ```
+
+- Add assist support.
+  Inside your plugins, you can now override `handleGetAssists`:
+
+  ```dart
+  import 'package:analyzer_plugin/protocol/protocol_generated.dart'
+    as analyzer_plugin;
+
+  class MyPlugin extends PluginBase {
+    // ...
+
+    Future<analyzer_plugin.EditGetAssistsResult> handleGetAssists(
+      ResolvedUnitResult resolvedUnitResult, {
+      required int offset,
+      required int length,
+    }) async {
+        // TODO return some assists for the given offset
+    }
+  }
+  ```
+
 ## 0.0.16
 
 Fix `expect_lint` not working if the file doesn't contain any lint.
