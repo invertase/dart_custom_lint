@@ -1,4 +1,4 @@
-## Unreleased major
+## 0.1.0
 
 - **Breaking**: The plugin entrypoint has moved.  
   Plugins no-longer should define a `/bin/custom_lint.dart` file.
