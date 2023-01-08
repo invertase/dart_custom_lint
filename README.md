@@ -94,11 +94,11 @@ To create a custom lint, you will need two things:
     custom_lint_builder:
   ```
 
-- create a `bin/custom_lint.dart` file in your project with the following:
+- create a `lib/<my_pachage_name>.dart` file in your project with the following:
 
   ```dart
   // This is the entrypoint of our custom linter
-  _ExampleLinter createPlugin() => _ExampleLinter();
+  PluginBase createPlugin() => _ExampleLinter();
 
   // This class is the one that will analyze Dart files and return lints
   class _ExampleLinter extends PluginBase {
