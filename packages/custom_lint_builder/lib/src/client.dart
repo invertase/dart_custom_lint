@@ -52,7 +52,7 @@ class CustomLintPluginClient {
   Future<HotReloader?> _maybeStartHotLoad() async {
     if (!await _isVmServiceEnabled()) return null;
     return HotReloader.create(
-      onAfterReload: (_) {
+      onAfterReload: (value) {
         _analyzerPlugin.reAnalyze();
       },
     );
@@ -259,6 +259,34 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   }
 
   @override
+  Future<void> analyzeFiles({
+    required AnalysisContext analysisContext,
+    required List<String> paths,
+  }) {
+    // analyzeFiles reanalizes all files even if nothing changed by default.
+    // We customize the behavior to optimize analysis to be performed only
+    // if something changed
+    if (paths.isEmpty) return Future.value();
+
+    return super.analyzeFiles(
+      analysisContext: analysisContext,
+      paths: paths,
+    );
+  }
+
+  bool _ownsPath(String path) {
+    for (final contextRoot
+        in _client._contextRootsForPlugin.values.expand((e) => e)) {
+      if (isWithin(contextRoot.root, path)) {
+        final isExcluded = contextRoot.exclude
+            .any((excludedPath) => isWithin(excludedPath, path));
+        if (!isExcluded) return true;
+      }
+    }
+    return false;
+  }
+
+  @override
   Future<void> analyzeFile({
     required AnalysisContext analysisContext,
     required String path,
@@ -267,6 +295,11 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
         !analysisContext.contextRoot.isAnalyzed(path)) {
       return;
     }
+
+    /// analyzeFile might be invoked with an analysisContext that's not
+    /// part of the enabled context roots. So we separately check that `path`
+    /// is something we want to analize
+    if (!_ownsPath(path)) return;
 
     await _runOperation(() async {
       final unit = await getResolvedUnitResult(path);

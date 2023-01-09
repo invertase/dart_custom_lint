@@ -1,0 +1,20 @@
+name: custom_lint_example_app
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: '>=2.16.0 <3.0.0'
+
+dependencies:
+  riverpod: ^2.0.0
+
+dev_dependencies:
+  custom_lint:
+  custom_lint_example_lint:
+    path: ../custom_lint/example/example_lint
+
+dependency_overrides:
+  custom_lint:
+    path: ../custom_lint
+  custom_lint_builder:
+    path: ../custom_lint_builder
