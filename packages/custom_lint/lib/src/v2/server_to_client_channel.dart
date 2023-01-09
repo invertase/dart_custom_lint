@@ -6,6 +6,7 @@ import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:uuid/uuid.dart';
 
 import '../channels.dart';
@@ -50,24 +51,43 @@ void _writePackageConfigForTempProject(
 
   final packageMap = <String, Package>{};
   for (final contextRoot in contextRoots) {
-    final uri = Uri.file(
+    final contextRootPackageConfigUri = Uri.file(
       join(contextRoot.root, '.dart_tool', 'package_config.json'),
     );
-    final file = File.fromUri(uri);
+    final packageConfigFile = File.fromUri(contextRootPackageConfigUri);
+    final contextRootPubspecFile = File(
+      join(contextRoot.root, 'pubspec.yaml'),
+    );
 
-    String content;
+    String packageConfigContent;
     try {
-      content = file.readAsStringSync();
+      packageConfigContent = packageConfigFile.readAsStringSync();
     } on FileSystemException {
       throw StateError(
         'No package_config.json found. Did you forget to run `pub get`?\n'
         'Tried to look in:\n${contextRoots.map((e) => '- ${e.root}\n').join()}',
       );
     }
+    final packageConfig = PackageConfig.parseString(
+      packageConfigContent,
+      contextRootPackageConfigUri,
+    );
 
-    final packageConfig = PackageConfig.parseString(content, uri);
+    final pubspecContent = contextRootPubspecFile.readAsStringSync();
+    final pubspec = Pubspec.parse(
+      pubspecContent,
+      sourceUrl: contextRootPubspecFile.uri,
+    );
 
     for (final package in packageConfig.packages) {
+      if (package.name == pubspec.name) {
+        // Don't include the project that has a plugin enabled in the list
+        // of dependencies of the plugin.
+        // This avoids the plugin from being hot-reloaded when the analyzed
+        // code changes.
+        continue;
+      }
+
       final currentPackage = packageMap[package.name];
 
       if (currentPackage != null && currentPackage.root != package.root) {
