@@ -1,3 +1,9 @@
+## 0.1.1
+
+- Fix an issue where plugins were hot-reloaded when the file analyzed changed.
+- Optimized analysis such that `PluginBase.getLints()` is theorically not reinvoked
+  unless the file analyzed changed.
+
 ## 0.1.0
 
 - **Breaking**: The plugin entrypoint has moved.  
