@@ -1,3 +1,7 @@
+## 0.1.2-dev
+
+Do some internal refactoring as an attempt to fix #60
+
 ## 0.1.1
 
 - Fix an issue where plugins were hot-reloaded when the file analyzed changed.
