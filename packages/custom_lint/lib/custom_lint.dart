@@ -39,27 +39,28 @@ Future<void> customLint({
   exitCode = 0;
 
   final channel = ServerIsolateChannel();
-  final customLintServer = CustomLintServer.start(
+  await CustomLintServer.run(
     sendPort: channel.receivePort.sendPort,
     watchMode: watchMode,
     delegate: CommandCustomLintDelegate(),
-  );
-  final runner = CustomLintRunner(customLintServer, workingDirectory, channel);
+    (customLintServer) async {
+      final runner =
+          CustomLintRunner(customLintServer, workingDirectory, channel);
 
-  await customLintServer.run(() async {
-    try {
-      await runner.initialize;
-      await _runPlugins(runner, reload: false);
+      try {
+        await runner.initialize;
+        await _runPlugins(runner, reload: false);
 
-      if (watchMode) {
-        await _startWatchMode(runner);
+        if (watchMode) {
+          await _startWatchMode(runner);
+        }
+      } catch (err) {
+        exitCode = 1;
+      } finally {
+        await runner.close();
       }
-    } catch (err) {
-      exitCode = 1;
-    } finally {
-      await runner.close();
-    }
-  });
+    },
+  );
 }
 
 Future<void> _runPlugins(

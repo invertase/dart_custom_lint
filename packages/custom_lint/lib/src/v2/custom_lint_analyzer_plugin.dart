@@ -18,21 +18,27 @@ import 'protocol.dart';
 import 'server_to_client_channel.dart';
 
 class CustomLintServer {
-  factory CustomLintServer.start({
+  CustomLintServer._({
+    required this.watchMode,
+    required this.delegate,
+  });
+
+  static R? run<R>(
+    R Function(CustomLintServer server) cb, {
     required SendPort sendPort,
     required bool watchMode,
     required CustomLintDelegate delegate,
   }) {
     late CustomLintServer server;
-
-    runZonedGuarded(
+    final result = runZonedGuarded(
       () {
         server = CustomLintServer._(
           watchMode: watchMode,
           delegate: delegate,
         );
-
         server._start(sendPort);
+
+        return cb(server);
       },
       (err, stack) => server.handleUncaughtError(err, stack),
       zoneSpecification: ZoneSpecification(
@@ -43,13 +49,8 @@ class CustomLintServer {
       ),
     );
 
-    return server;
+    return result;
   }
-
-  CustomLintServer._({
-    required this.watchMode,
-    required this.delegate,
-  });
 
   final CustomLintDelegate delegate;
   late final AnalyzerPluginClientChannel analyzerPluginClientChannel;
@@ -61,19 +62,6 @@ class CustomLintServer {
 
   final _clientChannel = BehaviorSubject<CustomLintServerToClientChannel>();
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
-
-  T? run<T>(T Function() cb) {
-    return runZonedGuarded(
-      cb,
-      handleUncaughtError,
-      zoneSpecification: ZoneSpecification(
-        print: (self, parent, zone, line) => handlePrint(
-          line,
-          isClientMessage: false,
-        ),
-      ),
-    );
-  }
 
   void _start(SendPort sendPort) {
     analyzerPluginClientChannel = JsonSendPortChannel(sendPort);

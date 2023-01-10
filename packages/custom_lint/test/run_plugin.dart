@@ -22,31 +22,31 @@ CustomLintRunner startRunnerForApp(
   bool ignoreErrors = false,
 }) {
   final channel = ServerIsolateChannel();
-  final runner = CustomLintRunner(
-    // TODO use IO override to mock & test stdout/stderr
-    CustomLintServer.start(
-      sendPort: channel.receivePort.sendPort,
-      delegate: CommandCustomLintDelegate(),
-      watchMode: false,
-    ),
-    directory,
-    channel,
-  );
-  addTearDown(runner.close);
 
-  if (!ignoreErrors) {
-    runner.channel
-      ..responseErrors.listen((event) {
-        fail('${event.message} ${event.code}\n${event.stackTrace}');
-      })
-      ..pluginErrors.listen((event) {
-        fail('${event.message}\n${event.stackTrace}');
-      });
-  }
+  // TODO use IO override to mock & test stdout/stderr
+  return CustomLintServer.run(
+    sendPort: channel.receivePort.sendPort,
+    delegate: CommandCustomLintDelegate(),
+    watchMode: false,
+    (customLintServer) {
+      final runner = CustomLintRunner(customLintServer, directory, channel);
+      addTearDown(runner.close);
 
-  unawaited(runner.initialize);
+      if (!ignoreErrors) {
+        runner.channel
+          ..responseErrors.listen((event) {
+            fail('${event.message} ${event.code}\n${event.stackTrace}');
+          })
+          ..pluginErrors.listen((event) {
+            fail('${event.message}\n${event.stackTrace}');
+          });
+      }
 
-  return runner;
+      unawaited(runner.initialize);
+
+      return runner;
+    },
+  )!;
 }
 
 extension LogFile on Directory {
