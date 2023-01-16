@@ -8,3 +8,11 @@ linter:
   rules:
     public_member_api_docs: false
     avoid_print: false
+
+custom_lint:
+  rules:
+    - prefer_lint
+    - map: false
+    # - riverpod_final_provider: false
+    - map2:
+      length: 42

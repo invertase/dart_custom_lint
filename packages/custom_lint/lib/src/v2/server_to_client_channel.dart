@@ -187,7 +187,7 @@ class _SocketCustomLintServerToClientChannel
     throw UnimplementedError();
   }
 
-  void _writeMain() {
+  void _writeEntrypoint() {
     final imports = _packages
         .map((e) => e.name)
         .map(
@@ -201,7 +201,8 @@ class _SocketCustomLintServerToClientChannel
         .map((packageName) => "'$packageName': $packageName.createPlugin,\n")
         .join();
 
-    final mainFile = File(join(_tempDirectory.path, 'lib', 'main.dart'));
+    final mainFile =
+        File(join(_tempDirectory.path, 'lib', 'custom_lint_client.dart'));
     mainFile.createSync(recursive: true);
     mainFile.writeAsStringSync('''
 import 'dart:convert';
@@ -247,7 +248,7 @@ $dependencies
       _contextRoots.roots,
     );
     _writePubspec();
-    _writeMain();
+    _writeEntrypoint();
 
     late int port;
     final processFuture = _asyncRetry(retryCount: 5, () async {
@@ -256,7 +257,7 @@ $dependencies
         Platform.resolvedExecutable,
         [
           '--enable-vm-service=$port',
-          join('lib', 'main.dart'),
+          join('lib', 'custom_lint_client.dart'),
           await _serverSocket.then((value) => value.port.toString())
         ],
         workingDirectory: _tempDirectory.path,

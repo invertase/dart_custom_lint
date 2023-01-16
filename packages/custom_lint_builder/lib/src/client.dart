@@ -1,26 +1,40 @@
 import 'dart:async';
 import 'dart:developer' as dev;
-import 'dart:io';
+import 'dart:io' as io;
 
 import 'package:analyzer/dart/analysis/analysis_context.dart';
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
-import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/error/error.dart';
+import 'package:analyzer/error/listener.dart';
+import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/source/line_info.dart';
+import 'package:analyzer/source/source_range.dart';
 import 'package:analyzer_plugin/plugin/plugin.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:analyzer_plugin/starter.dart';
+import 'package:analyzer_plugin/utilities/analyzer_converter.dart';
 import 'package:collection/collection.dart';
 // ignore: implementation_imports
 import 'package:custom_lint/src/v2/protocol.dart';
+import 'package:glob/glob.dart';
 import 'package:hotreloader/hotreloader.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:rxdart/subjects.dart';
 
-import '../../custom_lint_builder.dart';
+import 'assist.dart';
+import 'change_reporter.dart';
 import 'channel.dart';
+import 'configs.dart';
+import 'expect_lint.dart';
+import 'fixes.dart';
+import 'lint_codes.dart';
+import 'lint_rule.dart';
+import 'node_lint_visitor.dart';
+import 'plugin_base.dart';
+import 'resolver.dart';
 
 Future<bool> _isVmServiceEnabled() async {
   final serviceInfo = await dev.Service.getInfo();
@@ -53,7 +67,14 @@ class CustomLintPluginClient {
     if (!await _isVmServiceEnabled()) return null;
     return HotReloader.create(
       onAfterReload: (value) {
-        _analyzerPlugin.reAnalyze();
+        switch (value.result) {
+          case HotReloadResult.Succeeded:
+          case HotReloadResult.PartiallySucceeded:
+            _analyzerPlugin.reAnalyze();
+            break;
+          default:
+            print('Skipped hot-reload because of status: ${value.result}');
+        }
       },
     );
   }
@@ -105,7 +126,7 @@ class CustomLintPluginClient {
     _contextRootsForPlugin = {};
 
     for (final contextRoot in params.roots) {
-      final pubspecFile = File(join(contextRoot.root, 'pubspec.yaml'));
+      final pubspecFile = io.File(join(contextRoot.root, 'pubspec.yaml'));
       if (!pubspecFile.existsSync()) {
         continue;
       }
@@ -152,6 +173,97 @@ class CustomLintPluginClient {
   }
 }
 
+class _CustomLintAnalysisConfigs {
+  _CustomLintAnalysisConfigs(
+    this.configs,
+    this.rules,
+    this.fixes,
+    this.assists,
+    this.analysisContext,
+  );
+
+  factory _CustomLintAnalysisConfigs.from(
+    AnalysisContext analysisContext,
+    CustomLintPluginClient client,
+  ) {
+    final configs =
+        CustomLintConfigs.parse(analysisContext.contextRoot.optionsFile);
+
+    final activePluginsForContext =
+        Map.fromEntries(client._channel.registeredPlugins.entries.where(
+      (plugin) => client._isPluginActiveForContextRoot(
+        analysisContext,
+        pluginName: plugin.key,
+      ),
+    ));
+
+    final rules = _lintRulesForContext(activePluginsForContext, configs);
+    final fixes = _fixesForRules(rules);
+    final assists =
+        _assistsForContext(activePluginsForContext, configs, client);
+
+    return _CustomLintAnalysisConfigs(
+      configs,
+      rules,
+      fixes,
+      assists,
+      analysisContext,
+    );
+  }
+
+  static List<LintRule> _lintRulesForContext(
+    Map<String, PluginBase> activePluginsForContext,
+    CustomLintConfigs configs,
+  ) {
+    return activePluginsForContext.entries
+        .expand((plugin) => plugin.value.getLintRules(configs))
+        .where((lintRule) => configs.isLintEnabled(lintRule.code.name))
+        .toList();
+  }
+
+  static Map<LintCode, List<Fix>> _fixesForRules(List<LintRule> rules) {
+    return {
+      for (final rule in rules) rule.code: rule.getFixes(),
+    };
+  }
+
+  static List<Assist> _assistsForContext(
+    Map<String, PluginBase> activePluginsForContext,
+    CustomLintConfigs configs,
+    CustomLintPluginClient client,
+  ) {
+    return activePluginsForContext.entries
+        .expand((plugin) => plugin.value.getAssists())
+        .toList();
+  }
+
+  final CustomLintConfigs configs;
+  final List<LintRule> rules;
+  final Map<LintCode, List<Fix>> fixes;
+  final List<Assist> assists;
+  final AnalysisContext analysisContext;
+}
+
+@immutable
+class AnalysisErrorsKey {
+  const AnalysisErrorsKey({
+    required this.filePath,
+    required this.analysisContext,
+  });
+
+  final String filePath;
+  final AnalysisContext analysisContext;
+
+  @override
+  bool operator ==(Object other) =>
+      other is AnalysisErrorsKey &&
+      other.filePath == filePath &&
+      other.analysisContext == analysisContext;
+
+  @override
+  int get hashCode => Object.hash(filePath, analysisContext);
+}
+
 class _ClientAnalyzerPlugin extends ServerPlugin {
   _ClientAnalyzerPlugin(
     this._channel,
@@ -163,9 +275,13 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   final CustomLintPluginClient _client;
   final _contextCollection = BehaviorSubject<AnalysisContextCollection>();
   final _pendingOperations = <Future<void>>[];
+  var _customLintConfigsForAnalysisContexts =
+      <AnalysisContext, _CustomLintAnalysisConfigs>{};
+  final _analysisErrorsForAnalysisContexts =
+      <AnalysisErrorsKey, Set<AnalysisError>>{};
 
   @override
-  List<String> get fileGlobsToAnalyze => ['*.dart'];
+  List<String> get fileGlobsToAnalyze => ['*'];
 
   @override
   String get name => 'custom_lint_client';
@@ -196,6 +312,17 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   }) {
     _contextCollection.add(contextCollection);
     return _runOperation(() {
+      // Clear lints as we got a new context collection
+      _analysisErrorsForAnalysisContexts.removeWhere(
+        (key, value) =>
+            contextCollection.contexts.contains(key.analysisContext),
+      );
+      _customLintConfigsForAnalysisContexts = {
+        for (final analysisContext in contextCollection.contexts)
+          analysisContext:
+              _CustomLintAnalysisConfigs.from(analysisContext, _client),
+      };
+
       return super.afterNewContextCollection(
         contextCollection: contextCollection,
       );
@@ -209,20 +336,88 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     // TODO test
     final contextCollection = await _contextCollection.first;
     final analysisContext = contextCollection.contextFor(parameters.file);
-    final resolvedUnit = await getResolvedUnitResult(parameters.file);
+    final assists =
+        _customLintConfigsForAnalysisContexts[analysisContext]?.assists;
 
-    final results = await Future.wait([
-      for (final plugin
-          in _pluginsForFile(parameters.file, analysisContext).values)
-        plugin.handleGetAssists(
-          resolvedUnit,
-          offset: parameters.offset,
-          length: parameters.length,
-        )
+    final resolver = _createResolverForFile(
+      resourceProvider.getFile(parameters.file),
+    );
+    if (resolver == null || assists == null || assists.isEmpty) {
+      return EditGetAssistsResult([]);
+    }
+
+    final configs = _customLintConfigsForAnalysisContexts[analysisContext];
+    if (configs == null) {
+      return EditGetAssistsResult([]);
+    }
+
+    final target = SourceRange(parameters.offset, parameters.length);
+    final postRunCallbacks = <void Function()>[];
+    // TODO implement verbose mode to log lint duration
+    final registry = NodeLintRegistry(LintRegistry(), enableTiming: false);
+    final sharedState = <Object, Object?>{};
+
+    final changeReporter = ChangeReporterImpl(
+      configs.analysisContext.currentSession,
+      resolver,
+    );
+
+    await Future.wait([
+      for (final assist in configs.assists)
+        _runAssistStartup(
+          resolver,
+          assist,
+          LintContext(
+            LintRuleNodeRegistry(registry, assist.runtimeType.toString()),
+            postRunCallbacks.add,
+            sharedState,
+          ),
+          target,
+        ),
     ]);
+    for (final assist in configs.assists) {
+      _runAssistRun(
+        resolver,
+        assist,
+        LintContext(
+          LintRuleNodeRegistry(registry, assist.runtimeType.toString()),
+          postRunCallbacks.add,
+          sharedState,
+        ),
+        changeReporter,
+        target,
+      );
+    }
 
-    return EditGetAssistsResult(
-      results.expand((element) => element.assists).toList(),
+    _runPostRunCallbacks(postRunCallbacks);
+
+    return EditGetAssistsResult(await changeReporter.waitForCompletion());
+  }
+
+  Future<void> _runAssistStartup(
+    CustomLintResolver resolver,
+    Assist assist,
+    LintContext context,
+    SourceRange target,
+  ) async {
+    return _runLintZoned(
+      resolver,
+      () => assist.startUp(resolver, context, target),
+      name: assist.runtimeType.toString(),
+    );
+  }
+
+  void _runAssistRun(
+    CustomLintResolver resolver,
+    Assist assist,
+    LintContext context,
+    ChangeReporter changeReporter,
+    SourceRange target,
+  ) {
+    return _runLintZoned(
+      resolver,
+      () => assist.run(resolver, changeReporter, context, target),
+      name: assist.runtimeType.toString(),
     );
   }
 
@@ -230,32 +425,171 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   Future<EditGetFixesResult> handleEditGetFixes(
     EditGetFixesParams parameters,
   ) async {
+    final resolver = _createResolverForFile(
+      resourceProvider.getFile(parameters.file),
+    );
+    if (resolver == null) return EditGetFixesResult([]);
+
     // TODO test
     final contextCollection = await _contextCollection.first;
     final analysisContext = contextCollection.contextFor(parameters.file);
-    final resolvedUnit = await getResolvedUnitResult(parameters.file);
 
-    final results = await Future.wait([
-      for (final plugin
-          in _pluginsForFile(parameters.file, analysisContext).values)
-        plugin.handleEditGetFixes(resolvedUnit, parameters.offset)
+    final key = AnalysisErrorsKey(
+      filePath: parameters.file,
+      analysisContext: analysisContext,
+    );
+    final configs = _customLintConfigsForAnalysisContexts[analysisContext];
+
+    final analysisErrorsForContext =
+        _analysisErrorsForAnalysisContexts[key] ?? const {};
+    final errorsAtOffset = analysisErrorsForContext
+        .where(
+          (error) =>
+              parameters.offset >= error.offset &&
+              parameters.offset < error.offset + error.length,
+        )
+        .toList();
+
+    if (errorsAtOffset.isEmpty || configs == null) {
+      return EditGetFixesResult([]);
+    }
+
+    final analysisErrorFixes = await Future.wait([
+      for (final error in errorsAtOffset)
+        _handlesFixesForError(
+          error,
+          analysisErrorsForContext,
+          configs,
+          resolver,
+          parameters,
+        ),
     ]);
 
-    return EditGetFixesResult(
-      results.expand((element) => element.fixes).toList(),
+    return EditGetFixesResult(analysisErrorFixes.whereNotNull().toList());
+  }
+
+  Future<AnalysisErrorFixes?> _handlesFixesForError(
+    AnalysisError analysisError,
+    Set<AnalysisError> allErrors,
+    _CustomLintAnalysisConfigs configs,
+    CustomLintResolver resolver,
+    EditGetFixesParams parameters,
+  ) async {
+    final fixesForError = configs.fixes[analysisError.errorCode];
+    if (fixesForError == null || fixesForError.isEmpty) {
+      return null;
+    }
+
+    final otherErrors = allErrors
+        .where(
+          (element) =>
+              element != analysisError &&
+              element.errorCode == analysisError.errorCode,
+        )
+        .toList();
+
+    final postRunCallbacks = <void Function()>[];
+    // TODO implement verbose mode to log lint duration
+    final registry = NodeLintRegistry(LintRegistry(), enableTiming: false);
+    final sharedState = <Object, Object?>{};
+
+    final changeReporter = ChangeReporterImpl(
+      configs.analysisContext.currentSession,
+      resolver,
+    );
+
+    await Future.wait([
+      for (final fix in fixesForError)
+        _runFixStartup(
+          resolver,
+          fix,
+          LintContext(
+            LintRuleNodeRegistry(registry, fix.runtimeType.toString()),
+            postRunCallbacks.add,
+            sharedState,
+          ),
+        ),
+    ]);
+    for (final fix in fixesForError) {
+      _runFixRun(
+        resolver,
+        fix,
+        LintContext(
+          LintRuleNodeRegistry(registry, fix.runtimeType.toString()),
+          postRunCallbacks.add,
+          sharedState,
+        ),
+        changeReporter,
+        analysisError,
+        otherErrors,
+      );
+    }
+
+    _runPostRunCallbacks(postRunCallbacks);
+
+    return AnalysisErrorFixes(
+      AnalyzerConverter().convertAnalysisError(
+        analysisError,
+        lineInfo: resolver.lineInfo,
+        severity: analysisError.errorCode.errorSeverity,
+      ),
+      fixes: await changeReporter.waitForCompletion(),
     );
   }
 
-  Map<String, PluginBase> _pluginsForFile(
-    String file,
-    AnalysisContext analysisContext,
+  Future<void> _runFixStartup(
+    CustomLintResolver resolver,
+    Fix fix,
+    LintContext context,
+  ) async {
+    return _runLintZoned(
+      resolver,
+      () => fix.startUp(resolver, context),
+      name: fix.runtimeType.toString(),
+    );
+  }
+
+  void _runFixRun(
+    CustomLintResolver resolver,
+    Fix fix,
+    LintContext context,
+    ChangeReporter changeReporter,
+    AnalysisError analysisError,
+    List<AnalysisError> others,
   ) {
-    return <String, PluginBase>{
-      for (final plugin in _channel.registeredPlugins.entries)
-        if (_client._isPluginActiveForContextRoot(analysisContext,
-            pluginName: plugin.key))
-          plugin.key: plugin.value,
-    };
+    return _runLintZoned(
+      resolver,
+      () => fix.run(resolver, changeReporter, context, analysisError, others),
+      name: fix.runtimeType.toString(),
+    );
+  }
+
+  @override
+  Future<AnalysisHandleWatchEventsResult> handleAnalysisHandleWatchEvents(
+    AnalysisHandleWatchEventsParams parameters,
+  ) async {
+    final contextCollection = await _contextCollection.first;
+
+    for (final event in parameters.events) {
+      switch (event.type) {
+        case WatchEventType.REMOVE:
+
+          /// The file was deleted. Let's release associated resources.
+          final analysisContext = contextCollection.contextFor(event.path);
+          final key = AnalysisErrorsKey(
+            filePath: event.path,
+            analysisContext: analysisContext,
+          );
+
+          _analysisErrorsForAnalysisContexts.remove(key);
+          break;
+        default:
+          // Ignore unhandled watch event types.
+          break;
+      }
+    }
+
+    return super.handleAnalysisHandleWatchEvents(parameters);
   }
 
   @override
@@ -291,8 +625,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     required AnalysisContext analysisContext,
     required String path,
   }) async {
-    if (!path.endsWith('.dart') ||
-        !analysisContext.contextRoot.isAnalyzed(path)) {
+    if (!analysisContext.contextRoot.isAnalyzed(path)) {
       return;
     }
 
@@ -301,37 +634,137 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     /// is something we want to analize
     if (!_ownsPath(path)) return;
 
+    final configs = _customLintConfigsForAnalysisContexts[analysisContext];
+    if (configs == null) return;
+
+    final resolver = _createResolverForFile(resourceProvider.getFile(path));
+    if (resolver == null) return;
+
+    final source = resourceProvider.getFile(path).createSource();
+    final fileIgnoredCodes = _getAllIgnoredForFileCodes(source.contents.data);
+    // Lints are disabled for the entire file, so no point in executing lints
+    if (fileIgnoredCodes.contains('type=lint')) return;
+
+    final fileName = basename(path);
+    final activeLintRules = configs.rules
+        .where(
+          (lintRule) => lintRule.filesToAnalyze
+              .any((glob) => Glob(glob).matches(fileName)),
+        )
+        // Removing lints disabled for the file. No need to call LintRule.run
+        // if they are going to immediately get ignored
+        .where((e) => !fileIgnoredCodes.contains(e.code.name))
+        .toList();
+
+    // Even if the list of lints is empty, we keep going anyway. Because
+    // the analyzed file might have some expect-lints comments
+
+    final lints = <AnalysisError>[];
+    final reporterBeforeExpectLint = ErrorReporter(
+      // TODO assert that a LintRule only emits lints with a code matching LintRule.code
+      // TODO asserts lintRules can only emit lints in the analyzed file
+      _AnalysisErrorListenerDelegate((lint) {
+        if (!_isIgnored(lint, resolver)) {
+          lints.add(lint);
+        }
+      }),
+      source,
+      isNonNullableByDefault: false,
+    );
+
+    // TODO: cancel getLints if analyzeFile is reinvoked for path while
+    // the previous Stream is still pending.
     await _runOperation(() async {
-      final unit = await getResolvedUnitResult(path);
+      final postRunCallbacks = <void Function()>[];
+      // TODO implement verbose mode to log lint duration
+      final registry = NodeLintRegistry(LintRegistry(), enableTiming: false);
+      final sharedState = <Object, Object?>{};
 
-      final fileIgnoredCodes = _getAllIgnoredForFileCodes(unit.content);
-      // Lints are disabled for the entire file, so no point to even execute `getLints`
-      if (fileIgnoredCodes.contains('type=lint')) return;
-
-      // TODO: cancel getLints if analyzeFile is reinvoked for path while
-      // the previous Stream is still pending.
-      final lints = await Future.wait([
-        for (final plugin in _pluginsForFile(path, analysisContext).entries)
-          _getLintsForPlugin(plugin.value, unit, pluginName: plugin.key),
+      await Future.wait([
+        for (final lintRule in activeLintRules)
+          _startUpLintRule(
+            lintRule,
+            resolver,
+            reporterBeforeExpectLint,
+            LintContext(
+              LintRuleNodeRegistry(registry, lintRule.code.name),
+              postRunCallbacks.add,
+              sharedState,
+            ),
+          ),
       ]);
+      for (final lintRule in activeLintRules) {
+        _runLintRule(
+          lintRule,
+          resolver,
+          reporterBeforeExpectLint,
+          LintContext(
+            LintRuleNodeRegistry(registry, lintRule.code.name),
+            postRunCallbacks.add,
+            sharedState,
+          ),
+        );
+      }
+
+      _runPostRunCallbacks(postRunCallbacks);
+
+      final allAnalysisErrors = <AnalysisError>[];
+      final analyzerPluginReporter = ErrorReporter(
+        // TODO assert that a LintRule only emits lints with a code matching LintRule.code
+        // TODO asserts lintRules can only emit lints in the analyzed file
+        _AnalysisErrorListenerDelegate(allAnalysisErrors.add),
+        source,
+        isNonNullableByDefault: false,
+      );
+
+      ExpectLint(lints).run(resolver, analyzerPluginReporter);
+
+      final key =
+          AnalysisErrorsKey(filePath: path, analysisContext: analysisContext);
+      _analysisErrorsForAnalysisContexts[key] = {
+        // Combining lints before/after applying expect_error
+        // This is to enable fixes to access both
+        ...allAnalysisErrors,
+        ...lints,
+      };
 
       _channel.sendEvent(
         CustomLintEvent.analyzerPluginNotification(
           AnalysisErrorsParams(
             path,
-            lints.flattened
-                // Applying ignore_for_file
-                .where((lint) => !fileIgnoredCodes.contains(lint.code))
-                .where((lint) => !_isIgnored(lint, unit))
-                // Applying `// expect_lint` after ignores, such that if a lint
-                // is ignored, expect_lint will fail
-                ._applyExpectLint(unit)
-                .map((e) => e.asAnalysisError())
-                .toList(),
+            AnalyzerConverter().convertAnalysisErrors(
+              allAnalysisErrors,
+              lineInfo: resolver.lineInfo,
+              options: analysisContext.analysisOptions,
+            ),
           ).toNotification(),
         ),
       );
     });
+  }
+
+  void _runPostRunCallbacks(List<void Function()> postRunCallbacks) {
+    for (final postCallback in postRunCallbacks) {
+      try {
+        postCallback();
+      } catch (err) {
+        // TODO should errors be reported?
+        // All postCallbacks should execute even if one throw
+      }
+    }
+  }
+
+  AnalyzerResolver? _createResolverForFile(File file) {
+    if (!file.exists) return null;
+    final source = file.createSource();
+    final lineInfo = LineInfo.fromContent(source.contents.data);
+
+    return AnalyzerResolver(
+      getResolvedUnitResult,
+      lineInfo: lineInfo,
+      source: source,
+      path: file.path,
+    );
   }
 
   /// Queue an operation to be awaited by [_awaitAnalysisDone]
@@ -358,71 +791,101 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     }
   }
 
-  /// Execute [PluginBase.getLints], catching errors and redirecting logs.
-  Future<List<Lint>> _getLintsForPlugin(
-    PluginBase plugin,
-    ResolvedUnitResult unit, {
-    required String pluginName,
-  }) async {
-    final _errorLints = <Lint>[];
-    void pluginError(Object error, StackTrace stackTrace) {
-      final errorLint = _handleGetLintsError(
-        unit,
+  R? _runLintZoned<R>(
+    CustomLintResolver resolver,
+    R Function() cb, {
+    ErrorReporter? reporter,
+    required String name,
+  }) {
+    void onLog(String message) {
+      _channel.sendEvent(
+        CustomLintEvent.print(message, pluginName: name),
+      );
+    }
+
+    void onError(Object error, StackTrace stackTrace) {
+      _handleGetLintsError(
+        resolver,
         error,
         stackTrace,
-        pluginName: pluginName,
-        path: unit.path,
-      );
-      _errorLints.add(errorLint);
-    }
-
-    void pluginLog(String message) {
-      _channel.sendEvent(
-        CustomLintEvent.print(message, pluginName: pluginName),
+        reporter: reporter,
+        pluginName: name,
       );
     }
 
-    return await runZoned(
+    return runZonedGuarded(
       zoneSpecification: ZoneSpecification(
-        print: (self, parent, zone, line) => pluginLog(line),
+        print: (self, parent, zone, line) => onLog(line),
       ),
-      () async {
-        final result =
-            await plugin.getLints(unit).handleError(pluginError).toList();
-
-        return [
-          ..._errorLints,
-          ...result,
-        ];
-      },
+      cb,
+      onError,
     );
   }
 
-  /// Re-maps uncaught errors by [PluginBase.getLints] and, if in the IDE,
+  Future<void> _startUpLintRule(
+    LintRule lintRule,
+    CustomLintResolver resolver,
+    ErrorReporter reporter,
+    LintContext lintContext,
+  ) async {
+    await _runLintZoned(
+      resolver,
+      () => lintRule.startUp(resolver, lintContext),
+      name: name,
+      reporter: reporter,
+    );
+  }
+
+  void _runLintRule(
+    LintRule lintRule,
+    CustomLintResolver resolver,
+    ErrorReporter reporter,
+    LintContext lintContext,
+  ) {
+    _runLintZoned(
+      resolver,
+      () => lintRule.run(resolver, reporter, lintContext),
+      reporter: reporter,
+      name: name,
+    );
+  }
+
+  /// Re-maps uncaught errors by [LintRule] and, if in the IDE,
   /// shows a synthetic lint at the top of the file corresponding to the error.
-  Lint _handleGetLintsError(
-    ResolvedUnitResult analysisResult,
+  void _handleGetLintsError(
+    CustomLintResolver resolver,
     Object error,
     StackTrace stackTrace, {
-    required String path,
+    ErrorReporter? reporter,
     required String pluginName,
   }) {
     _channel.sendEvent(
       CustomLintEvent.error(
-        'Plugin $pluginName threw while analyzing $path:\n$error',
+        'Plugin $pluginName threw while analyzing ${resolver.path}:\n$error',
         stackTrace.toString(),
         pluginName: pluginName,
       ),
     );
 
+    if (reporter == null) return;
+
+    const code = LintCode(
+      name: 'custom_lint_get_lint_fail',
+      problemMessage: 'A lint plugin threw an exception',
+      errorSeverity: ErrorSeverity.ERROR,
+    );
+
     // TODO add context message that points to the fir line of the stacktrace
     // This involves knowing where a package points to, as a file path is needed
 
-    return Lint(
-      severity: LintSeverity.error,
-      location: analysisResult.lintLocationFromLines(startLine: 1, endLine: 1),
-      message: 'A lint plugin threw an exception',
-      code: 'custom_lint_get_lint_fail',
+    final startOffset = resolver.lineInfo.lineStarts.firstOrNull ?? 0;
+    final endOffset =
+        resolver.lineInfo.lineStarts.elementAtOrNull(1) ?? startOffset;
+
+    reporter.reportErrorForOffset(
+      code,
+      startOffset,
+      endOffset - startOffset,
     );
   }
 
@@ -435,110 +898,25 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   }
 }
 
-extension on Iterable<Lint> {
-  /// Applies `// expect_lint` specifically
-  List<Lint> _applyExpectLint(ResolvedUnitResult analysisResult) {
-    final expectLints = _getAllExpectedLints(
-      analysisResult.content,
-      analysisResult.lineInfo,
-      filePath: analysisResult.path,
-    );
+class _AnalysisErrorListenerDelegate implements AnalysisErrorListener {
+  _AnalysisErrorListenerDelegate(this._onError);
 
-    final allExpectedLints = expectLints
-        .map((e) => _ComparableExpectLintMeta(e.line, e.code))
-        .toSet();
-
-    // The list of all the expect_lints codes that don't have a matching lint.
-    final unfulfilledExpectedLints = expectLints.toList();
-
-    final lintsExcludingExpectedLints = where((lint) {
-      final matchingExpectLintMeta = _ComparableExpectLintMeta(
-        // Lints use 1-based offsets but expectLints use 0-based offsets. So
-        // we remove 1 to have them on the same unit. Then we remove 1 again
-        // to access the line before the lint.
-        lint.location.startLine - 2,
-        lint.code,
-      );
-
-      if (allExpectedLints.contains(matchingExpectLintMeta)) {
-        // The lint has a matching expect_lint. Let's ignore the lint and mark
-        // the associated expect_lint as fulfilled.
-        unfulfilledExpectedLints.removeWhere(
-          (e) =>
-              e.line == matchingExpectLintMeta.line &&
-              e.code == matchingExpectLintMeta.code,
-        );
-        return false;
-      }
-      return true;
-    });
-
-    return [
-      ...lintsExcludingExpectedLints,
-      for (final unfulfilledExpectedLint in unfulfilledExpectedLints)
-        Lint(
-          severity: LintSeverity.error,
-          message:
-              'Expected to find the lint ${unfulfilledExpectedLint.code} on next line but none found.',
-          code: 'unfulfilled_expect_lint',
-          correction:
-              'Either update the code such that it emits the lint ${unfulfilledExpectedLint.code} '
-              'or update the expect_lint clause to not include the code ${unfulfilledExpectedLint.code}.',
-          location: unfulfilledExpectedLint.location,
-        )
-    ];
-  }
-}
-
-/// Information about an `// expect_lint: code` clause
-@immutable
-class _ExpectLintMeta {
-  /// Information about an `// expect_lint: code` clause
-  const _ExpectLintMeta({
-    required this.line,
-    required this.code,
-    required this.location,
-  }) : assert(line >= 0, 'line must be positive');
-
-  /// A 0-based offset of the line having the expect_lint clause.
-  final int line;
-
-  /// The code expected.
-  final String code;
-
-  /// The location of the expected code.
-  final LintLocation location;
-}
-
-@immutable
-class _ComparableExpectLintMeta {
-  const _ComparableExpectLintMeta(this.line, this.code);
-
-  final int line;
-  final String code;
+  final void Function(AnalysisError error) _onError;
 
   @override
-  int get hashCode => Object.hash(line, code);
-
-  @override
-  bool operator ==(Object other) {
-    return other is _ComparableExpectLintMeta &&
-        other.code == code &&
-        other.line == line;
-  }
+  void onError(AnalysisError error) => _onError(error);
 }
 
 final _ignoreRegex = RegExp(r'//\s*ignore\s*:(.+)$', multiLine: true);
 
-bool _isIgnored(Lint lint, ResolvedUnitResult unit) {
-  // -1 because lines starts at 1 not 0
-  final line = lint.location.startLine - 1;
+bool _isIgnored(AnalysisError lint, CustomLintResolver resolver) {
+  final line = resolver.lineInfo.getLocation(lint.offset).lineNumber;
 
   if (line == 0) return false;
 
-  final previousLine = unit.content.substring(
-    unit.lineInfo.getOffsetOfLine(line - 1),
-    lint.location.offset - 1,
+  final previousLine = resolver.source.contents.data.substring(
+    resolver.lineInfo.getOffsetOfLine(line - 1),
+    lint.offset - 1,
   );
 
   final codeContent = _ignoreRegex.firstMatch(previousLine)?.group(1);
@@ -546,7 +924,7 @@ bool _isIgnored(Lint lint, ResolvedUnitResult unit) {
 
   final codes = codeContent.split(',').map((e) => e.trim()).toSet();
 
-  return codes.contains(lint.code) || codes.contains('type=lint');
+  return codes.contains(lint.errorCode.name) || codes.contains('type=lint');
 }
 
 final _ignoreForFileRegex =
@@ -559,46 +937,4 @@ Set<String> _getAllIgnoredForFileCodes(String source) {
       .expand((e) => e.split(','))
       .map((e) => e.trim())
       .toSet();
-}
-
-final _expectLintRegex = RegExp(r'//\s*expect_lint\s*:(.+)$', multiLine: true);
-
-List<_ExpectLintMeta> _getAllExpectedLints(
-  String source,
-  LineInfo lineInfo, {
-  required String filePath,
-}) {
-  final expectLints = _expectLintRegex.allMatches(source);
-
-  return expectLints.expand((expectLint) {
-    final lineNumber = lineInfo.getLocation(expectLint.start).lineNumber - 1;
-    final codesStartOffset = source.indexOf(':', expectLint.start) + 1;
-
-    final codes = expectLint.group(1)!.split(',');
-    var codeOffsetAcc = codesStartOffset;
-
-    return codes.map((rawCode) {
-      final codeOffset =
-          codeOffsetAcc + (rawCode.length - rawCode.trimLeft().length);
-      codeOffsetAcc += rawCode.length + 1;
-
-      final code = rawCode.trim();
-      final start = lineInfo.getLocation(codeOffset);
-      final end = lineInfo.getLocation(codeOffset + code.length);
-
-      return _ExpectLintMeta(
-        line: lineNumber,
-        code: code,
-        location: LintLocation(
-          filePath: filePath,
-          offset: codeOffset,
-          startLine: start.lineNumber,
-          startColumn: start.columnNumber,
-          endLine: end.lineNumber,
-          endColumn: end.columnNumber,
-          length: code.length,
-        ),
-      );
-    });
-  }).toList();
 }
