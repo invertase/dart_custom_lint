@@ -49,17 +49,25 @@ Future<void> runSocket(
   Map<String, PluginMain> pluginMains, {
   required int port,
   required bool watchMode,
+  required bool includeBuiltInLints,
 }) async {
   final client = Completer<CustomLintPluginClient>();
 
   await runZonedGuarded(
     () async {
-      final socket = JsonSocketChannel(await Socket.connect('localhost', port));
+      // ignore: close_sinks, connection stays open until the plugin is killed
+      final socket = await Socket.connect('localhost', port);
+      // If the server somehow quit, forcibly stop the client.
+      // In theory it should stop naturally, but let's make sure of this to prevent leaks.
+      unawaited(socket.done.then((value) => exit(0)));
+
+      final socketChannel = JsonSocketChannel(socket);
       final registeredPlugins = <String, PluginBase>{};
       client.complete(
         CustomLintPluginClient(
           watchMode: watchMode,
-          _SocketCustomLintClientChannel(socket, registeredPlugins),
+          includeBuiltInLints: includeBuiltInLints,
+          _SocketCustomLintClientChannel(socketChannel, registeredPlugins),
         ),
       );
 

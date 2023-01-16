@@ -4,9 +4,11 @@ import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:async/async.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
 
 import '../channels.dart';
@@ -139,7 +141,12 @@ class _SocketCustomLintServerToClientChannel
   )   : _packages = getPackageListForContextRoots(_contextRoots.roots),
         _serverSocket = _createServerSocket() {
     _socket = _serverSocket.then(
-      (server) async => JsonSocketChannel(await server.first),
+      (server) async {
+        // ignore: close_sinks
+        final socket = await server.firstOrNull;
+        if (socket == null) return null;
+        return JsonSocketChannel(socket);
+      },
     );
   }
 
@@ -148,12 +155,13 @@ class _SocketCustomLintServerToClientChannel
   final List<Package> _packages;
   final Directory _tempDirectory = Directory.systemTemp.createTempSync();
   final Future<ServerSocket> _serverSocket;
-  late final Future<JsonSocketChannel> _socket;
+  late final Future<JsonSocketChannel?> _socket;
 
   AnalysisSetContextRootsParams _contextRoots;
   final _process = Completer<Process>();
 
   late final Stream<CustomLintMessage> _messages = Stream.fromFuture(_socket)
+      .whereNotNull()
       .asyncExpand((e) => e.messages)
       .map((e) => e! as Map<String, Object?>)
       .map(CustomLintMessage.fromJson)
@@ -216,6 +224,7 @@ void main(List<String> args) async {
   runSocket(
     port: port,
     watchMode: ${_server.watchMode},
+    includeBuiltInLints: ${_server.includeBuiltInLints},
     {$plugins},
   );
 }
@@ -357,6 +366,9 @@ $dependencies
     final matchingResponse = _responses.firstWhere((e) => e.id == request.id);
 
     await _socket.then((socket) {
+      if (socket == null) {
+        throw StateError('Client disconnected, cannot send requests');
+      }
       socket.sendJson(request.toJson());
     });
 

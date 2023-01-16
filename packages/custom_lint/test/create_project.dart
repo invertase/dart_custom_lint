@@ -8,6 +8,55 @@ import 'peer_project_meta.dart';
 
 const _pluginDefaultPubspec = '<<<default>>>';
 
+const emptyPluginSource = '''
+import 'package:analyzer/dart/element/element.dart';
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
+
+PluginBase createPlugin() => _Plugin();
+
+class _Plugin extends PluginBase {
+  @override
+  List<LintRule> getLintRules(CustomLintConfigs configs) => [];
+}
+''';
+
+String createPluginSource({
+  required String code,
+  required String message,
+  String onRun = '',
+  String onVariable = '',
+}) =>
+    '''
+import 'package:analyzer/dart/element/element.dart';
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/error/listener.dart';
+
+PluginBase createPlugin() => _Plugin();
+
+class _Plugin extends PluginBase {
+  @override
+  List<LintRule> getLintRules(CustomLintConfigs configs) => [_LintRule()];
+}
+
+class _LintRule extends DartLintRule {
+  _LintRule()
+    : super(
+        code: LintCode(name: '$code', problemMessage: '$message'),
+      );
+
+  @override
+  void run(CustomLintResolver resolver, ErrorReporter reporter, LintContext context) {
+    $onRun
+    context.registry.addFunctionDeclaration((node) {
+      $onVariable
+      reporter.reportErrorForToken(code, node.name);
+    });
+  }
+}
+''';
+
 Directory createPlugin({
   required String name,
   String? pubpsec = _pluginDefaultPubspec,

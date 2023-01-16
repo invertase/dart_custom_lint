@@ -42,7 +42,11 @@ Future<bool> _isVmServiceEnabled() async {
 }
 
 class CustomLintPluginClient {
-  CustomLintPluginClient(this._channel, {required this.watchMode}) {
+  CustomLintPluginClient(
+    this._channel, {
+    required this.watchMode,
+    required this.includeBuiltInLints,
+  }) {
     _analyzerPlugin = _ClientAnalyzerPlugin(
       _channel,
       this,
@@ -56,6 +60,7 @@ class CustomLintPluginClient {
   }
 
   final bool watchMode;
+  final bool includeBuiltInLints;
   late final StreamSubscription<void> _channelInputSub;
   late final Future<HotReloader?> _hotReloader;
   final CustomLintClientChannel _channel;
@@ -830,8 +835,8 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     await _runLintZoned(
       resolver,
       () => lintRule.startUp(resolver, lintContext),
-      name: name,
       reporter: reporter,
+      name: lintRule.code.name,
     );
   }
 
@@ -845,7 +850,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       resolver,
       () => lintRule.run(resolver, reporter, lintContext),
       reporter: reporter,
-      name: name,
+      name: lintRule.code.name,
     );
   }
 
@@ -866,7 +871,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       ),
     );
 
-    if (reporter == null) return;
+    if (reporter == null || !_client.includeBuiltInLints) return;
 
     const code = LintCode(
       name: 'custom_lint_get_lint_fail',
@@ -909,9 +914,9 @@ class _AnalysisErrorListenerDelegate implements AnalysisErrorListener {
 final _ignoreRegex = RegExp(r'//\s*ignore\s*:(.+)$', multiLine: true);
 
 bool _isIgnored(AnalysisError lint, CustomLintResolver resolver) {
-  final line = resolver.lineInfo.getLocation(lint.offset).lineNumber;
+  final line = resolver.lineInfo.getLocation(lint.offset).lineNumber - 1;
 
-  if (line == 0) return false;
+  if (line <= 0) return false;
 
   final previousLine = resolver.source.contents.data.substring(
     resolver.lineInfo.getOffsetOfLine(line - 1),

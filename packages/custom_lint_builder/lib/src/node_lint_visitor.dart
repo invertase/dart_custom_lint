@@ -1023,9 +1023,8 @@ class LinterVisitor implements AstVisitor<void> {
       timer?.start();
       try {
         subscription.zone.runUnary(subscription.listener, node);
-        subscription.listener(node);
       } catch (exception, stackTrace) {
-        Zone.current.handleUncaughtError(exception, stackTrace);
+        subscription.zone.handleUncaughtError(exception, stackTrace);
       }
       timer?.stop();
     }

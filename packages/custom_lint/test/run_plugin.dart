@@ -27,6 +27,7 @@ CustomLintRunner startRunnerForApp(
   return CustomLintServer.run(
     sendPort: channel.receivePort.sendPort,
     delegate: CommandCustomLintDelegate(),
+    includeBuiltInLints: false,
     watchMode: false,
     (customLintServer) {
       final runner = CustomLintRunner(customLintServer, directory, channel);

@@ -29,6 +29,7 @@ class PreferFinalProviders extends DartLintRule {
   /// Emits lints for a given file.
   ///
   /// [run] will only be invoked with files respecting [filesToAnalyze]
+  @override
   void run(
     CustomLintResolver resolver,
     ErrorReporter reporter,

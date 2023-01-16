@@ -72,7 +72,6 @@ abstract class DartLintRule extends LintRule {
 
     context.addPostRunCallback(() {
       final linterVisitor = LinterVisitor(context.registry.nodeLintRegistry);
-
       unit.unit.accept(linterVisitor);
     });
   }
