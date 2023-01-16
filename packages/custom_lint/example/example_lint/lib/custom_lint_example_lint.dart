@@ -1,21 +1,10 @@
-import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/source/source_range.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-bool _isProvider(DartType type) {
-  final element = type.element;
-  if (element is! ClassElement) return false;
-  final source = element.librarySource.uri;
-
-  final isProviderBase = source.scheme == 'package' &&
-      source.pathSegments.first == 'riverpod' &&
-      element.name == 'ProviderBase';
-
-  return isProviderBase || element.allSupertypes.any(_isProvider);
-}
+const _providerBaseChecker =
+    TypeChecker.fromName('ProviderBase', packageName: 'riverpod');
 
 PluginBase createPlugin() => _RiverpodLint();
 
@@ -47,19 +36,21 @@ class PreferFinalProviders extends DartLintRule {
   ) {
     context.registry.addVariableDeclaration((node) {
       final element = node.declaredElement;
-      if (element == null || element.isFinal || !_isProvider(element.type)) {
+      if (element == null ||
+          element.isFinal ||
+          !_providerBaseChecker.isAssignableFromType(element.type)) {
         return;
       }
 
-      reporter.reportErrorForElement(PreferFinalProviders._code, element);
+      reporter.reportErrorForElement(code, element);
     });
   }
 
   @override
-  List<Fix> getFixes() => [_MakrProviderFinalFix()];
+  List<Fix> getFixes() => [_MakeProviderFinalFix()];
 }
 
-class _MakrProviderFinalFix extends DartFix {
+class _MakeProviderFinalFix extends DartFix {
   @override
   void run(
     CustomLintResolver resolver,
@@ -68,10 +59,28 @@ class _MakrProviderFinalFix extends DartFix {
     AnalysisError analysisError,
     List<AnalysisError> others,
   ) {
-    final changeBuilder = reporter.createChangeBuilder(
-      priority: 1,
-      message: 'Make provider final',
-    );
+    context.registry.addVariableDeclarationList((node) {
+      if (!analysisError.sourceRange.intersects(node.sourceRange)) return;
+
+      final changeBuilder = reporter.createChangeBuilder(
+        priority: 1,
+        message: 'Make provider final',
+      );
+      changeBuilder.addDartFileEdit((builder) {
+        final nodeKeyword = node.keyword;
+        final nodeType = node.type;
+        if (nodeKeyword != null) {
+          // var x = ... => final x = ...
+          builder.addSimpleReplacement(
+            SourceRange(nodeKeyword.offset, nodeKeyword.length),
+            'final',
+          );
+        } else if (nodeType != null) {
+          // Type x = ... => final Type x = ...
+          builder.addSimpleInsertion(nodeType.offset, 'final ');
+        }
+      });
+    });
   }
 }
 
@@ -84,12 +93,14 @@ class _ConvertToStreamProvider extends DartAssist {
     SourceRange target,
   ) {
     context.registry.addVariableDeclaration((node) {
-      if (!target.intersects(SourceRange(node.offset, node.length))) {
-        return;
-      }
+      // Check that the visited node is under the cursor
+      if (!target.intersects(node.sourceRange)) return;
 
+      // verify that the visited node is a provider, to only show the assist on providers
       final element = node.declaredElement;
-      if (element == null || element.isFinal || !_isProvider(element.type)) {
+      if (element == null ||
+          element.isFinal ||
+          !_providerBaseChecker.isAssignableFromType(element.type)) {
         return;
       }
 
@@ -97,6 +108,9 @@ class _ConvertToStreamProvider extends DartAssist {
         priority: 1,
         message: 'Convert to StreamProvider',
       );
+      changeBuilder.addDartFileEdit((builder) {
+        // TODO implement change to refactor the provider
+      });
     });
   }
 }

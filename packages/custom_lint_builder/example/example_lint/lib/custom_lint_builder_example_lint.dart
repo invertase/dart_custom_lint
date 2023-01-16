@@ -1,7 +1,6 @@
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/source/source_range.dart';
-import 'package:analyzer_plugin/utilities/range_factory.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 const _providerBaseChecker =
@@ -109,7 +108,9 @@ class _ConvertToStreamProvider extends DartAssist {
         priority: 1,
         message: 'Convert to StreamProvider',
       );
-      // TODO implement change
+      changeBuilder.addDartFileEdit((builder) {
+        // TODO implement change to refactor the provider
+      });
     });
   }
 }

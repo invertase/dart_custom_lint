@@ -73,7 +73,6 @@ class CustomLintPluginClient {
             _analyzerPlugin.reAnalyze();
             break;
           default:
-            print('Skipped hot-reload because of status: ${value.result}');
         }
       },
     );

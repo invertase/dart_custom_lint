@@ -2473,17 +2473,17 @@ class NodeLintRegistry {
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
-  /// Get the timer associated with the given [linter].
-  Stopwatch? _getTimer(String name) {
+  /// Get the timer associated with the given [key].
+  Stopwatch? _getTimer(String key) {
     if (_enableTiming) {
-      return _lintRegistry.getTimer(name);
+      return _lintRegistry.getTimer(key);
     } else {
       return null;
     }
   }
 }
 
-/// A single subscription for a node type, by the specified [linter].
+/// A single subscription for a node type, by the specified "key"
 class _Subscription<T> {
   _Subscription(this.listener, this.timer, this.zone);
 

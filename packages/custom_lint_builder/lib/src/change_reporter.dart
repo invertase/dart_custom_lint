@@ -49,7 +49,7 @@ class ChangeReporterImpl implements ChangeReporter {
 
 abstract class ChangeBuilder {
   /// Use the [buildFileEdit] function to create a collection of edits to the
-  /// file with the given [path]. The edits will be added to the source change
+  /// currently analyzed file. The edits will be added to the source change
   /// that is being built.
   ///
   /// The builder passed to the [buildFileEdit] function has additional support
@@ -60,7 +60,7 @@ abstract class ChangeBuilder {
   });
 
   /// Use the [buildFileEdit] function to create a collection of edits to the
-  /// file with the given [path]. The edits will be added to the source change
+  /// currently analyzed file. The edits will be added to the source change
   /// that is being built.
   ///
   /// The builder passed to the [buildFileEdit] function has no special support
@@ -70,7 +70,7 @@ abstract class ChangeBuilder {
   );
 
   /// Use the [buildFileEdit] function to create a collection of edits to the
-  /// file with the given [path]. The edits will be added to the source change
+  /// currently analyzed file. The edits will be added to the source change
   /// that is being built.
   ///
   /// The builder passed to the [buildFileEdit] function has additional support
