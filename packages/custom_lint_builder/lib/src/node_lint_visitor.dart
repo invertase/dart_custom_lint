@@ -978,12 +978,6 @@ class LinterVisitor implements AstVisitor<void> {
   }
 
   @override
-  void visitVariablePattern(VariablePattern node) {
-    _runSubscriptions(node, _registry._forVariablePattern);
-    node.visitChildren(this);
-  }
-
-  @override
   void visitWhenClause(WhenClause node) {
     _runSubscriptions(node, _registry._forWhenClause);
     node.visitChildren(this);
@@ -1004,6 +998,18 @@ class LinterVisitor implements AstVisitor<void> {
   @override
   void visitYieldStatement(YieldStatement node) {
     _runSubscriptions(node, _registry._forYieldStatement);
+    node.visitChildren(this);
+  }
+
+  @override
+  void visitAssignedVariablePattern(AssignedVariablePattern node) {
+    _runSubscriptions(node, _registry._forAssignedVariablePattern);
+    node.visitChildren(this);
+  }
+
+  @override
+  void visitDeclaredVariablePattern(DeclaredVariablePattern node) {
+    _runSubscriptions(node, _registry._forDeclaredVariablePattern);
     node.visitChildren(this);
   }
 
@@ -1224,11 +1230,14 @@ class NodeLintRegistry {
       _forVariableDeclarationList = [];
   final List<_Subscription<VariableDeclarationStatement>>
       _forVariableDeclarationStatement = [];
-  final List<_Subscription<VariablePattern>> _forVariablePattern = [];
   final List<_Subscription<WhenClause>> _forWhenClause = [];
   final List<_Subscription<WhileStatement>> _forWhileStatement = [];
   final List<_Subscription<WithClause>> _forWithClause = [];
   final List<_Subscription<YieldStatement>> _forYieldStatement = [];
+  final List<_Subscription<AssignedVariablePattern>>
+      _forAssignedVariablePattern = [];
+  final List<_Subscription<DeclaredVariablePattern>>
+      _forDeclaredVariablePattern = [];
 
   void addAdjacentStrings(
     String key,
@@ -2435,14 +2444,6 @@ class NodeLintRegistry {
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
-  void addVariablePattern(
-    String key,
-    void Function(VariablePattern node) listener,
-  ) {
-    _forVariablePattern
-        .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
   void addWhenClause(
     String key,
     void Function(WhenClause node) listener,
@@ -2470,6 +2471,22 @@ class NodeLintRegistry {
     void Function(YieldStatement node) listener,
   ) {
     _forYieldStatement
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  void addAssignedVariablePattern(
+    String key,
+    void Function(AssignedVariablePattern node) listener,
+  ) {
+    _forAssignedVariablePattern
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  void addDeclaredVariablePattern(
+    String key,
+    void Function(DeclaredVariablePattern node) listener,
+  ) {
+    _forDeclaredVariablePattern
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
@@ -3582,13 +3599,6 @@ class LintRuleNodeRegistry {
     void Function(VariableDeclarationStatement node) listener,
   ) {
     nodeLintRegistry.addVariableDeclarationStatement(name, listener);
-  }
-
-  @preferInline
-  void addVariablePattern(
-    void Function(VariablePattern node) listener,
-  ) {
-    nodeLintRegistry.addVariablePattern(name, listener);
   }
 
   @preferInline
