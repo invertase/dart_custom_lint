@@ -7,15 +7,19 @@ import 'create_project.dart';
 import 'equals_ignoring_ansi.dart';
 import 'mock_fs.dart';
 
-final oyPluginSource = createPluginSource(
-  code: 'oy',
-  message: 'Oy',
-);
+final oyPluginSource = createPluginSource([
+  TestLintRule(
+    code: 'oy',
+    message: 'Oy',
+  )
+]);
 
-final helloWordPluginSource = createPluginSource(
-  code: 'hello_world',
-  message: 'Hello world',
-);
+final helloWordPluginSource = createPluginSource([
+  TestLintRule(
+    code: 'hello_world',
+    message: 'Hello world',
+  )
+]);
 
 void main() {
   test('exits with 0 when no lint and no error are found', () async {
@@ -166,10 +170,11 @@ at:
   test('Shows prints and exceptions', () async {
     final plugin = createPlugin(
       name: 'test_lint',
-      main: createPluginSource(
-        code: 'hello_world',
-        message: 'Hello world',
-        onVariable: r'''
+      main: createPluginSource([
+        TestLintRule(
+          code: 'hello_world',
+          message: 'Hello world',
+          onVariable: r'''
     if (node.name.lexeme == 'fail') {
       print('');
       print(' ');
@@ -177,7 +182,8 @@ at:
        throw StateError('fail');
     }
 ''',
-      ),
+        ),
+      ]),
     );
 
     final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
@@ -222,7 +228,7 @@ at:
             contains('''
 Plugin hello_world threw while analyzing ${app.path}/lib/another.dart:
 Bad state: fail
-#0      _LintRule.run.<anonymous closure> (package:test_lint/test_lint.dart:27:8)
+#0      hello_world.run.<anonymous closure> (package:test_lint/test_lint.dart:25:8)
 '''),
           ),
         );

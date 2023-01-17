@@ -21,13 +21,22 @@ class _Plugin extends PluginBase {
 }
 ''';
 
-String createPluginSource({
-  required String code,
-  required String message,
-  String onRun = '',
-  String onVariable = '',
-}) =>
-    '''
+class TestLintRule {
+  TestLintRule({
+    required this.code,
+    required this.message,
+    this.onRun = '',
+    this.onVariable = '',
+  });
+
+  final String code;
+  final String message;
+  final String onRun;
+  final String onVariable;
+}
+
+String createPluginSource(List<TestLintRule> rules) {
+  final buffer = StringBuffer('''
 import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
@@ -37,25 +46,37 @@ PluginBase createPlugin() => _Plugin();
 
 class _Plugin extends PluginBase {
   @override
-  List<LintRule> getLintRules(CustomLintConfigs configs) => [_LintRule()];
-}
+  List<LintRule> getLintRules(CustomLintConfigs configs) => [
+''');
 
-class _LintRule extends DartLintRule {
-  _LintRule()
+  buffer.writeAll(rules.map((e) => '${e.code}()'), ',');
+
+  buffer.write(']; }');
+
+  for (final rule in rules) {
+    buffer.write(
+      '''
+class ${rule.code} extends DartLintRule {
+  ${rule.code}()
     : super(
-        code: LintCode(name: '$code', problemMessage: '$message'),
+        code: LintCode(name: '${rule.code}', problemMessage: '${rule.message}'),
       );
 
   @override
   void run(CustomLintResolver resolver, ErrorReporter reporter, LintContext context) {
-    $onRun
+    ${rule.onRun}
     context.registry.addFunctionDeclaration((node) {
-      $onVariable
+      ${rule.onVariable}
       reporter.reportErrorForToken(code, node.name);
     });
   }
 }
-''';
+''',
+    );
+  }
+
+  return buffer.toString();
+}
 
 Directory createPlugin({
   required String name,
