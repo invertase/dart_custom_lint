@@ -195,7 +195,6 @@ at:
       (out, err) async {
         await cli.entrypoint();
 
-        // out.listen(print);
         expect(exitCode, 1);
         expect(
           out.join(),
