@@ -45,8 +45,7 @@ No issues found!
     );
   });
 
-  test('exits with 1 if only an error but no lint are found', retry: 3,
-      () async {
+  test('exits with 1 if only an error but no lint are found', () async {
     final plugin = createPlugin(name: 'test_lint', main: 'invalid;');
 
     final app = createLintUsage(
@@ -63,22 +62,19 @@ No issues found!
         expect(
           err.join(),
           completion(
-            matchIgnoringAnsi(contains, '''
+            allOf([
+              matchIgnoringAnsi(contains, '''
 /lib/test_lint.dart:1:1: Error: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
 Try adding the name of the type of the variable or the keyword 'var'.
 invalid;
 ^^^^^^^
+'''),
+              matchIgnoringAnsi(contains, '''
 lib/custom_lint_client.dart:14:29: Error: Undefined name 'createPlugin'.
     {'test_lint': test_lint.createPlugin,
                             ^^^^^^^^^^^^
-
-
-Failed to start plugins
-The request analysis.setContextRoots failed with the following error:
-RequestErrorCode.PLUGIN_ERROR
-Bad state: Failed to start the plugins.
-at:
 '''),
+            ]),
           ),
         );
         expect(out, emitsDone);
