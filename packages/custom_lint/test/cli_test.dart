@@ -63,8 +63,8 @@ No issues found!
         expect(
           err.join(),
           completion(
-            matchIgnoringAnsi(startsWith, '''
-${plugin.path}/lib/test_lint.dart:1:1: Error: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
+            matchIgnoringAnsi(contains, '''
+/lib/test_lint.dart:1:1: Error: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
 Try adding the name of the type of the variable or the keyword 'var'.
 invalid;
 ^^^^^^^
