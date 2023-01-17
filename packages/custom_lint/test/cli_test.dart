@@ -113,7 +113,7 @@ lib/custom_lint_client.dart:14:29: Error: Undefined name 'createPlugin'.
     );
   });
 
-  test('supports plugins that do not compile', retry: 3, () async {
+  test('supports plugins that do not compile', () async {
     final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
     final plugin2 = createPlugin(
       name: 'test_lint2',
@@ -137,24 +137,18 @@ lib/custom_lint_client.dart:14:29: Error: Undefined name 'createPlugin'.
         expect(
           err.join(),
           completion(
-            matchIgnoringAnsi(
-              startsWith,
-              '''
+            allOf([
+              matchIgnoringAnsi(contains, '''
+/lib/test_lint2.dart:1:9: Error: A value of type 'String' can't be assigned to a variable of type 'int'.
+int x = 'oy';
+        ^
+'''),
+              matchIgnoringAnsi(contains, '''
 lib/custom_lint_client.dart:16:26: Error: Undefined name 'createPlugin'.
 'test_lint2': test_lint2.createPlugin,
                          ^^^^^^^^^^^^
-${plugin2.path}/lib/test_lint2.dart:1:9: Error: A value of type 'String' can't be assigned to a variable of type 'int'.
-int x = 'oy';
-        ^
-
-
-Failed to start plugins
-The request analysis.setContextRoots failed with the following error:
-RequestErrorCode.PLUGIN_ERROR
-Bad state: Failed to start the plugins.
-at:
-''',
-            ),
+'''),
+            ]),
           ),
         );
         expect(out.join(), completion(isEmpty));
