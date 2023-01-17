@@ -13,13 +13,14 @@ Future<List<AnalysisErrorsParams>> runServerInCliModeForApp(
   Directory directory,
   // to ignoreErrors as we cannot explictly handle errors
 ) async {
-  final runner = startRunnerForApp(directory);
+  final runner = startRunnerForApp(directory, includeBuiltInLints: false);
   return runner.getLints(reload: false);
 }
 
 CustomLintRunner startRunnerForApp(
   Directory directory, {
   bool ignoreErrors = false,
+  bool includeBuiltInLints = true,
 }) {
   final channel = ServerIsolateChannel();
 
@@ -27,7 +28,7 @@ CustomLintRunner startRunnerForApp(
   return CustomLintServer.run(
     sendPort: channel.receivePort.sendPort,
     delegate: CommandCustomLintDelegate(),
-    includeBuiltInLints: false,
+    includeBuiltInLints: includeBuiltInLints,
     watchMode: false,
     (customLintServer) {
       final runner = CustomLintRunner(customLintServer, directory, channel);

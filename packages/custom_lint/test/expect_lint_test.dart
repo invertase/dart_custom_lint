@@ -9,40 +9,18 @@ import 'package:test/test.dart';
 import 'create_project.dart';
 import 'run_plugin.dart';
 
-const source = '''
-import 'package:analyzer/dart/element/element.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/dart/analysis/results.dart';
-
-PluginBase createPlugin() => _HelloWorldLint();
-
-class _HelloWorldLint extends PluginBase {
-  @override
-  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-    final library = resolvedUnitResult.libraryElement;
-    for (final variable in library.topLevelElements) {
-      if (variable.name == 'ignore') continue;
-
-      yield Lint(
-        code: 'hello_world',
-        message: 'Hello world',
-        location: resolvedUnitResult.lintLocationFromOffset(
-          variable.nameOffset,
-          length: variable.nameLength,
-        ),
-      );
-      yield Lint(
-        code: 'foo',
-        message: 'Foo',
-        location: resolvedUnitResult.lintLocationFromOffset(
-          variable.nameOffset,
-          length: variable.nameLength,
-        ),
-      );
-    }
-  }
-}
-''';
+final source = createPluginSource([
+  TestLintRule(
+    code: 'hello_world',
+    message: 'Hello world',
+    onVariable: 'if (node.name.lexeme == "ignore") return;',
+  ),
+  TestLintRule(
+    code: 'foo',
+    message: 'Foo',
+    onVariable: 'if (node.name.lexeme == "ignore") return;',
+  ),
+]);
 
 void main() {
   test('supports `// expect_lint: code`', () async {

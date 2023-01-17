@@ -660,8 +660,13 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
         .where((e) => !fileIgnoredCodes.contains(e.code.name))
         .toList();
 
-    // Even if the list of lints is empty, we keep going anyway. Because
+    // Even if the list of lints is empty, we keep going for dart files. Because
     // the analyzed file might have some expect-lints comments
+    if (activeLintRules.isEmpty && !path.endsWith('.dart')) {
+      // The file is guaranteed to have no analysis error. Therefore we
+      // abort early to avoid sending a pointless notification
+      return;
+    }
 
     final lints = <AnalysisError>[];
     final reporterBeforeExpectLint = ErrorReporter(
