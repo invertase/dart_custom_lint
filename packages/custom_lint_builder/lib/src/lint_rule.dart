@@ -6,11 +6,11 @@ import 'package:meta/meta.dart';
 import '../custom_lint_builder.dart';
 import 'node_lint_visitor.dart';
 
-///
-class LintContext {
-  /// Create a [LintContext].
+/// An object for state shared between multiple [LintRule]/[Assist]/[Fix]...
+class CustomLintContext {
+  /// Create a [CustomLintContext].
   @internal
-  LintContext(this.registry, this._addPostRunCallback, this.sharedState);
+  CustomLintContext(this.registry, this._addPostRunCallback, this.sharedState);
 
   /// An object used to listen to the analysis of a Dart file.
   ///
@@ -18,14 +18,13 @@ class LintContext {
   /// The listeners will be executed after the `run` function has ended.
   final LintRuleNodeRegistry registry;
 
-  /// An object shared with all
+  /// An object shared with all lint rules/fixes/assits running.
   final Map<Object, Object?> sharedState;
+
   final void Function(void Function() cb) _addPostRunCallback;
 
   /// Registers a function that will be executed after all [LintRule.run]
   /// (or [Assist.run]/[Fix.run] if associated to an assist/fix).
-  ///
-  ///
   void addPostRunCallback(void Function() cb) {
     _addPostRunCallback(Zone.current.bindCallback(cb));
   }
@@ -35,6 +34,11 @@ class LintContext {
 @immutable
 abstract class LintRule {
   /// {@template custom_lint_builder.lint_rule}
+  /// A base class for plugins to define emit warnings/errors/infos.
+  ///
+  /// For creating assists inside Dart files, see [DartLintRule].
+  /// Suclassing [LintRule] can be helpful if you wish to implement assists for
+  /// non-Dart files (yaml, json, ...)
   ///
   /// For usage information, see https://github.com/invertase/dart_custom_lint/blob/main/docs/lints.md
   /// {@endtemplate}
@@ -53,6 +57,10 @@ abstract class LintRule {
   /// This can include Dart files, Yaml files, ...
   List<String> get filesToAnalyze;
 
+  /// Checks whether this lint rule is enabled in a configuration file.
+  ///
+  /// If a lint is neither enabled nor disabled by a configuration file,
+  /// [enabledByDefault] will be checked.
   bool isEnabled(CustomLintConfigs configs) {
     return configs.rules[code.name]?.enabled ??
         configs.enableAllLintRules ??
@@ -64,7 +72,7 @@ abstract class LintRule {
   /// [run] will only be invoked with files respecting [filesToAnalyze]
   Future<void> startUp(
     CustomLintResolver resolver,
-    LintContext context,
+    CustomLintContext context,
   ) async {}
 
   /// Emits lints for a given file.
@@ -73,14 +81,21 @@ abstract class LintRule {
   void run(
     CustomLintResolver resolver,
     ErrorReporter reporter,
-    LintContext context,
+    CustomLintContext context,
   );
 
+  /// Obtains the list of [Fix] associated with this [LintRule].
   List<Fix> getFixes() => const [];
 }
 
+/// A base class for emitting warnings/errors/infos inside Dart files.
+///
+/// For usage information, see https://github.com/invertase/dart_custom_lint/blob/main/docs/lints.md#Defining-dart-lints
 @immutable
 abstract class DartLintRule extends LintRule {
+  /// A base class for emitting warnings/errors/infos inside Dart files.
+  ///
+  /// For usage information, see https://github.com/invertase/dart_custom_lint/blob/main/docs/lints.md#Defining-dart-lints
   const DartLintRule({required super.code});
 
   static final _stateKey = Object();
@@ -91,7 +106,7 @@ abstract class DartLintRule extends LintRule {
   @override
   Future<void> startUp(
     CustomLintResolver resolver,
-    LintContext context,
+    CustomLintContext context,
   ) async {
     // Relying on shared state to execute all linters in a single AstVisitor
     if (context.sharedState.containsKey(_stateKey)) return;

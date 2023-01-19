@@ -23,7 +23,7 @@ class TestLintRule extends LintRule {
   void run(
     CustomLintResolver resolver,
     ErrorReporter reporter,
-    LintContext context,
+    CustomLintContext context,
   ) {}
 }
 

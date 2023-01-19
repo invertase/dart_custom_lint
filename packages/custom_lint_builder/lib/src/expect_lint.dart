@@ -8,11 +8,13 @@ import 'resolver.dart';
 
 final _expectLintRegex = RegExp(r'//\s*expect_lint\s*:(.+)$', multiLine: true);
 
+/// A class implementing the logic for `// expect_lint: code` comments
 @internal
 class ExpectLint {
+  /// A class implementing the logic for `// expect_lint: code` comments
   const ExpectLint(this.analysisErrors);
 
-  static const code = LintCode(
+  static const _code = LintCode(
     name: 'unfulfilled_expect_lint',
     problemMessage:
         'Expected to find the lint {0} on next line but none found.',
@@ -21,8 +23,10 @@ class ExpectLint {
     errorSeverity: ErrorSeverity.ERROR,
   );
 
+  /// The list of lints emitted in the file.
   final List<AnalysisError> analysisErrors;
 
+  /// Emits expect_lints
   void run(
     CustomLintResolver resolver,
     ErrorReporter reporter,
@@ -68,7 +72,7 @@ class ExpectLint {
     // Some expect_lint clauses where not respected
     for (final unfulfilledExpectedLint in unfulfilledExpectedLints) {
       reporter.reportErrorForOffset(
-        code,
+        _code,
         unfulfilledExpectedLint.offset,
         unfulfilledExpectedLint.code.length,
         [unfulfilledExpectedLint.code],

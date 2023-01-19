@@ -1,4 +1,3 @@
-// ignore_for_file: type=lint
 // Forked from package:analyzer/src/dart/error/lint_codes.dart
 
 // Copyright (c) 2014, the Dart project authors. Please see the AUTHORS file
@@ -6,20 +5,20 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:analyzer/error/error.dart';
+import 'package:meta/meta.dart';
 
-/// Defines style and best practice recommendations.
-///
-/// Unlike [HintCode]s, which are akin to traditional static warnings from a
-/// compiler, lint recommendations focus on matters of style and practices that
-/// might aggregated to define a project's style guide.
+import '../custom_lint_builder.dart';
+
+/// A class representing an [ErrorCode] for [LintRule]s.
+@immutable
 class LintCode extends ErrorCode {
+  /// A class representing an [ErrorCode] for [LintRule]s.
   const LintCode({
     required String name,
     required String problemMessage,
     super.correctionMessage,
     String? uniqueName,
     this.url,
-    this.description,
     this.errorSeverity = ErrorSeverity.INFO,
   }) : super(
           problemMessage: problemMessage,
@@ -33,8 +32,6 @@ class LintCode extends ErrorCode {
   @override
   final String? url;
 
-  final String? description;
-
   @override
   final ErrorSeverity errorSeverity;
 
@@ -42,6 +39,7 @@ class LintCode extends ErrorCode {
   int get hashCode => uniqueName.hashCode;
 
   @override
-  bool operator ==(Object other) =>
-      other is LintCode && uniqueName == other.uniqueName;
+  bool operator ==(Object other) {
+    return other is LintCode && uniqueName == other.uniqueName;
+  }
 }

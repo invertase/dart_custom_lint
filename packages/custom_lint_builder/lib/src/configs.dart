@@ -4,14 +4,19 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
+import '../custom_lint_builder.dart';
+
+/// Configurations representing the custom_lint metadata in the project's `analysis_options.yaml`.
 @immutable
 class CustomLintConfigs {
+  /// Configurations representing the custom_lint metadata in the project's `analysis_options.yaml`.
   @internal
   const CustomLintConfigs({
     required this.enableAllLintRules,
     required this.rules,
   });
 
+  /// Decode a [CustomLintConfigs] from a file.
   @internal
   factory CustomLintConfigs.parse(File? analysisOptionsFile) {
     if (analysisOptionsFile == null || !analysisOptionsFile.exists) {
@@ -84,13 +89,27 @@ class CustomLintConfigs {
     );
   }
 
+  /// An empty custom_lint configuration
   @internal
   static const empty = CustomLintConfigs(
     enableAllLintRules: null,
     rules: {},
   );
 
+  /// A field representing whether to enable/disable lint rules that are not
+  /// listed in:
+  ///
+  /// ```yaml
+  /// custom_lint:
+  ///   rules:
+  ///   ...
+  /// ```
+  ///
+  /// If `null`, the default behavior will be deferred to [LintRule.enabledByDefault].
   final bool? enableAllLintRules;
+
+  /// A list of lints that are explicitly enabled/disabled in the config file,
+  /// along with extra per-lint configuration.
   final Map<String, LintOptions> rules;
 
   @override
@@ -106,16 +125,22 @@ class CustomLintConfigs {
       );
 }
 
+/// Option information for a specific [LintRule].
 @immutable
 class LintOptions {
+  /// Creates a [LintOptions] from YAML.
   @internal
   const LintOptions.fromYaml(Map<String, Object?> yaml, {required this.enabled})
       : json = yaml;
 
+  /// Options with no [json]
   @internal
   const LintOptions.empty({required this.enabled}) : json = const {};
 
+  /// Whether the configuration enables/disables the lint rule.
   final bool enabled;
+
+  /// Extra configurations for a [LintRule].
   final Map<String, Object?> json;
 
   @override

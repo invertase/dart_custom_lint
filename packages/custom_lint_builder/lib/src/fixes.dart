@@ -6,6 +6,15 @@ import 'lint_rule.dart';
 import 'node_lint_visitor.dart';
 import 'resolver.dart';
 
+/// {@template custom_lint_builder.lint_rule}
+/// A base class for defining quick-fixes for a [LintRule]
+///
+/// For creating assists inside Dart files, see [DartFix].
+/// Suclassing [Fix] can be helpful if you wish to implement assists for
+/// non-Dart files (yaml, json, ...)
+///
+/// For usage information, see https://github.com/invertase/dart_custom_lint/blob/main/docs/fixes.md
+/// {@endtemplate}
 @immutable
 abstract class Fix {
   /// A list of glob patterns matching the files that [run] cares about.
@@ -18,7 +27,7 @@ abstract class Fix {
   /// [run] will only be invoked with files respecting [filesToAnalyze]
   Future<void> startUp(
     CustomLintResolver resolver,
-    LintContext context,
+    CustomLintContext context,
   ) async {}
 
   /// Emits lints for a given file.
@@ -32,12 +41,15 @@ abstract class Fix {
   void run(
     CustomLintResolver resolver,
     ChangeReporter reporter,
-    LintContext context,
+    CustomLintContext context,
     AnalysisError analysisError,
     List<AnalysisError> others,
   );
 }
 
+/// A base class for defining quick-fixes inside Dart files.
+///
+/// For usage information, see https://github.com/invertase/dart_custom_lint/blob/main/docs/fixes.md#Defining-dart-fix
 @immutable
 abstract class DartFix extends Fix {
   static final _stateKey = Object();
@@ -48,7 +60,7 @@ abstract class DartFix extends Fix {
   @override
   Future<void> startUp(
     CustomLintResolver resolver,
-    LintContext context,
+    CustomLintContext context,
   ) async {
     // Relying on shared state to execute all linters in a single AstVisitor
     if (context.sharedState.containsKey(_stateKey)) return;

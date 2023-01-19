@@ -31,7 +31,7 @@ abstract class Assist {
   /// [run] will only be invoked with files respecting [filesToAnalyze]
   Future<void> startUp(
     CustomLintResolver resolver,
-    LintContext context,
+    CustomLintContext context,
     SourceRange target,
   ) async {}
 
@@ -41,7 +41,7 @@ abstract class Assist {
   void run(
     CustomLintResolver resolver,
     ChangeReporter reporter,
-    LintContext context,
+    CustomLintContext context,
     SourceRange target,
   );
 }
@@ -59,7 +59,7 @@ abstract class DartAssist extends Assist {
   @override
   Future<void> startUp(
     CustomLintResolver resolver,
-    LintContext context,
+    CustomLintContext context,
     SourceRange target,
   ) async {
     // Relying on shared state to execute all linters in a single AstVisitor

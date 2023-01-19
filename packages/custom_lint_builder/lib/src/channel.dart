@@ -39,14 +39,18 @@ class StreamToSentPortAdapter {
     );
   }
 
+  /// The [SendPort] associated with the input [Stream].
   SendPort get sendPort => _outputReceivePort.sendPort;
+
   final _outputReceivePort = ReceivePort();
 }
 
-typedef PluginMain = PluginBase Function();
+/// The prototype of plugin's `createPlugin` entrypoint function.
+typedef CreatePluginMain = PluginBase Function();
 
+/// Starts a custom_lint client using web sockets.
 Future<void> runSocket(
-  Map<String, PluginMain> pluginMains, {
+  Map<String, CreatePluginMain> pluginMains, {
   required int port,
   required bool watchMode,
   required bool includeBuiltInLints,
@@ -88,22 +92,29 @@ Future<void> runSocket(
   );
 }
 
+/// An interface for clients to send messages to the custom_lint server.
 abstract class CustomLintClientChannel {
+  /// An interface for clients to send messages to the custom_lint server.
   CustomLintClientChannel(this.registeredPlugins);
 
   /// The [SendPort] that will be passed to analyzer_plugin
   SendPort get sendPort;
 
+  /// The list of plugins installed by custom_lint.
   final Map<String, PluginBase> registeredPlugins;
 
+  /// Messages from the custom_lint server
   Stream<CustomLintRequest> get input;
 
   void _sendJson(Map<String, Object?> json);
 
+  /// Sends a response to the custom_lint server, associated to a request
   void sendResponse(CustomLintResponse response) {
     _sendJson(CustomLintMessage.response(response).toJson());
   }
 
+  /// Sends a notification to the custom_lint server, which is not associated with
+  /// a request.
   void sendEvent(CustomLintEvent event) {
     _sendJson(CustomLintMessage.event(event).toJson());
   }

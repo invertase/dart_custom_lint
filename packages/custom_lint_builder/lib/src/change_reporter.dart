@@ -8,15 +8,24 @@ import 'package:meta/meta.dart';
 
 import 'resolver.dart';
 
+/// A class used for requesting a [ChangeBuilder].
 abstract class ChangeReporter {
+  /// Creates a [ChangeBuilder], which can then be used to modify files.
+  ///
+  /// [message] is the name that will show-up in the IDE when users request changes.
+  ///
+  /// [priority] defines how high/low in the list of proposed changes will this
+  /// change be.
   ChangeBuilder createChangeBuilder({
     required String message,
     required int priority,
   });
 }
 
+/// The implementation of [ChangeReporter]
 @internal
 class ChangeReporterImpl implements ChangeReporter {
+  /// The implementation of [ChangeReporter]
   ChangeReporterImpl(this._analysisSession, this._resolver);
 
   final CustomLintResolver _resolver;
@@ -39,6 +48,7 @@ class ChangeReporterImpl implements ChangeReporter {
     return changeBuilderImpl;
   }
 
+  /// Waits for all [ChangeBuilder] to fully compute the source changes.
   @internal
   Future<List<PrioritizedSourceChange>> waitForCompletion() async {
     return Future.wait(
@@ -47,6 +57,7 @@ class ChangeReporterImpl implements ChangeReporter {
   }
 }
 
+/// A class for modifying
 abstract class ChangeBuilder {
   /// Use the [buildFileEdit] function to create a collection of edits to the
   /// currently analyzed file. The edits will be added to the source change

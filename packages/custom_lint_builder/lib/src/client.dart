@@ -41,7 +41,9 @@ Future<bool> _isVmServiceEnabled() async {
   return serviceInfo.serverUri != null;
 }
 
+/// The custom_lint client
 class CustomLintPluginClient {
+  /// The custom_lint client
   CustomLintPluginClient(
     this._channel, {
     required this.watchMode,
@@ -59,7 +61,10 @@ class CustomLintPluginClient {
     _channelInputSub = _channel.input.listen(_handleCustomLintRequest);
   }
 
+  /// Whether the client should perform a hot-reload when the source of plugins changes.
   final bool watchMode;
+
+  /// Whether
   final bool includeBuiltInLints;
   late final StreamSubscription<void> _channelInputSub;
   late final Future<HotReloader?> _hotReloader;
@@ -155,6 +160,9 @@ class CustomLintPluginClient {
     }
   }
 
+  /// An event handler for uncaught errors.
+  ///
+  /// This method will be invoked for errors that are not associated with a lint/fix/assist.
   void handleError(Object error, StackTrace stackTrace) {
     _channel.sendEvent(
       CustomLintEvent.error(
@@ -165,6 +173,9 @@ class CustomLintPluginClient {
     );
   }
 
+  /// An event handler for invocations to [print] in the client.
+  ///
+  /// This method will be invoked for prints that are not associated with a lint/fix/assist.
   void handlePrint(String message) {
     _channel.sendEvent(CustomLintEvent.print(message, pluginName: null));
   }
@@ -250,8 +261,8 @@ class _CustomLintAnalysisConfigs {
 }
 
 @immutable
-class AnalysisErrorsKey {
-  const AnalysisErrorsKey({
+class _AnalysisErrorsKey {
+  const _AnalysisErrorsKey({
     required this.filePath,
     required this.analysisContext,
   });
@@ -261,7 +272,7 @@ class AnalysisErrorsKey {
 
   @override
   bool operator ==(Object other) =>
-      other is AnalysisErrorsKey &&
+      other is _AnalysisErrorsKey &&
       other.filePath == filePath &&
       other.analysisContext == analysisContext;
 
@@ -283,7 +294,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   var _customLintConfigsForAnalysisContexts =
       <AnalysisContext, _CustomLintAnalysisConfigs>{};
   final _analysisErrorsForAnalysisContexts =
-      <AnalysisErrorsKey, Set<AnalysisError>>{};
+      <_AnalysisErrorsKey, Set<AnalysisError>>{};
 
   @override
   List<String> get fileGlobsToAnalyze => ['*'];
@@ -372,7 +383,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
         _runAssistStartup(
           resolver,
           assist,
-          LintContext(
+          CustomLintContext(
             LintRuleNodeRegistry(registry, assist.runtimeType.toString()),
             postRunCallbacks.add,
             sharedState,
@@ -384,7 +395,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       _runAssistRun(
         resolver,
         assist,
-        LintContext(
+        CustomLintContext(
           LintRuleNodeRegistry(registry, assist.runtimeType.toString()),
           postRunCallbacks.add,
           sharedState,
@@ -402,7 +413,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   Future<void> _runAssistStartup(
     CustomLintResolver resolver,
     Assist assist,
-    LintContext context,
+    CustomLintContext context,
     SourceRange target,
   ) async {
     return _runLintZoned(
@@ -415,7 +426,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   void _runAssistRun(
     CustomLintResolver resolver,
     Assist assist,
-    LintContext context,
+    CustomLintContext context,
     ChangeReporter changeReporter,
     SourceRange target,
   ) {
@@ -439,7 +450,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     final contextCollection = await _contextCollection.first;
     final analysisContext = contextCollection.contextFor(parameters.file);
 
-    final key = AnalysisErrorsKey(
+    final key = _AnalysisErrorsKey(
       filePath: parameters.file,
       analysisContext: analysisContext,
     );
@@ -508,7 +519,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
         _runFixStartup(
           resolver,
           fix,
-          LintContext(
+          CustomLintContext(
             LintRuleNodeRegistry(registry, fix.runtimeType.toString()),
             postRunCallbacks.add,
             sharedState,
@@ -519,7 +530,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       _runFixRun(
         resolver,
         fix,
-        LintContext(
+        CustomLintContext(
           LintRuleNodeRegistry(registry, fix.runtimeType.toString()),
           postRunCallbacks.add,
           sharedState,
@@ -545,7 +556,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   Future<void> _runFixStartup(
     CustomLintResolver resolver,
     Fix fix,
-    LintContext context,
+    CustomLintContext context,
   ) async {
     return _runLintZoned(
       resolver,
@@ -557,7 +568,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   void _runFixRun(
     CustomLintResolver resolver,
     Fix fix,
-    LintContext context,
+    CustomLintContext context,
     ChangeReporter changeReporter,
     AnalysisError analysisError,
     List<AnalysisError> others,
@@ -581,7 +592,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
 
           /// The file was deleted. Let's release associated resources.
           final analysisContext = contextCollection.contextFor(event.path);
-          final key = AnalysisErrorsKey(
+          final key = _AnalysisErrorsKey(
             filePath: event.path,
             analysisContext: analysisContext,
           );
@@ -696,7 +707,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
             lintRule,
             resolver,
             reporterBeforeExpectLint,
-            LintContext(
+            CustomLintContext(
               LintRuleNodeRegistry(registry, lintRule.code.name),
               postRunCallbacks.add,
               sharedState,
@@ -708,7 +719,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
           lintRule,
           resolver,
           reporterBeforeExpectLint,
-          LintContext(
+          CustomLintContext(
             LintRuleNodeRegistry(registry, lintRule.code.name),
             postRunCallbacks.add,
             sharedState,
@@ -730,7 +741,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       ExpectLint(lints).run(resolver, analyzerPluginReporter);
 
       final key =
-          AnalysisErrorsKey(filePath: path, analysisContext: analysisContext);
+          _AnalysisErrorsKey(filePath: path, analysisContext: analysisContext);
       _analysisErrorsForAnalysisContexts[key] = {
         // Combining lints before/after applying expect_error
         // This is to enable fixes to access both
@@ -764,12 +775,12 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     }
   }
 
-  AnalyzerResolver? _createResolverForFile(File file) {
+  CustomLintResolverImpl? _createResolverForFile(File file) {
     if (!file.exists) return null;
     final source = file.createSource();
     final lineInfo = LineInfo.fromContent(source.contents.data);
 
-    return AnalyzerResolver(
+    return CustomLintResolverImpl(
       getResolvedUnitResult,
       lineInfo: lineInfo,
       source: source,
@@ -836,7 +847,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     LintRule lintRule,
     CustomLintResolver resolver,
     ErrorReporter reporter,
-    LintContext lintContext,
+    CustomLintContext lintContext,
   ) async {
     await _runLintZoned(
       resolver,
@@ -850,7 +861,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     LintRule lintRule,
     CustomLintResolver resolver,
     ErrorReporter reporter,
-    LintContext lintContext,
+    CustomLintContext lintContext,
   ) {
     _runLintZoned(
       resolver,

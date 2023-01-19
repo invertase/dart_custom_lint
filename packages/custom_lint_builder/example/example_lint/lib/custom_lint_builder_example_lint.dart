@@ -33,7 +33,7 @@ class PreferFinalProviders extends DartLintRule {
   void run(
     CustomLintResolver resolver,
     ErrorReporter reporter,
-    LintContext context,
+    CustomLintContext context,
   ) {
     context.registry.addVariableDeclaration((node) {
       final element = node.declaredElement;
@@ -56,7 +56,7 @@ class _MakeProviderFinalFix extends DartFix {
   void run(
     CustomLintResolver resolver,
     ChangeReporter reporter,
-    LintContext context,
+    CustomLintContext context,
     AnalysisError analysisError,
     List<AnalysisError> others,
   ) {
@@ -90,7 +90,7 @@ class _ConvertToStreamProvider extends DartAssist {
   void run(
     CustomLintResolver resolver,
     ChangeReporter reporter,
-    LintContext context,
+    CustomLintContext context,
     SourceRange target,
   ) {
     context.registry.addVariableDeclaration((node) {

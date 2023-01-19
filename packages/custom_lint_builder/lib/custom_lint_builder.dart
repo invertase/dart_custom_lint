@@ -7,6 +7,6 @@ export 'src/lint_rule.dart';
 export 'src/node_lint_visitor.dart'
     hide LintRegistry, LinterVisitor, NodeLintRegistry;
 export 'src/plugin_base.dart';
-export 'src/resolver.dart' hide AnalyzerResolver;
+export 'src/resolver.dart' hide CustomLintResolverImpl;
 export 'src/source_range_extensions.dart';
 export 'src/type_checker.dart';

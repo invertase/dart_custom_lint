@@ -26,9 +26,11 @@ abstract class CustomLintResolver {
   Future<ResolvedUnitResult> getResolvedUnitResult();
 }
 
+/// The implementation of [CustomLintResolver]
 @internal
-class AnalyzerResolver extends CustomLintResolver {
-  AnalyzerResolver(
+class CustomLintResolverImpl extends CustomLintResolver {
+  /// The implementation of [CustomLintResolver]
+  CustomLintResolverImpl(
     this._getResolvedUnitResult, {
     required this.lineInfo,
     required this.source,
