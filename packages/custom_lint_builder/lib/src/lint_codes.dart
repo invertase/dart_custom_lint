@@ -13,28 +13,24 @@ import 'package:analyzer/error/error.dart';
 /// compiler, lint recommendations focus on matters of style and practices that
 /// might aggregated to define a project's style guide.
 class LintCode extends ErrorCode {
-  final String? _url;
-
   const LintCode({
     required String name,
     required String problemMessage,
     super.correctionMessage,
     String? uniqueName,
-    String? url,
+    this.url,
     this.errorSeverity = ErrorSeverity.INFO,
-  })  : _url = url,
-        super(
+  }) : super(
           problemMessage: problemMessage,
           name: name,
-          uniqueName: uniqueName ?? 'LintCode.$name',
+          uniqueName: uniqueName ?? name,
         );
 
   @override
   ErrorType get type => ErrorType.LINT;
 
   @override
-  String get url =>
-      _url ?? 'https://dart-lang.github.io/linter/lints/$name.html';
+  final String? url;
 
   @override
   final ErrorSeverity errorSeverity;
