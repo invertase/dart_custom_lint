@@ -2,10 +2,8 @@ import 'dart:async';
 
 import 'package:analyzer/error/listener.dart';
 import 'package:meta/meta.dart';
-import 'fixes.dart';
-import 'lint_codes.dart';
+import '../custom_lint_builder.dart';
 import 'node_lint_visitor.dart';
-import 'resolver.dart';
 
 class LintContext {
   LintContext(this.registry, this._addPostRunCallback, this.sharedState);
@@ -25,10 +23,19 @@ abstract class LintRule {
 
   final LintCode code;
 
+  /// Whether the lint rule is on or off by default in an empty analysis_options.yaml
+  bool get enabledByDefault => true;
+
   /// A list of glob patterns matching the files that [run] cares about.
   ///
   /// This can include Dart files, Yaml files, ...
   List<String> get filesToAnalyze;
+
+  bool isEnabled(CustomLintConfigs configs) {
+    return configs.rules[code.name]?.enabled ??
+        configs.enableAllLintRules ??
+        enabledByDefault;
+  }
 
   /// Emits lints for a given file.
   ///

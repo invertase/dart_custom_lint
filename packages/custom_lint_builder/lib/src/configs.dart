@@ -1,40 +1,34 @@
-import 'dart:collection';
-
 import 'package:analyzer/file_system/file_system.dart';
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
-import 'lint_rule.dart';
-
-@internal
-const defaultEnableAllLintRules = true;
-
+@immutable
 class CustomLintConfigs {
-  CustomLintConfigs._({
-    required bool? enableAllLintRules,
-    required Map<String, LintOptions> rules,
-  })  : _enableAllLintRules = enableAllLintRules,
-        _rules = rules;
   @internal
-  static final empty = CustomLintConfigs._(
-    enableAllLintRules: null,
-    rules: {},
-  );
+  const CustomLintConfigs({
+    required this.enableAllLintRules,
+    required this.rules,
+  });
 
   @internal
-  // ignore: prefer_constructors_over_static_methods
-  static CustomLintConfigs parse(File? analysisOptionsFile) {
+  factory CustomLintConfigs.parse(File? analysisOptionsFile) {
     if (analysisOptionsFile == null || !analysisOptionsFile.exists) {
       return CustomLintConfigs.empty;
     }
 
     final optionsString = analysisOptionsFile.readAsStringSync();
-    final yaml = loadYaml(optionsString) as Object?;
+    Object? yaml;
+    try {
+      yaml = loadYaml(optionsString) as Object?;
+    } catch (err) {
+      return CustomLintConfigs.empty;
+    }
     if (yaml is! Map) return CustomLintConfigs.empty;
 
     final include = yaml['include'] as Object?;
-    CustomLintConfigs? includedOptions;
+    var includedOptions = CustomLintConfigs.empty;
     if (include is String) {
       final includeAbsolutePath = absolute(
         analysisOptionsFile.parent.path,
@@ -46,20 +40,15 @@ class CustomLintConfigs {
     }
 
     final customLint = yaml['custom_lint'] as Object?;
-    if (customLint is! Map) return CustomLintConfigs.empty;
+    if (customLint is! Map) return includedOptions;
 
+    final rules = <String, LintOptions>{...includedOptions.rules};
     final enableAllLintRulesYaml = customLint['enable_all_lint_rules'];
     final enableAllLintRules = enableAllLintRulesYaml is bool?
-        ? enableAllLintRulesYaml ?? includedOptions?._enableAllLintRules
+        ? enableAllLintRulesYaml ?? includedOptions.enableAllLintRules
         : null;
 
-    final areLintsEnabledByDefault =
-        enableAllLintRules ?? defaultEnableAllLintRules;
-
     final rulesYaml = customLint['rules'] as Object?;
-    final rules = <String, LintOptions>{
-      ...?includedOptions?._rules,
-    };
 
     if (rulesYaml is List) {
       // Supports:
@@ -71,7 +60,7 @@ class CustomLintConfigs {
 
       for (final item in rulesYaml) {
         if (item is String) {
-          rules[item] = LintOptions.empty(enabled: areLintsEnabledByDefault);
+          rules[item] = const LintOptions.empty(enabled: true);
         } else if (item is Map) {
           final key = item.keys.first as String;
           final value = item.values.first;
@@ -81,46 +70,61 @@ class CustomLintConfigs {
             Map<String, Object?>.fromEntries(item.entries
                 .skip(1)
                 .map((e) => MapEntry(e.key as String, e.value))),
-            enabled: enabled ?? areLintsEnabledByDefault,
+            enabled: enabled ?? true,
           );
         }
       }
     }
 
-    return CustomLintConfigs._(
+    return CustomLintConfigs(
       enableAllLintRules: enableAllLintRules,
       rules: UnmodifiableMapView(rules),
     );
   }
 
-  final bool? _enableAllLintRules;
-  final Map<String, LintOptions> _rules;
+  @internal
+  static const empty = CustomLintConfigs(
+    enableAllLintRules: null,
+    rules: {},
+  );
 
-  LintOptions optionsForFile(LintRule lintRule) {
-    return _rules[lintRule.code.name] ??
-        LintOptions.empty(
-          enabled: _enableAllLintRules ?? defaultEnableAllLintRules,
-        );
-  }
+  final bool? enableAllLintRules;
+  final Map<String, LintOptions> rules;
 
-  bool isLintEnabled(String name) {
-    return _rules[name]?.enabled ??
-        _enableAllLintRules ??
-        defaultEnableAllLintRules;
-  }
+  @override
+  bool operator ==(Object other) =>
+      other is CustomLintConfigs &&
+      other.enableAllLintRules == enableAllLintRules &&
+      const MapEquality<String, LintOptions>().equals(other.rules, rules);
+
+  @override
+  int get hashCode => Object.hash(
+        enableAllLintRules,
+        const MapEquality<String, LintOptions>().hash(rules),
+      );
 }
 
+@immutable
 class LintOptions {
   @internal
-  const LintOptions.fromYaml(
-    Map<String, Object?> yaml, {
-    required this.enabled,
-  }) : json = yaml;
+  const LintOptions.fromYaml(Map<String, Object?> yaml, {required this.enabled})
+      : json = yaml;
 
   @internal
   const LintOptions.empty({required this.enabled}) : json = const {};
 
+  final bool enabled;
   final Map<String, Object?> json;
 
-  final bool enabled;
+  @override
+  bool operator ==(Object other) =>
+      other is LintOptions &&
+      other.enabled == enabled &&
+      const MapEquality<String, Object?>().equals(other.json, json);
+
+  @override
+  int get hashCode => Object.hash(
+        enabled,
+        const MapEquality<String, Object?>().hash(json),
+      );
 }

@@ -221,7 +221,7 @@ class _CustomLintAnalysisConfigs {
   ) {
     return activePluginsForContext.entries
         .expand((plugin) => plugin.value.getLintRules(configs))
-        .where((lintRule) => configs.isLintEnabled(lintRule.code.name))
+        .where((lintRule) => lintRule.isEnabled(configs))
         .toList();
   }
 
