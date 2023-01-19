@@ -36,9 +36,12 @@ void main() {
         await cli.entrypoint();
 
         expect(exitCode, 0);
-        expect(out.join(), completion('''
+        expect(
+          out.join(),
+          completion('''
 No issues found!
-'''));
+'''),
+        );
         expect(err, emitsDone);
       },
       currentDirectory: app,
@@ -101,12 +104,15 @@ lib/custom_lint_client.dart:14:29: Error: Undefined name 'createPlugin'.
         await cli.entrypoint();
 
         expect(err, emitsDone);
-        expect(out.join(), completion('''
+        expect(
+          out.join(),
+          completion('''
   lib/another.dart:1:6 • Hello world • hello_world
   lib/another.dart:1:6 • Oy • oy
   lib/main.dart:1:6 • Hello world • hello_world
   lib/main.dart:1:6 • Oy • oy
-'''));
+'''),
+        );
         expect(exitCode, 1);
       },
       currentDirectory: app,

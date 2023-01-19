@@ -287,7 +287,8 @@ $dependencies
         (element) =>
             element.startsWith('The Dart VM service is listening on') ||
             element.startsWith(
-                'The Dart DevTools debugger and profiler is available at:'),
+              'The Dart DevTools debugger and profiler is available at:',
+            ),
       );
     }
 
@@ -323,9 +324,10 @@ $dependencies
           );
 
           _server.analyzerPluginClientChannel.sendJson(
-              PluginErrorParams(true, 'Failed to start plugins', '')
-                  .toNotification()
-                  .toJson());
+            PluginErrorParams(true, 'Failed to start plugins', '')
+                .toNotification()
+                .toJson(),
+          );
 
           throw StateError('Failed to start the plugins.');
         }),

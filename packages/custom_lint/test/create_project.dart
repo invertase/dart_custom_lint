@@ -120,10 +120,14 @@ Directory createLintUsage({
   Map<String, String> source = const {},
   required String name,
 }) {
-  final pluginDevDependencies = plugins.entries.map((e) => '''
+  final pluginDevDependencies = plugins.entries
+      .map(
+        (e) => '''
   ${e.key}:
     path: ${e.value}
-''').join('\n');
+''',
+      )
+      .join('\n');
 
   return createDartProject(
     sources: source,

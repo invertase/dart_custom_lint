@@ -67,9 +67,11 @@ class CustomLintConfigs {
           final enabled = value is bool? ? value : null;
 
           rules[key] = LintOptions.fromYaml(
-            Map<String, Object?>.fromEntries(item.entries
-                .skip(1)
-                .map((e) => MapEntry(e.key as String, e.value))),
+            Map<String, Object?>.fromEntries(
+              item.entries
+                  .skip(1)
+                  .map((e) => MapEntry(e.key as String, e.value)),
+            ),
             enabled: enabled ?? true,
           );
         }

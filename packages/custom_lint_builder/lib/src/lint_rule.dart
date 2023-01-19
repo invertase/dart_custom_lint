@@ -1,26 +1,48 @@
 import 'dart:async';
 
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:meta/meta.dart';
 import '../custom_lint_builder.dart';
 import 'node_lint_visitor.dart';
 
+///
 class LintContext {
+  /// Create a [LintContext].
+  @internal
   LintContext(this.registry, this._addPostRunCallback, this.sharedState);
 
+  /// An object used to listen to the analysis of a Dart file.
+  ///
+  /// Using [registry], we can add listeners to specific [AstNode]s.
+  /// The listeners will be executed after the `run` function has ended.
   final LintRuleNodeRegistry registry;
+
+  /// An object shared with all
   final Map<Object, Object?> sharedState;
   final void Function(void Function() cb) _addPostRunCallback;
 
+  /// Registers a function that will be executed after all [LintRule.run]
+  /// (or [Assist.run]/[Fix.run] if associated to an assist/fix).
+  ///
+  ///
   void addPostRunCallback(void Function() cb) {
     _addPostRunCallback(Zone.current.bindCallback(cb));
   }
 }
 
+/// {@macro custom_lint_builder.lint_rule}
 @immutable
 abstract class LintRule {
+  /// {@template custom_lint_builder.lint_rule}
+  ///
+  /// For usage information, see https://github.com/invertase/dart_custom_lint/blob/main/docs/lints.md
+  /// {@endtemplate}
   const LintRule({required this.code});
 
+  /// The [LintCode] that this [LintRule] may emit.
+  ///
+  /// [LintRule]s should avoid emitting lints that use a code different that [code].
   final LintCode code;
 
   /// Whether the lint rule is on or off by default in an empty analysis_options.yaml

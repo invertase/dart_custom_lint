@@ -19,6 +19,7 @@ class LintCode extends ErrorCode {
     super.correctionMessage,
     String? uniqueName,
     this.url,
+    this.description,
     this.errorSeverity = ErrorSeverity.INFO,
   }) : super(
           problemMessage: problemMessage,
@@ -31,6 +32,8 @@ class LintCode extends ErrorCode {
 
   @override
   final String? url;
+
+  final String? description;
 
   @override
   final ErrorSeverity errorSeverity;

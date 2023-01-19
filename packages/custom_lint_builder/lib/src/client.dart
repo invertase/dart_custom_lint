@@ -193,13 +193,14 @@ class _CustomLintAnalysisConfigs {
     final configs =
         CustomLintConfigs.parse(analysisContext.contextRoot.optionsFile);
 
-    final activePluginsForContext =
-        Map.fromEntries(client._channel.registeredPlugins.entries.where(
-      (plugin) => client._isPluginActiveForContextRoot(
-        analysisContext,
-        pluginName: plugin.key,
+    final activePluginsForContext = Map.fromEntries(
+      client._channel.registeredPlugins.entries.where(
+        (plugin) => client._isPluginActiveForContextRoot(
+          analysisContext,
+          pluginName: plugin.key,
+        ),
       ),
-    ));
+    );
 
     final rules = _lintRulesForContext(activePluginsForContext, configs);
     final fixes = _fixesForRules(rules);

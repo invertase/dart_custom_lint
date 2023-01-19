@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// ignore_for_file: public_member_api_docs
+
 import 'dart:async';
 import 'dart:collection';
 
@@ -26,6 +28,8 @@ class LintRegistry {
 /// The AST visitor that runs handlers for nodes from the [_registry].
 @internal
 class LinterVisitor implements AstVisitor<void> {
+  /// The AST visitor that runs handlers for nodes from the [_registry].
+  @internal
   LinterVisitor(this._registry);
 
   final NodeLintRegistry _registry;
@@ -686,7 +690,8 @@ class LinterVisitor implements AstVisitor<void> {
 
   @override
   void visitPatternVariableDeclarationStatement(
-      PatternVariableDeclarationStatement node) {
+    PatternVariableDeclarationStatement node,
+  ) {
     _runSubscriptions(node, _registry._forPatternVariableDeclarationStatement);
     node.visitChildren(this);
   }
@@ -753,28 +758,32 @@ class LinterVisitor implements AstVisitor<void> {
 
   @override
   void visitRecordTypeAnnotationNamedField(
-      RecordTypeAnnotationNamedField node) {
+    RecordTypeAnnotationNamedField node,
+  ) {
     _runSubscriptions(node, _registry._forRecordTypeAnnotationNamedField);
     node.visitChildren(this);
   }
 
   @override
   void visitRecordTypeAnnotationNamedFields(
-      RecordTypeAnnotationNamedFields node) {
+    RecordTypeAnnotationNamedFields node,
+  ) {
     _runSubscriptions(node, _registry._forRecordTypeAnnotationNamedFields);
     node.visitChildren(this);
   }
 
   @override
   void visitRecordTypeAnnotationPositionalField(
-      RecordTypeAnnotationPositionalField node) {
+    RecordTypeAnnotationPositionalField node,
+  ) {
     _runSubscriptions(node, _registry._forRecordTypeAnnotationPositionalField);
     node.visitChildren(this);
   }
 
   @override
   void visitRedirectingConstructorInvocation(
-      RedirectingConstructorInvocation node) {
+    RedirectingConstructorInvocation node,
+  ) {
     _runSubscriptions(node, _registry._forRedirectingConstructorInvocation);
     node.visitChildren(this);
   }
@@ -1034,6 +1043,8 @@ class LinterVisitor implements AstVisitor<void> {
 /// The container to register visitors for separate AST node types.
 @internal
 class NodeLintRegistry {
+  /// The container to register visitors for separate AST node types.
+  @internal
   NodeLintRegistry(this._lintRegistry, {required bool enableTiming})
       : _enableTiming = enableTiming;
 

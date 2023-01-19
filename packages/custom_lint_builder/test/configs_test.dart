@@ -184,11 +184,13 @@ custom_lint:
 
     group('Handles errors', () {
       test('Defaults to empty if yaml fails to parse', () {
-        final configs = CustomLintConfigs.parse(createAnalysisOptions('''
+        final configs = CustomLintConfigs.parse(
+          createAnalysisOptions('''
 foo:
     bar:
   baz:
-'''));
+'''),
+        );
         expect(configs, CustomLintConfigs.empty);
       });
     });
