@@ -3,15 +3,21 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+/// An interface for interacting with analyzer_plugin
 abstract class AnalyzerPluginClientChannel {
+  /// The list of messages sent by analyzer_plugin.
   Stream<Object?> get messages;
 
+  /// Sends a JSON object to the analyzer_plugin server
   void sendJson(Map<String, Object?> json);
 
+  /// Releases the resources
   void close();
 }
 
+/// An interface for discussing with analyzer_plugin using a [SendPort]
 class JsonSendPortChannel implements AnalyzerPluginClientChannel {
+  /// An interface for discussing with analyzer_plugin using a [SendPortƒ]
   JsonSendPortChannel(this._sendPort) : _receivePort = ReceivePort() {
     _sendPort.send(_receivePort.sendPort);
   }
@@ -31,7 +37,9 @@ class JsonSendPortChannel implements AnalyzerPluginClientChannel {
   void close() => _receivePort.close();
 }
 
+/// An interface for discussing with analyzer_plugin using web sockets
 class JsonSocketChannel implements AnalyzerPluginClientChannel {
+  /// An interface for discussing with analyzer_plugin using web sockets
   JsonSocketChannel(this._socket);
 
   final Socket _socket;

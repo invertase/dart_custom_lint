@@ -18,6 +18,8 @@ import '../request_extension.dart';
 import 'protocol.dart';
 import 'server_to_client_channel.dart';
 
+/// The custom_lint server, in charge of interacting with analyzer_plugin
+/// and starting custom_lint plugins
 class CustomLintServer {
   CustomLintServer._({
     required this.watchMode,
@@ -25,6 +27,7 @@ class CustomLintServer {
     required this.delegate,
   });
 
+  /// Start the server while also capturing prints and errors.
   static R? run<R>(
     R Function(CustomLintServer server) cb, {
     required SendPort sendPort,
@@ -56,10 +59,17 @@ class CustomLintServer {
     return result;
   }
 
+  /// The object in charge of logging events and possibly rendering events
+  /// in the console (if ran from a terminal).
   final CustomLintDelegate delegate;
+
+  /// The interface for discussing with analyzer_plugin
   late final AnalyzerPluginClientChannel analyzerPluginClientChannel;
 
+  /// Whether plugins should be started in watch mode
   final bool watchMode;
+
+  /// Whether plugins should include lints used for debugging.
   final bool includeBuiltInLints;
 
   late final StreamSubscription<void> _requestSubscription;
@@ -77,10 +87,11 @@ class CustomLintServer {
         .listen(_handleRequest);
   }
 
+  /// Waits for the plugins to complete their analysis
   Future<void> awaitAnalysisDone({
     required bool reload,
   }) =>
-      _runner.run('awaitAnalysisDone', () async {
+      _runner.run(() async {
         final clientChannel = await _clientChannel.first;
 
         await clientChannel.sendCustomLintRequest(
@@ -123,7 +134,7 @@ class CustomLintServer {
           }
         },
         orElse: () async {
-          return _runner.run('_handleRequest ${request.method}', () async {
+          return _runner.run(() async {
             final clientChannel = await _clientChannel.first;
             final response =
                 await clientChannel.sendAnalyzerPluginRequest(request);
@@ -161,7 +172,7 @@ class CustomLintServer {
   /// An uncaught error was detected (unrelated to requests).
   /// Logging the error and notifying the analyzer server
   Future<void> handleUncaughtError(Object error, StackTrace stackTrace) =>
-      _runner.run('handleUncaughtError', () async {
+      _runner.run(() async {
         analyzerPluginClientChannel.sendJson(
           PluginErrorParams(false, error.toString(), stackTrace.toString())
               .toNotification()
@@ -182,7 +193,7 @@ class CustomLintServer {
     String message, {
     required bool isClientMessage,
   }) =>
-      _runner.run('handlePrint', () async {
+      _runner.run(() async {
         final roots = await _contextRoots.first;
 
         if (!isClientMessage) {
@@ -247,7 +258,7 @@ class CustomLintServer {
   Future<AnalysisSetContextRootsResult> _handleAnalysisSetContextRoots(
     AnalysisSetContextRootsParams parameters,
   ) =>
-      _runner.run('_handleAnalysisSetContextRoots', () async {
+      _runner.run(() async {
         _contextRoots.add(parameters);
 
         await _maybeSpawnCustomLintPlugin(parameters);

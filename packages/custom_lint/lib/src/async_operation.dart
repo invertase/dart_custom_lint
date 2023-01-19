@@ -1,24 +1,29 @@
 import 'dart:async';
 
+/// A class for awaiting multiple async operations at once.
+///
+/// See [wait].
 class PendingOperation {
-  final _pendingOperations = <MapEntry<String, Future<void>>>[];
+  final _pendingOperations = <Future<void>>[];
 
-  Future<T> run<T>(String key, Future<T> Function() cb) async {
+  /// Register an async operation to be awaited.
+  Future<T> run<T>(Future<T> Function() cb) async {
     final future = Future(cb);
-    final entry = MapEntry(key, future);
-    _pendingOperations.add(entry);
+    _pendingOperations.add(future);
     try {
       return await future;
     } finally {
-      _pendingOperations.remove(entry);
+      _pendingOperations.remove(future);
     }
   }
 
+  /// Waits for all operations registered in [run].
+  ///
+  /// If during the wait new async operations are registered, they will be
+  /// awaited too.
   Future<void> wait() async {
     while (_pendingOperations.isNotEmpty) {
-      await Future.wait([
-        for (final entry in _pendingOperations) entry.value,
-      ]);
+      await Future.wait(_pendingOperations.toList());
     }
   }
 }

@@ -402,15 +402,22 @@ $dependencies
   }
 }
 
+/// A custom_lint request failed
 class CustomLintRequestFailure implements Exception {
+  /// A custom_lint request failed
   CustomLintRequestFailure({
     required this.message,
     required this.stackTrace,
     required this.request,
   });
 
+  /// The error message
   final String message;
+
+  /// The stacktrace of the error
   final String? stackTrace;
+
+  /// The request that failed.
   final CustomLintRequest request;
 
   @override
@@ -421,31 +428,31 @@ class CustomLintRequestFailure implements Exception {
 
 /// custom_lint's analyzer_plugin -> custom_lint's plugin host
 abstract class CustomLintServerToClientChannel {
+  /// Starts a custom_lint client, in charge of running all plugins.
   factory CustomLintServerToClientChannel.spawn(
     CustomLintServer server,
     PluginVersionCheckParams version,
     AnalysisSetContextRootsParams contextRoots,
   ) = _SocketCustomLintServerToClientChannel;
 
-  // factory CustomLintServerToClientChannel.fromIsolate(SendPort sendPort) {
-  //   throw UnimplementedError();
-  // }
-
-  // factory CustomLintServerToClientChannel.fromSocket(Socket socket) {
-  //   throw UnimplementedError();
-  // }
-
+  /// The events sent by the client.
   Stream<CustomLintEvent> get events;
 
+  /// Initializes and waits for the client to start
   Future<void> init();
 
+  /// Updates the context roots on the client
   Future<AnalysisSetContextRootsResult> setContextRoots(
     AnalysisSetContextRootsParams contextRoots,
   );
 
+  /// Sends a custom_lint request to the client, expecting a custom_lint response
   Future<CustomLintResponse> sendCustomLintRequest(CustomLintRequest request);
 
+  /// Sends a request based on the analyzer_plugin protocol, expecting
+  /// an analyzer_plugin response.
   Future<Response> sendAnalyzerPluginRequest(Request request);
 
+  /// Stops the client, liberating the resources.
   void close();
 }
