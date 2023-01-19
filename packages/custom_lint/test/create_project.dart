@@ -63,7 +63,7 @@ class ${rule.code} extends DartLintRule {
       );
 
   @override
-  void run(CustomLintResolver resolver, ErrorReporter reporter, LintContext context) {
+  void run(CustomLintResolver resolver, ErrorReporter reporter, CustomLintContext context) {
     ${rule.onRun}
     context.registry.addFunctionDeclaration((node) {
       ${rule.onVariable}

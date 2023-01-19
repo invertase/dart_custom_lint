@@ -254,7 +254,7 @@ class _Lint extends DartLintRule {
   void run(
     CustomLintResolver resolver,
     ErrorReporter reporter,
-    LintContext context,
+    CustomLintContext context,
   ) {
     final line2 = resolver.lineInfo.getOffsetOfLine(1);
     reporter.reportErrorForOffset(
