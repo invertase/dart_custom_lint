@@ -36,8 +36,12 @@ class PeerProjectMeta {
 
     final packagesPath = normalize(join(directory.path, '..'));
 
-    final examplePackageConfigPath = join(normalize(exampleAppDir.path),
-        'example_lint', '.dart_tool', 'package_config.json');
+    final examplePackageConfigPath = join(
+      normalize(exampleAppDir.path),
+      'example_lint',
+      '.dart_tool',
+      'package_config.json',
+    );
     final exampleLintPackageConfigString =
         File(examplePackageConfigPath).readAsStringSync();
 

@@ -4,9 +4,11 @@ import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:async/async.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
 
 import '../channels.dart';
@@ -139,7 +141,12 @@ class _SocketCustomLintServerToClientChannel
   )   : _packages = getPackageListForContextRoots(_contextRoots.roots),
         _serverSocket = _createServerSocket() {
     _socket = _serverSocket.then(
-      (server) async => JsonSocketChannel(await server.first),
+      (server) async {
+        // ignore: close_sinks
+        final socket = await server.firstOrNull;
+        if (socket == null) return null;
+        return JsonSocketChannel(socket);
+      },
     );
   }
 
@@ -148,12 +155,13 @@ class _SocketCustomLintServerToClientChannel
   final List<Package> _packages;
   final Directory _tempDirectory = Directory.systemTemp.createTempSync();
   final Future<ServerSocket> _serverSocket;
-  late final Future<JsonSocketChannel> _socket;
+  late final Future<JsonSocketChannel?> _socket;
 
   AnalysisSetContextRootsParams _contextRoots;
   final _process = Completer<Process>();
 
   late final Stream<CustomLintMessage> _messages = Stream.fromFuture(_socket)
+      .whereNotNull()
       .asyncExpand((e) => e.messages)
       .map((e) => e! as Map<String, Object?>)
       .map(CustomLintMessage.fromJson)
@@ -187,7 +195,7 @@ class _SocketCustomLintServerToClientChannel
     throw UnimplementedError();
   }
 
-  void _writeMain() {
+  void _writeEntrypoint() {
     final imports = _packages
         .map((e) => e.name)
         .map(
@@ -201,7 +209,8 @@ class _SocketCustomLintServerToClientChannel
         .map((packageName) => "'$packageName': $packageName.createPlugin,\n")
         .join();
 
-    final mainFile = File(join(_tempDirectory.path, 'lib', 'main.dart'));
+    final mainFile =
+        File(join(_tempDirectory.path, 'lib', 'custom_lint_client.dart'));
     mainFile.createSync(recursive: true);
     mainFile.writeAsStringSync('''
 import 'dart:convert';
@@ -215,6 +224,7 @@ void main(List<String> args) async {
   runSocket(
     port: port,
     watchMode: ${_server.watchMode},
+    includeBuiltInLints: ${_server.includeBuiltInLints},
     {$plugins},
   );
 }
@@ -247,7 +257,7 @@ $dependencies
       _contextRoots.roots,
     );
     _writePubspec();
-    _writeMain();
+    _writeEntrypoint();
 
     late int port;
     final processFuture = _asyncRetry(retryCount: 5, () async {
@@ -256,7 +266,7 @@ $dependencies
         Platform.resolvedExecutable,
         [
           '--enable-vm-service=$port',
-          join('lib', 'main.dart'),
+          join('lib', 'custom_lint_client.dart'),
           await _serverSocket.then((value) => value.port.toString())
         ],
         workingDirectory: _tempDirectory.path,
@@ -277,7 +287,8 @@ $dependencies
         (element) =>
             element.startsWith('The Dart VM service is listening on') ||
             element.startsWith(
-                'The Dart DevTools debugger and profiler is available at:'),
+              'The Dart DevTools debugger and profiler is available at:',
+            ),
       );
     }
 
@@ -313,9 +324,10 @@ $dependencies
           );
 
           _server.analyzerPluginClientChannel.sendJson(
-              PluginErrorParams(true, 'Failed to start plugins', '')
-                  .toNotification()
-                  .toJson());
+            PluginErrorParams(true, 'Failed to start plugins', '')
+                .toNotification()
+                .toJson(),
+          );
 
           throw StateError('Failed to start the plugins.');
         }),
@@ -356,6 +368,9 @@ $dependencies
     final matchingResponse = _responses.firstWhere((e) => e.id == request.id);
 
     await _socket.then((socket) {
+      if (socket == null) {
+        throw StateError('Client disconnected, cannot send requests');
+      }
       socket.sendJson(request.toJson());
     });
 
@@ -387,15 +402,22 @@ $dependencies
   }
 }
 
+/// A custom_lint request failed
 class CustomLintRequestFailure implements Exception {
+  /// A custom_lint request failed
   CustomLintRequestFailure({
     required this.message,
     required this.stackTrace,
     required this.request,
   });
 
+  /// The error message
   final String message;
+
+  /// The stacktrace of the error
   final String? stackTrace;
+
+  /// The request that failed.
   final CustomLintRequest request;
 
   @override
@@ -406,31 +428,31 @@ class CustomLintRequestFailure implements Exception {
 
 /// custom_lint's analyzer_plugin -> custom_lint's plugin host
 abstract class CustomLintServerToClientChannel {
+  /// Starts a custom_lint client, in charge of running all plugins.
   factory CustomLintServerToClientChannel.spawn(
     CustomLintServer server,
     PluginVersionCheckParams version,
     AnalysisSetContextRootsParams contextRoots,
   ) = _SocketCustomLintServerToClientChannel;
 
-  // factory CustomLintServerToClientChannel.fromIsolate(SendPort sendPort) {
-  //   throw UnimplementedError();
-  // }
-
-  // factory CustomLintServerToClientChannel.fromSocket(Socket socket) {
-  //   throw UnimplementedError();
-  // }
-
+  /// The events sent by the client.
   Stream<CustomLintEvent> get events;
 
+  /// Initializes and waits for the client to start
   Future<void> init();
 
+  /// Updates the context roots on the client
   Future<AnalysisSetContextRootsResult> setContextRoots(
     AnalysisSetContextRootsParams contextRoots,
   );
 
+  /// Sends a custom_lint request to the client, expecting a custom_lint response
   Future<CustomLintResponse> sendCustomLintRequest(CustomLintRequest request);
 
+  /// Sends a request based on the analyzer_plugin protocol, expecting
+  /// an analyzer_plugin response.
   Future<Response> sendAnalyzerPluginRequest(Request request);
 
+  /// Stops the client, liberating the resources.
   void close();
 }

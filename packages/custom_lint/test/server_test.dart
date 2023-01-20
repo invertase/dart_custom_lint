@@ -14,34 +14,7 @@ import 'run_plugin.dart';
 
 void main() {
   test('List warnings for all files combined', () async {
-    final plugin = createPlugin(
-      name: 'test_lint',
-      main: '''
-import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/dart/analysis/results.dart';
-
-PluginBase createPlugin() => _HelloWorldLint();
-
-class _HelloWorldLint extends PluginBase {
-  @override
-  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-    final library = resolvedUnitResult.libraryElement;
-    for (final variable in library.topLevelElements) {
-      yield Lint(
-        code: 'hello_world',
-        message: 'Hello world',
-        location: resolvedUnitResult.lintLocationFromOffset(
-          variable.nameOffset,
-          length: variable.nameLength,
-        ),
-      );
-    }
-  }
-}
-''',
-    );
+    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
 
     final app = createLintUsage(
       source: {
@@ -215,30 +188,17 @@ void fn2() {}''',
   test('redirect prints and errors to log files', () async {
     final plugin = createPlugin(
       name: 'test_lint',
-      main: '''
-import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/dart/analysis/results.dart';
-
-PluginBase createPlugin() => _HelloWorldLint();
-
-class _HelloWorldLint extends PluginBase {
-  @override
-  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-    final library = resolvedUnitResult.libraryElement;
-    if (library.topLevelElements.single.name == 'fail') {
-       print('Hello world');
-       throw StateError('fail');
-    }
-    yield Lint(
-      code: 'hello_world',
-      message: 'Hello world',
-      location: resolvedUnitResult.lintLocationFromOffset(0, length: 1),
-    );
-  }
-}
-''',
+      main: createPluginSource([
+        TestLintRule(
+          code: 'hello_world',
+          message: 'Hello world',
+          onVariable: '''
+if (node.name.lexeme == "fail") {
+  print('Hello world');
+  throw StateError('fail');
+}''',
+        ),
+      ]),
     );
     final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
 
@@ -268,7 +228,7 @@ class _HelloWorldLint extends PluginBase {
           predicate<PluginErrorParams>((value) {
             expect(
               value.message,
-              'Plugin test_lint threw while analyzing ${app.path}/lib/another.dart:\n'
+              'Plugin hello_world threw while analyzing ${app.path}/lib/another.dart:\n'
               'Bad state: fail',
             );
             return true;
@@ -303,13 +263,6 @@ class _HelloWorldLint extends PluginBase {
       // await runner.close();
       // return;
 
-      expect(
-        app.log,
-        matchesLogGolden(
-          'test/goldens/server_test/redirect_logs.golden',
-          paths: {plugin.uri: 'plugin', app.uri: 'app'},
-        ),
-      );
       expect(
         app.log,
         matchesLogGolden(
@@ -361,29 +314,14 @@ class _HelloWorldLint extends PluginBase {
         ),
       );
 
-      pluginMain.writeAsStringSync('''
-import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/dart/analysis/results.dart';
-
-PluginBase createPlugin() => _ReloaddLint();
-
-class _ReloaddLint extends PluginBase {
-  @override
-  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-    final library = resolvedUnitResult.libraryElement;
-    yield Lint(
-      code: 'hello_reload',
-      message: 'Hello reload',
-      location: resolvedUnitResult.lintLocationFromOffset(
-        library.topLevelElements.first.nameOffset,
-        length: library.topLevelElements.first.nameLength,
-      ),
-    );
-  }
-}
-''');
+      pluginMain.writeAsStringSync(
+        createPluginSource([
+          TestLintRule(
+            code: 'hello_reload',
+            message: 'Hello reload',
+          ),
+        ]),
+      );
 
       await expectLater(
         runner.channel.lints,

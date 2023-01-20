@@ -10,6 +10,7 @@ import 'package:custom_lint/src/v2/protocol.dart';
 
 import '../../custom_lint_builder.dart';
 import 'client.dart';
+import 'plugin_base.dart';
 
 /// Converts a Stream/Sink into a Sendport/ReceivePort equivalent
 class StreamToSentPortAdapter {
@@ -38,27 +39,39 @@ class StreamToSentPortAdapter {
     );
   }
 
+  /// The [SendPort] associated with the input [Stream].
   SendPort get sendPort => _outputReceivePort.sendPort;
+
   final _outputReceivePort = ReceivePort();
 }
 
-typedef PluginMain = PluginBase Function();
+/// The prototype of plugin's `createPlugin` entrypoint function.
+typedef CreatePluginMain = PluginBase Function();
 
+/// Starts a custom_lint client using web sockets.
 Future<void> runSocket(
-  Map<String, PluginMain> pluginMains, {
+  Map<String, CreatePluginMain> pluginMains, {
   required int port,
   required bool watchMode,
+  required bool includeBuiltInLints,
 }) async {
   final client = Completer<CustomLintPluginClient>();
 
   await runZonedGuarded(
     () async {
-      final socket = JsonSocketChannel(await Socket.connect('localhost', port));
+      // ignore: close_sinks, connection stays open until the plugin is killed
+      final socket = await Socket.connect('localhost', port);
+      // If the server somehow quit, forcibly stop the client.
+      // In theory it should stop naturally, but let's make sure of this to prevent leaks.
+      unawaited(socket.done.then((value) => exit(0)));
+
+      final socketChannel = JsonSocketChannel(socket);
       final registeredPlugins = <String, PluginBase>{};
       client.complete(
         CustomLintPluginClient(
           watchMode: watchMode,
-          _SocketCustomLintClientChannel(socket, registeredPlugins),
+          includeBuiltInLints: includeBuiltInLints,
+          _SocketCustomLintClientChannel(socketChannel, registeredPlugins),
         ),
       );
 
@@ -79,22 +92,29 @@ Future<void> runSocket(
   );
 }
 
+/// An interface for clients to send messages to the custom_lint server.
 abstract class CustomLintClientChannel {
+  /// An interface for clients to send messages to the custom_lint server.
   CustomLintClientChannel(this.registeredPlugins);
 
   /// The [SendPort] that will be passed to analyzer_plugin
   SendPort get sendPort;
 
+  /// The list of plugins installed by custom_lint.
   final Map<String, PluginBase> registeredPlugins;
 
+  /// Messages from the custom_lint server
   Stream<CustomLintRequest> get input;
 
   void _sendJson(Map<String, Object?> json);
 
+  /// Sends a response to the custom_lint server, associated to a request
   void sendResponse(CustomLintResponse response) {
     _sendJson(CustomLintMessage.response(response).toJson());
   }
 
+  /// Sends a notification to the custom_lint server, which is not associated with
+  /// a request.
   void sendEvent(CustomLintEvent event) {
     _sendJson(CustomLintMessage.event(event).toJson());
   }

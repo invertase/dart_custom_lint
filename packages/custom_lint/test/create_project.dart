@@ -8,6 +8,76 @@ import 'peer_project_meta.dart';
 
 const _pluginDefaultPubspec = '<<<default>>>';
 
+const emptyPluginSource = '''
+import 'package:analyzer/dart/element/element.dart';
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
+
+PluginBase createPlugin() => _Plugin();
+
+class _Plugin extends PluginBase {
+  @override
+  List<LintRule> getLintRules(CustomLintConfigs configs) => [];
+}
+''';
+
+class TestLintRule {
+  TestLintRule({
+    required this.code,
+    required this.message,
+    this.onRun = '',
+    this.onVariable = '',
+  });
+
+  final String code;
+  final String message;
+  final String onRun;
+  final String onVariable;
+}
+
+String createPluginSource(List<TestLintRule> rules) {
+  final buffer = StringBuffer('''
+import 'package:analyzer/dart/element/element.dart';
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/error/listener.dart';
+
+PluginBase createPlugin() => _Plugin();
+
+class _Plugin extends PluginBase {
+  @override
+  List<LintRule> getLintRules(CustomLintConfigs configs) => [
+''');
+
+  buffer.writeAll(rules.map((e) => '${e.code}()'), ',');
+
+  buffer.write(']; }');
+
+  for (final rule in rules) {
+    buffer.write(
+      '''
+class ${rule.code} extends DartLintRule {
+  ${rule.code}()
+    : super(
+        code: LintCode(name: '${rule.code}', problemMessage: '${rule.message}'),
+      );
+
+  @override
+  void run(CustomLintResolver resolver, ErrorReporter reporter, CustomLintContext context) {
+    ${rule.onRun}
+    context.registry.addFunctionDeclaration((node) {
+      ${rule.onVariable}
+      reporter.reportErrorForToken(code, node.name);
+    });
+  }
+}
+''',
+    );
+  }
+
+  return buffer.toString();
+}
+
 Directory createPlugin({
   required String name,
   String? pubpsec = _pluginDefaultPubspec,
@@ -50,10 +120,14 @@ Directory createLintUsage({
   Map<String, String> source = const {},
   required String name,
 }) {
-  final pluginDevDependencies = plugins.entries.map((e) => '''
+  final pluginDevDependencies = plugins.entries
+      .map(
+        (e) => '''
   ${e.key}:
     path: ${e.value}
-''').join('\n');
+''',
+      )
+      .join('\n');
 
   return createDartProject(
     sources: source,

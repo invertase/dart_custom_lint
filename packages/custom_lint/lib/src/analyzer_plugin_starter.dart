@@ -8,6 +8,8 @@ import 'v2/custom_lint_analyzer_plugin.dart';
 void start(Iterable<String> _, SendPort sendPort) {
   CustomLintServer.run<void>(
     sendPort: sendPort,
+    // In the IDE, show lints designed for debugging
+    includeBuiltInLints: true,
     // In the IDE always enable hot-restart
     // TODO enable hot-restart only if running plugin from source (excluding pub cache)
     watchMode: true,
