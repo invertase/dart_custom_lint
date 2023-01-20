@@ -52,7 +52,7 @@ void fn3() {}
     );
 
     final runner = startRunnerForApp(app);
-    final lints = await runner.channel.lints.toList().then((lints) {
+    final lints = await runner.getLints(reload: false).then((lints) {
       final result = <String, AnalysisErrorsParams>{};
       for (final lint in lints) {
         final key = path.basename(lint.file);
