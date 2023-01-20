@@ -52,10 +52,20 @@ void fn3() {}
     );
 
     final runner = startRunnerForApp(app);
-    final lints = StreamQueue(runner.channel.lints);
+    final lints = await runner.channel.lints.toList().then((lints) {
+      final result = <String, AnalysisErrorsParams>{};
+      for (final lint in lints) {
+        final key = path.basename(lint.file);
+        expect(result[key], isNull);
+        result[key] = lint;
+      }
+      return result;
+    });
+
+    expect(lints.length, 2);
 
     expect(
-      await lints.next,
+      lints['main.dart'],
       predicate<AnalysisErrorsParams>((value) {
         expect(value.file, path.join(app.path, 'lib', 'main.dart'));
         expect(value.errors.length, 4);
@@ -93,7 +103,7 @@ void fn3() {}
     );
 
     expect(
-      await lints.next,
+      lints['empty.dart'],
       predicate<AnalysisErrorsParams>((value) {
         expect(value.file, path.join(app.path, 'lib', 'empty.dart'));
         expect(value.errors.length, 1);
@@ -111,8 +121,6 @@ void fn3() {}
         return true;
       }),
     );
-
-    expect(lints.rest, emitsDone);
 
     // Closing so that previous error matchers relying on stream
     // closing can complete
