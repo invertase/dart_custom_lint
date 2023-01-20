@@ -12,7 +12,7 @@
  <a href="https://invertase.link/discord">
    <img src="https://img.shields.io/discord/295953187817521152.svg?style=flat-square&colorA=7289da&label=Chat%20on%20Discord" alt="Chat on Discord">
  </a>
- 
+
 ---
 
 ## Index
@@ -33,8 +33,8 @@ You can read the latest [blog post](https://invertase.link/b18R) or watch the [a
 
 ## About
 
-Lint rules are a powerful way to improve the mainta∏inability of a project.
-The more, the merrier!  
+Lint rules are a powerful way to improve the maintainability of a project.
+The more, the merrier!
 But while Dart offers a wide variety of lint rules by default, it cannot
 reasonably include every possible lint. For example, Dart does not
 include lints related to third-party packages.
@@ -48,17 +48,17 @@ That includes:
 
 - A command-line to obtain the list of lints in your CI
   without having to write a command line yourself.
-- A simplified project setup:  
+- A simplified project setup:
   No need to deal with the `analyzer` server or error handling. Custom_lint
   takes care of that for you, so that you can focus on writing lints.
-- Debugger support.  
+- Debugger support.
   Inspect your lints using the Dart debugger and place breakpoints.
-- Supports hot-reload/hot-restart:  
+- Supports hot-reload/hot-restart:
   Updating the source code of a linter plugin will dynamically restart it,
   without having to restart your IDE/analyzer server.
 - Built-in support for `// ignore:` and `// ignore_for_file:`.
 - Built-in testing mechanism using `// expect_lint`. See [Testing your plugins using expect_lint](#testing-your-plugins-using-expect_lint)
-- Support for `print(...)` and exceptions:  
+- Support for `print(...)` and exceptions:
   If your plugin somehow throws or print debug messages, custom_lint
   will generate a log file with the messages/errors.
 
@@ -89,7 +89,7 @@ To create a custom lint, you will need two things:
     custom_lint_builder:
   ```
 
-- create a `lib/<my_pachage_name>.dart` file in your project with the following:
+- create a `lib/<my_package_name>.dart` file in your project with the following:
 
   ```dart
   // This is the entrypoint of our custom linter
@@ -170,7 +170,7 @@ For users to run custom_lint packages, there are a few steps:
     my_custom_lint_package:
   ```
 
-That's all!  
+That's all!
 After running `pub get` (and possibly restarting their IDE), users should now
 see our custom lints in their Dart files:
 
@@ -178,7 +178,7 @@ see our custom lints in their Dart files:
 
 ### Obtaining the list of lints in the CI
 
-Unfortunately, running `dart analyze` does not pick up our newly defined lints.  
+Unfortunately, running `dart analyze` does not pick up our newly defined lints.
 We need a separate command for this.
 
 To do that, users of our custom lint package can run the following inside their terminal:
@@ -232,7 +232,7 @@ var provider = Provider(...);
 
 When doing this, there are two possible cases:
 
-- The line after the `expect_lint` correctly contains the expected lint.  
+- The line after the `expect_lint` correctly contains the expected lint.
   In that case, the lint is ignored (similarly to if we used `// ignore`)
 - The next line does **not** contain the lint.
   In that case, the `expect_lint` comment will have an error.
