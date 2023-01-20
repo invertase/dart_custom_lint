@@ -1,3 +1,38 @@
+## 0.2.0
+
+**Large Breaking change**
+This new version introduces large changes to how lints/fixes/assists are defined.  
+Long story short, besides the `createPlugin` method, the entire syntax changed.
+
+See the readme, examples, and docs around how to use the new syntax.
+
+The new syntax has multiple benefits:
+
+- It is now possible to enable/disable lints inside the `analysis_options.yaml`
+  as followed:
+
+  ```yaml
+  # optional
+  include: path/to/another/analysis_options.yaml
+
+  custom_lint:
+    rules:
+      # enable a lint rule
+      - my_lint_rule
+      # A lint rule that is explicitly disabled
+      - another_lint_rule: false
+  ```
+
+  Enabling/disabling lints is supported by default with the new syntax. Nothing to do~
+
+- Performance improvement when using a large number of lints.
+  The workload of analyzing files is now shared between lints.
+
+- The new syntax makes the code simpler to maintain.
+  Before, the `PluginBase.getLints` rapidly ended-up doing too much.
+  Now, it is simple to split the implementation in multiple bits
+
+
 ## 0.1.2-dev
 
 Do some internal refactoring as an attempt to fix #60
