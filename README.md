@@ -26,11 +26,6 @@
   - [Obtaining the list of lints in the CI](#obtaining-the-list-of-lints-in-the-ci)
   - [Using the Dart debugger](#using-the-dart-debugger)
   - [Testing your plugins using expect\_lint](#testing-your-plugins-using-expect_lint)
-- [FAQs](#faqs)
-  - [Q. How do I get all the classes present in my source code?](#q-how-do-i-get-all-the-classes-present-in-my-source-code)
-  - [Q. How do I get all the global variables present in my source code?](#q-how-do-i-get-all-the-global-variables-present-in-my-source-code)
-  - [Q. How do I get the path to my currently opened dart file?](#q-how-do-i-get-the-path-to-my-currently-opened-dart-file)
-  - [Q. I want to insert code at the end of the file. How can I get the required offset?](#q-i-want-to-insert-code-at-the-end-of-the-file-how-can-i-get-the-required-offset)
 
 ## Tutorial
 
@@ -100,24 +95,52 @@ To create a custom lint, you will need two things:
   // This is the entrypoint of our custom linter
   PluginBase createPlugin() => _ExampleLinter();
 
-  // This class is the one that will analyze Dart files and return lints
+  /// A plugin class is used to list all the assists/lints defined by a plugin.
   class _ExampleLinter extends PluginBase {
+    /// We list all the custom warnings/infos/errors
     @override
-    Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-      // A basic lint that shows at the top of the file.
-      yield Lint(
-        code: 'my_custom_lint_code',
-        message: 'This is the description of our custom lint',
-        // Where your lint will appear within the Dart file.
-        // The following code will make appear at the top of the file (offset 0),
-        // and be 10 characters long.
-        location: resolvedUnitResult.lintLocationFromOffset(0, length: 10),
-      );
+    List<LintRule> getLintRules(CustomLintConfigs configs) => [
+          MyCustomLintCode(),
+        ];
+  }
+
+  class MyCustomLintCode extends DartLintRule {
+    MyCustomLintCode() : super(code: _code);
+
+    /// Metadata about the warning that will show-up in the IDE.
+    /// This is used for `// ignore: code` and enabling/disabling the lint
+    static const _code = LintCode(
+      name: 'my_custom_lint_code',
+      problemMessage: 'This is the description of our custom lint',
+    );
+
+    @override
+    void run(
+      CustomLintResolver resolver,
+      ErrorReporter reporter,
+      CustomLintContext context,
+    ) {
+      // Our lint will highlight all variable declarations with our custom warning.
+      context.registry.addVariableDeclaration((node) {
+        // "node" exposes metadata about the variable declaration. We could
+        // check "node" to show the lint only in some conditions.
+
+        // This line tells custom_lint to render a waring at the location of "node".
+        // And the warning shown will use our `code` variable defined above as description.
+        reporter.reportErrorForNode(code, node);
+      });
     }
   }
   ```
 
 That's it for defining a custom lint package!
+
+If you're looking for a more advanced example, see the [example](https://github.com/invertase/dart_custom_lint/tree/main/packages/custom_lint/example).
+This example implements:
+
+- a lint appearing on all variables of a specific type
+- a quick fix for that lint
+- an "assist" for providing refactoring options.
 
 Let's now use it in an application.
 
@@ -217,102 +240,6 @@ When doing this, there are two possible cases:
 This allows testing your plugins by simply running `custom_lint` on your test/example folder.
 Then, if any expected lint is missing, the command will fail. But if your plugin correctly
 emits the lint, the command will succeed.
-
----
-
-## FAQs
-
-### Q. How do I get all the classes present in my source code?
-
-There are two ways of doing that. You can either use the `Element Tree` or the `Abstract Syntax Tree (AST)` to find all the classes. Here's an example with each approach.
-
-- **Element Tree Approach**
-
-  ```dart
-  class _CustomLint extends PluginBase {
-    @override
-    Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-      final library = resolvedUnitResult.libraryElement;
-      final classes = library.topLevelElements.whereType<ClassElement>();
-      ....
-      ....
-    }
-  }
-  ```
-
-  The variable `classes` is of type `List<ClassElement>` and will contain all the ClassElements.
-
-- **AST Approach**
-
-  ```dart
-  class ClassDeclarationVisitor extends GeneralizingAstVisitor<void> {
-    ClassDeclarationVisitor({
-      required this.onClassDeclarationVisit,
-    });
-
-    void Function(ClassDeclaration node) onClassDeclarationVisit;
-
-    @override
-    void visitClassDeclaration(ClassDeclaration node) {
-      onClassDeclarationVisit(node);
-      super.visitClassDeclaration(node);
-    }
-  }
-
-  class _CustomLint extends PluginBase {
-    @override
-    Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-      final classDeclarations = <ClassDeclaration>[];
-      resolvedUnitResult.unit.visitChildren(
-        ClassDeclarationVisitor(
-          onClassDeclarationVisit: classDeclarations.add,
-        ),
-      );
-      ....
-      ....
-    }
-  }
-  ```
-
-  This way, the variable `classDeclarations` will contain list of `ClassDeclaration`.
-
----
-
-### Q. How do I get all the global variables present in my source code?
-
-Same as [above](#q-how-do-i-get-all-the-classes-present-in-my-source-code). Just replace `ClassElement` with `VariableElement` in the Element Tree Approach or replace `ClassDeclaration` with `VariableDeclaration` in the AST approach.
-
----
-
-### Q. How do I get the path to my currently opened dart file?
-
-You can use the instance of `ResolvedUnitResult` to call the `path` getter.
-
-```dart
-class _CustomLints extends PluginBase {
-  @override
-  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-    final path = resolvedUnitResult.path; // Gives the path of the currently opened Dart file
-    ...
-    ...
-  }
-}
-```
-
----
-
-### Q. I want to insert code at the end of the file. How can I get the required offset?
-
-To find the offset for the end of the file (or simply put, find the end line of a Dart file), you can use the instance of `ResolvedUnitResult` to call the `end` getter.
-
-```dart
-class _CustomLints extends PluginBase {
-  @override
-  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-    final endLineOffset = resolvedUnitResult.unit.end; // Gives the offset for the last line in a Dart file
-  }
-}
-```
 
 ---
 
