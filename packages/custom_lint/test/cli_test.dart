@@ -7,69 +7,23 @@ import 'create_project.dart';
 import 'equals_ignoring_ansi.dart';
 import 'mock_fs.dart';
 
-const oyPluginSource = '''
-import 'package:analyzer/dart/element/element.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/dart/analysis/results.dart';
+final oyPluginSource = createPluginSource([
+  TestLintRule(
+    code: 'oy',
+    message: 'Oy',
+  )
+]);
 
-PluginBase createPlugin() => _AnotherLint();
-
-class _AnotherLint extends PluginBase {
-  @override
-  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-    final library = resolvedUnitResult.libraryElement;
-    yield Lint(
-      code: 'oy',
-      message: 'Oy',
-      location: resolvedUnitResult.lintLocationFromOffset(
-        library.topLevelElements.first.nameOffset,
-        length: library.topLevelElements.first.nameLength,
-      ),
-    );
-  }
-}
-''';
-
-const helloWordPluginSource = '''
-import 'package:analyzer/dart/element/element.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/dart/analysis/results.dart';
-
-PluginBase createPlugin() => _HelloWorldLint();
-
-class _HelloWorldLint extends PluginBase {
-  @override
-  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-    final library = resolvedUnitResult.libraryElement;
-    yield Lint(
-      code: 'hello_world',
-      message: 'Hello world',
-      location: resolvedUnitResult.lintLocationFromOffset(
-        library.topLevelElements.first.nameOffset,
-        length: library.topLevelElements.first.nameLength,
-      ),
-    );
-  }
-}
-''';
+final helloWordPluginSource = createPluginSource([
+  TestLintRule(
+    code: 'hello_world',
+    message: 'Hello world',
+  )
+]);
 
 void main() {
   test('exits with 0 when no lint and no error are found', () async {
-    final plugin = createPlugin(
-      name: 'test_lint',
-      main: '''
-import 'package:analyzer/dart/element/element.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/dart/analysis/results.dart';
-
-PluginBase createPlugin() => _AnotherLint();
-
-class _AnotherLint extends PluginBase {
-  @override
-  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {}
-}
-''',
-    );
+    final plugin = createPlugin(name: 'test_lint', main: emptyPluginSource);
 
     final app = createLintUsage(
       source: {'lib/main.dart': 'void fn() {}'},
@@ -82,17 +36,19 @@ class _AnotherLint extends PluginBase {
         await cli.entrypoint();
 
         expect(exitCode, 0);
-        expect(out.join(), completion('''
+        expect(
+          out.join(),
+          completion('''
 No issues found!
-'''));
+'''),
+        );
         expect(err, emitsDone);
       },
       currentDirectory: app,
     );
   });
 
-  test('exits with 1 if only an error but no lint are found', retry: 3,
-      () async {
+  test('exits with 1 if only an error but no lint are found', () async {
     final plugin = createPlugin(name: 'test_lint', main: 'invalid;');
 
     final app = createLintUsage(
@@ -109,22 +65,19 @@ No issues found!
         expect(
           err.join(),
           completion(
-            matchIgnoringAnsi(startsWith, '''
-${plugin.path}/lib/test_lint.dart:1:1: Error: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
+            allOf([
+              matchIgnoringAnsi(contains, '''
+/lib/test_lint.dart:1:1: Error: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
 Try adding the name of the type of the variable or the keyword 'var'.
 invalid;
 ^^^^^^^
-lib/main.dart:13:29: Error: Undefined name 'createPlugin'.
+'''),
+              matchIgnoringAnsi(contains, '''
+lib/custom_lint_client.dart:14:29: Error: Undefined name 'createPlugin'.
     {'test_lint': test_lint.createPlugin,
                             ^^^^^^^^^^^^
-
-
-Failed to start plugins
-The request analysis.setContextRoots failed with the following error:
-RequestErrorCode.PLUGIN_ERROR
-Bad state: Failed to start the plugins.
-at:
 '''),
+            ]),
           ),
         );
         expect(out, emitsDone);
@@ -150,20 +103,23 @@ at:
       (out, err) async {
         await cli.entrypoint();
 
-        expect(exitCode, 1);
-        expect(out.join(), completion('''
+        expect(err, emitsDone);
+        expect(
+          out.join(),
+          completion('''
   lib/another.dart:1:6 • Hello world • hello_world
   lib/another.dart:1:6 • Oy • oy
   lib/main.dart:1:6 • Hello world • hello_world
   lib/main.dart:1:6 • Oy • oy
-'''));
-        expect(err, emitsDone);
+'''),
+        );
+        expect(exitCode, 1);
       },
       currentDirectory: app,
     );
   });
 
-  test('supports plugins that do not compile', retry: 3, () async {
+  test('supports plugins that do not compile', () async {
     final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
     final plugin2 = createPlugin(
       name: 'test_lint2',
@@ -187,24 +143,18 @@ at:
         expect(
           err.join(),
           completion(
-            matchIgnoringAnsi(
-              startsWith,
-              '''
-lib/main.dart:15:26: Error: Undefined name 'createPlugin'.
-'test_lint2': test_lint2.createPlugin,
-                         ^^^^^^^^^^^^
-${plugin2.path}/lib/test_lint2.dart:1:9: Error: A value of type 'String' can't be assigned to a variable of type 'int'.
+            allOf([
+              matchIgnoringAnsi(contains, '''
+/lib/test_lint2.dart:1:9: Error: A value of type 'String' can't be assigned to a variable of type 'int'.
 int x = 'oy';
         ^
-
-
-Failed to start plugins
-The request analysis.setContextRoots failed with the following error:
-RequestErrorCode.PLUGIN_ERROR
-Bad state: Failed to start the plugins.
-at:
-''',
-            ),
+'''),
+              matchIgnoringAnsi(contains, '''
+lib/custom_lint_client.dart:16:26: Error: Undefined name 'createPlugin'.
+'test_lint2': test_lint2.createPlugin,
+                         ^^^^^^^^^^^^
+'''),
+            ]),
           ),
         );
         expect(out.join(), completion(isEmpty));
@@ -216,32 +166,20 @@ at:
   test('Shows prints and exceptions', () async {
     final plugin = createPlugin(
       name: 'test_lint',
-      main: r'''
-import 'package:analyzer/dart/element/element.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/dart/analysis/results.dart';
-
-PluginBase createPlugin() => _HelloWorldLint();
-
-class _HelloWorldLint extends PluginBase {
-  @override
-  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-    final library = resolvedUnitResult.libraryElement;
-    print('Oy');
-    if (library.topLevelElements.single.name == 'fail') {
+      main: createPluginSource([
+        TestLintRule(
+          code: 'hello_world',
+          message: 'Hello world',
+          onVariable: r'''
+    if (node.name.lexeme == 'fail') {
       print('');
       print(' ');
        print('Hello\nworld');
        throw StateError('fail');
     }
-    yield Lint(
-      message: 'Hello world',
-      code: 'hello_world',
-      location: resolvedUnitResult.lintLocationFromOffset(0, length: 5),
-    );
-  }
-}
 ''',
+        ),
+      ]),
     );
 
     final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
@@ -259,22 +197,21 @@ class _HelloWorldLint extends PluginBase {
       (out, err) async {
         await cli.entrypoint();
 
-        // out.listen(print);
         expect(exitCode, 1);
         expect(
           out.join(),
           completion(
             allOf(
               contains('''
-[test_lint]
-[test_lint]  
-[test_lint] Hello
-[test_lint] world
+[hello_world]
+[hello_world]  
+[hello_world] Hello
+[hello_world] world
 '''),
               endsWith(
                 '''
   lib/another.dart:1:6 • Oy • oy
-  lib/main.dart:1:1 • Hello world • hello_world
+  lib/main.dart:1:6 • Hello world • hello_world
   lib/main.dart:1:6 • Oy • oy
 ''',
               ),
@@ -285,9 +222,9 @@ class _HelloWorldLint extends PluginBase {
           err.join(),
           completion(
             contains('''
-Plugin test_lint threw while analyzing ${app.path}/lib/another.dart:
+Plugin hello_world threw while analyzing ${app.path}/lib/another.dart:
 Bad state: fail
-#0      _HelloWorldLint.getLints (package:test_lint/test_lint.dart:16:8)
+#0      hello_world.run.<anonymous closure> (package:test_lint/test_lint.dart:25:8)
 '''),
           ),
         );
@@ -300,64 +237,50 @@ Bad state: fail
     final plugin = createPlugin(
       name: 'test_lint',
       main: '''
-import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/dart/analysis/results.dart';
 
 PluginBase createPlugin() => _HelloWorldLint();
 
 class _HelloWorldLint extends PluginBase {
   @override
-  Stream<Lint> getLints(ResolvedUnitResult resolvedUnitResult) async* {
-    yield Lint(
-      message: 'x2',
-      code: 'x2',
-      location: resolvedUnitResult.lintLocationFromLines(
-        startLine: 2,
-        endLine: 2,
-        startColumn: 2,
-        endColumn: 3,
-      ),
+  List<LintRule> getLintRules(CustomLintConfigs configs) => const [_Lint()];
+}
+
+class _Lint extends DartLintRule {
+  const _Lint() : super(code: const LintCode(name: 'a', problemMessage: 'a'));
+
+  @override
+  void run(
+    CustomLintResolver resolver,
+    ErrorReporter reporter,
+    CustomLintContext context,
+  ) {
+    final line2 = resolver.lineInfo.getOffsetOfLine(1);
+    reporter.reportErrorForOffset(
+      const LintCode(name: 'x2', problemMessage: 'x2'),
+      line2 + 1,
+      1,
     );
-    yield Lint(
-      message: 'a',
-      code: 'a',
-      location: resolvedUnitResult.lintLocationFromLines(
-        startLine: 2,
-        endLine: 2,
-        startColumn: 2,
-        endColumn: 3,
-      ),
+    reporter.reportErrorForOffset(
+      const LintCode(name: 'a', problemMessage: 'a'),
+      line2 + 1,
+      1,
     );
-    yield Lint(
-      message: 'x',
-      code: 'x',
-      location: resolvedUnitResult.lintLocationFromLines(
-        startLine: 2,
-        endLine: 2,
-        startColumn: 2,
-        endColumn: 3,
-      ),
+    reporter.reportErrorForOffset(
+      const LintCode(name: 'x', problemMessage: 'x'),
+      line2 + 1,
+      1,
     );
-    yield Lint(
-      message: 'y',
-      code: 'y',
-      location: resolvedUnitResult.lintLocationFromLines(
-        startLine: 2,
-        endLine: 2,
-        startColumn: 1,
-        endColumn: 2,
-      ),
+    reporter.reportErrorForOffset(
+      const LintCode(name: 'y', problemMessage: 'y'),
+      line2,
+      1,
     );
-    yield Lint(
-      message: 'z',
-      code: 'z',
-      location: resolvedUnitResult.lintLocationFromLines(
-        startLine: 1,
-        endLine: 1,
-        startColumn: 1,
-        endColumn: 2,
-      ),
+    reporter.reportErrorForOffset(
+      const LintCode(name: 'z', problemMessage: 'z'),
+      0,
+      1,
     );
   }
 }

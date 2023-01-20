@@ -118,6 +118,7 @@ class _PrettyRequestFailure extends RequestFailure {
 
 /// Mixin for Isolate-based channels
 abstract class IsolateChannelBase with ChannelBase {
+  /// Mixin for Isolate-based channels
   IsolateChannelBase(this.receivePort) {
     _sendPort =
         inputStream.where((event) => event is SendPort).cast<SendPort>().first;
@@ -148,5 +149,6 @@ class ServerIsolateChannel extends IsolateChannelBase {
       .where((e) => e.event == ANALYSIS_NOTIFICATION_ERRORS)
       .map(AnalysisErrorsParams.fromNotification);
 
+  /// Releases the associated resources.
   void close() => receivePort.close();
 }
