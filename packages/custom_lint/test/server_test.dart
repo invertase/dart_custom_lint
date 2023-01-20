@@ -270,13 +270,6 @@ if (node.name.lexeme == "fail") {
           paths: {plugin.uri: 'plugin', app.uri: 'app'},
         ),
       );
-      expect(
-        app.log,
-        matchesLogGolden(
-          'test/goldens/server_test/redirect_logs.golden',
-          paths: {plugin.uri: 'plugin', app.uri: 'app'},
-        ),
-      );
 
       // Closing so that previous error matchers relying on stream
       // closing can complete

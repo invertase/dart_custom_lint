@@ -4,23 +4,23 @@
 [hello_world] 1990-01-01T00:00:00.000 #0      hello_world.run.<anonymous closure> (package:test_lint/test_lint.dart:23:3)
 [hello_world] 1990-01-01T00:00:00.000 #1      _rootRunUnary (dart:async/zone.dart:1414:13)
 [hello_world] 1990-01-01T00:00:00.000 #2      _CustomZone.runUnary (dart:async/zone.dart:1307:19)
-[hello_world] 1990-01-01T00:00:00.000 #3      LinterVisitor._runSubscriptions (package:custom_lint_builder/src/node_lint_visitor.dart:1025:27)
-[hello_world] 1990-01-01T00:00:00.000 #4      LinterVisitor.visitFunctionDeclaration (package:custom_lint_builder/src/node_lint_visitor.dart:401:5)
+[hello_world] 1990-01-01T00:00:00.000 #3      LinterVisitor._runSubscriptions (package:custom_lint_builder/src/node_lint_visitor.dart:1034:27)
+[hello_world] 1990-01-01T00:00:00.000 #4      LinterVisitor.visitFunctionDeclaration (package:custom_lint_builder/src/node_lint_visitor.dart:405:5)
 [hello_world] 1990-01-01T00:00:00.000 #5      FunctionDeclarationImpl.accept (package:analyzer/src/dart/ast/ast.dart:5957:50)
 [hello_world] 1990-01-01T00:00:00.000 #6      NodeListImpl.accept (package:analyzer/src/dart/ast/ast.dart:9445:20)
 [hello_world] 1990-01-01T00:00:00.000 #7      CompilationUnitImpl.visitChildren (package:analyzer/src/dart/ast/ast.dart:2596:21)
-[hello_world] 1990-01-01T00:00:00.000 #8      LinterVisitor.visitCompilationUnit (package:custom_lint_builder/src/node_lint_visitor.dart:180:10)
+[hello_world] 1990-01-01T00:00:00.000 #8      LinterVisitor.visitCompilationUnit (package:custom_lint_builder/src/node_lint_visitor.dart:184:10)
 [hello_world] 1990-01-01T00:00:00.000 #9      CompilationUnitImpl.accept (package:analyzer/src/dart/ast/ast.dart:2589:50)
-[hello_world] 1990-01-01T00:00:00.000 #10     DartLintRule.startUp.<anonymous closure> (package:custom_lint_builder/src/lint_rule.dart:75:17)
+[hello_world] 1990-01-01T00:00:00.000 #10     DartLintRule.startUp.<anonymous closure> (package:custom_lint_builder/src/lint_rule.dart:119:17)
 [hello_world] 1990-01-01T00:00:00.000 #11     _rootRun (dart:async/zone.dart:1398:13)
 [hello_world] 1990-01-01T00:00:00.000 #12     _CustomZone.run (dart:async/zone.dart:1300:19)
 [hello_world] 1990-01-01T00:00:00.000 #13     _CustomZone.bindCallback.<anonymous closure> (dart:async/zone.dart:1232:23)
-[hello_world] 1990-01-01T00:00:00.000 #14     _ClientAnalyzerPlugin._runPostRunCallbacks (package:custom_lint_builder/src/client.dart:758:21)
-[hello_world] 1990-01-01T00:00:00.000 #15     _ClientAnalyzerPlugin.analyzeFile.<anonymous closure> (package:custom_lint_builder/src/client.dart:718:7)
+[hello_world] 1990-01-01T00:00:00.000 #14     _ClientAnalyzerPlugin._runPostRunCallbacks (package:custom_lint_builder/src/client.dart:770:21)
+[hello_world] 1990-01-01T00:00:00.000 #15     _ClientAnalyzerPlugin.analyzeFile.<anonymous closure> (package:custom_lint_builder/src/client.dart:730:7)
 [hello_world] 1990-01-01T00:00:00.000 <asynchronous suspension>
-[hello_world] 1990-01-01T00:00:00.000 #16     _ClientAnalyzerPlugin._runOperation (package:custom_lint_builder/src/client.dart:785:14)
+[hello_world] 1990-01-01T00:00:00.000 #16     _ClientAnalyzerPlugin._runOperation (package:custom_lint_builder/src/client.dart:797:14)
 [hello_world] 1990-01-01T00:00:00.000 <asynchronous suspension>
-[hello_world] 1990-01-01T00:00:00.000 #17     _ClientAnalyzerPlugin.analyzeFile (package:custom_lint_builder/src/client.dart:686:5)
+[hello_world] 1990-01-01T00:00:00.000 #17     _ClientAnalyzerPlugin.analyzeFile (package:custom_lint_builder/src/client.dart:698:5)
 [hello_world] 1990-01-01T00:00:00.000 <asynchronous suspension>
 [hello_world] 1990-01-01T00:00:00.000 #18     ServerPlugin.analyzeFiles (package:analyzer_plugin/plugin/plugin.dart:119:7)
 [hello_world] 1990-01-01T00:00:00.000 <asynchronous suspension>
@@ -32,10 +32,10 @@
 [hello_world] 1990-01-01T00:00:00.000 <asynchronous suspension>
 [hello_world] 1990-01-01T00:00:00.000 #22     Future.wait.<anonymous closure> (dart:async/future.dart:522:21)
 [hello_world] 1990-01-01T00:00:00.000 <asynchronous suspension>
-[hello_world] 1990-01-01T00:00:00.000 #23     _ClientAnalyzerPlugin._awaitAnalysisDone (package:custom_lint_builder/src/client.dart:799:7)
+[hello_world] 1990-01-01T00:00:00.000 #23     _ClientAnalyzerPlugin._awaitAnalysisDone (package:custom_lint_builder/src/client.dart:811:7)
 [hello_world] 1990-01-01T00:00:00.000 <asynchronous suspension>
-[hello_world] 1990-01-01T00:00:00.000 #24     CustomLintPluginClient._handleCustomLintRequest.<anonymous closure> (package:custom_lint_builder/src/client.dart:108:11)
+[hello_world] 1990-01-01T00:00:00.000 #24     CustomLintPluginClient._handleCustomLintRequest.<anonymous closure> (package:custom_lint_builder/src/client.dart:113:11)
 [hello_world] 1990-01-01T00:00:00.000 <asynchronous suspension>
-[hello_world] 1990-01-01T00:00:00.000 #25     CustomLintPluginClient._handleCustomLintRequest (package:custom_lint_builder/src/client.dart:103:24)
+[hello_world] 1990-01-01T00:00:00.000 #25     CustomLintPluginClient._handleCustomLintRequest (package:custom_lint_builder/src/client.dart:108:24)
 [hello_world] 1990-01-01T00:00:00.000 <asynchronous suspension>
 [hello_world] 1990-01-01T00:00:00.000
