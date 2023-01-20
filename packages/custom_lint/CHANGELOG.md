@@ -1,4 +1,4 @@
-## Unreleased major
+## 0.2.0
 
 **Large Breaking change**
 This new version introduces large changes to how lints/fixes/assists are defined.  
