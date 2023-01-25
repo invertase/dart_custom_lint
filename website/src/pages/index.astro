@@ -1,0 +1,34 @@
+---
+import Root from "@layouts/Root.astro";
+import Header from "@components/Header.astro";
+import Footer from "@components/Footer.astro";
+import Card from "@components/Card.astro";
+
+const cards = Array.from(new Array(8), () => ({
+	name: "Package Name",
+	description:
+		"Brief text descriptions of the package, this shouldnt be too long.",
+	link: "",
+}));
+---
+
+<Root>
+	<Header />
+	<div class="max-w-7xl mx-auto mb-36 text-center">
+		<h2 class="mb-10 font-semibold text-5xl">VS code Integration</h2>
+		<p class="font-medium mb-16 text-lg">
+			Easily integrate your sandbox with VS-code, takes less than a
+			minuite
+		</p>
+	</div>
+	<div class="max-w-7xl mx-auto mb-12">
+		<h2 class="text-center mb-20 font-semibold text-5xl">Plugin library</h2>
+		<div class="grid grid-cols-4 gap-10">
+			{cards.map((card) => <Card {...card} />)}
+		</div>
+		<div class="mt-16 flex justify-center">
+			<button class="btn-secondary dark:btn-primary">Load More</button>
+		</div>
+	</div>
+	<Footer />
+</Root>

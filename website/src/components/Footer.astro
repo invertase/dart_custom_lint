@@ -1,0 +1,78 @@
+---
+import IconMoon from "@components/icons/IconMoon.astro";
+import IconSun from "@components/icons/IconSun.astro";
+import Logo from "@components/Logo.astro";
+---
+
+<footer class="bg-white shadow-footer dark:bg-transparent">
+    <div class="max-w-7xl mx-auto py-16">
+        <div
+            class="flex justify-between items-start gap-10 text-gray-500 dark:text-white"
+        >
+            <div class="">
+                <div>
+                    <a
+                        href="/"
+                        class="flex items-center gap-2 hover:opacity-75 whitespace-nowrap transition-opacity duration-500 mb-5"
+                    >
+                        <Logo class="dark:hidden" />
+                        <Logo
+                            class="hidden dark:block"
+                            mainColor="#BEECFE"
+                            secondColor="#FFF"
+                        />
+                        <span
+                            class="text-base font-medium whitespace-nowrap dark:opacity-75"
+                        >
+                            by Invertase.
+                        </span>
+                    </a>
+                </div>
+                <button
+                    id="theme-toggle"
+                    class="flex relative items-center cursor-pointer"
+                >
+                    <div
+                        class="w-16 h-8 dark:border-white border rounded-full after:translate-x-8 dark:after:translate-x-0 after:absolute after:bg-gray-300 dark:after:bg-white after:rounded-full after:h-8 after:w-8 after:transition-all flex justify-between items-center"
+                    >
+                        <div
+                            class="w-5 h-5 translate-x-[6px] relative z-20 dark:text-linter"
+                        >
+                            <IconMoon />
+                        </div>
+                        <div class="w-5 h-5 translate-x-[-4px] relative z-20">
+                            <IconSun />
+                        </div>
+                    </div>
+                </button>
+            </div>
+            <div class="flex gap-14">
+                <a
+                    class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
+                    href="">Docs</a
+                >
+                <a
+                    class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
+                    href="https://pub.dev/packages/custom_lint">Github</a
+                >
+            </div>
+        </div>
+    </div>
+</footer>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        document
+            .getElementById("theme-toggle")
+            ?.addEventListener("click", () => {
+                document.documentElement.classList.toggle("dark");
+
+                const isDarkTheme =
+                    localStorage.theme === "dark" ||
+                    (!("theme" in localStorage) &&
+                        window.matchMedia("(prefers-color-scheme: dark)")
+                            .matches);
+
+                localStorage.setItem("theme", isDarkTheme ? "light" : "dark");
+            });
+    });
+</script>

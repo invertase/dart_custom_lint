@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@700@300&display=swap');
+
+:root {
+  --primary: #2E2174;
+  --light-background: #fff;
+  --dark-background: #202528;
+}
+
+html {
+  --background: var(--light-background);
+
+  color-scheme: light;
+}
+
+html.dark {
+  --background: var(--dark-background);
+
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  .underline-gradient {
+    @apply bg-gradient-to-r from-[currentColor] to-[currentColor] bg-[length:0_1px] bg-[0_100%] bg-no-repeat transition-[background-size] duration-500;
+  }
+
+  .underline-gradient-visible {
+    @apply bg-[length:100%_1px];
+  }
+
+  .underline-gradient-hidden {
+    @apply bg-[length:0_1px];
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-block rounded-md bg-white px-6 py-4 text-center  
+              text-linter transition-opacity duration-500 ease-in-out
+              hover:opacity-70 disabled:pointer-events-none disabled:cursor-default;
+  }
+
+  .btn-secondary {
+    @apply btn-primary bg-linter text-white;
+  }
+}
+
+@layer utilities {
+    /* Chrome, Safari and Opera */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none; /* IE and Edge */
+      scrollbar-width: none; /* Firefox */
+    }
+
+    .overflow-initial {
+        overflow: initial;
+    }
+}

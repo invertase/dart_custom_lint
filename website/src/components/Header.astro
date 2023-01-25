@@ -1,0 +1,47 @@
+---
+import Logo from "@components/Logo.astro";
+---
+
+<header class="bg-[url(/images/bg_header.svg)] bg-[length:100%_100%] mb-44">
+    <div
+        class="bg-[url(/images/bg_header_corner.svg)] bg-[length:45%_65%] bg-no-repeat"
+    >
+        <div class="max-w-7xl mx-auto text-white">
+            <div class="flex justify-between items-start gap-10 py-7 mb-20">
+                <div class="">
+                    <div>
+                        <a
+                            href="/"
+                            class="hover:opacity-75 transition-opacity duration-500 mb-5"
+                        >
+                            <Logo mainColor="#BEECFE" secondColor="#FFF" />
+                        </a>
+                    </div>
+                </div>
+                <div class="flex gap-14">
+                    <a
+                        class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
+                        href="">Docs</a
+                    >
+                    <a
+                        class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
+                        href="https://pub.dev/packages/custom_lint">Github</a
+                    >
+                </div>
+            </div>
+            <div class="pb-52 pt-20 grid grid-cols-2 gap-10">
+                <div>
+                    <h1 class="mb-12 font-semibold text-5xl leading-tight">
+                        Build powerful Custom Lint rules for any dart & flutter
+                        package
+                    </h1>
+                    <p class="mb-16">
+                        Zero configuration, zero set up, simply start building!
+                    </p>
+                    <a class="btn-primary" href="">Go to Docs</a>
+                </div>
+                <div></div>
+            </div>
+        </div>
+    </div>
+</header>
