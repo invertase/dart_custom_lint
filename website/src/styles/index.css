@@ -3,7 +3,30 @@
 :root {
   --primary: #2E2174;
   --light-background: #fff;
-  --dark-background: #202528;
+  --dark-background: #0C0D12;
+
+  --astro-code-color-text: #000;
+  --astro-code-color-background: transparent;
+  --astro-code-token-constant: #6ee7b7;
+  --astro-code-token-string: #6ee7b7;
+  --astro-code-token-comment: #71717a;
+  --astro-code-token-keyword: #000;
+  --astro-code-token-parameter: #f9a8d4;
+  --astro-code-token-function: #c4b5fd;
+  --astro-code-token-string-expression: rgba(71, 148, 23, 0.88);
+  --astro-code-token-punctuation: #e4e4e7;
+  --astro-code-token-link: var(--primary);
+
+  --shiki-color-background: var(--astro-code-color-background);
+  --shiki-color-text: var(--astro-code-color-text);
+  --shiki-token-constant: var(--astro-code-token-constant);
+  --shiki-token-string: var(--astro-code-token-string);
+  --shiki-token-comment: var(--astro-code-token-comment);
+  --shiki-token-keyword: var(--astro-code-token-keyword);
+  --shiki-token-parameter: var(--astro-code-token-parameter);
+  --shiki-token-function: var(--astro-code-token-function);
+  --shiki-token-string-expression: var(--astro-code-token-string-expression);
+  --shiki-token-punctuation: var(--astro-code-token-punctuation);
 }
 
 html {
@@ -15,6 +38,10 @@ html {
 html.dark {
   --background: var(--dark-background);
 
+  --astro-code-color-text: #FFF;
+  --astro-code-token-comment: #FFF;
+  --astro-code-token-keyword: #FFF;
+
   color-scheme: dark;
 }
 
@@ -22,19 +49,6 @@ html,
 body,
 #root {
   height: 100%;
-}
-
-@keyframes fadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.2s ease-in-out;
 }
 
 @tailwind base;
@@ -64,6 +78,10 @@ body,
 
   .btn-secondary {
     @apply btn-primary bg-linter text-white;
+  }
+
+  .btn-third {
+    @apply btn-primary bg-[linear-gradient(93.73deg,#2D2072_28.69%,#371D62_88.7%)] text-white shadow-lg shadow-indigo-700/30;
   }
 }
 

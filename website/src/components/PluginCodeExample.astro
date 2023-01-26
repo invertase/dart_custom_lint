@@ -1,0 +1,62 @@
+---
+import { Code } from "astro/components";
+
+interface Props {
+    class?: string;
+}
+
+const { class: classStr = "" } = Astro.props as Props;
+---
+
+<div class={`relative rounded-lg  w-full shadow-xl ${classStr}`}>
+    <div
+        class="relative z-[3] rounded-lg bg-white dark:bg-linter-card shadow-xl dark:border border-white/20 overflow-hidden text-[0.8125rem]"
+    >
+        <div
+            class="flex items-center text-xs text-gray-600 dark:text-white border-b dark:border-white/10 font-itc"
+        >
+            <div
+                class="px-3 py-3 inline-flex items-center gap-3 bg-gray-300/30 dark:bg-transparent dark:border-r border-white/10"
+            >
+                <span class="opacity-90 dark:opacity-50">{"< >"}</span>
+                <span class="text-linter opacity-90 dark:text-white">
+                    plugin_code
+                </span>
+                <span class="text-gray-800 dark:text-white">X</span>
+            </div>
+            <div class="px-3 py-3 border-r dark:border-white/10">
+                <span class="opacity text-gray-800/80 dark:text-white/80"
+                    >Js</span
+                >
+                <span class="opacity-80 dark:opacity-50">app.js</span>
+            </div>
+            <div class="px-3 py-3">
+                <span class="opacity text-gray-800 dark:text-white">#</span>
+                <span class="opacity-80 dark:opacity-50">styles.dart</span>
+            </div>
+        </div>
+        <div class="relative rounded-br-lg rounded-bl-lg">
+            <div class="p-6">
+                <Code
+                    lang="yaml"
+                    theme="css-variables"
+                    code={`# pubspec.yaml name: my_custom_lint_package 
+environment: sdk: ">=2.16.0 <3.0.0"
+
+
+dependencies: # we will use analyzer for inspecting Dart files analyzer: 
+analyzer_plugin: # 
+
+
+custom_lint_builder will give us tools for writing lints
+custom_lint_builder:
+
+
+code: 'my_custom_lint_code', message: 'This is the description of our
+custom lint',
+`}
+                />
+            </div>
+        </div>
+    </div>
+</div>

@@ -4,7 +4,7 @@ import Header from "@components/Header.astro";
 import Footer from "@components/Footer.astro";
 import Card from "@components/Card.astro";
 
-const cards = Array.from(new Array(8), () => ({
+const cards = Array.from(new Array(9), () => ({
 	name: "Package Name",
 	description:
 		"Brief text descriptions of the package, this shouldnt be too long.",
@@ -12,23 +12,80 @@ const cards = Array.from(new Array(8), () => ({
 }));
 ---
 
+<script>
+	document.addEventListener("DOMContentLoaded", () => {
+		const button = document.getElementById("load-more-cards");
+		if (!button) return;
+
+		const getLogItems = () =>
+			Array.from(document.getElementsByClassName("js-hidden-cards"));
+
+		const changeButtonState = () => {
+			if (getLogItems().length) {
+				button.classList.remove("hidden");
+			} else {
+				button.classList.add("hidden");
+			}
+		};
+
+		changeButtonState();
+
+		button.addEventListener("click", () => {
+			getLogItems()
+				.slice(0, 8)
+				.map((it) => {
+					it.classList.remove(...["hidden", "js-hidden-cards"]);
+				});
+
+			changeButtonState();
+		});
+	});
+</script>
+
 <Root>
 	<Header />
-	<div class="max-w-7xl mx-auto mb-36 text-center">
-		<h2 class="mb-10 font-semibold text-5xl">VS code Integration</h2>
-		<p class="font-medium mb-16 text-lg">
-			Easily integrate your sandbox with VS-code, takes less than a
-			minuite
-		</p>
-	</div>
-	<div class="max-w-7xl mx-auto mb-12">
-		<h2 class="text-center mb-20 font-semibold text-5xl">Plugin library</h2>
-		<div class="grid grid-cols-4 gap-10">
-			{cards.map((card) => <Card {...card} />)}
+	<section class="px-5">
+		<div class="max-w-7xl mx-auto mb-36 text-center">
+			<h2 class="mb-10 font-semibold text-5xl">VS code Integration</h2>
+			<p class="font-medium mb-16 text-lg dark:opacity-70">
+				Easily integrate your sandbox with VS-code, takes less than a
+				minuite
+			</p>
+			<figure
+				class="max-w-4xl w-full mx-auto shadow-2xl overflow-hidden rounded-xl"
+			>
+				<img
+					class="block w-full"
+					src="/images/vscode-example.jpg"
+					alt=""
+				/>
+			</figure>
 		</div>
-		<div class="mt-16 flex justify-center">
-			<button class="btn-secondary dark:btn-primary">Load More</button>
+	</section>
+	<section class="px-5">
+		<div class="max-w-7xl mx-auto mb-12">
+			<h2 class="text-center mb-20 font-semibold text-5xl">
+				Plugin library
+			</h2>
+			<div class="grid grid-cols-4 gap-10 mb-16">
+				{
+					cards.map((card, index) => (
+						<Card
+							class={index > 7 ? "js-hidden-cards hidden" : ""}
+							{...card}
+						/>
+					))
+				}
+			</div>
+			<div class="flex justify-center">
+				<button
+					id="load-more-cards"
+					class="btn-secondary dark:btn-third hidden w-40"
+				>
+					View More
+				</button>
+			</div>
 		</div>
-	</div>
+	</section>
 	<Footer />
 </Root>

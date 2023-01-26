@@ -4,30 +4,30 @@ import IconSun from "@components/icons/IconSun.astro";
 import Logo from "@components/Logo.astro";
 ---
 
-<footer class="bg-white shadow-footer dark:bg-transparent">
+<footer
+    class="bg-white shadow-footer dark:bg-transparent dark:shadow-none dark:border-t dark:border-white/20 px-5"
+>
     <div class="max-w-7xl mx-auto py-16">
-        <div
-            class="flex justify-between items-start gap-10 text-gray-500 dark:text-white"
-        >
-            <div class="">
-                <div>
-                    <a
-                        href="/"
-                        class="flex items-center gap-2 hover:opacity-75 whitespace-nowrap transition-opacity duration-500 mb-5"
+        <div class="grid grid-cols-3 gap-10 text-gray-500 dark:text-white">
+            <div>
+                <a
+                    href="/"
+                    class="flex items-center gap-2 hover:opacity-75 whitespace-nowrap transition-opacity duration-500"
+                >
+                    <Logo class="dark:hidden" />
+                    <Logo
+                        class="hidden dark:block"
+                        mainColor="#7352A0"
+                        secondColor="#FFF"
+                    />
+                    <span
+                        class="text-base font-medium whitespace-nowrap dark:opacity-75"
                     >
-                        <Logo class="dark:hidden" />
-                        <Logo
-                            class="hidden dark:block"
-                            mainColor="#BEECFE"
-                            secondColor="#FFF"
-                        />
-                        <span
-                            class="text-base font-medium whitespace-nowrap dark:opacity-75"
-                        >
-                            by Invertase.
-                        </span>
-                    </a>
-                </div>
+                        by Invertase.
+                    </span>
+                </a>
+            </div>
+            <div class="flex justify-center">
                 <button
                     id="theme-toggle"
                     class="flex relative items-center cursor-pointer"
@@ -46,7 +46,7 @@ import Logo from "@components/Logo.astro";
                     </div>
                 </button>
             </div>
-            <div class="flex gap-14">
+            <div class="flex gap-14 dark:opacity-75 justify-end items-center">
                 <a
                     class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
                     href="">Docs</a

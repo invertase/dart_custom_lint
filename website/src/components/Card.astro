@@ -5,23 +5,28 @@ interface Props {
     name: string;
     description: string;
     link: string;
+    class?: string;
 }
 
-const { name, description, link } = Astro.props as Props;
+const { name, description, link, class: classStr } = Astro.props as Props;
 ---
 
 <div
-    class="bg-white dark:bg-white/90 rounded-lg px-6 py-5 shadow-lg hover:scale-105 duration-300"
+    class={`bg-white dark:bg-linter-card border border-transparent dark:border-white/20 rounded-lg px-6 py-5 shadow-lg hover:scale-105 duration-300 ${classStr}`}
 >
     <a
-        class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
+        class="text-linter dark:text-white underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
         href={link}
     >
-        <h3 class="text-linter font-medium mb-5 inline-block">{name}</h3>
+        <h3 class="font-medium mb-5 inline-block font-">{name}</h3>
     </a>
-    <p class="text-sm leading-6 font-light mb-7 text-gray-500">{description}</p>
+    <p
+        class="text-sm leading-6 font-light mb-7 text-gray-500/80 dark:text-white/50"
+    >
+        {description}
+    </p>
     <a
-        class="text-linter font-medium text-xs group inline-flex gap-1 items-center"
+        class="text-linter dark:text-white font-medium dark:font-light text-xs group inline-flex gap-1 items-center"
         href={link}
     >
         <span

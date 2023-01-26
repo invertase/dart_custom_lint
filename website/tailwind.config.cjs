@@ -5,7 +5,7 @@ module.exports = {
 	theme: {
 		extend: {
 			fontFamily: {
-				itc: "Arial, sans-serif;",
+				itc: '"ITC Avant Garde Gothic Book", Arial, sans-serif;',
 			},
 			boxShadow: {
 				footer: '0px -2px 227px rgba(0, 0, 0, 0.14)'
@@ -14,6 +14,7 @@ module.exports = {
 				linter: {
 					DEFAULT: 'var(--primary)',
 					background: 'var(--background)',
+					card: 'rgb(44,30,60)',
 				},
 			},
 		},
