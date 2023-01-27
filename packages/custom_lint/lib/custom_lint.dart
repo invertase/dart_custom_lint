@@ -57,7 +57,8 @@ Future<void> customLint({
         if (watchMode) {
           await _startWatchMode(runner);
         }
-      } catch (err) {
+      } catch (err, stack) {
+        stderr.writeln('$err\n$stack');
         exitCode = 1;
       } finally {
         await runner.close();

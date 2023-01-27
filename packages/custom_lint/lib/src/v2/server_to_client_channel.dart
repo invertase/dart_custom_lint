@@ -39,6 +39,40 @@ Future<T> _asyncRetry<T>(
   }
 }
 
+/// Write a package_config.json file in a project
+void writePackageConfigSync(
+  Directory directory,
+  Iterable<Package> packages,
+) {
+  final targetFile = File(
+    join(directory.path, '.dart_tool', 'package_config.json'),
+  );
+
+  targetFile.createSync(recursive: true);
+
+  targetFile.writeAsStringSync(
+    jsonEncode(<String, Object?>{
+      'configVersion': 2,
+      'generated': DateTime.now().toIso8601String(),
+      'generator': 'custom_lint',
+      'generatorVersion': '0.0.1',
+      'packages': <Object?>[
+        for (final package in packages)
+          <String, String>{
+            'name': package.name,
+            // This is somehow enough to change relative paths into absolute ones.
+            // It seems that PackageConfig.parse already converts the paths into
+            // absolute ones.
+            'rootUri': package.root.toString(),
+            'packageUri': package.packageUriRoot.toString(),
+            'languageVersion': package.languageVersion.toString(),
+            'extraData': package.extraData.toString(),
+          }
+      ],
+    }),
+  );
+}
+
 /// Generate a package_config.json combining all the dependencies from all
 /// the contextRoots.
 ///
@@ -47,10 +81,6 @@ void _writePackageConfigForTempProject(
   Directory tempDirectory,
   List<ContextRoot> contextRoots,
 ) {
-  final targetFile = File(
-    join(tempDirectory.path, '.dart_tool', 'package_config.json'),
-  );
-
   final packageMap = <String, Package>{};
   for (final contextRoot in contextRoots) {
     final contextRootPackageConfigUri = Uri.file(
@@ -107,29 +137,7 @@ therefore custom_lint does not know which one to pick.
     }
   }
 
-  targetFile.createSync(recursive: true);
-
-  targetFile.writeAsStringSync(
-    jsonEncode(<String, Object?>{
-      'configVersion': 2,
-      'generated': DateTime.now().toIso8601String(),
-      'generator': 'custom_lint',
-      'generatorVersion': '0.0.1',
-      'packages': <Object?>[
-        for (final package in packageMap.values)
-          <String, String>{
-            'name': package.name,
-            // This is somehow enough to change relative paths into absolute ones.
-            // It seems that PackageConfig.parse already converts the paths into
-            // absolute ones.
-            'rootUri': package.root.toString(),
-            'packageUri': package.packageUriRoot.toString(),
-            'languageVersion': package.languageVersion.toString(),
-            'extraData': package.extraData.toString(),
-          }
-      ],
-    }),
-  );
+  writePackageConfigSync(tempDirectory, packageMap.values);
 }
 
 class _SocketCustomLintServerToClientChannel
@@ -379,6 +387,7 @@ $dependencies
     response.map(
       awaitAnalysisDone: (_) {},
       pong: (_) {},
+      listLintRules: (_) {},
       analyzerPluginResponse: (response) {
         final error = response.response.error;
         if (error != null) {

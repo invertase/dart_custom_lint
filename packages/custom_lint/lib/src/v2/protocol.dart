@@ -17,10 +17,14 @@ class CustomLintRequest with _$CustomLintRequest {
   factory CustomLintRequest.awaitAnalysisDone({
     required String id,
     required bool reload,
-  }) = _CustomLintRequestAwaitAnalysisDone;
+  }) = CustomLintRequestAwaitAnalysisDone;
+
+  /// Asks for the list of lint rules.
+  factory CustomLintRequest.listLintRules({required String id}) =
+      CustomLintRequestLintRules;
 
   /// Sends a meaningless message to the client, waiting for a response.
-  factory CustomLintRequest.ping({required String id}) = _CustomLintRequestPing;
+  factory CustomLintRequest.ping({required String id}) = CustomLintRequestPing;
 
   /// Decode a custom_lint request from JSON
   factory CustomLintRequest.fromJson(Map<String, Object?> json) =>
@@ -33,27 +37,53 @@ class CustomLintRequest with _$CustomLintRequest {
 
 /// The base class for all responses to a custom_lint request.
 @freezed
+class LintRuleMeta with _$LintRuleMeta {
+  /// The response for an analyzer_plugin request
+  factory LintRuleMeta({
+    /// The name of the plugin that defined this lint rule.
+    required String pluginName,
+
+    /// The error code that the lint rule might emit.
+    required String code,
+
+    /// General information about the lint rule.
+    required String? description,
+  }) = _LintRuleMeta;
+
+  /// Decode a custom_lint request from JSON
+  factory LintRuleMeta.fromJson(Map<String, Object?> json) =>
+      _$LintRuleMetaFromJson(json);
+}
+
+/// The base class for all responses to a custom_lint request.
+@freezed
 class CustomLintResponse with _$CustomLintResponse {
   /// The response for an analyzer_plugin request
   factory CustomLintResponse.analyzerPluginResponse(
     Response response, {
     required String id,
-  }) = _CustomLintResponseAnalyzerPluginResponse;
+  }) = CustomLintResponseAnalyzerPluginResponse;
 
   /// The message sent when the client has completed its analysis
   factory CustomLintResponse.awaitAnalysisDone({required String id}) =
-      _CustomLintResponseAwaitAnalysisDone;
+      CustomLintResponseAwaitAnalysisDone;
+
+  /// Asks for the list of lint rules.
+  factory CustomLintResponse.listLintRules({
+    required String id,
+    required List<LintRuleMeta> lintRules,
+  }) = CustomLintResponseLintRules;
 
   /// The reply to a ping request
   factory CustomLintResponse.pong({required String id}) =
-      _CustomLintResponsePong;
+      CustomLintResponsePong;
 
   /// A request failed
   factory CustomLintResponse.error({
     required String id,
     required String message,
     required String stackTrace,
-  }) = _CustomLintResponseError;
+  }) = CustomLintResponseError;
 
   /// Decode a response from JSON
   factory CustomLintResponse.fromJson(Map<String, Object?> json) =>
@@ -106,7 +136,7 @@ class CustomLintEvent with _$CustomLintEvent {
   /// The client sent a [Notification] using the analyzer_plugin protocol
   factory CustomLintEvent.analyzerPluginNotification(
     @NotificationJsonConverter() Notification notification,
-  ) = _CustomLintEventAnalyzerPluginNotification;
+  ) = CustomLintEventAnalyzerPluginNotification;
   // TOOD add source change event?
 
   /// A spontaneous error, unrelated to a request
@@ -114,13 +144,13 @@ class CustomLintEvent with _$CustomLintEvent {
     String message,
     String stackTrace, {
     required String? pluginName,
-  }) = _CustomLintEventError;
+  }) = CustomLintEventError;
 
   /// A log output
   factory CustomLintEvent.print(
     String message, {
     required String? pluginName,
-  }) = _CustomLintEventPrint;
+  }) = CustomLintEventPrint;
 
   /// Decode an event from JSON
   factory CustomLintEvent.fromJson(Map<String, Object?> json) =>

@@ -107,6 +107,17 @@ class CustomLintServer {
         );
       });
 
+  /// Waits for the plugins to complete their analysis
+  Future<List<LintRuleMeta>> getLintRules() => _runner.run(() async {
+        final clientChannel = await _clientChannel.first;
+
+        final response = await clientChannel.sendCustomLintRequest(
+          CustomLintRequest.listLintRules(id: const Uuid().v4()),
+        );
+        response as CustomLintResponseLintRules;
+        return response.lintRules;
+      });
+
   Future<void> _handleRequest(Request request) async {
     final requestTime = DateTime.now().millisecondsSinceEpoch;
     void sendResponse({ResponseResult? data, RequestError? error}) {

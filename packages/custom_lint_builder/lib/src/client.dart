@@ -108,11 +108,9 @@ class CustomLintPluginClient {
       final response = await request.map<FutureOr<CustomLintResponse?>>(
         // Analayzer_plugin requests are handles by the _analyzer_plugin client
         analyzerPluginRequest: (_) => null,
-        ping: (param) => CustomLintResponse.pong(id: request.id),
-        awaitAnalysisDone: (param) async {
-          await _analyzerPlugin._awaitAnalysisDone(reload: param.reload);
-          return CustomLintResponse.awaitAnalysisDone(id: request.id);
-        },
+        ping: _handlePing,
+        awaitAnalysisDone: _handleAwaitAnalysisDone,
+        listLintRules: _handleListLintRules,
       );
 
       if (response != null) {
@@ -127,6 +125,40 @@ class CustomLintPluginClient {
         ),
       );
     }
+  }
+
+  Future<CustomLintResponseLintRules> _handleListLintRules(
+    CustomLintRequestLintRules request,
+  ) async {
+    return CustomLintResponseLintRules(
+      id: request.id,
+      lintRules: _channel.registeredPlugins.entries
+          .expand(
+            (element) => element.value
+                .getLintRules(
+                  const CustomLintConfigs(enableAllLintRules: true, rules: {}),
+                )
+                .map(
+                  (lintRule) => LintRuleMeta(
+                    pluginName: element.key,
+                    code: lintRule.code.name,
+                    description: lintRule.description,
+                  ),
+                ),
+          )
+          .toList(),
+    );
+  }
+
+  Future<CustomLintResponseAwaitAnalysisDone> _handleAwaitAnalysisDone(
+    CustomLintRequestAwaitAnalysisDone request,
+  ) async {
+    await _analyzerPlugin._awaitAnalysisDone(reload: request.reload);
+    return CustomLintResponseAwaitAnalysisDone(id: request.id);
+  }
+
+  CustomLintResponsePong _handlePing(CustomLintRequestPing request) {
+    return CustomLintResponsePong(id: request.id);
   }
 
   Future<void> _handleSetContextRoots(
@@ -254,7 +286,10 @@ class _CustomLintAnalysisConfigs {
   }
 
   final CustomLintConfigs configs;
+
+  /// All lint rules are enabled
   final List<LintRule> rules;
+
   final Map<LintCode, List<Fix>> fixes;
   final List<Assist> assists;
   final AnalysisContext analysisContext;

@@ -19,9 +19,11 @@ CustomLintRequest _$CustomLintRequestFromJson(Map<String, dynamic> json) {
     case 'analyzerPluginRequest':
       return CustomLintRequestAnalyzerPluginRequest.fromJson(json);
     case 'awaitAnalysisDone':
-      return _CustomLintRequestAwaitAnalysisDone.fromJson(json);
+      return CustomLintRequestAwaitAnalysisDone.fromJson(json);
+    case 'listLintRules':
+      return CustomLintRequestLintRules.fromJson(json);
     case 'ping':
-      return _CustomLintRequestPing.fromJson(json);
+      return CustomLintRequestPing.fromJson(json);
 
     default:
       throw CheckedFromJsonException(json, 'runtimeType', 'CustomLintRequest',
@@ -36,6 +38,7 @@ mixin _$CustomLintRequest {
   TResult when<TResult extends Object?>({
     required TResult Function(Request request, String id) analyzerPluginRequest,
     required TResult Function(String id, bool reload) awaitAnalysisDone,
+    required TResult Function(String id) listLintRules,
     required TResult Function(String id) ping,
   }) =>
       throw _privateConstructorUsedError;
@@ -43,6 +46,7 @@ mixin _$CustomLintRequest {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Request request, String id)? analyzerPluginRequest,
     TResult? Function(String id, bool reload)? awaitAnalysisDone,
+    TResult? Function(String id)? listLintRules,
     TResult? Function(String id)? ping,
   }) =>
       throw _privateConstructorUsedError;
@@ -50,6 +54,7 @@ mixin _$CustomLintRequest {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Request request, String id)? analyzerPluginRequest,
     TResult Function(String id, bool reload)? awaitAnalysisDone,
+    TResult Function(String id)? listLintRules,
     TResult Function(String id)? ping,
     required TResult orElse(),
   }) =>
@@ -58,27 +63,30 @@ mixin _$CustomLintRequest {
   TResult map<TResult extends Object?>({
     required TResult Function(CustomLintRequestAnalyzerPluginRequest value)
         analyzerPluginRequest,
-    required TResult Function(_CustomLintRequestAwaitAnalysisDone value)
+    required TResult Function(CustomLintRequestAwaitAnalysisDone value)
         awaitAnalysisDone,
-    required TResult Function(_CustomLintRequestPing value) ping,
+    required TResult Function(CustomLintRequestLintRules value) listLintRules,
+    required TResult Function(CustomLintRequestPing value) ping,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(CustomLintRequestAnalyzerPluginRequest value)?
         analyzerPluginRequest,
-    TResult? Function(_CustomLintRequestAwaitAnalysisDone value)?
+    TResult? Function(CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult? Function(_CustomLintRequestPing value)? ping,
+    TResult? Function(CustomLintRequestLintRules value)? listLintRules,
+    TResult? Function(CustomLintRequestPing value)? ping,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(CustomLintRequestAnalyzerPluginRequest value)?
         analyzerPluginRequest,
-    TResult Function(_CustomLintRequestAwaitAnalysisDone value)?
+    TResult Function(CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult Function(_CustomLintRequestPing value)? ping,
+    TResult Function(CustomLintRequestLintRules value)? listLintRules,
+    TResult Function(CustomLintRequestPing value)? ping,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -213,6 +221,7 @@ class _$CustomLintRequestAnalyzerPluginRequest
   TResult when<TResult extends Object?>({
     required TResult Function(Request request, String id) analyzerPluginRequest,
     required TResult Function(String id, bool reload) awaitAnalysisDone,
+    required TResult Function(String id) listLintRules,
     required TResult Function(String id) ping,
   }) {
     return analyzerPluginRequest(request, id);
@@ -223,6 +232,7 @@ class _$CustomLintRequestAnalyzerPluginRequest
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Request request, String id)? analyzerPluginRequest,
     TResult? Function(String id, bool reload)? awaitAnalysisDone,
+    TResult? Function(String id)? listLintRules,
     TResult? Function(String id)? ping,
   }) {
     return analyzerPluginRequest?.call(request, id);
@@ -233,6 +243,7 @@ class _$CustomLintRequestAnalyzerPluginRequest
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Request request, String id)? analyzerPluginRequest,
     TResult Function(String id, bool reload)? awaitAnalysisDone,
+    TResult Function(String id)? listLintRules,
     TResult Function(String id)? ping,
     required TResult orElse(),
   }) {
@@ -247,9 +258,10 @@ class _$CustomLintRequestAnalyzerPluginRequest
   TResult map<TResult extends Object?>({
     required TResult Function(CustomLintRequestAnalyzerPluginRequest value)
         analyzerPluginRequest,
-    required TResult Function(_CustomLintRequestAwaitAnalysisDone value)
+    required TResult Function(CustomLintRequestAwaitAnalysisDone value)
         awaitAnalysisDone,
-    required TResult Function(_CustomLintRequestPing value) ping,
+    required TResult Function(CustomLintRequestLintRules value) listLintRules,
+    required TResult Function(CustomLintRequestPing value) ping,
   }) {
     return analyzerPluginRequest(this);
   }
@@ -259,9 +271,10 @@ class _$CustomLintRequestAnalyzerPluginRequest
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(CustomLintRequestAnalyzerPluginRequest value)?
         analyzerPluginRequest,
-    TResult? Function(_CustomLintRequestAwaitAnalysisDone value)?
+    TResult? Function(CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult? Function(_CustomLintRequestPing value)? ping,
+    TResult? Function(CustomLintRequestLintRules value)? listLintRules,
+    TResult? Function(CustomLintRequestPing value)? ping,
   }) {
     return analyzerPluginRequest?.call(this);
   }
@@ -271,9 +284,10 @@ class _$CustomLintRequestAnalyzerPluginRequest
   TResult maybeMap<TResult extends Object?>({
     TResult Function(CustomLintRequestAnalyzerPluginRequest value)?
         analyzerPluginRequest,
-    TResult Function(_CustomLintRequestAwaitAnalysisDone value)?
+    TResult Function(CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult Function(_CustomLintRequestPing value)? ping,
+    TResult Function(CustomLintRequestLintRules value)? listLintRules,
+    TResult Function(CustomLintRequestPing value)? ping,
     required TResult orElse(),
   }) {
     if (analyzerPluginRequest != null) {
@@ -310,25 +324,25 @@ abstract class CustomLintRequestAnalyzerPluginRequest
 }
 
 /// @nodoc
-abstract class _$$_CustomLintRequestAwaitAnalysisDoneCopyWith<$Res>
+abstract class _$$CustomLintRequestAwaitAnalysisDoneCopyWith<$Res>
     implements $CustomLintRequestCopyWith<$Res> {
-  factory _$$_CustomLintRequestAwaitAnalysisDoneCopyWith(
-          _$_CustomLintRequestAwaitAnalysisDone value,
-          $Res Function(_$_CustomLintRequestAwaitAnalysisDone) then) =
-      __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>;
+  factory _$$CustomLintRequestAwaitAnalysisDoneCopyWith(
+          _$CustomLintRequestAwaitAnalysisDone value,
+          $Res Function(_$CustomLintRequestAwaitAnalysisDone) then) =
+      __$$CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String id, bool reload});
 }
 
 /// @nodoc
-class __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>
+class __$$CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>
     extends _$CustomLintRequestCopyWithImpl<$Res,
-        _$_CustomLintRequestAwaitAnalysisDone>
-    implements _$$_CustomLintRequestAwaitAnalysisDoneCopyWith<$Res> {
-  __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl(
-      _$_CustomLintRequestAwaitAnalysisDone _value,
-      $Res Function(_$_CustomLintRequestAwaitAnalysisDone) _then)
+        _$CustomLintRequestAwaitAnalysisDone>
+    implements _$$CustomLintRequestAwaitAnalysisDoneCopyWith<$Res> {
+  __$$CustomLintRequestAwaitAnalysisDoneCopyWithImpl(
+      _$CustomLintRequestAwaitAnalysisDone _value,
+      $Res Function(_$CustomLintRequestAwaitAnalysisDone) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -337,7 +351,7 @@ class __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>
     Object? id = null,
     Object? reload = null,
   }) {
-    return _then(_$_CustomLintRequestAwaitAnalysisDone(
+    return _then(_$CustomLintRequestAwaitAnalysisDone(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -352,15 +366,15 @@ class __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintRequestAwaitAnalysisDone
-    implements _CustomLintRequestAwaitAnalysisDone {
-  _$_CustomLintRequestAwaitAnalysisDone(
+class _$CustomLintRequestAwaitAnalysisDone
+    implements CustomLintRequestAwaitAnalysisDone {
+  _$CustomLintRequestAwaitAnalysisDone(
       {required this.id, required this.reload, final String? $type})
       : $type = $type ?? 'awaitAnalysisDone';
 
-  factory _$_CustomLintRequestAwaitAnalysisDone.fromJson(
+  factory _$CustomLintRequestAwaitAnalysisDone.fromJson(
           Map<String, dynamic> json) =>
-      _$$_CustomLintRequestAwaitAnalysisDoneFromJson(json);
+      _$$CustomLintRequestAwaitAnalysisDoneFromJson(json);
 
   @override
   final String id;
@@ -379,7 +393,7 @@ class _$_CustomLintRequestAwaitAnalysisDone
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintRequestAwaitAnalysisDone &&
+            other is _$CustomLintRequestAwaitAnalysisDone &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.reload, reload) || other.reload == reload));
   }
@@ -391,16 +405,17 @@ class _$_CustomLintRequestAwaitAnalysisDone
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintRequestAwaitAnalysisDoneCopyWith<
-          _$_CustomLintRequestAwaitAnalysisDone>
-      get copyWith => __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<
-          _$_CustomLintRequestAwaitAnalysisDone>(this, _$identity);
+  _$$CustomLintRequestAwaitAnalysisDoneCopyWith<
+          _$CustomLintRequestAwaitAnalysisDone>
+      get copyWith => __$$CustomLintRequestAwaitAnalysisDoneCopyWithImpl<
+          _$CustomLintRequestAwaitAnalysisDone>(this, _$identity);
 
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function(Request request, String id) analyzerPluginRequest,
     required TResult Function(String id, bool reload) awaitAnalysisDone,
+    required TResult Function(String id) listLintRules,
     required TResult Function(String id) ping,
   }) {
     return awaitAnalysisDone(id, reload);
@@ -411,6 +426,7 @@ class _$_CustomLintRequestAwaitAnalysisDone
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Request request, String id)? analyzerPluginRequest,
     TResult? Function(String id, bool reload)? awaitAnalysisDone,
+    TResult? Function(String id)? listLintRules,
     TResult? Function(String id)? ping,
   }) {
     return awaitAnalysisDone?.call(id, reload);
@@ -421,6 +437,7 @@ class _$_CustomLintRequestAwaitAnalysisDone
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Request request, String id)? analyzerPluginRequest,
     TResult Function(String id, bool reload)? awaitAnalysisDone,
+    TResult Function(String id)? listLintRules,
     TResult Function(String id)? ping,
     required TResult orElse(),
   }) {
@@ -435,9 +452,10 @@ class _$_CustomLintRequestAwaitAnalysisDone
   TResult map<TResult extends Object?>({
     required TResult Function(CustomLintRequestAnalyzerPluginRequest value)
         analyzerPluginRequest,
-    required TResult Function(_CustomLintRequestAwaitAnalysisDone value)
+    required TResult Function(CustomLintRequestAwaitAnalysisDone value)
         awaitAnalysisDone,
-    required TResult Function(_CustomLintRequestPing value) ping,
+    required TResult Function(CustomLintRequestLintRules value) listLintRules,
+    required TResult Function(CustomLintRequestPing value) ping,
   }) {
     return awaitAnalysisDone(this);
   }
@@ -447,9 +465,10 @@ class _$_CustomLintRequestAwaitAnalysisDone
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(CustomLintRequestAnalyzerPluginRequest value)?
         analyzerPluginRequest,
-    TResult? Function(_CustomLintRequestAwaitAnalysisDone value)?
+    TResult? Function(CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult? Function(_CustomLintRequestPing value)? ping,
+    TResult? Function(CustomLintRequestLintRules value)? listLintRules,
+    TResult? Function(CustomLintRequestPing value)? ping,
   }) {
     return awaitAnalysisDone?.call(this);
   }
@@ -459,9 +478,10 @@ class _$_CustomLintRequestAwaitAnalysisDone
   TResult maybeMap<TResult extends Object?>({
     TResult Function(CustomLintRequestAnalyzerPluginRequest value)?
         analyzerPluginRequest,
-    TResult Function(_CustomLintRequestAwaitAnalysisDone value)?
+    TResult Function(CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult Function(_CustomLintRequestPing value)? ping,
+    TResult Function(CustomLintRequestLintRules value)? listLintRules,
+    TResult Function(CustomLintRequestPing value)? ping,
     required TResult orElse(),
   }) {
     if (awaitAnalysisDone != null) {
@@ -472,49 +492,50 @@ class _$_CustomLintRequestAwaitAnalysisDone
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintRequestAwaitAnalysisDoneToJson(
+    return _$$CustomLintRequestAwaitAnalysisDoneToJson(
       this,
     );
   }
 }
 
-abstract class _CustomLintRequestAwaitAnalysisDone
-    implements CustomLintRequest {
-  factory _CustomLintRequestAwaitAnalysisDone(
+abstract class CustomLintRequestAwaitAnalysisDone implements CustomLintRequest {
+  factory CustomLintRequestAwaitAnalysisDone(
       {required final String id,
-      required final bool reload}) = _$_CustomLintRequestAwaitAnalysisDone;
+      required final bool reload}) = _$CustomLintRequestAwaitAnalysisDone;
 
-  factory _CustomLintRequestAwaitAnalysisDone.fromJson(
+  factory CustomLintRequestAwaitAnalysisDone.fromJson(
           Map<String, dynamic> json) =
-      _$_CustomLintRequestAwaitAnalysisDone.fromJson;
+      _$CustomLintRequestAwaitAnalysisDone.fromJson;
 
   @override
   String get id;
   bool get reload;
   @override
   @JsonKey(ignore: true)
-  _$$_CustomLintRequestAwaitAnalysisDoneCopyWith<
-          _$_CustomLintRequestAwaitAnalysisDone>
+  _$$CustomLintRequestAwaitAnalysisDoneCopyWith<
+          _$CustomLintRequestAwaitAnalysisDone>
       get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintRequestPingCopyWith<$Res>
+abstract class _$$CustomLintRequestLintRulesCopyWith<$Res>
     implements $CustomLintRequestCopyWith<$Res> {
-  factory _$$_CustomLintRequestPingCopyWith(_$_CustomLintRequestPing value,
-          $Res Function(_$_CustomLintRequestPing) then) =
-      __$$_CustomLintRequestPingCopyWithImpl<$Res>;
+  factory _$$CustomLintRequestLintRulesCopyWith(
+          _$CustomLintRequestLintRules value,
+          $Res Function(_$CustomLintRequestLintRules) then) =
+      __$$CustomLintRequestLintRulesCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String id});
 }
 
 /// @nodoc
-class __$$_CustomLintRequestPingCopyWithImpl<$Res>
-    extends _$CustomLintRequestCopyWithImpl<$Res, _$_CustomLintRequestPing>
-    implements _$$_CustomLintRequestPingCopyWith<$Res> {
-  __$$_CustomLintRequestPingCopyWithImpl(_$_CustomLintRequestPing _value,
-      $Res Function(_$_CustomLintRequestPing) _then)
+class __$$CustomLintRequestLintRulesCopyWithImpl<$Res>
+    extends _$CustomLintRequestCopyWithImpl<$Res, _$CustomLintRequestLintRules>
+    implements _$$CustomLintRequestLintRulesCopyWith<$Res> {
+  __$$CustomLintRequestLintRulesCopyWithImpl(
+      _$CustomLintRequestLintRules _value,
+      $Res Function(_$CustomLintRequestLintRules) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -522,7 +543,7 @@ class __$$_CustomLintRequestPingCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
   }) {
-    return _then(_$_CustomLintRequestPing(
+    return _then(_$CustomLintRequestLintRules(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -533,12 +554,187 @@ class __$$_CustomLintRequestPingCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintRequestPing implements _CustomLintRequestPing {
-  _$_CustomLintRequestPing({required this.id, final String? $type})
+class _$CustomLintRequestLintRules implements CustomLintRequestLintRules {
+  _$CustomLintRequestLintRules({required this.id, final String? $type})
+      : $type = $type ?? 'listLintRules';
+
+  factory _$CustomLintRequestLintRules.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintRequestLintRulesFromJson(json);
+
+  @override
+  final String id;
+
+  @JsonKey(name: 'runtimeType')
+  final String $type;
+
+  @override
+  String toString() {
+    return 'CustomLintRequest.listLintRules(id: $id)';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$CustomLintRequestLintRules &&
+            (identical(other.id, id) || other.id == id));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, id);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$CustomLintRequestLintRulesCopyWith<_$CustomLintRequestLintRules>
+      get copyWith => __$$CustomLintRequestLintRulesCopyWithImpl<
+          _$CustomLintRequestLintRules>(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(Request request, String id) analyzerPluginRequest,
+    required TResult Function(String id, bool reload) awaitAnalysisDone,
+    required TResult Function(String id) listLintRules,
+    required TResult Function(String id) ping,
+  }) {
+    return listLintRules(id);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(Request request, String id)? analyzerPluginRequest,
+    TResult? Function(String id, bool reload)? awaitAnalysisDone,
+    TResult? Function(String id)? listLintRules,
+    TResult? Function(String id)? ping,
+  }) {
+    return listLintRules?.call(id);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(Request request, String id)? analyzerPluginRequest,
+    TResult Function(String id, bool reload)? awaitAnalysisDone,
+    TResult Function(String id)? listLintRules,
+    TResult Function(String id)? ping,
+    required TResult orElse(),
+  }) {
+    if (listLintRules != null) {
+      return listLintRules(id);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(CustomLintRequestAnalyzerPluginRequest value)
+        analyzerPluginRequest,
+    required TResult Function(CustomLintRequestAwaitAnalysisDone value)
+        awaitAnalysisDone,
+    required TResult Function(CustomLintRequestLintRules value) listLintRules,
+    required TResult Function(CustomLintRequestPing value) ping,
+  }) {
+    return listLintRules(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(CustomLintRequestAnalyzerPluginRequest value)?
+        analyzerPluginRequest,
+    TResult? Function(CustomLintRequestAwaitAnalysisDone value)?
+        awaitAnalysisDone,
+    TResult? Function(CustomLintRequestLintRules value)? listLintRules,
+    TResult? Function(CustomLintRequestPing value)? ping,
+  }) {
+    return listLintRules?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(CustomLintRequestAnalyzerPluginRequest value)?
+        analyzerPluginRequest,
+    TResult Function(CustomLintRequestAwaitAnalysisDone value)?
+        awaitAnalysisDone,
+    TResult Function(CustomLintRequestLintRules value)? listLintRules,
+    TResult Function(CustomLintRequestPing value)? ping,
+    required TResult orElse(),
+  }) {
+    if (listLintRules != null) {
+      return listLintRules(this);
+    }
+    return orElse();
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$CustomLintRequestLintRulesToJson(
+      this,
+    );
+  }
+}
+
+abstract class CustomLintRequestLintRules implements CustomLintRequest {
+  factory CustomLintRequestLintRules({required final String id}) =
+      _$CustomLintRequestLintRules;
+
+  factory CustomLintRequestLintRules.fromJson(Map<String, dynamic> json) =
+      _$CustomLintRequestLintRules.fromJson;
+
+  @override
+  String get id;
+  @override
+  @JsonKey(ignore: true)
+  _$$CustomLintRequestLintRulesCopyWith<_$CustomLintRequestLintRules>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$CustomLintRequestPingCopyWith<$Res>
+    implements $CustomLintRequestCopyWith<$Res> {
+  factory _$$CustomLintRequestPingCopyWith(_$CustomLintRequestPing value,
+          $Res Function(_$CustomLintRequestPing) then) =
+      __$$CustomLintRequestPingCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String id});
+}
+
+/// @nodoc
+class __$$CustomLintRequestPingCopyWithImpl<$Res>
+    extends _$CustomLintRequestCopyWithImpl<$Res, _$CustomLintRequestPing>
+    implements _$$CustomLintRequestPingCopyWith<$Res> {
+  __$$CustomLintRequestPingCopyWithImpl(_$CustomLintRequestPing _value,
+      $Res Function(_$CustomLintRequestPing) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+  }) {
+    return _then(_$CustomLintRequestPing(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$CustomLintRequestPing implements CustomLintRequestPing {
+  _$CustomLintRequestPing({required this.id, final String? $type})
       : $type = $type ?? 'ping';
 
-  factory _$_CustomLintRequestPing.fromJson(Map<String, dynamic> json) =>
-      _$$_CustomLintRequestPingFromJson(json);
+  factory _$CustomLintRequestPing.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintRequestPingFromJson(json);
 
   @override
   final String id;
@@ -555,7 +751,7 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintRequestPing &&
+            other is _$CustomLintRequestPing &&
             (identical(other.id, id) || other.id == id));
   }
 
@@ -566,8 +762,8 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintRequestPingCopyWith<_$_CustomLintRequestPing> get copyWith =>
-      __$$_CustomLintRequestPingCopyWithImpl<_$_CustomLintRequestPing>(
+  _$$CustomLintRequestPingCopyWith<_$CustomLintRequestPing> get copyWith =>
+      __$$CustomLintRequestPingCopyWithImpl<_$CustomLintRequestPing>(
           this, _$identity);
 
   @override
@@ -575,6 +771,7 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
   TResult when<TResult extends Object?>({
     required TResult Function(Request request, String id) analyzerPluginRequest,
     required TResult Function(String id, bool reload) awaitAnalysisDone,
+    required TResult Function(String id) listLintRules,
     required TResult Function(String id) ping,
   }) {
     return ping(id);
@@ -585,6 +782,7 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Request request, String id)? analyzerPluginRequest,
     TResult? Function(String id, bool reload)? awaitAnalysisDone,
+    TResult? Function(String id)? listLintRules,
     TResult? Function(String id)? ping,
   }) {
     return ping?.call(id);
@@ -595,6 +793,7 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Request request, String id)? analyzerPluginRequest,
     TResult Function(String id, bool reload)? awaitAnalysisDone,
+    TResult Function(String id)? listLintRules,
     TResult Function(String id)? ping,
     required TResult orElse(),
   }) {
@@ -609,9 +808,10 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
   TResult map<TResult extends Object?>({
     required TResult Function(CustomLintRequestAnalyzerPluginRequest value)
         analyzerPluginRequest,
-    required TResult Function(_CustomLintRequestAwaitAnalysisDone value)
+    required TResult Function(CustomLintRequestAwaitAnalysisDone value)
         awaitAnalysisDone,
-    required TResult Function(_CustomLintRequestPing value) ping,
+    required TResult Function(CustomLintRequestLintRules value) listLintRules,
+    required TResult Function(CustomLintRequestPing value) ping,
   }) {
     return ping(this);
   }
@@ -621,9 +821,10 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(CustomLintRequestAnalyzerPluginRequest value)?
         analyzerPluginRequest,
-    TResult? Function(_CustomLintRequestAwaitAnalysisDone value)?
+    TResult? Function(CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult? Function(_CustomLintRequestPing value)? ping,
+    TResult? Function(CustomLintRequestLintRules value)? listLintRules,
+    TResult? Function(CustomLintRequestPing value)? ping,
   }) {
     return ping?.call(this);
   }
@@ -633,9 +834,10 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
   TResult maybeMap<TResult extends Object?>({
     TResult Function(CustomLintRequestAnalyzerPluginRequest value)?
         analyzerPluginRequest,
-    TResult Function(_CustomLintRequestAwaitAnalysisDone value)?
+    TResult Function(CustomLintRequestAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult Function(_CustomLintRequestPing value)? ping,
+    TResult Function(CustomLintRequestLintRules value)? listLintRules,
+    TResult Function(CustomLintRequestPing value)? ping,
     required TResult orElse(),
   }) {
     if (ping != null) {
@@ -646,37 +848,231 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintRequestPingToJson(
+    return _$$CustomLintRequestPingToJson(
       this,
     );
   }
 }
 
-abstract class _CustomLintRequestPing implements CustomLintRequest {
-  factory _CustomLintRequestPing({required final String id}) =
-      _$_CustomLintRequestPing;
+abstract class CustomLintRequestPing implements CustomLintRequest {
+  factory CustomLintRequestPing({required final String id}) =
+      _$CustomLintRequestPing;
 
-  factory _CustomLintRequestPing.fromJson(Map<String, dynamic> json) =
-      _$_CustomLintRequestPing.fromJson;
+  factory CustomLintRequestPing.fromJson(Map<String, dynamic> json) =
+      _$CustomLintRequestPing.fromJson;
 
   @override
   String get id;
   @override
   @JsonKey(ignore: true)
-  _$$_CustomLintRequestPingCopyWith<_$_CustomLintRequestPing> get copyWith =>
+  _$$CustomLintRequestPingCopyWith<_$CustomLintRequestPing> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+LintRuleMeta _$LintRuleMetaFromJson(Map<String, dynamic> json) {
+  return _LintRuleMeta.fromJson(json);
+}
+
+/// @nodoc
+mixin _$LintRuleMeta {
+  /// The name of the plugin that defined this lint rule.
+  String get pluginName => throw _privateConstructorUsedError;
+
+  /// The error code that the lint rule might emit.
+  String get code => throw _privateConstructorUsedError;
+
+  /// General information about the lint rule.
+  String? get description => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $LintRuleMetaCopyWith<LintRuleMeta> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $LintRuleMetaCopyWith<$Res> {
+  factory $LintRuleMetaCopyWith(
+          LintRuleMeta value, $Res Function(LintRuleMeta) then) =
+      _$LintRuleMetaCopyWithImpl<$Res, LintRuleMeta>;
+  @useResult
+  $Res call({String pluginName, String code, String? description});
+}
+
+/// @nodoc
+class _$LintRuleMetaCopyWithImpl<$Res, $Val extends LintRuleMeta>
+    implements $LintRuleMetaCopyWith<$Res> {
+  _$LintRuleMetaCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? pluginName = null,
+    Object? code = null,
+    Object? description = freezed,
+  }) {
+    return _then(_value.copyWith(
+      pluginName: null == pluginName
+          ? _value.pluginName
+          : pluginName // ignore: cast_nullable_to_non_nullable
+              as String,
+      code: null == code
+          ? _value.code
+          : code // ignore: cast_nullable_to_non_nullable
+              as String,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$_LintRuleMetaCopyWith<$Res>
+    implements $LintRuleMetaCopyWith<$Res> {
+  factory _$$_LintRuleMetaCopyWith(
+          _$_LintRuleMeta value, $Res Function(_$_LintRuleMeta) then) =
+      __$$_LintRuleMetaCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String pluginName, String code, String? description});
+}
+
+/// @nodoc
+class __$$_LintRuleMetaCopyWithImpl<$Res>
+    extends _$LintRuleMetaCopyWithImpl<$Res, _$_LintRuleMeta>
+    implements _$$_LintRuleMetaCopyWith<$Res> {
+  __$$_LintRuleMetaCopyWithImpl(
+      _$_LintRuleMeta _value, $Res Function(_$_LintRuleMeta) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? pluginName = null,
+    Object? code = null,
+    Object? description = freezed,
+  }) {
+    return _then(_$_LintRuleMeta(
+      pluginName: null == pluginName
+          ? _value.pluginName
+          : pluginName // ignore: cast_nullable_to_non_nullable
+              as String,
+      code: null == code
+          ? _value.code
+          : code // ignore: cast_nullable_to_non_nullable
+              as String,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$_LintRuleMeta implements _LintRuleMeta {
+  _$_LintRuleMeta(
+      {required this.pluginName,
+      required this.code,
+      required this.description});
+
+  factory _$_LintRuleMeta.fromJson(Map<String, dynamic> json) =>
+      _$$_LintRuleMetaFromJson(json);
+
+  /// The name of the plugin that defined this lint rule.
+  @override
+  final String pluginName;
+
+  /// The error code that the lint rule might emit.
+  @override
+  final String code;
+
+  /// General information about the lint rule.
+  @override
+  final String? description;
+
+  @override
+  String toString() {
+    return 'LintRuleMeta(pluginName: $pluginName, code: $code, description: $description)';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$_LintRuleMeta &&
+            (identical(other.pluginName, pluginName) ||
+                other.pluginName == pluginName) &&
+            (identical(other.code, code) || other.code == code) &&
+            (identical(other.description, description) ||
+                other.description == description));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, pluginName, code, description);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$_LintRuleMetaCopyWith<_$_LintRuleMeta> get copyWith =>
+      __$$_LintRuleMetaCopyWithImpl<_$_LintRuleMeta>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$_LintRuleMetaToJson(
+      this,
+    );
+  }
+}
+
+abstract class _LintRuleMeta implements LintRuleMeta {
+  factory _LintRuleMeta(
+      {required final String pluginName,
+      required final String code,
+      required final String? description}) = _$_LintRuleMeta;
+
+  factory _LintRuleMeta.fromJson(Map<String, dynamic> json) =
+      _$_LintRuleMeta.fromJson;
+
+  @override
+
+  /// The name of the plugin that defined this lint rule.
+  String get pluginName;
+  @override
+
+  /// The error code that the lint rule might emit.
+  String get code;
+  @override
+
+  /// General information about the lint rule.
+  String? get description;
+  @override
+  @JsonKey(ignore: true)
+  _$$_LintRuleMetaCopyWith<_$_LintRuleMeta> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 CustomLintResponse _$CustomLintResponseFromJson(Map<String, dynamic> json) {
   switch (json['runtimeType']) {
     case 'analyzerPluginResponse':
-      return _CustomLintResponseAnalyzerPluginResponse.fromJson(json);
+      return CustomLintResponseAnalyzerPluginResponse.fromJson(json);
     case 'awaitAnalysisDone':
-      return _CustomLintResponseAwaitAnalysisDone.fromJson(json);
+      return CustomLintResponseAwaitAnalysisDone.fromJson(json);
+    case 'listLintRules':
+      return CustomLintResponseLintRules.fromJson(json);
     case 'pong':
-      return _CustomLintResponsePong.fromJson(json);
+      return CustomLintResponsePong.fromJson(json);
     case 'error':
-      return _CustomLintResponseError.fromJson(json);
+      return CustomLintResponseError.fromJson(json);
 
     default:
       throw CheckedFromJsonException(json, 'runtimeType', 'CustomLintResponse',
@@ -692,6 +1088,8 @@ mixin _$CustomLintResponse {
     required TResult Function(Response response, String id)
         analyzerPluginResponse,
     required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id, List<LintRuleMeta> lintRules)
+        listLintRules,
     required TResult Function(String id) pong,
     required TResult Function(String id, String message, String stackTrace)
         error,
@@ -701,6 +1099,7 @@ mixin _$CustomLintResponse {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Response response, String id)? analyzerPluginResponse,
     TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id, List<LintRuleMeta> lintRules)? listLintRules,
     TResult? Function(String id)? pong,
     TResult? Function(String id, String message, String stackTrace)? error,
   }) =>
@@ -709,6 +1108,7 @@ mixin _$CustomLintResponse {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Response response, String id)? analyzerPluginResponse,
     TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id, List<LintRuleMeta> lintRules)? listLintRules,
     TResult Function(String id)? pong,
     TResult Function(String id, String message, String stackTrace)? error,
     required TResult orElse(),
@@ -716,32 +1116,35 @@ mixin _$CustomLintResponse {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_CustomLintResponseAnalyzerPluginResponse value)
+    required TResult Function(CustomLintResponseAnalyzerPluginResponse value)
         analyzerPluginResponse,
-    required TResult Function(_CustomLintResponseAwaitAnalysisDone value)
+    required TResult Function(CustomLintResponseAwaitAnalysisDone value)
         awaitAnalysisDone,
-    required TResult Function(_CustomLintResponsePong value) pong,
-    required TResult Function(_CustomLintResponseError value) error,
+    required TResult Function(CustomLintResponseLintRules value) listLintRules,
+    required TResult Function(CustomLintResponsePong value) pong,
+    required TResult Function(CustomLintResponseError value) error,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_CustomLintResponseAnalyzerPluginResponse value)?
+    TResult? Function(CustomLintResponseAnalyzerPluginResponse value)?
         analyzerPluginResponse,
-    TResult? Function(_CustomLintResponseAwaitAnalysisDone value)?
+    TResult? Function(CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult? Function(_CustomLintResponsePong value)? pong,
-    TResult? Function(_CustomLintResponseError value)? error,
+    TResult? Function(CustomLintResponseLintRules value)? listLintRules,
+    TResult? Function(CustomLintResponsePong value)? pong,
+    TResult? Function(CustomLintResponseError value)? error,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_CustomLintResponseAnalyzerPluginResponse value)?
+    TResult Function(CustomLintResponseAnalyzerPluginResponse value)?
         analyzerPluginResponse,
-    TResult Function(_CustomLintResponseAwaitAnalysisDone value)?
+    TResult Function(CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult Function(_CustomLintResponsePong value)? pong,
-    TResult Function(_CustomLintResponseError value)? error,
+    TResult Function(CustomLintResponseLintRules value)? listLintRules,
+    TResult Function(CustomLintResponsePong value)? pong,
+    TResult Function(CustomLintResponseError value)? error,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -785,25 +1188,25 @@ class _$CustomLintResponseCopyWithImpl<$Res, $Val extends CustomLintResponse>
 }
 
 /// @nodoc
-abstract class _$$_CustomLintResponseAnalyzerPluginResponseCopyWith<$Res>
+abstract class _$$CustomLintResponseAnalyzerPluginResponseCopyWith<$Res>
     implements $CustomLintResponseCopyWith<$Res> {
-  factory _$$_CustomLintResponseAnalyzerPluginResponseCopyWith(
-          _$_CustomLintResponseAnalyzerPluginResponse value,
-          $Res Function(_$_CustomLintResponseAnalyzerPluginResponse) then) =
-      __$$_CustomLintResponseAnalyzerPluginResponseCopyWithImpl<$Res>;
+  factory _$$CustomLintResponseAnalyzerPluginResponseCopyWith(
+          _$CustomLintResponseAnalyzerPluginResponse value,
+          $Res Function(_$CustomLintResponseAnalyzerPluginResponse) then) =
+      __$$CustomLintResponseAnalyzerPluginResponseCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({Response response, String id});
 }
 
 /// @nodoc
-class __$$_CustomLintResponseAnalyzerPluginResponseCopyWithImpl<$Res>
+class __$$CustomLintResponseAnalyzerPluginResponseCopyWithImpl<$Res>
     extends _$CustomLintResponseCopyWithImpl<$Res,
-        _$_CustomLintResponseAnalyzerPluginResponse>
-    implements _$$_CustomLintResponseAnalyzerPluginResponseCopyWith<$Res> {
-  __$$_CustomLintResponseAnalyzerPluginResponseCopyWithImpl(
-      _$_CustomLintResponseAnalyzerPluginResponse _value,
-      $Res Function(_$_CustomLintResponseAnalyzerPluginResponse) _then)
+        _$CustomLintResponseAnalyzerPluginResponse>
+    implements _$$CustomLintResponseAnalyzerPluginResponseCopyWith<$Res> {
+  __$$CustomLintResponseAnalyzerPluginResponseCopyWithImpl(
+      _$CustomLintResponseAnalyzerPluginResponse _value,
+      $Res Function(_$CustomLintResponseAnalyzerPluginResponse) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -812,7 +1215,7 @@ class __$$_CustomLintResponseAnalyzerPluginResponseCopyWithImpl<$Res>
     Object? response = null,
     Object? id = null,
   }) {
-    return _then(_$_CustomLintResponseAnalyzerPluginResponse(
+    return _then(_$CustomLintResponseAnalyzerPluginResponse(
       null == response
           ? _value.response
           : response // ignore: cast_nullable_to_non_nullable
@@ -827,15 +1230,15 @@ class __$$_CustomLintResponseAnalyzerPluginResponseCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintResponseAnalyzerPluginResponse
-    implements _CustomLintResponseAnalyzerPluginResponse {
-  _$_CustomLintResponseAnalyzerPluginResponse(this.response,
+class _$CustomLintResponseAnalyzerPluginResponse
+    implements CustomLintResponseAnalyzerPluginResponse {
+  _$CustomLintResponseAnalyzerPluginResponse(this.response,
       {required this.id, final String? $type})
       : $type = $type ?? 'analyzerPluginResponse';
 
-  factory _$_CustomLintResponseAnalyzerPluginResponse.fromJson(
+  factory _$CustomLintResponseAnalyzerPluginResponse.fromJson(
           Map<String, dynamic> json) =>
-      _$$_CustomLintResponseAnalyzerPluginResponseFromJson(json);
+      _$$CustomLintResponseAnalyzerPluginResponseFromJson(json);
 
   @override
   final Response response;
@@ -854,7 +1257,7 @@ class _$_CustomLintResponseAnalyzerPluginResponse
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintResponseAnalyzerPluginResponse &&
+            other is _$CustomLintResponseAnalyzerPluginResponse &&
             (identical(other.response, response) ||
                 other.response == response) &&
             (identical(other.id, id) || other.id == id));
@@ -867,10 +1270,10 @@ class _$_CustomLintResponseAnalyzerPluginResponse
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintResponseAnalyzerPluginResponseCopyWith<
-          _$_CustomLintResponseAnalyzerPluginResponse>
-      get copyWith => __$$_CustomLintResponseAnalyzerPluginResponseCopyWithImpl<
-          _$_CustomLintResponseAnalyzerPluginResponse>(this, _$identity);
+  _$$CustomLintResponseAnalyzerPluginResponseCopyWith<
+          _$CustomLintResponseAnalyzerPluginResponse>
+      get copyWith => __$$CustomLintResponseAnalyzerPluginResponseCopyWithImpl<
+          _$CustomLintResponseAnalyzerPluginResponse>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -878,6 +1281,8 @@ class _$_CustomLintResponseAnalyzerPluginResponse
     required TResult Function(Response response, String id)
         analyzerPluginResponse,
     required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id, List<LintRuleMeta> lintRules)
+        listLintRules,
     required TResult Function(String id) pong,
     required TResult Function(String id, String message, String stackTrace)
         error,
@@ -890,6 +1295,7 @@ class _$_CustomLintResponseAnalyzerPluginResponse
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Response response, String id)? analyzerPluginResponse,
     TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id, List<LintRuleMeta> lintRules)? listLintRules,
     TResult? Function(String id)? pong,
     TResult? Function(String id, String message, String stackTrace)? error,
   }) {
@@ -901,6 +1307,7 @@ class _$_CustomLintResponseAnalyzerPluginResponse
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Response response, String id)? analyzerPluginResponse,
     TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id, List<LintRuleMeta> lintRules)? listLintRules,
     TResult Function(String id)? pong,
     TResult Function(String id, String message, String stackTrace)? error,
     required TResult orElse(),
@@ -914,12 +1321,13 @@ class _$_CustomLintResponseAnalyzerPluginResponse
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_CustomLintResponseAnalyzerPluginResponse value)
+    required TResult Function(CustomLintResponseAnalyzerPluginResponse value)
         analyzerPluginResponse,
-    required TResult Function(_CustomLintResponseAwaitAnalysisDone value)
+    required TResult Function(CustomLintResponseAwaitAnalysisDone value)
         awaitAnalysisDone,
-    required TResult Function(_CustomLintResponsePong value) pong,
-    required TResult Function(_CustomLintResponseError value) error,
+    required TResult Function(CustomLintResponseLintRules value) listLintRules,
+    required TResult Function(CustomLintResponsePong value) pong,
+    required TResult Function(CustomLintResponseError value) error,
   }) {
     return analyzerPluginResponse(this);
   }
@@ -927,12 +1335,13 @@ class _$_CustomLintResponseAnalyzerPluginResponse
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_CustomLintResponseAnalyzerPluginResponse value)?
+    TResult? Function(CustomLintResponseAnalyzerPluginResponse value)?
         analyzerPluginResponse,
-    TResult? Function(_CustomLintResponseAwaitAnalysisDone value)?
+    TResult? Function(CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult? Function(_CustomLintResponsePong value)? pong,
-    TResult? Function(_CustomLintResponseError value)? error,
+    TResult? Function(CustomLintResponseLintRules value)? listLintRules,
+    TResult? Function(CustomLintResponsePong value)? pong,
+    TResult? Function(CustomLintResponseError value)? error,
   }) {
     return analyzerPluginResponse?.call(this);
   }
@@ -940,12 +1349,13 @@ class _$_CustomLintResponseAnalyzerPluginResponse
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_CustomLintResponseAnalyzerPluginResponse value)?
+    TResult Function(CustomLintResponseAnalyzerPluginResponse value)?
         analyzerPluginResponse,
-    TResult Function(_CustomLintResponseAwaitAnalysisDone value)?
+    TResult Function(CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult Function(_CustomLintResponsePong value)? pong,
-    TResult Function(_CustomLintResponseError value)? error,
+    TResult Function(CustomLintResponseLintRules value)? listLintRules,
+    TResult Function(CustomLintResponsePong value)? pong,
+    TResult Function(CustomLintResponseError value)? error,
     required TResult orElse(),
   }) {
     if (analyzerPluginResponse != null) {
@@ -956,51 +1366,51 @@ class _$_CustomLintResponseAnalyzerPluginResponse
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintResponseAnalyzerPluginResponseToJson(
+    return _$$CustomLintResponseAnalyzerPluginResponseToJson(
       this,
     );
   }
 }
 
-abstract class _CustomLintResponseAnalyzerPluginResponse
+abstract class CustomLintResponseAnalyzerPluginResponse
     implements CustomLintResponse {
-  factory _CustomLintResponseAnalyzerPluginResponse(final Response response,
-      {required final String id}) = _$_CustomLintResponseAnalyzerPluginResponse;
+  factory CustomLintResponseAnalyzerPluginResponse(final Response response,
+      {required final String id}) = _$CustomLintResponseAnalyzerPluginResponse;
 
-  factory _CustomLintResponseAnalyzerPluginResponse.fromJson(
+  factory CustomLintResponseAnalyzerPluginResponse.fromJson(
           Map<String, dynamic> json) =
-      _$_CustomLintResponseAnalyzerPluginResponse.fromJson;
+      _$CustomLintResponseAnalyzerPluginResponse.fromJson;
 
   Response get response;
   @override
   String get id;
   @override
   @JsonKey(ignore: true)
-  _$$_CustomLintResponseAnalyzerPluginResponseCopyWith<
-          _$_CustomLintResponseAnalyzerPluginResponse>
+  _$$CustomLintResponseAnalyzerPluginResponseCopyWith<
+          _$CustomLintResponseAnalyzerPluginResponse>
       get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintResponseAwaitAnalysisDoneCopyWith<$Res>
+abstract class _$$CustomLintResponseAwaitAnalysisDoneCopyWith<$Res>
     implements $CustomLintResponseCopyWith<$Res> {
-  factory _$$_CustomLintResponseAwaitAnalysisDoneCopyWith(
-          _$_CustomLintResponseAwaitAnalysisDone value,
-          $Res Function(_$_CustomLintResponseAwaitAnalysisDone) then) =
-      __$$_CustomLintResponseAwaitAnalysisDoneCopyWithImpl<$Res>;
+  factory _$$CustomLintResponseAwaitAnalysisDoneCopyWith(
+          _$CustomLintResponseAwaitAnalysisDone value,
+          $Res Function(_$CustomLintResponseAwaitAnalysisDone) then) =
+      __$$CustomLintResponseAwaitAnalysisDoneCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String id});
 }
 
 /// @nodoc
-class __$$_CustomLintResponseAwaitAnalysisDoneCopyWithImpl<$Res>
+class __$$CustomLintResponseAwaitAnalysisDoneCopyWithImpl<$Res>
     extends _$CustomLintResponseCopyWithImpl<$Res,
-        _$_CustomLintResponseAwaitAnalysisDone>
-    implements _$$_CustomLintResponseAwaitAnalysisDoneCopyWith<$Res> {
-  __$$_CustomLintResponseAwaitAnalysisDoneCopyWithImpl(
-      _$_CustomLintResponseAwaitAnalysisDone _value,
-      $Res Function(_$_CustomLintResponseAwaitAnalysisDone) _then)
+        _$CustomLintResponseAwaitAnalysisDone>
+    implements _$$CustomLintResponseAwaitAnalysisDoneCopyWith<$Res> {
+  __$$CustomLintResponseAwaitAnalysisDoneCopyWithImpl(
+      _$CustomLintResponseAwaitAnalysisDone _value,
+      $Res Function(_$CustomLintResponseAwaitAnalysisDone) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -1008,7 +1418,7 @@ class __$$_CustomLintResponseAwaitAnalysisDoneCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
   }) {
-    return _then(_$_CustomLintResponseAwaitAnalysisDone(
+    return _then(_$CustomLintResponseAwaitAnalysisDone(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -1019,15 +1429,14 @@ class __$$_CustomLintResponseAwaitAnalysisDoneCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintResponseAwaitAnalysisDone
-    implements _CustomLintResponseAwaitAnalysisDone {
-  _$_CustomLintResponseAwaitAnalysisDone(
-      {required this.id, final String? $type})
+class _$CustomLintResponseAwaitAnalysisDone
+    implements CustomLintResponseAwaitAnalysisDone {
+  _$CustomLintResponseAwaitAnalysisDone({required this.id, final String? $type})
       : $type = $type ?? 'awaitAnalysisDone';
 
-  factory _$_CustomLintResponseAwaitAnalysisDone.fromJson(
+  factory _$CustomLintResponseAwaitAnalysisDone.fromJson(
           Map<String, dynamic> json) =>
-      _$$_CustomLintResponseAwaitAnalysisDoneFromJson(json);
+      _$$CustomLintResponseAwaitAnalysisDoneFromJson(json);
 
   @override
   final String id;
@@ -1044,7 +1453,7 @@ class _$_CustomLintResponseAwaitAnalysisDone
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintResponseAwaitAnalysisDone &&
+            other is _$CustomLintResponseAwaitAnalysisDone &&
             (identical(other.id, id) || other.id == id));
   }
 
@@ -1055,10 +1464,10 @@ class _$_CustomLintResponseAwaitAnalysisDone
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintResponseAwaitAnalysisDoneCopyWith<
-          _$_CustomLintResponseAwaitAnalysisDone>
-      get copyWith => __$$_CustomLintResponseAwaitAnalysisDoneCopyWithImpl<
-          _$_CustomLintResponseAwaitAnalysisDone>(this, _$identity);
+  _$$CustomLintResponseAwaitAnalysisDoneCopyWith<
+          _$CustomLintResponseAwaitAnalysisDone>
+      get copyWith => __$$CustomLintResponseAwaitAnalysisDoneCopyWithImpl<
+          _$CustomLintResponseAwaitAnalysisDone>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1066,6 +1475,8 @@ class _$_CustomLintResponseAwaitAnalysisDone
     required TResult Function(Response response, String id)
         analyzerPluginResponse,
     required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id, List<LintRuleMeta> lintRules)
+        listLintRules,
     required TResult Function(String id) pong,
     required TResult Function(String id, String message, String stackTrace)
         error,
@@ -1078,6 +1489,7 @@ class _$_CustomLintResponseAwaitAnalysisDone
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Response response, String id)? analyzerPluginResponse,
     TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id, List<LintRuleMeta> lintRules)? listLintRules,
     TResult? Function(String id)? pong,
     TResult? Function(String id, String message, String stackTrace)? error,
   }) {
@@ -1089,6 +1501,7 @@ class _$_CustomLintResponseAwaitAnalysisDone
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Response response, String id)? analyzerPluginResponse,
     TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id, List<LintRuleMeta> lintRules)? listLintRules,
     TResult Function(String id)? pong,
     TResult Function(String id, String message, String stackTrace)? error,
     required TResult orElse(),
@@ -1102,12 +1515,13 @@ class _$_CustomLintResponseAwaitAnalysisDone
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_CustomLintResponseAnalyzerPluginResponse value)
+    required TResult Function(CustomLintResponseAnalyzerPluginResponse value)
         analyzerPluginResponse,
-    required TResult Function(_CustomLintResponseAwaitAnalysisDone value)
+    required TResult Function(CustomLintResponseAwaitAnalysisDone value)
         awaitAnalysisDone,
-    required TResult Function(_CustomLintResponsePong value) pong,
-    required TResult Function(_CustomLintResponseError value) error,
+    required TResult Function(CustomLintResponseLintRules value) listLintRules,
+    required TResult Function(CustomLintResponsePong value) pong,
+    required TResult Function(CustomLintResponseError value) error,
   }) {
     return awaitAnalysisDone(this);
   }
@@ -1115,12 +1529,13 @@ class _$_CustomLintResponseAwaitAnalysisDone
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_CustomLintResponseAnalyzerPluginResponse value)?
+    TResult? Function(CustomLintResponseAnalyzerPluginResponse value)?
         analyzerPluginResponse,
-    TResult? Function(_CustomLintResponseAwaitAnalysisDone value)?
+    TResult? Function(CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult? Function(_CustomLintResponsePong value)? pong,
-    TResult? Function(_CustomLintResponseError value)? error,
+    TResult? Function(CustomLintResponseLintRules value)? listLintRules,
+    TResult? Function(CustomLintResponsePong value)? pong,
+    TResult? Function(CustomLintResponseError value)? error,
   }) {
     return awaitAnalysisDone?.call(this);
   }
@@ -1128,12 +1543,13 @@ class _$_CustomLintResponseAwaitAnalysisDone
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_CustomLintResponseAnalyzerPluginResponse value)?
+    TResult Function(CustomLintResponseAnalyzerPluginResponse value)?
         analyzerPluginResponse,
-    TResult Function(_CustomLintResponseAwaitAnalysisDone value)?
+    TResult Function(CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult Function(_CustomLintResponsePong value)? pong,
-    TResult Function(_CustomLintResponseError value)? error,
+    TResult Function(CustomLintResponseLintRules value)? listLintRules,
+    TResult Function(CustomLintResponsePong value)? pong,
+    TResult Function(CustomLintResponseError value)? error,
     required TResult orElse(),
   }) {
     if (awaitAnalysisDone != null) {
@@ -1144,47 +1560,256 @@ class _$_CustomLintResponseAwaitAnalysisDone
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintResponseAwaitAnalysisDoneToJson(
+    return _$$CustomLintResponseAwaitAnalysisDoneToJson(
       this,
     );
   }
 }
 
-abstract class _CustomLintResponseAwaitAnalysisDone
+abstract class CustomLintResponseAwaitAnalysisDone
     implements CustomLintResponse {
-  factory _CustomLintResponseAwaitAnalysisDone({required final String id}) =
-      _$_CustomLintResponseAwaitAnalysisDone;
+  factory CustomLintResponseAwaitAnalysisDone({required final String id}) =
+      _$CustomLintResponseAwaitAnalysisDone;
 
-  factory _CustomLintResponseAwaitAnalysisDone.fromJson(
+  factory CustomLintResponseAwaitAnalysisDone.fromJson(
           Map<String, dynamic> json) =
-      _$_CustomLintResponseAwaitAnalysisDone.fromJson;
+      _$CustomLintResponseAwaitAnalysisDone.fromJson;
 
   @override
   String get id;
   @override
   @JsonKey(ignore: true)
-  _$$_CustomLintResponseAwaitAnalysisDoneCopyWith<
-          _$_CustomLintResponseAwaitAnalysisDone>
+  _$$CustomLintResponseAwaitAnalysisDoneCopyWith<
+          _$CustomLintResponseAwaitAnalysisDone>
       get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintResponsePongCopyWith<$Res>
+abstract class _$$CustomLintResponseLintRulesCopyWith<$Res>
     implements $CustomLintResponseCopyWith<$Res> {
-  factory _$$_CustomLintResponsePongCopyWith(_$_CustomLintResponsePong value,
-          $Res Function(_$_CustomLintResponsePong) then) =
-      __$$_CustomLintResponsePongCopyWithImpl<$Res>;
+  factory _$$CustomLintResponseLintRulesCopyWith(
+          _$CustomLintResponseLintRules value,
+          $Res Function(_$CustomLintResponseLintRules) then) =
+      __$$CustomLintResponseLintRulesCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String id, List<LintRuleMeta> lintRules});
+}
+
+/// @nodoc
+class __$$CustomLintResponseLintRulesCopyWithImpl<$Res>
+    extends _$CustomLintResponseCopyWithImpl<$Res,
+        _$CustomLintResponseLintRules>
+    implements _$$CustomLintResponseLintRulesCopyWith<$Res> {
+  __$$CustomLintResponseLintRulesCopyWithImpl(
+      _$CustomLintResponseLintRules _value,
+      $Res Function(_$CustomLintResponseLintRules) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? lintRules = null,
+  }) {
+    return _then(_$CustomLintResponseLintRules(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      lintRules: null == lintRules
+          ? _value._lintRules
+          : lintRules // ignore: cast_nullable_to_non_nullable
+              as List<LintRuleMeta>,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$CustomLintResponseLintRules implements CustomLintResponseLintRules {
+  _$CustomLintResponseLintRules(
+      {required this.id,
+      required final List<LintRuleMeta> lintRules,
+      final String? $type})
+      : _lintRules = lintRules,
+        $type = $type ?? 'listLintRules';
+
+  factory _$CustomLintResponseLintRules.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintResponseLintRulesFromJson(json);
+
+  @override
+  final String id;
+  final List<LintRuleMeta> _lintRules;
+  @override
+  List<LintRuleMeta> get lintRules {
+    if (_lintRules is EqualUnmodifiableListView) return _lintRules;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_lintRules);
+  }
+
+  @JsonKey(name: 'runtimeType')
+  final String $type;
+
+  @override
+  String toString() {
+    return 'CustomLintResponse.listLintRules(id: $id, lintRules: $lintRules)';
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$CustomLintResponseLintRules &&
+            (identical(other.id, id) || other.id == id) &&
+            const DeepCollectionEquality()
+                .equals(other._lintRules, _lintRules));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType, id, const DeepCollectionEquality().hash(_lintRules));
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$CustomLintResponseLintRulesCopyWith<_$CustomLintResponseLintRules>
+      get copyWith => __$$CustomLintResponseLintRulesCopyWithImpl<
+          _$CustomLintResponseLintRules>(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(Response response, String id)
+        analyzerPluginResponse,
+    required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id, List<LintRuleMeta> lintRules)
+        listLintRules,
+    required TResult Function(String id) pong,
+    required TResult Function(String id, String message, String stackTrace)
+        error,
+  }) {
+    return listLintRules(id, lintRules);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(Response response, String id)? analyzerPluginResponse,
+    TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id, List<LintRuleMeta> lintRules)? listLintRules,
+    TResult? Function(String id)? pong,
+    TResult? Function(String id, String message, String stackTrace)? error,
+  }) {
+    return listLintRules?.call(id, lintRules);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(Response response, String id)? analyzerPluginResponse,
+    TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id, List<LintRuleMeta> lintRules)? listLintRules,
+    TResult Function(String id)? pong,
+    TResult Function(String id, String message, String stackTrace)? error,
+    required TResult orElse(),
+  }) {
+    if (listLintRules != null) {
+      return listLintRules(id, lintRules);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(CustomLintResponseAnalyzerPluginResponse value)
+        analyzerPluginResponse,
+    required TResult Function(CustomLintResponseAwaitAnalysisDone value)
+        awaitAnalysisDone,
+    required TResult Function(CustomLintResponseLintRules value) listLintRules,
+    required TResult Function(CustomLintResponsePong value) pong,
+    required TResult Function(CustomLintResponseError value) error,
+  }) {
+    return listLintRules(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(CustomLintResponseAnalyzerPluginResponse value)?
+        analyzerPluginResponse,
+    TResult? Function(CustomLintResponseAwaitAnalysisDone value)?
+        awaitAnalysisDone,
+    TResult? Function(CustomLintResponseLintRules value)? listLintRules,
+    TResult? Function(CustomLintResponsePong value)? pong,
+    TResult? Function(CustomLintResponseError value)? error,
+  }) {
+    return listLintRules?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(CustomLintResponseAnalyzerPluginResponse value)?
+        analyzerPluginResponse,
+    TResult Function(CustomLintResponseAwaitAnalysisDone value)?
+        awaitAnalysisDone,
+    TResult Function(CustomLintResponseLintRules value)? listLintRules,
+    TResult Function(CustomLintResponsePong value)? pong,
+    TResult Function(CustomLintResponseError value)? error,
+    required TResult orElse(),
+  }) {
+    if (listLintRules != null) {
+      return listLintRules(this);
+    }
+    return orElse();
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$CustomLintResponseLintRulesToJson(
+      this,
+    );
+  }
+}
+
+abstract class CustomLintResponseLintRules implements CustomLintResponse {
+  factory CustomLintResponseLintRules(
+          {required final String id,
+          required final List<LintRuleMeta> lintRules}) =
+      _$CustomLintResponseLintRules;
+
+  factory CustomLintResponseLintRules.fromJson(Map<String, dynamic> json) =
+      _$CustomLintResponseLintRules.fromJson;
+
+  @override
+  String get id;
+  List<LintRuleMeta> get lintRules;
+  @override
+  @JsonKey(ignore: true)
+  _$$CustomLintResponseLintRulesCopyWith<_$CustomLintResponseLintRules>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$CustomLintResponsePongCopyWith<$Res>
+    implements $CustomLintResponseCopyWith<$Res> {
+  factory _$$CustomLintResponsePongCopyWith(_$CustomLintResponsePong value,
+          $Res Function(_$CustomLintResponsePong) then) =
+      __$$CustomLintResponsePongCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String id});
 }
 
 /// @nodoc
-class __$$_CustomLintResponsePongCopyWithImpl<$Res>
-    extends _$CustomLintResponseCopyWithImpl<$Res, _$_CustomLintResponsePong>
-    implements _$$_CustomLintResponsePongCopyWith<$Res> {
-  __$$_CustomLintResponsePongCopyWithImpl(_$_CustomLintResponsePong _value,
-      $Res Function(_$_CustomLintResponsePong) _then)
+class __$$CustomLintResponsePongCopyWithImpl<$Res>
+    extends _$CustomLintResponseCopyWithImpl<$Res, _$CustomLintResponsePong>
+    implements _$$CustomLintResponsePongCopyWith<$Res> {
+  __$$CustomLintResponsePongCopyWithImpl(_$CustomLintResponsePong _value,
+      $Res Function(_$CustomLintResponsePong) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -1192,7 +1817,7 @@ class __$$_CustomLintResponsePongCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
   }) {
-    return _then(_$_CustomLintResponsePong(
+    return _then(_$CustomLintResponsePong(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -1203,12 +1828,12 @@ class __$$_CustomLintResponsePongCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintResponsePong implements _CustomLintResponsePong {
-  _$_CustomLintResponsePong({required this.id, final String? $type})
+class _$CustomLintResponsePong implements CustomLintResponsePong {
+  _$CustomLintResponsePong({required this.id, final String? $type})
       : $type = $type ?? 'pong';
 
-  factory _$_CustomLintResponsePong.fromJson(Map<String, dynamic> json) =>
-      _$$_CustomLintResponsePongFromJson(json);
+  factory _$CustomLintResponsePong.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintResponsePongFromJson(json);
 
   @override
   final String id;
@@ -1225,7 +1850,7 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintResponsePong &&
+            other is _$CustomLintResponsePong &&
             (identical(other.id, id) || other.id == id));
   }
 
@@ -1236,8 +1861,8 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintResponsePongCopyWith<_$_CustomLintResponsePong> get copyWith =>
-      __$$_CustomLintResponsePongCopyWithImpl<_$_CustomLintResponsePong>(
+  _$$CustomLintResponsePongCopyWith<_$CustomLintResponsePong> get copyWith =>
+      __$$CustomLintResponsePongCopyWithImpl<_$CustomLintResponsePong>(
           this, _$identity);
 
   @override
@@ -1246,6 +1871,8 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
     required TResult Function(Response response, String id)
         analyzerPluginResponse,
     required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id, List<LintRuleMeta> lintRules)
+        listLintRules,
     required TResult Function(String id) pong,
     required TResult Function(String id, String message, String stackTrace)
         error,
@@ -1258,6 +1885,7 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Response response, String id)? analyzerPluginResponse,
     TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id, List<LintRuleMeta> lintRules)? listLintRules,
     TResult? Function(String id)? pong,
     TResult? Function(String id, String message, String stackTrace)? error,
   }) {
@@ -1269,6 +1897,7 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Response response, String id)? analyzerPluginResponse,
     TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id, List<LintRuleMeta> lintRules)? listLintRules,
     TResult Function(String id)? pong,
     TResult Function(String id, String message, String stackTrace)? error,
     required TResult orElse(),
@@ -1282,12 +1911,13 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_CustomLintResponseAnalyzerPluginResponse value)
+    required TResult Function(CustomLintResponseAnalyzerPluginResponse value)
         analyzerPluginResponse,
-    required TResult Function(_CustomLintResponseAwaitAnalysisDone value)
+    required TResult Function(CustomLintResponseAwaitAnalysisDone value)
         awaitAnalysisDone,
-    required TResult Function(_CustomLintResponsePong value) pong,
-    required TResult Function(_CustomLintResponseError value) error,
+    required TResult Function(CustomLintResponseLintRules value) listLintRules,
+    required TResult Function(CustomLintResponsePong value) pong,
+    required TResult Function(CustomLintResponseError value) error,
   }) {
     return pong(this);
   }
@@ -1295,12 +1925,13 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_CustomLintResponseAnalyzerPluginResponse value)?
+    TResult? Function(CustomLintResponseAnalyzerPluginResponse value)?
         analyzerPluginResponse,
-    TResult? Function(_CustomLintResponseAwaitAnalysisDone value)?
+    TResult? Function(CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult? Function(_CustomLintResponsePong value)? pong,
-    TResult? Function(_CustomLintResponseError value)? error,
+    TResult? Function(CustomLintResponseLintRules value)? listLintRules,
+    TResult? Function(CustomLintResponsePong value)? pong,
+    TResult? Function(CustomLintResponseError value)? error,
   }) {
     return pong?.call(this);
   }
@@ -1308,12 +1939,13 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_CustomLintResponseAnalyzerPluginResponse value)?
+    TResult Function(CustomLintResponseAnalyzerPluginResponse value)?
         analyzerPluginResponse,
-    TResult Function(_CustomLintResponseAwaitAnalysisDone value)?
+    TResult Function(CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult Function(_CustomLintResponsePong value)? pong,
-    TResult Function(_CustomLintResponseError value)? error,
+    TResult Function(CustomLintResponseLintRules value)? listLintRules,
+    TResult Function(CustomLintResponsePong value)? pong,
+    TResult Function(CustomLintResponseError value)? error,
     required TResult orElse(),
   }) {
     if (pong != null) {
@@ -1324,44 +1956,44 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintResponsePongToJson(
+    return _$$CustomLintResponsePongToJson(
       this,
     );
   }
 }
 
-abstract class _CustomLintResponsePong implements CustomLintResponse {
-  factory _CustomLintResponsePong({required final String id}) =
-      _$_CustomLintResponsePong;
+abstract class CustomLintResponsePong implements CustomLintResponse {
+  factory CustomLintResponsePong({required final String id}) =
+      _$CustomLintResponsePong;
 
-  factory _CustomLintResponsePong.fromJson(Map<String, dynamic> json) =
-      _$_CustomLintResponsePong.fromJson;
+  factory CustomLintResponsePong.fromJson(Map<String, dynamic> json) =
+      _$CustomLintResponsePong.fromJson;
 
   @override
   String get id;
   @override
   @JsonKey(ignore: true)
-  _$$_CustomLintResponsePongCopyWith<_$_CustomLintResponsePong> get copyWith =>
+  _$$CustomLintResponsePongCopyWith<_$CustomLintResponsePong> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintResponseErrorCopyWith<$Res>
+abstract class _$$CustomLintResponseErrorCopyWith<$Res>
     implements $CustomLintResponseCopyWith<$Res> {
-  factory _$$_CustomLintResponseErrorCopyWith(_$_CustomLintResponseError value,
-          $Res Function(_$_CustomLintResponseError) then) =
-      __$$_CustomLintResponseErrorCopyWithImpl<$Res>;
+  factory _$$CustomLintResponseErrorCopyWith(_$CustomLintResponseError value,
+          $Res Function(_$CustomLintResponseError) then) =
+      __$$CustomLintResponseErrorCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String id, String message, String stackTrace});
 }
 
 /// @nodoc
-class __$$_CustomLintResponseErrorCopyWithImpl<$Res>
-    extends _$CustomLintResponseCopyWithImpl<$Res, _$_CustomLintResponseError>
-    implements _$$_CustomLintResponseErrorCopyWith<$Res> {
-  __$$_CustomLintResponseErrorCopyWithImpl(_$_CustomLintResponseError _value,
-      $Res Function(_$_CustomLintResponseError) _then)
+class __$$CustomLintResponseErrorCopyWithImpl<$Res>
+    extends _$CustomLintResponseCopyWithImpl<$Res, _$CustomLintResponseError>
+    implements _$$CustomLintResponseErrorCopyWith<$Res> {
+  __$$CustomLintResponseErrorCopyWithImpl(_$CustomLintResponseError _value,
+      $Res Function(_$CustomLintResponseError) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -1371,7 +2003,7 @@ class __$$_CustomLintResponseErrorCopyWithImpl<$Res>
     Object? message = null,
     Object? stackTrace = null,
   }) {
-    return _then(_$_CustomLintResponseError(
+    return _then(_$CustomLintResponseError(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -1390,16 +2022,16 @@ class __$$_CustomLintResponseErrorCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintResponseError implements _CustomLintResponseError {
-  _$_CustomLintResponseError(
+class _$CustomLintResponseError implements CustomLintResponseError {
+  _$CustomLintResponseError(
       {required this.id,
       required this.message,
       required this.stackTrace,
       final String? $type})
       : $type = $type ?? 'error';
 
-  factory _$_CustomLintResponseError.fromJson(Map<String, dynamic> json) =>
-      _$$_CustomLintResponseErrorFromJson(json);
+  factory _$CustomLintResponseError.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintResponseErrorFromJson(json);
 
   @override
   final String id;
@@ -1420,7 +2052,7 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintResponseError &&
+            other is _$CustomLintResponseError &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.message, message) || other.message == message) &&
             (identical(other.stackTrace, stackTrace) ||
@@ -1434,10 +2066,9 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintResponseErrorCopyWith<_$_CustomLintResponseError>
-      get copyWith =>
-          __$$_CustomLintResponseErrorCopyWithImpl<_$_CustomLintResponseError>(
-              this, _$identity);
+  _$$CustomLintResponseErrorCopyWith<_$CustomLintResponseError> get copyWith =>
+      __$$CustomLintResponseErrorCopyWithImpl<_$CustomLintResponseError>(
+          this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1445,6 +2076,8 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
     required TResult Function(Response response, String id)
         analyzerPluginResponse,
     required TResult Function(String id) awaitAnalysisDone,
+    required TResult Function(String id, List<LintRuleMeta> lintRules)
+        listLintRules,
     required TResult Function(String id) pong,
     required TResult Function(String id, String message, String stackTrace)
         error,
@@ -1457,6 +2090,7 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(Response response, String id)? analyzerPluginResponse,
     TResult? Function(String id)? awaitAnalysisDone,
+    TResult? Function(String id, List<LintRuleMeta> lintRules)? listLintRules,
     TResult? Function(String id)? pong,
     TResult? Function(String id, String message, String stackTrace)? error,
   }) {
@@ -1468,6 +2102,7 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(Response response, String id)? analyzerPluginResponse,
     TResult Function(String id)? awaitAnalysisDone,
+    TResult Function(String id, List<LintRuleMeta> lintRules)? listLintRules,
     TResult Function(String id)? pong,
     TResult Function(String id, String message, String stackTrace)? error,
     required TResult orElse(),
@@ -1481,12 +2116,13 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_CustomLintResponseAnalyzerPluginResponse value)
+    required TResult Function(CustomLintResponseAnalyzerPluginResponse value)
         analyzerPluginResponse,
-    required TResult Function(_CustomLintResponseAwaitAnalysisDone value)
+    required TResult Function(CustomLintResponseAwaitAnalysisDone value)
         awaitAnalysisDone,
-    required TResult Function(_CustomLintResponsePong value) pong,
-    required TResult Function(_CustomLintResponseError value) error,
+    required TResult Function(CustomLintResponseLintRules value) listLintRules,
+    required TResult Function(CustomLintResponsePong value) pong,
+    required TResult Function(CustomLintResponseError value) error,
   }) {
     return error(this);
   }
@@ -1494,12 +2130,13 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_CustomLintResponseAnalyzerPluginResponse value)?
+    TResult? Function(CustomLintResponseAnalyzerPluginResponse value)?
         analyzerPluginResponse,
-    TResult? Function(_CustomLintResponseAwaitAnalysisDone value)?
+    TResult? Function(CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult? Function(_CustomLintResponsePong value)? pong,
-    TResult? Function(_CustomLintResponseError value)? error,
+    TResult? Function(CustomLintResponseLintRules value)? listLintRules,
+    TResult? Function(CustomLintResponsePong value)? pong,
+    TResult? Function(CustomLintResponseError value)? error,
   }) {
     return error?.call(this);
   }
@@ -1507,12 +2144,13 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_CustomLintResponseAnalyzerPluginResponse value)?
+    TResult Function(CustomLintResponseAnalyzerPluginResponse value)?
         analyzerPluginResponse,
-    TResult Function(_CustomLintResponseAwaitAnalysisDone value)?
+    TResult Function(CustomLintResponseAwaitAnalysisDone value)?
         awaitAnalysisDone,
-    TResult Function(_CustomLintResponsePong value)? pong,
-    TResult Function(_CustomLintResponseError value)? error,
+    TResult Function(CustomLintResponseLintRules value)? listLintRules,
+    TResult Function(CustomLintResponsePong value)? pong,
+    TResult Function(CustomLintResponseError value)? error,
     required TResult orElse(),
   }) {
     if (error != null) {
@@ -1523,20 +2161,20 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintResponseErrorToJson(
+    return _$$CustomLintResponseErrorToJson(
       this,
     );
   }
 }
 
-abstract class _CustomLintResponseError implements CustomLintResponse {
-  factory _CustomLintResponseError(
+abstract class CustomLintResponseError implements CustomLintResponse {
+  factory CustomLintResponseError(
       {required final String id,
       required final String message,
-      required final String stackTrace}) = _$_CustomLintResponseError;
+      required final String stackTrace}) = _$CustomLintResponseError;
 
-  factory _CustomLintResponseError.fromJson(Map<String, dynamic> json) =
-      _$_CustomLintResponseError.fromJson;
+  factory CustomLintResponseError.fromJson(Map<String, dynamic> json) =
+      _$CustomLintResponseError.fromJson;
 
   @override
   String get id;
@@ -1544,8 +2182,8 @@ abstract class _CustomLintResponseError implements CustomLintResponse {
   String get stackTrace;
   @override
   @JsonKey(ignore: true)
-  _$$_CustomLintResponseErrorCopyWith<_$_CustomLintResponseError>
-      get copyWith => throw _privateConstructorUsedError;
+  _$$CustomLintResponseErrorCopyWith<_$CustomLintResponseError> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 CustomLintMessage _$CustomLintMessageFromJson(Map<String, dynamic> json) {
@@ -1953,11 +2591,11 @@ abstract class CustomLintMessageResponse implements CustomLintMessage {
 CustomLintEvent _$CustomLintEventFromJson(Map<String, dynamic> json) {
   switch (json['runtimeType']) {
     case 'analyzerPluginNotification':
-      return _CustomLintEventAnalyzerPluginNotification.fromJson(json);
+      return CustomLintEventAnalyzerPluginNotification.fromJson(json);
     case 'error':
-      return _CustomLintEventError.fromJson(json);
+      return CustomLintEventError.fromJson(json);
     case 'print':
-      return _CustomLintEventPrint.fromJson(json);
+      return CustomLintEventPrint.fromJson(json);
 
     default:
       throw CheckedFromJsonException(json, 'runtimeType', 'CustomLintEvent',
@@ -1999,26 +2637,26 @@ mixin _$CustomLintEvent {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_CustomLintEventAnalyzerPluginNotification value)
+    required TResult Function(CustomLintEventAnalyzerPluginNotification value)
         analyzerPluginNotification,
-    required TResult Function(_CustomLintEventError value) error,
-    required TResult Function(_CustomLintEventPrint value) print,
+    required TResult Function(CustomLintEventError value) error,
+    required TResult Function(CustomLintEventPrint value) print,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_CustomLintEventAnalyzerPluginNotification value)?
+    TResult? Function(CustomLintEventAnalyzerPluginNotification value)?
         analyzerPluginNotification,
-    TResult? Function(_CustomLintEventError value)? error,
-    TResult? Function(_CustomLintEventPrint value)? print,
+    TResult? Function(CustomLintEventError value)? error,
+    TResult? Function(CustomLintEventPrint value)? print,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_CustomLintEventAnalyzerPluginNotification value)?
+    TResult Function(CustomLintEventAnalyzerPluginNotification value)?
         analyzerPluginNotification,
-    TResult Function(_CustomLintEventError value)? error,
-    TResult Function(_CustomLintEventPrint value)? print,
+    TResult Function(CustomLintEventError value)? error,
+    TResult Function(CustomLintEventPrint value)? print,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -2044,23 +2682,23 @@ class _$CustomLintEventCopyWithImpl<$Res, $Val extends CustomLintEvent>
 }
 
 /// @nodoc
-abstract class _$$_CustomLintEventAnalyzerPluginNotificationCopyWith<$Res> {
-  factory _$$_CustomLintEventAnalyzerPluginNotificationCopyWith(
-          _$_CustomLintEventAnalyzerPluginNotification value,
-          $Res Function(_$_CustomLintEventAnalyzerPluginNotification) then) =
-      __$$_CustomLintEventAnalyzerPluginNotificationCopyWithImpl<$Res>;
+abstract class _$$CustomLintEventAnalyzerPluginNotificationCopyWith<$Res> {
+  factory _$$CustomLintEventAnalyzerPluginNotificationCopyWith(
+          _$CustomLintEventAnalyzerPluginNotification value,
+          $Res Function(_$CustomLintEventAnalyzerPluginNotification) then) =
+      __$$CustomLintEventAnalyzerPluginNotificationCopyWithImpl<$Res>;
   @useResult
   $Res call({@NotificationJsonConverter() Notification notification});
 }
 
 /// @nodoc
-class __$$_CustomLintEventAnalyzerPluginNotificationCopyWithImpl<$Res>
+class __$$CustomLintEventAnalyzerPluginNotificationCopyWithImpl<$Res>
     extends _$CustomLintEventCopyWithImpl<$Res,
-        _$_CustomLintEventAnalyzerPluginNotification>
-    implements _$$_CustomLintEventAnalyzerPluginNotificationCopyWith<$Res> {
-  __$$_CustomLintEventAnalyzerPluginNotificationCopyWithImpl(
-      _$_CustomLintEventAnalyzerPluginNotification _value,
-      $Res Function(_$_CustomLintEventAnalyzerPluginNotification) _then)
+        _$CustomLintEventAnalyzerPluginNotification>
+    implements _$$CustomLintEventAnalyzerPluginNotificationCopyWith<$Res> {
+  __$$CustomLintEventAnalyzerPluginNotificationCopyWithImpl(
+      _$CustomLintEventAnalyzerPluginNotification _value,
+      $Res Function(_$CustomLintEventAnalyzerPluginNotification) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -2068,7 +2706,7 @@ class __$$_CustomLintEventAnalyzerPluginNotificationCopyWithImpl<$Res>
   $Res call({
     Object? notification = null,
   }) {
-    return _then(_$_CustomLintEventAnalyzerPluginNotification(
+    return _then(_$CustomLintEventAnalyzerPluginNotification(
       null == notification
           ? _value.notification
           : notification // ignore: cast_nullable_to_non_nullable
@@ -2079,16 +2717,16 @@ class __$$_CustomLintEventAnalyzerPluginNotificationCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintEventAnalyzerPluginNotification
-    implements _CustomLintEventAnalyzerPluginNotification {
-  _$_CustomLintEventAnalyzerPluginNotification(
+class _$CustomLintEventAnalyzerPluginNotification
+    implements CustomLintEventAnalyzerPluginNotification {
+  _$CustomLintEventAnalyzerPluginNotification(
       @NotificationJsonConverter() this.notification,
       {final String? $type})
       : $type = $type ?? 'analyzerPluginNotification';
 
-  factory _$_CustomLintEventAnalyzerPluginNotification.fromJson(
+  factory _$CustomLintEventAnalyzerPluginNotification.fromJson(
           Map<String, dynamic> json) =>
-      _$$_CustomLintEventAnalyzerPluginNotificationFromJson(json);
+      _$$CustomLintEventAnalyzerPluginNotificationFromJson(json);
 
   @override
   @NotificationJsonConverter()
@@ -2106,7 +2744,7 @@ class _$_CustomLintEventAnalyzerPluginNotification
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintEventAnalyzerPluginNotification &&
+            other is _$CustomLintEventAnalyzerPluginNotification &&
             (identical(other.notification, notification) ||
                 other.notification == notification));
   }
@@ -2118,11 +2756,10 @@ class _$_CustomLintEventAnalyzerPluginNotification
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintEventAnalyzerPluginNotificationCopyWith<
-          _$_CustomLintEventAnalyzerPluginNotification>
-      get copyWith =>
-          __$$_CustomLintEventAnalyzerPluginNotificationCopyWithImpl<
-              _$_CustomLintEventAnalyzerPluginNotification>(this, _$identity);
+  _$$CustomLintEventAnalyzerPluginNotificationCopyWith<
+          _$CustomLintEventAnalyzerPluginNotification>
+      get copyWith => __$$CustomLintEventAnalyzerPluginNotificationCopyWithImpl<
+          _$CustomLintEventAnalyzerPluginNotification>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -2169,10 +2806,10 @@ class _$_CustomLintEventAnalyzerPluginNotification
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_CustomLintEventAnalyzerPluginNotification value)
+    required TResult Function(CustomLintEventAnalyzerPluginNotification value)
         analyzerPluginNotification,
-    required TResult Function(_CustomLintEventError value) error,
-    required TResult Function(_CustomLintEventPrint value) print,
+    required TResult Function(CustomLintEventError value) error,
+    required TResult Function(CustomLintEventPrint value) print,
   }) {
     return analyzerPluginNotification(this);
   }
@@ -2180,10 +2817,10 @@ class _$_CustomLintEventAnalyzerPluginNotification
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_CustomLintEventAnalyzerPluginNotification value)?
+    TResult? Function(CustomLintEventAnalyzerPluginNotification value)?
         analyzerPluginNotification,
-    TResult? Function(_CustomLintEventError value)? error,
-    TResult? Function(_CustomLintEventPrint value)? print,
+    TResult? Function(CustomLintEventError value)? error,
+    TResult? Function(CustomLintEventPrint value)? print,
   }) {
     return analyzerPluginNotification?.call(this);
   }
@@ -2191,10 +2828,10 @@ class _$_CustomLintEventAnalyzerPluginNotification
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_CustomLintEventAnalyzerPluginNotification value)?
+    TResult Function(CustomLintEventAnalyzerPluginNotification value)?
         analyzerPluginNotification,
-    TResult Function(_CustomLintEventError value)? error,
-    TResult Function(_CustomLintEventPrint value)? print,
+    TResult Function(CustomLintEventError value)? error,
+    TResult Function(CustomLintEventPrint value)? print,
     required TResult orElse(),
   }) {
     if (analyzerPluginNotification != null) {
@@ -2205,45 +2842,45 @@ class _$_CustomLintEventAnalyzerPluginNotification
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintEventAnalyzerPluginNotificationToJson(
+    return _$$CustomLintEventAnalyzerPluginNotificationToJson(
       this,
     );
   }
 }
 
-abstract class _CustomLintEventAnalyzerPluginNotification
+abstract class CustomLintEventAnalyzerPluginNotification
     implements CustomLintEvent {
-  factory _CustomLintEventAnalyzerPluginNotification(
+  factory CustomLintEventAnalyzerPluginNotification(
           @NotificationJsonConverter() final Notification notification) =
-      _$_CustomLintEventAnalyzerPluginNotification;
+      _$CustomLintEventAnalyzerPluginNotification;
 
-  factory _CustomLintEventAnalyzerPluginNotification.fromJson(
+  factory CustomLintEventAnalyzerPluginNotification.fromJson(
           Map<String, dynamic> json) =
-      _$_CustomLintEventAnalyzerPluginNotification.fromJson;
+      _$CustomLintEventAnalyzerPluginNotification.fromJson;
 
   @NotificationJsonConverter()
   Notification get notification;
   @JsonKey(ignore: true)
-  _$$_CustomLintEventAnalyzerPluginNotificationCopyWith<
-          _$_CustomLintEventAnalyzerPluginNotification>
+  _$$CustomLintEventAnalyzerPluginNotificationCopyWith<
+          _$CustomLintEventAnalyzerPluginNotification>
       get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintEventErrorCopyWith<$Res> {
-  factory _$$_CustomLintEventErrorCopyWith(_$_CustomLintEventError value,
-          $Res Function(_$_CustomLintEventError) then) =
-      __$$_CustomLintEventErrorCopyWithImpl<$Res>;
+abstract class _$$CustomLintEventErrorCopyWith<$Res> {
+  factory _$$CustomLintEventErrorCopyWith(_$CustomLintEventError value,
+          $Res Function(_$CustomLintEventError) then) =
+      __$$CustomLintEventErrorCopyWithImpl<$Res>;
   @useResult
   $Res call({String message, String stackTrace, String? pluginName});
 }
 
 /// @nodoc
-class __$$_CustomLintEventErrorCopyWithImpl<$Res>
-    extends _$CustomLintEventCopyWithImpl<$Res, _$_CustomLintEventError>
-    implements _$$_CustomLintEventErrorCopyWith<$Res> {
-  __$$_CustomLintEventErrorCopyWithImpl(_$_CustomLintEventError _value,
-      $Res Function(_$_CustomLintEventError) _then)
+class __$$CustomLintEventErrorCopyWithImpl<$Res>
+    extends _$CustomLintEventCopyWithImpl<$Res, _$CustomLintEventError>
+    implements _$$CustomLintEventErrorCopyWith<$Res> {
+  __$$CustomLintEventErrorCopyWithImpl(_$CustomLintEventError _value,
+      $Res Function(_$CustomLintEventError) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -2253,7 +2890,7 @@ class __$$_CustomLintEventErrorCopyWithImpl<$Res>
     Object? stackTrace = null,
     Object? pluginName = freezed,
   }) {
-    return _then(_$_CustomLintEventError(
+    return _then(_$CustomLintEventError(
       null == message
           ? _value.message
           : message // ignore: cast_nullable_to_non_nullable
@@ -2272,13 +2909,13 @@ class __$$_CustomLintEventErrorCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintEventError implements _CustomLintEventError {
-  _$_CustomLintEventError(this.message, this.stackTrace,
+class _$CustomLintEventError implements CustomLintEventError {
+  _$CustomLintEventError(this.message, this.stackTrace,
       {required this.pluginName, final String? $type})
       : $type = $type ?? 'error';
 
-  factory _$_CustomLintEventError.fromJson(Map<String, dynamic> json) =>
-      _$$_CustomLintEventErrorFromJson(json);
+  factory _$CustomLintEventError.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintEventErrorFromJson(json);
 
   @override
   final String message;
@@ -2299,7 +2936,7 @@ class _$_CustomLintEventError implements _CustomLintEventError {
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintEventError &&
+            other is _$CustomLintEventError &&
             (identical(other.message, message) || other.message == message) &&
             (identical(other.stackTrace, stackTrace) ||
                 other.stackTrace == stackTrace) &&
@@ -2314,8 +2951,8 @@ class _$_CustomLintEventError implements _CustomLintEventError {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintEventErrorCopyWith<_$_CustomLintEventError> get copyWith =>
-      __$$_CustomLintEventErrorCopyWithImpl<_$_CustomLintEventError>(
+  _$$CustomLintEventErrorCopyWith<_$CustomLintEventError> get copyWith =>
+      __$$CustomLintEventErrorCopyWithImpl<_$CustomLintEventError>(
           this, _$identity);
 
   @override
@@ -2363,10 +3000,10 @@ class _$_CustomLintEventError implements _CustomLintEventError {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_CustomLintEventAnalyzerPluginNotification value)
+    required TResult Function(CustomLintEventAnalyzerPluginNotification value)
         analyzerPluginNotification,
-    required TResult Function(_CustomLintEventError value) error,
-    required TResult Function(_CustomLintEventPrint value) print,
+    required TResult Function(CustomLintEventError value) error,
+    required TResult Function(CustomLintEventPrint value) print,
   }) {
     return error(this);
   }
@@ -2374,10 +3011,10 @@ class _$_CustomLintEventError implements _CustomLintEventError {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_CustomLintEventAnalyzerPluginNotification value)?
+    TResult? Function(CustomLintEventAnalyzerPluginNotification value)?
         analyzerPluginNotification,
-    TResult? Function(_CustomLintEventError value)? error,
-    TResult? Function(_CustomLintEventPrint value)? print,
+    TResult? Function(CustomLintEventError value)? error,
+    TResult? Function(CustomLintEventPrint value)? print,
   }) {
     return error?.call(this);
   }
@@ -2385,10 +3022,10 @@ class _$_CustomLintEventError implements _CustomLintEventError {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_CustomLintEventAnalyzerPluginNotification value)?
+    TResult Function(CustomLintEventAnalyzerPluginNotification value)?
         analyzerPluginNotification,
-    TResult Function(_CustomLintEventError value)? error,
-    TResult Function(_CustomLintEventPrint value)? print,
+    TResult Function(CustomLintEventError value)? error,
+    TResult Function(CustomLintEventPrint value)? print,
     required TResult orElse(),
   }) {
     if (error != null) {
@@ -2399,42 +3036,42 @@ class _$_CustomLintEventError implements _CustomLintEventError {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintEventErrorToJson(
+    return _$$CustomLintEventErrorToJson(
       this,
     );
   }
 }
 
-abstract class _CustomLintEventError implements CustomLintEvent {
-  factory _CustomLintEventError(final String message, final String stackTrace,
-      {required final String? pluginName}) = _$_CustomLintEventError;
+abstract class CustomLintEventError implements CustomLintEvent {
+  factory CustomLintEventError(final String message, final String stackTrace,
+      {required final String? pluginName}) = _$CustomLintEventError;
 
-  factory _CustomLintEventError.fromJson(Map<String, dynamic> json) =
-      _$_CustomLintEventError.fromJson;
+  factory CustomLintEventError.fromJson(Map<String, dynamic> json) =
+      _$CustomLintEventError.fromJson;
 
   String get message;
   String get stackTrace;
   String? get pluginName;
   @JsonKey(ignore: true)
-  _$$_CustomLintEventErrorCopyWith<_$_CustomLintEventError> get copyWith =>
+  _$$CustomLintEventErrorCopyWith<_$CustomLintEventError> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintEventPrintCopyWith<$Res> {
-  factory _$$_CustomLintEventPrintCopyWith(_$_CustomLintEventPrint value,
-          $Res Function(_$_CustomLintEventPrint) then) =
-      __$$_CustomLintEventPrintCopyWithImpl<$Res>;
+abstract class _$$CustomLintEventPrintCopyWith<$Res> {
+  factory _$$CustomLintEventPrintCopyWith(_$CustomLintEventPrint value,
+          $Res Function(_$CustomLintEventPrint) then) =
+      __$$CustomLintEventPrintCopyWithImpl<$Res>;
   @useResult
   $Res call({String message, String? pluginName});
 }
 
 /// @nodoc
-class __$$_CustomLintEventPrintCopyWithImpl<$Res>
-    extends _$CustomLintEventCopyWithImpl<$Res, _$_CustomLintEventPrint>
-    implements _$$_CustomLintEventPrintCopyWith<$Res> {
-  __$$_CustomLintEventPrintCopyWithImpl(_$_CustomLintEventPrint _value,
-      $Res Function(_$_CustomLintEventPrint) _then)
+class __$$CustomLintEventPrintCopyWithImpl<$Res>
+    extends _$CustomLintEventCopyWithImpl<$Res, _$CustomLintEventPrint>
+    implements _$$CustomLintEventPrintCopyWith<$Res> {
+  __$$CustomLintEventPrintCopyWithImpl(_$CustomLintEventPrint _value,
+      $Res Function(_$CustomLintEventPrint) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -2443,7 +3080,7 @@ class __$$_CustomLintEventPrintCopyWithImpl<$Res>
     Object? message = null,
     Object? pluginName = freezed,
   }) {
-    return _then(_$_CustomLintEventPrint(
+    return _then(_$CustomLintEventPrint(
       null == message
           ? _value.message
           : message // ignore: cast_nullable_to_non_nullable
@@ -2458,13 +3095,13 @@ class __$$_CustomLintEventPrintCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintEventPrint implements _CustomLintEventPrint {
-  _$_CustomLintEventPrint(this.message,
+class _$CustomLintEventPrint implements CustomLintEventPrint {
+  _$CustomLintEventPrint(this.message,
       {required this.pluginName, final String? $type})
       : $type = $type ?? 'print';
 
-  factory _$_CustomLintEventPrint.fromJson(Map<String, dynamic> json) =>
-      _$$_CustomLintEventPrintFromJson(json);
+  factory _$CustomLintEventPrint.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintEventPrintFromJson(json);
 
   @override
   final String message;
@@ -2483,7 +3120,7 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
   bool operator ==(dynamic other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintEventPrint &&
+            other is _$CustomLintEventPrint &&
             (identical(other.message, message) || other.message == message) &&
             (identical(other.pluginName, pluginName) ||
                 other.pluginName == pluginName));
@@ -2496,8 +3133,8 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintEventPrintCopyWith<_$_CustomLintEventPrint> get copyWith =>
-      __$$_CustomLintEventPrintCopyWithImpl<_$_CustomLintEventPrint>(
+  _$$CustomLintEventPrintCopyWith<_$CustomLintEventPrint> get copyWith =>
+      __$$CustomLintEventPrintCopyWithImpl<_$CustomLintEventPrint>(
           this, _$identity);
 
   @override
@@ -2545,10 +3182,10 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
-    required TResult Function(_CustomLintEventAnalyzerPluginNotification value)
+    required TResult Function(CustomLintEventAnalyzerPluginNotification value)
         analyzerPluginNotification,
-    required TResult Function(_CustomLintEventError value) error,
-    required TResult Function(_CustomLintEventPrint value) print,
+    required TResult Function(CustomLintEventError value) error,
+    required TResult Function(CustomLintEventPrint value) print,
   }) {
     return print(this);
   }
@@ -2556,10 +3193,10 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(_CustomLintEventAnalyzerPluginNotification value)?
+    TResult? Function(CustomLintEventAnalyzerPluginNotification value)?
         analyzerPluginNotification,
-    TResult? Function(_CustomLintEventError value)? error,
-    TResult? Function(_CustomLintEventPrint value)? print,
+    TResult? Function(CustomLintEventError value)? error,
+    TResult? Function(CustomLintEventPrint value)? print,
   }) {
     return print?.call(this);
   }
@@ -2567,10 +3204,10 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
-    TResult Function(_CustomLintEventAnalyzerPluginNotification value)?
+    TResult Function(CustomLintEventAnalyzerPluginNotification value)?
         analyzerPluginNotification,
-    TResult Function(_CustomLintEventError value)? error,
-    TResult Function(_CustomLintEventPrint value)? print,
+    TResult Function(CustomLintEventError value)? error,
+    TResult Function(CustomLintEventPrint value)? print,
     required TResult orElse(),
   }) {
     if (print != null) {
@@ -2581,22 +3218,22 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintEventPrintToJson(
+    return _$$CustomLintEventPrintToJson(
       this,
     );
   }
 }
 
-abstract class _CustomLintEventPrint implements CustomLintEvent {
-  factory _CustomLintEventPrint(final String message,
-      {required final String? pluginName}) = _$_CustomLintEventPrint;
+abstract class CustomLintEventPrint implements CustomLintEvent {
+  factory CustomLintEventPrint(final String message,
+      {required final String? pluginName}) = _$CustomLintEventPrint;
 
-  factory _CustomLintEventPrint.fromJson(Map<String, dynamic> json) =
-      _$_CustomLintEventPrint.fromJson;
+  factory CustomLintEventPrint.fromJson(Map<String, dynamic> json) =
+      _$CustomLintEventPrint.fromJson;
 
   String get message;
   String? get pluginName;
   @JsonKey(ignore: true)
-  _$$_CustomLintEventPrintCopyWith<_$_CustomLintEventPrint> get copyWith =>
+  _$$CustomLintEventPrintCopyWith<_$CustomLintEventPrint> get copyWith =>
       throw _privateConstructorUsedError;
 }

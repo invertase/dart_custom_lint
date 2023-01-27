@@ -208,7 +208,7 @@ class CommandCustomLintDelegate
             .map((e) => e.isEmpty ? '$label\n' : '$label $e\n')
             .join();
 
-    stdout.write(msg);
+    stdout.writeln(msg);
   }
 
   @override

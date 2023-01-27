@@ -49,6 +49,13 @@ abstract class LintRule {
   /// [LintRule]s should avoid emitting lints that use a code different that [code].
   final LintCode code;
 
+  /// An optional description about the lint rule, written in markdown.
+  ///
+  /// This information might be displayed in various places, such as:
+  /// - a website listing all the lint rules implemented by a plugin
+  /// - by the IDE during auto-completion in the `analysis_options.yaml`
+  String? get description => null;
+
   /// Whether the lint rule is on or off by default in an empty analysis_options.yaml
   bool get enabledByDefault => true;
 

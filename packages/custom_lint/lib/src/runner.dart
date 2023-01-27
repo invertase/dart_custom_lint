@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import 'analyzer_utils/analyzer_utils.dart';
 import 'server_isolate_channel.dart';
 import 'v2/custom_lint_analyzer_plugin.dart';
+import 'v2/protocol.dart';
 
 const _pluginName = 'custom_lint';
 const _analyzerPluginProtocolVersion = '1.0.0-alpha.0';
@@ -86,6 +87,9 @@ class CustomLintRunner {
     return _accumulatedLints.values.toList()
       ..sort((a, b) => a.file.compareTo(b.file));
   }
+
+  /// Obtains the list of lint rules defined in a project
+  Future<List<LintRuleMeta>> getLintRules() => _server.getLintRules();
 
   /// Stop the command runner, sending a [PluginShutdownParams] request in the process.
   Future<void> close() async {
