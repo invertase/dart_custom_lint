@@ -2,6 +2,7 @@
 import IconMoon from "@components/icons/IconMoon.astro";
 import IconSun from "@components/icons/IconSun.astro";
 import Logo from "@components/Logo.astro";
+import nav from "src/nav";
 ---
 
 <footer
@@ -53,14 +54,16 @@ import Logo from "@components/Logo.astro";
             <div
                 class="flex flex-col sm:flex-row gap-14 dark:opacity-75 justify-end items-center"
             >
-                <a
-                    class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
-                    href="">Docs</a
-                >
-                <a
-                    class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
-                    href="https://pub.dev/packages/custom_lint">Github</a
-                >
+                {
+                    nav.map(({ title, href }) => (
+                        <a
+                            class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
+                            href={href}
+                        >
+                            {title}
+                        </a>
+                    ))
+                }
             </div>
         </div>
     </div>

@@ -1,6 +1,9 @@
 ---
 import Logo from "@components/Logo.astro";
 import PluginCodeExample from "./PluginCodeExample.astro";
+import nav from "src/nav";
+import Toggle from "@components/Toggle.astro";
+import MobileMenu from "@components/MobileMenu.astro";
 ---
 
 <header
@@ -13,35 +16,36 @@ import PluginCodeExample from "./PluginCodeExample.astro";
             <div
                 class="flex justify-between items-center gap-10 py-7 mb-0 lg:mb-20"
             >
-                <div>
-                    <div>
-                        <a
-                            href="/"
-                            class="hover:opacity-75 transition-opacity duration-500 mb-5"
-                        >
-                            <Logo
-                                class="dark:hidden"
-                                mainColor="#BEECFE"
-                                secondColor="#FFF"
-                            />
-                            <Logo
-                                class="hidden dark:block"
-                                mainColor="#7352A0"
-                                secondColor="#FFF"
-                            />
-                        </a>
-                    </div>
-                </div>
-                <div class="flex gap-14 dark:opacity-75">
+                <div class="relative z-40">
                     <a
-                        class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
-                        href="">Docs</a
+                        href="/"
+                        class="hover:opacity-75 transition-opacity duration-500 mb-5"
                     >
-                    <a
-                        class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
-                        href="https://pub.dev/packages/custom_lint">Github</a
-                    >
+                        <Logo
+                            class="dark:hidden"
+                            mainColor="#BEECFE"
+                            secondColor="#FFF"
+                        />
+                        <Logo
+                            class="hidden dark:block"
+                            mainColor="#7352A0"
+                            secondColor="#FFF"
+                        />
+                    </a>
                 </div>
+                <div class="gap-14 dark:opacity-75 hidden md:flex">
+                    {
+                        nav.map(({ title, href }) => (
+                            <a
+                                class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
+                                href={href}
+                            >
+                                {title}
+                            </a>
+                        ))
+                    }
+                </div>
+                <Toggle class="md:hidden z-40" />
             </div>
             <div
                 class="pb-24 lg:pb-52 pt-10 lg:pt-20 flex flex-col-reverse lg:flex-row justify-between gap-10 lg:gap-20"
@@ -85,5 +89,6 @@ import PluginCodeExample from "./PluginCodeExample.astro";
                 </div>
             </div>
         </div>
+        <MobileMenu />
     </div>
 </header>
