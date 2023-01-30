@@ -1,3 +1,7 @@
+## 0.2.1
+
+Add `TypeChecker.every` and `TypeChecker.package`
+
 ## 0.2.0
 
 **Large Breaking change**

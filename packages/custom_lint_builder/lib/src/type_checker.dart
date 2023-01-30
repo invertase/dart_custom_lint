@@ -31,10 +31,21 @@ abstract class TypeChecker {
   /// ```
   const factory TypeChecker.any(Iterable<TypeChecker> checkers) = _AnyChecker;
 
+  /// Creates a new [TypeChecker] that delegates to other [checkers].
+  ///
+  /// This implementation will return `true` if **all** the checkers match.
+  /// Checkers will be checked in order.
+  const factory TypeChecker.every(Iterable<TypeChecker> checkers) =
+      _EveryChecker;
+
   /// Create a new [TypeChecker] backed by a static [type].
   const factory TypeChecker.fromStatic(DartType type) = _LibraryTypeChecker;
 
-  /// Checks that the element has a specific name and comes from a specific package.
+  /// Checks that the element comes from a specific package.
+  const factory TypeChecker.fromPackage(String packageName) = _PackageChecker;
+
+  /// Checks that the element has a specific name, and optionally checks that it
+  /// is defined from a specific package.
   ///
   /// This is similar to [TypeChecker.fromUrl] but does not rely on exactly where
   /// the definition of the element comes from.
@@ -42,7 +53,7 @@ abstract class TypeChecker {
   /// same name, there could be a conflict.
   const factory TypeChecker.fromName(
     String name, {
-    required String packageName,
+    String? packageName,
   }) = _NamedChecker;
 
   /// Create a new [TypeChecker] backed by a library [url].
@@ -225,21 +236,48 @@ class _LibraryTypeChecker extends TypeChecker {
 }
 
 @immutable
+class _PackageChecker extends TypeChecker {
+  const _PackageChecker(this._packageName) : super._();
+
+  final String _packageName;
+
+  @override
+  bool isExactly(Element element) {
+    final elementUri = element.librarySource?.uri;
+
+    return elementUri != null &&
+        elementUri.scheme == 'package' &&
+        elementUri.pathSegments.first == _packageName;
+  }
+
+  @override
+  bool operator ==(Object o) {
+    return o is _PackageChecker && o._packageName == _packageName;
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, _packageName);
+
+  @override
+  String toString() => _packageName;
+}
+
+@immutable
 class _NamedChecker extends TypeChecker {
-  const _NamedChecker(this._name, {required this.packageName}) : super._();
+  const _NamedChecker(this._name, {this.packageName}) : super._();
 
   final String _name;
-  final String packageName;
+  final String? packageName;
 
   @override
   bool isExactly(Element element) {
     if (element.name != _name) return false;
 
-    final elementUri = element.librarySource?.uri;
+    // No packageName specified, ignoring it.
+    if (packageName == null) return true;
 
-    return elementUri != null &&
-        elementUri.scheme == 'package' &&
-        elementUri.pathSegments.first == packageName;
+    final checker = _PackageChecker(packageName!);
+    return checker.isExactly(element);
   }
 
   @override
@@ -296,6 +334,17 @@ class _AnyChecker extends TypeChecker {
 
   @override
   bool isExactly(Element element) => _checkers.any((c) => c.isExactly(element));
+}
+
+class _EveryChecker extends TypeChecker {
+  const _EveryChecker(this._checkers) : super._();
+
+  final Iterable<TypeChecker> _checkers;
+
+  @override
+  bool isExactly(Element element) {
+    return _checkers.every((c) => c.isExactly(element));
+  }
 }
 
 /// Exception thrown when [TypeChecker] fails to resolve a metadata annotation.
