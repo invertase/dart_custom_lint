@@ -10,13 +10,13 @@ const { class: classStr = "" } = Astro.props as Props;
 
 <div class={`relative rounded-lg  w-full shadow-xl ${classStr}`}>
     <div
-        class="relative z-[3] rounded-lg bg-white dark:bg-linter-card shadow-xl dark:border border-white/20 overflow-hidden text-[0.8125rem]"
+        class="relative z-[3] rounded-lg bg-white dark:bg-linter-card shadow-xl dark:border border-white/20 overflow-hidden text-[7px] sm:text-[0.8125rem]"
     >
         <div
-            class="flex items-center text-xs text-gray-600 dark:text-white border-b dark:border-white/10 font-itc"
+            class="flex items-center text-[7px] sm:text-xs text-gray-600 dark:text-white border-b dark:border-white/10 font-itc"
         >
             <div
-                class="px-3 py-3 inline-flex items-center gap-3 bg-gray-300/30 dark:bg-transparent dark:border-r border-white/10"
+                class="px-3 py-1.5 sm:py-3 inline-flex items-center gap-3 bg-gray-300/30 dark:bg-transparent dark:border-r border-white/10"
             >
                 <span class="opacity-90 dark:opacity-50">{"< >"}</span>
                 <span class="text-linter opacity-90 dark:text-white">
@@ -24,19 +24,19 @@ const { class: classStr = "" } = Astro.props as Props;
                 </span>
                 <span class="text-gray-800 dark:text-white">X</span>
             </div>
-            <div class="px-3 py-3 border-r dark:border-white/10">
+            <div class="px-3 py-1.5 sm:py-3 border-r dark:border-white/10">
                 <span class="opacity text-gray-800/80 dark:text-white/80"
                     >Js</span
                 >
                 <span class="opacity-80 dark:opacity-50">app.js</span>
             </div>
-            <div class="px-3 py-3">
+            <div class="px-3 py-1.5 sm:py-3">
                 <span class="opacity text-gray-800 dark:text-white">#</span>
                 <span class="opacity-80 dark:opacity-50">styles.dart</span>
             </div>
         </div>
         <div class="relative rounded-br-lg rounded-bl-lg">
-            <div class="p-6">
+            <div class="p-3 sm:p-6">
                 <Code
                     lang="yaml"
                     theme="css-variables"

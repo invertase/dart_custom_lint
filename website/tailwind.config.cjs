@@ -14,7 +14,8 @@ module.exports = {
 				linter: {
 					DEFAULT: 'var(--primary)',
 					background: 'var(--background)',
-					card: 'rgb(44,30,60)',
+					card: '#2C1E3C',
+					toggle: '#261F3C'
 				},
 			},
 		},

@@ -51,6 +51,19 @@ body,
   height: 100%;
 }
 
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -81,7 +94,7 @@ body,
   }
 
   .btn-third {
-    @apply btn-primary bg-[linear-gradient(93.73deg,#2D2072_28.69%,#371D62_88.7%)] text-white shadow-lg shadow-indigo-700/30;
+    @apply btn-primary bg-transparent bg-[linear-gradient(93.73deg,#2D2072_28.69%,#371D62_88.7%)] text-white shadow-lg shadow-indigo-700/30;
   }
 }
 
