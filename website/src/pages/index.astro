@@ -44,57 +44,71 @@ const cards = Array.from(new Array(9), () => ({
 </script>
 
 <Root>
-	<Header />
-	<section class="px-5">
-		<div class="max-w-7xl mx-auto mb-16 lg:mb-36 text-center">
-			<h2 class="mb-7 lg:mb-10 font-semibold text-3xl lg:text-5xl">
-				VS code Integration
-			</h2>
-			<p
-				class="font-medium mb-10 lg:mb-16 text-sm lg:text-lg opacity-80 dark:opacity-70"
-			>
-				Easily integrate your sandbox with VS-code, takes less than a
-				minuite
-			</p>
-			<figure
-				class="max-w-4xl w-full mx-auto shadow-2xl overflow-hidden rounded-xl"
-			>
-				<img
-					class="block w-full"
-					src="/images/vscode-example.jpg"
-					alt=""
-				/>
-			</figure>
-		</div>
-	</section>
-	<section class="px-5">
-		<div class="max-w-7xl mx-auto mb-12">
-			<h2
-				class="text-center mb-10 lg:mb-20 font-semibold text-3xl lg:text-5xl"
-			>
-				Plugin library
-			</h2>
-			<div
-				class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-10 mb-16"
-			>
-				{
-					cards.map((card, index) => (
-						<Card
-							class={index > 7 ? "js-hidden-cards hidden" : ""}
-							{...card}
+	<div
+		class="dark:bg-[url(/images/bg-shadow-l-t.svg)] bg-left-top bg-no-repeat"
+	>
+		<div
+			class="dark:bg-[url(/images/bg-shadow-l-b.svg)] bg-left-bottom bg-no-repeat"
+		>
+			<Header />
+			<section class="px-5">
+				<div class="max-w-7xl mx-auto mb-16 lg:mb-36 text-center">
+					<h2
+						class="mb-7 lg:mb-10 font-semibold text-3xl lg:text-5xl"
+					>
+						VS code Integration
+					</h2>
+					<p
+						class="font-medium mb-10 lg:mb-16 text-sm lg:text-lg opacity-80 dark:opacity-70"
+					>
+						Easily integrate your sandbox with VS-code, takes less
+						than a minuite
+					</p>
+					<figure
+						class="max-w-4xl w-full mx-auto shadow-2xl overflow-hidden rounded-xl"
+					>
+						<img
+							class="block w-full"
+							src="/images/vscode-example.jpg"
+							alt=""
 						/>
-					))
-				}
-			</div>
-			<div class="flex justify-center">
-				<button
-					id="load-more-cards"
-					class="btn-secondary dark:btn-third hidden w-full max-w-xs lg:w-40"
-				>
-					View More
-				</button>
-			</div>
+					</figure>
+				</div>
+			</section>
+			<section class="px-5">
+				<div class="max-w-7xl mx-auto mb-12">
+					<h2
+						class="text-center mb-10 lg:mb-20 font-semibold text-3xl lg:text-5xl"
+					>
+						Plugin library
+					</h2>
+					<div
+						class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-10 mb-16"
+					>
+						{
+							cards.map((card, index) => (
+								<Card
+									class={
+										index > 7
+											? "js-hidden-cards hidden"
+											: ""
+									}
+									{...card}
+								/>
+							))
+						}
+					</div>
+					<div class="flex justify-center">
+						<button
+							id="load-more-cards"
+							class="btn-secondary dark:btn-third hidden w-full max-w-xs lg:w-40"
+						>
+							View More
+						</button>
+					</div>
+				</div>
+			</section>
+			<Footer />
 		</div>
-	</section>
-	<Footer />
+	</div>
 </Root>

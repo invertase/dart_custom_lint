@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@700@300&display=swap');
-
 :root {
   --primary: #2E2174;
   --light-background: #fff;
@@ -46,8 +44,7 @@ html.dark {
 }
 
 html,
-body,
-#root {
+body {
   height: 100%;
 }
 
@@ -94,7 +91,7 @@ body,
   }
 
   .btn-third {
-    @apply btn-primary bg-transparent bg-[linear-gradient(93.73deg,#2D2072_28.69%,#371D62_88.7%)] text-white shadow-lg shadow-indigo-700/30;
+    @apply btn-primary bg-transparent bg-[linear-gradient(93.73deg,#2D2072_28.69%,#4B1D62_88.7%)] text-white shadow-lg shadow-indigo-700/30;
   }
 }
 
