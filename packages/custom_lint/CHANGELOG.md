@@ -1,3 +1,8 @@
+## 0.2.2
+
+Fixes an exception thrown when a project contains images.
+
+
 ## 0.2.0
 
 **Large Breaking change**
