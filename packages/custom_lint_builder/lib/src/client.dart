@@ -653,13 +653,13 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     final configs = _customLintConfigsForAnalysisContexts[analysisContext];
     if (configs == null) return;
 
-    final resolver = _createResolverForFile(resourceProvider.getFile(path));
-    if (resolver == null) return;
-
-    final source = resourceProvider.getFile(path).createSource();
-    final fileIgnoredCodes = _getAllIgnoredForFileCodes(source.contents.data);
-    // Lints are disabled for the entire file, so no point in executing lints
-    if (fileIgnoredCodes.contains('type=lint')) return;
+    var fileIgnoredCodes = <String>{};
+    if (path.endsWith('.dart')) {
+      final source = resourceProvider.getFile(path).createSource();
+      fileIgnoredCodes = _getAllIgnoredForFileCodes(source.contents.data);
+      // Lints are disabled for the entire file, so no point in executing lints
+      if (fileIgnoredCodes.contains('type=lint')) return;
+    }
 
     final fileName = basename(path);
     final activeLintRules = configs.rules
@@ -680,6 +680,9 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       return;
     }
 
+    final resolver = _createResolverForFile(resourceProvider.getFile(path));
+    if (resolver == null) return;
+
     final lints = <AnalysisError>[];
     final reporterBeforeExpectLint = ErrorReporter(
       // TODO assert that a LintRule only emits lints with a code matching LintRule.code
@@ -689,7 +692,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
           lints.add(lint);
         }
       }),
-      source,
+      resolver.source,
       isNonNullableByDefault: false,
     );
 
@@ -734,7 +737,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
         // TODO assert that a LintRule only emits lints with a code matching LintRule.code
         // TODO asserts lintRules can only emit lints in the analyzed file
         _AnalysisErrorListenerDelegate(allAnalysisErrors.add),
-        source,
+        resolver.source,
         isNonNullableByDefault: false,
       );
 
