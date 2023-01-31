@@ -15,11 +15,6 @@
             <stop stop-color="#221638" />
             <stop offset="0.25" stop-color="#221638" />
             <stop offset="1" stop-color="#261632" />
-
-            <!-- <stop stop-color="#261632" />
-            <stop offset="0.5" stop-color="#261632"
-            />
-            <stop offset="1" stop-color="#221638" /> -->
         </linearGradient>
     </defs>
 </svg> 

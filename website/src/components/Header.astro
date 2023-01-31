@@ -6,8 +6,10 @@ import Toggle from "@components/Toggle.astro";
 import MobileMenu from "@components/MobileMenu.astro";
 ---
 
+<MobileMenu />
+
 <header
-    class="bg-[url(/images/bg_header_mobile.svg)] lg:bg-[url(/images/bg_header.svg)] bg-[length:100%_100%] bg-left-top mb-12 lg:mb-44 dark:bg-none"
+    class="bg-[url(/images/bg_header_mobile.svg)] lg:bg-[url(/images/bg_header.svg)] bg-[length:100%_100%] bg-left-top mb-14 lg:mb-44 lg:dark:mb-80 dark:bg-none relative"
 >
     <div
         class="lg:bg-[url(/images/bg_header_corner.svg)] bg-[length:45%_65%] bg-no-repeat dark:bg-none px-5"
@@ -48,7 +50,7 @@ import MobileMenu from "@components/MobileMenu.astro";
                 <Toggle class="md:hidden z-40" />
             </div>
             <div
-                class="pb-24 lg:pb-52 pt-10 lg:pt-20 flex flex-col-reverse lg:flex-row justify-between gap-10 lg:gap-20"
+                class="pb-24 lg:pb-52 pt-10 lg:pt-20 flex flex-col-reverse lg:flex-row justify-between gap-10 lg:gap-20 relative z-[1]"
             >
                 <div class="w-full lg:w-2/5 text-center lg:text-left">
                     <h1
@@ -65,7 +67,7 @@ import MobileMenu from "@components/MobileMenu.astro";
                         Zero configuration, zero set up, simply start building!
                     </p>
                     <a
-                        class="btn-primary dark:btn-third w-full max-w-xs lg:w-40"
+                        class="btn-primary dark:btn-third w-full max-w-xs lg:w-40 inline-block"
                         href=""
                     >
                         Go to Docs
@@ -89,6 +91,10 @@ import MobileMenu from "@components/MobileMenu.astro";
                 </div>
             </div>
         </div>
-        <MobileMenu />
+    </div>
+    <div
+        class="absolute bottom-0 translate-y-1/2 lg:translate-y-2/3 hidden dark:block"
+    >
+        <img src="/images/particles_wave.webp" role="banner" alt="" />
     </div>
 </header>

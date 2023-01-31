@@ -81,7 +81,7 @@ body {
 
 @layer components {
   .btn-primary {
-    @apply inline-block rounded-md bg-white px-6 py-4 text-center  
+    @apply rounded-md bg-white px-6 py-4 text-center  
               text-linter transition-opacity duration-500 ease-in-out
               hover:opacity-70 disabled:pointer-events-none disabled:cursor-default;
   }
