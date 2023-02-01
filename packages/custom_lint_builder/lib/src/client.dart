@@ -4,6 +4,8 @@ import 'dart:io' as io;
 
 import 'package:analyzer/dart/analysis/analysis_context.dart';
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/file_system/file_system.dart';
@@ -784,11 +786,21 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     final lineInfo = LineInfo.fromContent(source.contents.data);
 
     return CustomLintResolverImpl(
-      getResolvedUnitResult,
+      _safeGetResolvedUnitResult,
       lineInfo: lineInfo,
       source: source,
       path: file.path,
     );
+  }
+
+  Future<ResolvedUnitResult> _safeGetResolvedUnitResult(String path) async {
+    while (true) {
+      try {
+        return await getResolvedUnitResult(path);
+      } on InconsistentAnalysisException {
+        // Retry analysis on InconsistentAnalysisException
+      }
+    }
   }
 
   /// Queue an operation to be awaited by [_awaitAnalysisDone]
