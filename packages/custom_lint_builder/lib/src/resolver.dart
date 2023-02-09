@@ -46,12 +46,12 @@ class CustomLintResolverImpl extends CustomLintResolver {
   @override
   final String path;
 
-  final Future<ResolvedUnitResult> Function(String path) _getResolvedUnitResult;
+  final Future<ResolvedUnitResult> Function() _getResolvedUnitResult;
 
   Future<ResolvedUnitResult>? _getResolvedUnitResultFuture;
 
   @override
   Future<ResolvedUnitResult> getResolvedUnitResult() {
-    return _getResolvedUnitResultFuture ??= _getResolvedUnitResult(path);
+    return _getResolvedUnitResultFuture ??= _getResolvedUnitResult();
   }
 }
