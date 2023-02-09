@@ -1,3 +1,10 @@
+## 0.2.4
+
+- Added `<DartLintRule/DartFix/DartAssist>.testRun` & `testAnalyzeAndRun` methods, which
+  enables programmatically running a lint/assist/fix against a Dart file.
+- Added `matcherNormalizedPrioritizedSourceChangeSnapshot` test matcher, which
+  allows checking that a list of file edits matches against a JSON snapshot of the changes.
+
 ## 0.2.3
 
 Fixes InconsistentAnalysisException
@@ -43,7 +50,6 @@ The new syntax has multiple benefits:
 - The new syntax makes the code simpler to maintain.
   Before, the `PluginBase.getLints` rapidly ended-up doing too much.
   Now, it is simple to split the implementation in multiple bits
-
 
 ## 0.1.2-dev
 
