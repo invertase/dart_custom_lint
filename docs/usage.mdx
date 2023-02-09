@@ -1,0 +1,113 @@
+## Usage
+
+Using custom_lint is split in two parts:
+
+- how to define a custom_lint package
+- how users can install our package in their application to see our newly defined lints
+
+### Creating a custom lint package
+
+To create a custom lint, you will need two things:
+
+- updating your `pubspec.yaml` to include `custom_lint_builder` as a dependency:
+
+  ```yaml
+  # pubspec.yaml
+  name: my_custom_lint_package
+  environment:
+    sdk: ">=2.16.0 <3.0.0"
+
+  dependencies:
+    # we will use analyzer for inspecting Dart files
+    analyzer:
+    analyzer_plugin:
+    # custom_lint_builder will give us tools for writing lints
+    custom_lint_builder:
+  ```
+
+- create a `lib/<my_package_name>.dart` file in your project with the following:
+
+  ```dart
+  // This is the entrypoint of our custom linter
+  PluginBase createPlugin() => _ExampleLinter();
+
+  /// A plugin class is used to list all the assists/lints defined by a plugin.
+  class _ExampleLinter extends PluginBase {
+    /// We list all the custom warnings/infos/errors
+    @override
+    List<LintRule> getLintRules(CustomLintConfigs configs) => [
+          MyCustomLintCode(),
+        ];
+  }
+
+  class MyCustomLintCode extends DartLintRule {
+    MyCustomLintCode() : super(code: _code);
+
+    /// Metadata about the warning that will show-up in the IDE.
+    /// This is used for `// ignore: code` and enabling/disabling the lint
+    static const _code = LintCode(
+      name: 'my_custom_lint_code',
+      problemMessage: 'This is the description of our custom lint',
+    );
+
+    @override
+    void run(
+      CustomLintResolver resolver,
+      ErrorReporter reporter,
+      CustomLintContext context,
+    ) {
+      // Our lint will highlight all variable declarations with our custom warning.
+      context.registry.addVariableDeclaration((node) {
+        // "node" exposes metadata about the variable declaration. We could
+        // check "node" to show the lint only in some conditions.
+
+        // This line tells custom_lint to render a waring at the location of "node".
+        // And the warning shown will use our `code` variable defined above as description.
+        reporter.reportErrorForNode(code, node);
+      });
+    }
+  }
+  ```
+
+That's it for defining a custom lint package!
+
+If you're looking for a more advanced example, see the [example](https://github.com/invertase/dart_custom_lint/tree/main/packages/custom_lint/example).
+This example implements:
+
+- a lint appearing on all variables of a specific type
+- a quick fix for that lint
+- an "assist" for providing refactoring options.
+
+Let's now use it in an application.
+
+### Using our custom lint package in an application
+
+For users to run custom_lint packages, there are a few steps:
+
+- The application must contain an `analysis_options.yaml` with the following:
+
+  ```yaml
+  analyzer:
+    plugins:
+      - custom_lint
+  ```
+
+- The application also needs to add `custom_lint` and our package(s) as dev
+  dependency in their application:
+
+  ```yaml
+  # The pubspec.yaml of an application using our lints
+  name: example_app
+  environment:
+    sdk: ">=2.16.0 <3.0.0"
+
+  dev_dependencies:
+    custom_lint:
+    my_custom_lint_package:
+  ```
+
+That's all!
+After running `pub get` (and possibly restarting their IDE), users should now
+see our custom lints in their Dart files:
+
+![screenshot of our custom lints in the IDE](https://raw.githubusercontent.com/invertase/dart_custom_lint/main/resources/lint_showcase.png)

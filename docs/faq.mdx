@@ -1,0 +1,64 @@
+### Obtaining the list of lints in the CI
+
+Unfortunately, running `dart analyze` does not pick up our newly defined lints.
+We need a separate command for this.
+
+To do that, users of our custom lint package can run the following inside their terminal:
+
+```sh
+$ dart run custom_lint
+  lib/main.dart:0:0 • This is the description of our custom lint • my_custom_lint_code
+```
+
+If you are working on a Flutter project, run `flutter pub run custom_lint` instead.
+
+### Using the Dart debugger
+
+To debug plugins in custom_lint, you need to connect to plugins using "attach"
+mode in your IDE (`cmd+shift+p` + `Debug: attach to Dart process` in VSCode).
+
+When using this command, you will need a VM service URI provided by custom_lint.
+
+There are two possible ways to obtain one:
+
+- if you started your plugin using `custom_lint --watch`, it should be visible
+  in the console output.
+- if your plugin is started by your IDE, you can open the `custom_lint.log` file
+  that custom_lint created next to the `pubspec.yaml` of your analyzed projects.
+
+In both cases, what you're looking for is logs similar to:
+
+```
+The Dart VM service is listening on http://127.0.0.1:60671/9DS43lRMY90=/
+The Dart DevTools debugger and profiler is available at: http://127.0.0.1:60671/9DS43lRMY90=/devtools/#/?uri=ws%3A%2F%2F127.0.0.1%3A60671%2F9DS43lRMY90%3D%2Fws
+```
+
+What you'll want is the first URI. In this example, that is `http://127.0.0.1:60671/9DS43lRMY90=/`.
+You can then pass this to your IDE, which should now be able to attach to the
+plugin.
+
+### Testing your plugins using expect_lint
+
+Custom_lint comes with an official testing mechanism for asserting that your
+plugins correctly work.
+
+Testing your plugins is straightforward: Simply write a file that should contain
+lints from your plugin (such as the example folder). Then, using a syntax
+similar to `// ignore`, write a `// expect_lint: code` in the line before
+your lint:
+
+```dart
+// expect_lint: riverpod_final_provider
+var provider = Provider(...);
+```
+
+When doing this, there are two possible cases:
+
+- The line after the `expect_lint` correctly contains the expected lint.
+  In that case, the lint is ignored (similarly to if we used `// ignore`)
+- The next line does **not** contain the lint.
+  In that case, the `expect_lint` comment will have an error.
+
+This allows testing your plugins by simply running `custom_lint` on your test/example folder.
+Then, if any expected lint is missing, the command will fail. But if your plugin correctly
+emits the lint, the command will succeed.
