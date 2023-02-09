@@ -1,10 +1,16 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:meta/meta.dart';
 import '../custom_lint_builder.dart';
+import 'client.dart';
 import 'node_lint_visitor.dart';
+import 'resolver.dart';
 
 /// An object for state shared between multiple [LintRule]/[Assist]/[Fix]...
 class CustomLintContext {
@@ -118,5 +124,48 @@ abstract class DartLintRule extends LintRule {
       final linterVisitor = LinterVisitor(context.registry.nodeLintRegistry);
       unit.unit.accept(linterVisitor);
     });
+  }
+
+  /// Runs this assist in test mode.
+  ///
+  /// The result will contain all the changes that would have been applied by [run].
+  @visibleForTesting
+  Future<List<AnalysisError>> testRun(ResolvedUnitResult result) async {
+    final registry = LintRuleNodeRegistry(
+      NodeLintRegistry(LintRegistry(), enableTiming: false),
+      'unknown',
+    );
+    final postRunCallbacks = <void Function()>[];
+    final context = CustomLintContext(registry, postRunCallbacks.add, {});
+    final resolver = CustomLintResolverImpl(
+      () => Future.value(result),
+      lineInfo: result.lineInfo,
+      path: result.path,
+      source: result.libraryElement.source,
+    );
+
+    final listener = RecordingErrorListener();
+    final reporter = ErrorReporter(
+      listener,
+      result.libraryElement.source,
+      isNonNullableByDefault: false,
+    );
+
+    await startUp(resolver, context);
+
+    run(resolver, reporter, context);
+    runPostRunCallbacks(postRunCallbacks);
+
+    return listener.errors;
+  }
+
+  /// Analyze a Dart file and runs this assist in test mode.
+  ///
+  /// The result will contain all the changes that would have been applied by [run].
+  @visibleForTesting
+  Future<List<AnalysisError>> testAnalyzeAndRun(File file) async {
+    final result = await resolveFile2(path: file.path);
+    result as ResolvedUnitResult;
+    return testRun(result);
   }
 }

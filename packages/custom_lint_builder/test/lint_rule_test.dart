@@ -1,7 +1,10 @@
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:test/test.dart';
 
+import 'assist_test.dart';
 import 'configs_test.dart';
 
 class TestLintRule extends LintRule {
@@ -27,9 +30,70 @@ class TestLintRule extends LintRule {
   ) {}
 }
 
+class MyLintRule extends DartLintRule {
+  const MyLintRule()
+      : super(
+          code: const LintCode(
+            name: 'my_lint_code',
+            problemMessage: 'message',
+          ),
+        );
+
+  @override
+  void run(
+    CustomLintResolver resolver,
+    ErrorReporter reporter,
+    CustomLintContext context,
+  ) {
+    context.registry.addMethodInvocation((node) {
+      reporter.reportErrorForNode(code, node.methodName);
+    });
+  }
+}
+
 void main() {
   const onByDefault = TestLintRule(enabledByDefault: true);
   const offByDefault = TestLintRule(enabledByDefault: false);
+
+  test('LintRule.testRun', () async {
+    const assist = MyLintRule();
+
+    final file = writeToTemporaryFile('''
+void main() {
+  print('Hello world');
+}
+''');
+    final result = await resolveFile2(path: file.path);
+    result as ResolvedUnitResult;
+
+    final analysisErrors = await assist.testRun(result);
+
+    expect(analysisErrors, hasLength(1));
+
+    expect(analysisErrors.first.errorCode.name, 'my_lint_code');
+    expect(analysisErrors.first.message, 'message');
+    expect(analysisErrors.first.offset, 16);
+    expect(analysisErrors.first.length, 'print'.length);
+  });
+
+  test('LintRule.testAnalyzeAndRun', () async {
+    const assist = MyLintRule();
+
+    final file = writeToTemporaryFile('''
+void main() {
+  print('Hello world');
+}
+''');
+
+    final analysisErrors = await assist.testAnalyzeAndRun(file);
+
+    expect(analysisErrors, hasLength(1));
+
+    expect(analysisErrors.first.errorCode.name, 'my_lint_code');
+    expect(analysisErrors.first.message, 'message');
+    expect(analysisErrors.first.offset, 16);
+    expect(analysisErrors.first.length, 'print'.length);
+  });
 
   group('LintRule.isEnabled', () {
     test('defaults to checking "enabedByDefault"', () {

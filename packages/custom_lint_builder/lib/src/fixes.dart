@@ -1,7 +1,13 @@
+import 'dart:io';
+
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/error/error.dart';
+import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:meta/meta.dart';
 
 import 'change_reporter.dart';
+import 'client.dart';
 import 'lint_rule.dart';
 import 'node_lint_visitor.dart';
 import 'resolver.dart';
@@ -73,5 +79,49 @@ abstract class DartFix extends Fix {
 
       unit.unit.accept(linterVisitor);
     });
+  }
+
+  /// Runs this fix in test mode.
+  ///
+  /// The result will contain all the changes that would have been applied by [run].
+  @visibleForTesting
+  Future<List<PrioritizedSourceChange>> testRun(
+    ResolvedUnitResult result,
+    AnalysisError analysisError,
+    List<AnalysisError> others,
+  ) async {
+    final registry = LintRuleNodeRegistry(
+      NodeLintRegistry(LintRegistry(), enableTiming: false),
+      'unknown',
+    );
+    final postRunCallbacks = <void Function()>[];
+    final context = CustomLintContext(registry, postRunCallbacks.add, {});
+    final resolver = CustomLintResolverImpl(
+      () => Future.value(result),
+      lineInfo: result.lineInfo,
+      path: result.path,
+      source: result.libraryElement.source,
+    );
+    final reporter = ChangeReporterImpl(result.session, resolver);
+
+    await startUp(resolver, context);
+    run(resolver, reporter, context, analysisError, others);
+    runPostRunCallbacks(postRunCallbacks);
+
+    return reporter.waitForCompletion();
+  }
+
+  /// Analyze a Dart file and runs this fix in test mode.
+  ///
+  /// The result will contain all the changes that would have been applied by [run].
+  @visibleForTesting
+  Future<List<PrioritizedSourceChange>> testAnalyzeAndRun(
+    File file,
+    AnalysisError analysisError,
+    List<AnalysisError> others,
+  ) async {
+    final result = await resolveFile2(path: file.path);
+    result as ResolvedUnitResult;
+    return testRun(result, analysisError, others);
   }
 }

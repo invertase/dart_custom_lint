@@ -1,7 +1,13 @@
+import 'dart:io' as io;
+
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/source/source_range.dart';
+import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:meta/meta.dart';
 
 import 'change_reporter.dart';
+import 'client.dart';
 import 'fixes.dart';
 import 'lint_rule.dart';
 import 'node_lint_visitor.dart';
@@ -73,5 +79,52 @@ abstract class DartAssist extends Assist {
 
       unit.unit.accept(linterVisitor);
     });
+  }
+
+  /// Runs this assist in test mode.
+  ///
+  /// The result will contain all the changes that would have been applied by [run].
+  @visibleForTesting
+  Future<List<PrioritizedSourceChange>> testRun(
+    ResolvedUnitResult result,
+    SourceRange target,
+  ) async {
+    final registry = LintRuleNodeRegistry(
+      NodeLintRegistry(LintRegistry(), enableTiming: false),
+      'unknown',
+    );
+    final postRunCallbacks = <void Function()>[];
+    final context = CustomLintContext(registry, postRunCallbacks.add, {});
+    final resolver = CustomLintResolverImpl(
+      () => Future.value(result),
+      lineInfo: result.lineInfo,
+      path: result.path,
+      source: result.libraryElement.source,
+    );
+    final reporter = ChangeReporterImpl(result.session, resolver);
+
+    await startUp(
+      resolver,
+      context,
+      target,
+    );
+
+    run(resolver, reporter, context, target);
+    runPostRunCallbacks(postRunCallbacks);
+
+    return reporter.waitForCompletion();
+  }
+
+  /// Analyze a Dart file and runs this assist in test mode.
+  ///
+  /// The result will contain all the changes that would have been applied by [run].
+  @visibleForTesting
+  Future<List<PrioritizedSourceChange>> testAnalyzeAndRun(
+    io.File file,
+    SourceRange target,
+  ) async {
+    final result = await resolveFile2(path: file.path);
+    result as ResolvedUnitResult;
+    return testRun(result, target);
   }
 }

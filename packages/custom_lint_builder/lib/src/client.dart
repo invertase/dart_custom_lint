@@ -38,6 +38,52 @@ import 'node_lint_visitor.dart';
 import 'plugin_base.dart';
 import 'resolver.dart';
 
+/// Runs a list of "postRun" callbacks.
+///
+/// Errors are caught to ensure all callbacks are executed.
+@internal
+void runPostRunCallbacks(List<void Function()> postRunCallbacks) {
+  for (final postCallback in postRunCallbacks) {
+    try {
+      postCallback();
+    } catch (err) {
+      // TODO should errors be reported?
+      // All postCallbacks should execute even if one throw
+    }
+  }
+}
+
+/// Analysis utilities for custom_lint
+extension AnalysisSessionUtils on AnalysisSession {
+  /// Create a [CustomLintResolverImpl] for a file.
+  @internal
+  CustomLintResolverImpl? createResolverForFile(File file) {
+    if (!file.exists) return null;
+    final source = file.createSource();
+    final lineInfo = LineInfo.fromContent(source.contents.data);
+
+    return CustomLintResolverImpl(
+      () => safeGetResolvedUnitResult(file.path),
+      lineInfo: lineInfo,
+      source: source,
+      path: file.path,
+    );
+  }
+
+  /// Obtains a [ResolvedUnitResult] for the given [path], while catching [InconsistentAnalysisException] and retrying.
+  @internal
+  Future<ResolvedUnitResult> safeGetResolvedUnitResult(String path) async {
+    while (true) {
+      try {
+        final result = await getResolvedUnit(path);
+        return result as ResolvedUnitResult;
+      } on InconsistentAnalysisException {
+        // Retry analysis on InconsistentAnalysisException
+      }
+    }
+  }
+}
+
 Future<bool> _isVmServiceEnabled() async {
   final serviceInfo = await dev.Service.getInfo();
   return serviceInfo.serverUri != null;
@@ -357,7 +403,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     final assists =
         _customLintConfigsForAnalysisContexts[analysisContext]?.assists;
 
-    final resolver = _createResolverForFile(
+    final resolver = analysisContext.currentSession.createResolverForFile(
       resourceProvider.getFile(parameters.file),
     );
     if (resolver == null || assists == null || assists.isEmpty) {
@@ -407,7 +453,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       );
     }
 
-    _runPostRunCallbacks(postRunCallbacks);
+    runPostRunCallbacks(postRunCallbacks);
 
     return EditGetAssistsResult(await changeReporter.waitForCompletion());
   }
@@ -443,14 +489,13 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   Future<EditGetFixesResult> handleEditGetFixes(
     EditGetFixesParams parameters,
   ) async {
-    final resolver = _createResolverForFile(
-      resourceProvider.getFile(parameters.file),
-    );
-    if (resolver == null) return EditGetFixesResult([]);
-
     // TODO test
     final contextCollection = await _contextCollection.first;
     final analysisContext = contextCollection.contextFor(parameters.file);
+    final resolver = analysisContext.currentSession.createResolverForFile(
+      resourceProvider.getFile(parameters.file),
+    );
+    if (resolver == null) return EditGetFixesResult([]);
 
     final key = _AnalysisErrorsKey(
       filePath: parameters.file,
@@ -543,7 +588,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       );
     }
 
-    _runPostRunCallbacks(postRunCallbacks);
+    runPostRunCallbacks(postRunCallbacks);
 
     return AnalysisErrorFixes(
       AnalyzerConverter().convertAnalysisError(
@@ -682,7 +727,8 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       return;
     }
 
-    final resolver = _createResolverForFile(resourceProvider.getFile(path));
+    final resolver = analysisContext.currentSession
+        .createResolverForFile(resourceProvider.getFile(path));
     if (resolver == null) return;
 
     final lints = <AnalysisError>[];
@@ -732,7 +778,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
         );
       }
 
-      _runPostRunCallbacks(postRunCallbacks);
+      runPostRunCallbacks(postRunCallbacks);
 
       final allAnalysisErrors = <AnalysisError>[];
       final analyzerPluginReporter = ErrorReporter(
@@ -767,40 +813,6 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
         ),
       );
     });
-  }
-
-  void _runPostRunCallbacks(List<void Function()> postRunCallbacks) {
-    for (final postCallback in postRunCallbacks) {
-      try {
-        postCallback();
-      } catch (err) {
-        // TODO should errors be reported?
-        // All postCallbacks should execute even if one throw
-      }
-    }
-  }
-
-  CustomLintResolverImpl? _createResolverForFile(File file) {
-    if (!file.exists) return null;
-    final source = file.createSource();
-    final lineInfo = LineInfo.fromContent(source.contents.data);
-
-    return CustomLintResolverImpl(
-      _safeGetResolvedUnitResult,
-      lineInfo: lineInfo,
-      source: source,
-      path: file.path,
-    );
-  }
-
-  Future<ResolvedUnitResult> _safeGetResolvedUnitResult(String path) async {
-    while (true) {
-      try {
-        return await getResolvedUnitResult(path);
-      } on InconsistentAnalysisException {
-        // Retry analysis on InconsistentAnalysisException
-      }
-    }
   }
 
   /// Queue an operation to be awaited by [_awaitAnalysisDone]
