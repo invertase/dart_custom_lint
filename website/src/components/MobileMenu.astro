@@ -1,0 +1,81 @@
+---
+import nav from 'src/nav';
+---
+
+<div
+  data-mobile-menu
+  class="absolute top-0 z-20 inset-x-0 lg:hidden overflow-hidden transition px-6 pb-6 pt-20 rounded-b-xl bg-zinc-900 text-white"
+  style={{
+    opacity: 0,
+    transform: 'translateY(-130px)',
+  }}
+>
+  <ul class="space-y-6 font-semibold">
+    {
+      nav.map(({ title, href }) => (
+        <li>
+          <a class="block" href={href}>
+            {title}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+<div
+  data-mobile-mask
+  class="fixed z-10 inset-0 bg-zinc-900/20 backdrop-blur lg:hidden transition"
+  style={{
+    opacity: '0',
+    'pointer-events': 'none',
+  }}
+>
+</div>
+<script>
+  const toggle = document.querySelector('[data-mobile-toggle]')! as HTMLDivElement;
+  const actions = {
+    open: toggle.querySelector('[data-mobile-toggle-open]')! as HTMLSpanElement,
+    close: toggle.querySelector('[data-mobile-toggle-close]')! as HTMLSpanElement,
+  } as const;
+
+  const menu = document.querySelector('[data-mobile-menu]')! as HTMLDivElement;
+  const mask = document.querySelector('[data-mobile-mask]')! as HTMLDivElement;
+
+  let isOpen = false;
+
+  const open = () => {
+    document.body.classList.add('overflow-hidden');
+
+    actions.open.style.opacity = '0';
+    actions.close.style.opacity = '1';
+
+    menu.style.opacity = '1';
+    menu.style.transform = 'translateY(0px)';
+    mask.style.pointerEvents = 'auto';
+    mask.style.opacity = '1';
+    isOpen = true;
+  };
+
+  const close = () => {
+    document.body.classList.remove('overflow-hidden');
+
+    actions.open.style.opacity = '1';
+    actions.close.style.opacity = '0';
+
+    menu.style.opacity = '0';
+    menu.style.transform = 'translateY(-130px)';
+    mask.style.pointerEvents = 'none';
+    mask.style.opacity = '0';
+    isOpen = false;
+  };
+
+  toggle.addEventListener('click', () => {
+    if (isOpen) {
+      close();
+    } else {
+      open();
+    }
+  });
+
+  mask.addEventListener('click', () => close());
+</script>
