@@ -1,4 +1,4 @@
-## Unreleased fix
+## 0.2.3
 
 Fixes InconsistentAnalysisException
 
