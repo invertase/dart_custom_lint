@@ -1,58 +1,56 @@
 ---
-import Root from "@layouts/Root.astro";
-import Header from "@components/Header.astro";
-import Footer from "@components/Footer.astro";
-import Card from "@components/Card.astro";
-import VsCodeBanner from "@components/VsCodeBanner.astro";
+import Root from '@layouts/Root.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import Card from '@components/Card.astro';
+// import VsCodeBanner from '@components/VsCodeBanner.astro';
 
-const cards = Array.from(new Array(9), () => ({
-	name: "Package Name",
-	description:
-		"Brief text descriptions of the package, this shouldnt be too long.",
-	link: "",
-}));
+const cards = [
+  {
+    name: 'Riverpod',
+    description: 'A Reactive Caching and Data-binding Framework',
+    link: 'https://riverpod.dev/',
+  },
+];
 ---
 
 <script>
-	document.addEventListener("DOMContentLoaded", () => {
-		const button = document.getElementById("load-more-cards");
-		if (!button) return;
+  document.addEventListener('DOMContentLoaded', () => {
+    const button = document.getElementById('load-more-cards');
+    if (!button) return;
 
-		const getLogItems = () =>
-			Array.from(document.getElementsByClassName("js-hidden-cards"));
+    const getLogItems = () => Array.from(document.getElementsByClassName('js-hidden-cards'));
 
-		const changeButtonState = () => {
-			if (getLogItems().length) {
-				button.classList.remove("hidden");
-			} else {
-				button.classList.add("hidden");
-			}
-		};
+    const changeButtonState = () => {
+      if (getLogItems().length) {
+        button.classList.remove('hidden');
+      } else {
+        button.classList.add('hidden');
+      }
+    };
 
-		changeButtonState();
+    changeButtonState();
 
-		button.addEventListener("click", () => {
-			getLogItems()
-				.slice(0, 8)
-				.map((it) => {
-					it.classList.add("fade-in");
-					it.classList.remove(...["hidden", "js-hidden-cards"]);
-				});
+    button.addEventListener('click', () => {
+      getLogItems()
+        .slice(0, 8)
+        .map((it) => {
+          it.classList.add('fade-in');
+          it.classList.remove(...['hidden', 'js-hidden-cards']);
+        });
 
-			changeButtonState();
-		});
-	});
+      changeButtonState();
+    });
+  });
 </script>
 
 <Root>
-	<div
-		class="dark:bg-[url(/images/bg_shadow_l_t.svg)] bg-left-top bg-no-repeat"
-	>
-		<div
-			class="dark:bg-[url(/images/bg_shadow_l_b.svg)] bg-left-bottom bg-no-repeat overflow-hidden"
-		>
-			<Header />
-			<section class="mb-16 lg:mb-36">
+  <div class="dark:bg-[url(/images/bg_shadow_l_t.svg)] bg-left-top bg-no-repeat">
+    <div
+      class="dark:bg-[url(/images/bg_shadow_l_b.svg)] bg-left-bottom bg-no-repeat overflow-hidden"
+    >
+      <Header />
+      <!-- <section class="mb-16 lg:mb-36">
 				<div class="px-5">
 					<div class="max-w-7xl mx-auto text-center">
 						<h2
@@ -69,58 +67,49 @@ const cards = Array.from(new Array(9), () => ({
 					</div>
 				</div>
 				<VsCodeBanner />
-			</section>
+			</section> -->
 
-			<section class="w-full overflow-hidden">
-				<div class="px-5">
-					<div class="max-w-7xl mx-auto mb-12">
-						<h2
-							class="text-center mb-10 lg:mb-20 font-semibold text-3xl lg:text-5xl"
-						>
-							Plugin library
-						</h2>
-						<div class="relative">
-							<div
-								class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-10 mb-16 relative z-20"
-							>
-								{
-									cards.map((card, index) => (
-										<Card
-											class={
-												index > 7
-													? "js-hidden-cards hidden"
-													: ""
-											}
-											{...card}
-										/>
-									))
-								}
-							</div>
-							<img
-								class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 hidden dark:block"
-								src="/images/bg_plugins_shadow.svg"
-								role="banner"
-								alt=""
-							/>
-							<img
-								class="absolute -right-72 top-3/4 -translate-y-1/2 hidden dark:block"
-								src="/images/bg_plugins_shadow.svg"
-								role="banner"
-								alt=""
-							/>
-						</div>
-						<div class="flex justify-center relative">
-							<button
-								id="load-more-cards"
-								class="btn-secondary dark:btn-third hidden w-full max-w-xs lg:w-40 transform-gpu"
-							>
-								View More
-							</button>
-						</div>
-					</div>
-				</div>
-			</section>
-			<Footer />
-		</div>
-	</div>
+      <section class="w-full overflow-hidden">
+        <div class="px-5">
+          <div class="max-w-7xl mx-auto mb-12">
+            <h2 class="text-center mb-10 lg:mb-20 font-semibold text-3xl lg:text-5xl">
+              Plugin library
+            </h2>
+            <div class="relative">
+              <div
+                class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-10 mb-16 relative z-20"
+              >
+                {
+                  cards.map((card, index) => (
+                    <Card class={index > 7 ? 'js-hidden-cards hidden' : ''} {...card} />
+                  ))
+                }
+              </div>
+              <img
+                class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 hidden dark:block"
+                src="/images/bg_plugins_shadow.svg"
+                role="banner"
+                alt=""
+              />
+              <img
+                class="absolute -right-72 top-3/4 -translate-y-1/2 hidden dark:block"
+                src="/images/bg_plugins_shadow.svg"
+                role="banner"
+                alt=""
+              />
+            </div>
+            <!-- <div class="flex justify-center relative">
+              <button
+                id="load-more-cards"
+                class="btn-secondary dark:btn-third hidden w-full max-w-xs lg:w-40 transform-gpu"
+              >
+                View More
+              </button>
+            </div> -->
+          </div>
+        </div>
+      </section>
+      <Footer />
+    </div>
+  </div>
 </Root>

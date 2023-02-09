@@ -1,12 +1,12 @@
 ---
-import IconChevronUp from "@components/icons/IconChevronUp.astro";
-import IconHamburger from "@components/icons/IconHamburger.astro";
+import IconChevronUp from '@components/icons/IconChevronUp.astro';
+import IconHamburger from '@components/icons/IconHamburger.astro';
 
 interface Props {
   class?: string;
 }
 
-const { class: classStr = "" } = Astro.props as Props;
+const { class: classStr = '' } = Astro.props as Props;
 ---
 
 <button data-mobile-toggle class={`w-6 h-6 relative ${classStr}`}>

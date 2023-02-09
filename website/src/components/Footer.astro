@@ -1,87 +1,68 @@
 ---
-import IconMoon from "@components/icons/IconMoon.astro";
-import IconSun from "@components/icons/IconSun.astro";
-import Logo from "@components/Logo.astro";
-import nav from "src/nav";
+import IconMoon from '@components/icons/IconMoon.astro';
+import IconSun from '@components/icons/IconSun.astro';
+import Logo from '@components/Logo.astro';
+import nav from 'src/nav';
 ---
 
 <footer
-    class="bg-white shadow-footer dark:bg-transparent dark:shadow-none dark:border-t dark:border-white/20 px-5"
+  class="bg-white shadow-footer dark:bg-transparent dark:shadow-none dark:border-t dark:border-white/20 px-5"
 >
-    <div class="max-w-7xl mx-auto py-8 lg:py-16">
-        <div
-            class="flex flex-col-reverse items-center lg:grid lg:grid-cols-3 gap-14 lg:gap-10 text-gray-500 dark:text-white"
+  <div class="max-w-7xl mx-auto py-8 lg:py-16">
+    <div
+      class="flex flex-col-reverse items-center lg:grid lg:grid-cols-3 gap-14 lg:gap-10 text-gray-500 dark:text-white"
+    >
+      <div>
+        <a
+          href="/"
+          class="flex items-center gap-2 hover:opacity-75 whitespace-nowrap transition-opacity duration-500"
         >
-            <div>
-                <a
-                    href="/"
-                    class="flex items-center gap-2 hover:opacity-75 whitespace-nowrap transition-opacity duration-500"
-                >
-                    <Logo class="dark:hidden min-w-[5rem]" />
-                    <Logo
-                        class="hidden dark:block min-w-[5rem]"
-                        mainColor="#7352A0"
-                        secondColor="#FFF"
-                    />
-                    <span
-                        class="text-base font-medium whitespace-nowrap dark:opacity-75"
-                    >
-                        by Invertase.
-                    </span>
-                </a>
+          <Logo class="dark:hidden min-w-[5rem]" />
+          <Logo class="hidden dark:block min-w-[5rem]" mainColor="#7352A0" secondColor="#FFF" />
+          <span class="text-base font-medium whitespace-nowrap dark:opacity-75">
+            by Invertase.
+          </span>
+        </a>
+      </div>
+      <div class="flex justify-center">
+        <button id="theme-toggle" class="flex relative items-center cursor-pointer">
+          <div
+            class="w-16 h-8 dark:border-white/10 border rounded-full after:translate-x-8 dark:after:translate-x-0 after:absolute after:bg-gray-300 dark:after:bg-linter-toggle/90 after:rounded-full after:h-8 after:w-8 after:transition-all flex justify-between items-center"
+          >
+            <div class="w-5 h-5 translate-x-1.5 translate-y-px relative z-20 dark:text-white/80">
+              <IconMoon />
             </div>
-            <div class="flex justify-center">
-                <button
-                    id="theme-toggle"
-                    class="flex relative items-center cursor-pointer"
-                >
-                    <div
-                        class="w-16 h-8 dark:border-white/10 border rounded-full after:translate-x-8 dark:after:translate-x-0 after:absolute after:bg-gray-300 dark:after:bg-linter-toggle/90 after:rounded-full after:h-8 after:w-8 after:transition-all flex justify-between items-center"
-                    >
-                        <div
-                            class="w-5 h-5 translate-x-1.5 translate-y-px relative z-20 dark:text-white/80"
-                        >
-                            <IconMoon />
-                        </div>
-                        <div
-                            class="w-5 h-5 -translate-x-[3px] translate-y-px relative z-20"
-                        >
-                            <IconSun />
-                        </div>
-                    </div>
-                </button>
+            <div class="w-5 h-5 -translate-x-[3px] translate-y-px relative z-20">
+              <IconSun />
             </div>
-            <div
-                class="flex flex-col sm:flex-row gap-14 dark:opacity-75 justify-end items-center"
+          </div>
+        </button>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-14 dark:opacity-75 justify-end items-center">
+        {
+          nav.map(({ title, href }) => (
+            <a
+              class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
+              href={href}
             >
-                {
-                    nav.map(({ title, href }) => (
-                        <a
-                            class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
-                            href={href}
-                        >
-                            {title}
-                        </a>
-                    ))
-                }
-            </div>
-        </div>
+              {title}
+            </a>
+          ))
+        }
+      </div>
     </div>
+  </div>
 </footer>
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        document
-            .getElementById("theme-toggle")
-            ?.addEventListener("click", () => {
-                document.documentElement.classList.toggle("dark");
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('theme-toggle')?.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
 
-                const isDarkTheme =
-                    localStorage.theme === "dark" ||
-                    (!("theme" in localStorage) &&
-                        window.matchMedia("(prefers-color-scheme: dark)")
-                            .matches);
+      const isDarkTheme =
+        localStorage.theme === 'dark' ||
+        (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-                localStorage.setItem("theme", isDarkTheme ? "light" : "dark");
-            });
+      localStorage.setItem('theme', isDarkTheme ? 'light' : 'dark');
     });
+  });
 </script>

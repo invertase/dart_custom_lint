@@ -1,10 +1,10 @@
 export default [
-    {
-        href: '/',
-        title: 'Docs',
-    },
-    {
-        href: 'https://pub.dev/packages/custom_lint',
-        title: 'Github',
-    },
+  {
+    href: 'https://docs.custom-lint.dev',
+    title: 'Docs',
+  },
+  {
+    href: 'https://github.com/invertase/dart_custom_lint',
+    title: 'Github',
+  },
 ];
