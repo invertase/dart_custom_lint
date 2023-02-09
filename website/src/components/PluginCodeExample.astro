@@ -1,0 +1,64 @@
+---
+import { Code } from 'astro/components';
+
+interface Props {
+  class?: string;
+}
+
+const { class: classStr = '' } = Astro.props as Props;
+---
+
+<div class={`relative rounded-lg  w-full shadow-xl ${classStr}`}>
+  <div
+    class="relative z-[3] rounded-lg bg-white dark:bg-linter-card shadow-xl dark:border border-white/20 overflow-hidden text-[7px] sm:text-[0.8125rem]"
+  >
+    <div
+      class="flex items-center text-[7px] sm:text-xs text-gray-600 dark:text-white border-b dark:border-white/10 font-itc"
+    >
+      <div
+        class="px-3 py-1.5 sm:py-3 inline-flex items-center gap-3 bg-gray-300/30 dark:bg-transparent dark:border-r border-white/10"
+      >
+        <span class="opacity-90 dark:opacity-50">{'< >'}</span>
+        <span class="text-linter opacity-90 dark:text-white"> lib/my_package_name.dart</span>
+        <span class="text-gray-800 dark:text-white">X</span>
+      </div>
+
+      <div class="px-3 py-1.5 sm:py-3">
+        <span class="opacity text-gray-800 dark:text-white">#</span>
+        <span class="opacity-80 dark:opacity-50">pubspec.yaml</span>
+      </div>
+    </div>
+    <div class="relative rounded-br-lg rounded-bl-lg">
+      <div class="p-3 sm:p-6">
+        <Code
+          lang="dart"
+          theme="css-variables"
+          code={`PluginBase createPlugin() => _ExampleLinter();
+class _ExampleLinter extends PluginBase {
+  @override
+  List<LintRule> getLintRules(CustomLintConfigs configs) => [
+        MyCustomLintCode(),
+      ];
+}
+class MyCustomLintCode extends DartLintRule {
+  MyCustomLintCode() : super(code: _code);
+  static const _code = LintCode(
+    name: 'my_custom_lint_code',
+    problemMessage: 'This is the description of our custom lint',
+  );
+  @override
+  void run(
+    CustomLintResolver resolver,
+    ErrorReporter reporter,
+    CustomLintContext context,
+  ) {
+    context.registry.addVariableDeclaration((node) {
+      reporter.reportErrorForNode(code, node);
+    });
+  }
+}`}
+        />
+      </div>
+    </div>
+  </div>
+</div>

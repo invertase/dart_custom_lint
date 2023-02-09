@@ -1,0 +1,28 @@
+@font-face {
+	font-family: 'ITC Avant Garde Gothic Book';
+	src:  url('../fonts/ITCAvantGardeRegular.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'ITC Avant Garde Gothic Book';
+	src:  url('../fonts/ITCAvantGardePro-Demi.woff') format('woff');
+	font-weight: 600;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'ITC Avant Garde Gothic Book';
+	src:  url('../fonts/ITCAvantGardePro-Md.woff') format('woff');
+	font-weight: 500;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'ITC Avant Garde Gothic Book';
+	src:  url('../fonts/ITCAvantGardePro-Bk.woff') format('woff');
+	font-weight: 300;
+	font-style: normal;
+}
+

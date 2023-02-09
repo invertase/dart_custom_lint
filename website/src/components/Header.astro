@@ -1,0 +1,76 @@
+---
+import Logo from '@components/Logo.astro';
+import PluginCodeExample from './PluginCodeExample.astro';
+import nav from 'src/nav';
+import Toggle from '@components/Toggle.astro';
+import MobileMenu from '@components/MobileMenu.astro';
+---
+
+<MobileMenu />
+
+<header
+  class="bg-[url(/images/bg_header_mobile.svg)] lg:bg-[url(/images/bg_header.svg)] bg-[length:100%_100%] bg-left-top mb-14 lg:mb-44 lg:dark:mb-80 dark:bg-none relative"
+>
+  <div
+    class="lg:bg-[url(/images/bg_header_corner.svg)] bg-[length:45%_65%] bg-no-repeat dark:bg-none px-5"
+  >
+    <div class="max-w-7xl mx-auto text-white">
+      <div class="flex justify-between items-center gap-10 py-7 mb-0 lg:mb-20">
+        <div class="relative z-40">
+          <a href="/" class="hover:opacity-75 transition-opacity duration-500 mb-5">
+            <Logo class="dark:hidden" mainColor="#BEECFE" secondColor="#FFF" />
+            <Logo class="hidden dark:block" mainColor="#7352A0" secondColor="#FFF" />
+          </a>
+        </div>
+        <div class="gap-14 dark:opacity-75 hidden md:flex">
+          {
+            nav.map(({ title, href }) => (
+              <a
+                class="underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
+                href={href}
+              >
+                {title}
+              </a>
+            ))
+          }
+        </div>
+        <Toggle class="md:hidden z-40" />
+      </div>
+      <div
+        class="pb-24 lg:pb-52 pt-10 lg:pt-20 flex flex-col-reverse lg:flex-row justify-between gap-10 lg:gap-20 relative z-[1]"
+      >
+        <div class="w-full lg:w-2/5 text-center lg:text-left">
+          <h1 class="mb-5 sm:mb-12 font-semibold text-3xl sm:text-5xl leading-tight">
+            Build powerful Custom Lint rules for any <span
+              class="sm:font-light dark:text-blue-300/60">dart & flutter package</span
+            >
+          </h1>
+          <p class="mb-12 sm:mb-16 dark:opacity-70 text-sm sm:text-base">
+            Zero configuration, zero set up, simply start building!
+          </p>
+          <a
+            class="btn-primary dark:btn-third w-full max-w-xs lg:w-40 inline-block"
+            href="https://docs.custom-lint.dev"
+          >
+            Go to Docs
+          </a>
+        </div>
+        <div class="relative w-full max-w-md sm:max-w-2xl self-end sm:self-center lg:w-1/2">
+          <div
+            class="relative z-[1] -right-5 sm:-right-3 lg:-top-10 rounded-l-md sm:rounded-lg overflow-hidden flex justify-center items-center bg-white h-full shadow-[0_0_0_30px_rgba(152,139,222,.04)] dark:bg-transparent dark:bg-[linear-gradient(180deg,#2D2072_10%,#42206E_50%,rgba(45,32,114,0))] dark:shadow-none min-h-[12.5rem] sm:min-h-[20rem] w-[90%] lg:w-full ml-auto"
+          >
+            <span class="text-linter text-lg sm:text-4xl font-semibold dark:text-white font-mono">
+              <img src="/images/lint_showcase.png" alt="showcase" />
+            </span>
+          </div>
+          <PluginCodeExample
+            class="-top-10 sm:right-3 lg:top-3/4 z-[2] lg:absolute lg:right-10 xl:right-1/3 before:bg-[rgba(152,139,222,.04)] before:absolute before:-left-8 before:-top-8 before:w-full before:h-full before:z-[1] before:rounded-lg dark:before:hidden w-11/12 lg:w-full"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="absolute bottom-0 translate-y-1/2 lg:translate-y-2/3 hidden dark:block">
+    <img src="/images/particles_wave.webp" role="banner" alt="" />
+  </div>
+</header>

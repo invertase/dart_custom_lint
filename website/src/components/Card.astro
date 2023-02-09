@@ -1,0 +1,41 @@
+---
+import IconExternalLink from '@components/icons/IconExternalLink.astro';
+
+interface Props {
+  name: string;
+  description: string;
+  link: string;
+  class?: string;
+}
+
+const { name, description, link, class: classStr } = Astro.props as Props;
+---
+
+<div
+  class={`bg-white dark:bg-linter-card border border-transparent dark:border-white/20 rounded-lg px-3 lg:px-6 py-5 transform-gpu shadow-lg hover:scale-105 duration-300 ${classStr}`}
+>
+  <a
+    class="text-linter dark:text-white underline-gradient underline-gradient-hidden hover:underline-gradient-visible"
+    href={link}
+  >
+    <h3 class="font-medium mb-4 lg:mb-5 inline-block text-sm lg:text-base">
+      {name}
+    </h3>
+  </a>
+  <p
+    class="text-xs lg:text-sm leading-6 font-light mb-4 lg:mb-7 text-gray-500/80 dark:text-white/50"
+  >
+    {description}
+  </p>
+  <a
+    class="text-linter dark:text-white font-medium dark:font-light text-xs group inline-flex gap-1 items-center"
+    href={link}
+  >
+    <span
+      class="underline-gradient underline-gradient-hidden group-hover:underline-gradient-visible"
+    >
+      Use this package
+    </span>
+    <IconExternalLink />
+  </a>
+</div>
