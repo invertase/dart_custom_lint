@@ -11,38 +11,19 @@ const cards = [
     description: 'A Reactive Caching and Data-binding Framework',
     link: 'https://riverpod.dev/',
   },
+  {
+    name: 'Supernova_lints',
+    description: 'Provides custom lint rules broadly used in supernova.io.',
+    link: 'https://pub.dev/packages/supernova_lints',
+  },
+  {
+    name: 'Flutter-ReachFive',
+    description:
+      'This sdk is the flutter interface implementation of the android and ios sdks of ReachFive',
+    link: 'https://pub.dev/packages/flutter_reach_five',
+  },
 ];
 ---
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const button = document.getElementById('load-more-cards');
-    if (!button) return;
-
-    const getLogItems = () => Array.from(document.getElementsByClassName('js-hidden-cards'));
-
-    const changeButtonState = () => {
-      if (getLogItems().length) {
-        button.classList.remove('hidden');
-      } else {
-        button.classList.add('hidden');
-      }
-    };
-
-    changeButtonState();
-
-    button.addEventListener('click', () => {
-      getLogItems()
-        .slice(0, 8)
-        .map((it) => {
-          it.classList.add('fade-in');
-          it.classList.remove(...['hidden', 'js-hidden-cards']);
-        });
-
-      changeButtonState();
-    });
-  });
-</script>
 
 <Root>
   <div class="dark:bg-[url(/images/bg_shadow_l_t.svg)] bg-left-top bg-no-repeat">
@@ -68,7 +49,6 @@ const cards = [
 				</div>
 				<VsCodeBanner />
 			</section> -->
-
       <section class="w-full overflow-hidden">
         <div class="px-5">
           <div class="max-w-7xl mx-auto mb-12">
@@ -77,7 +57,7 @@ const cards = [
             </h2>
             <div class="relative">
               <div
-                class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-10 mb-16 relative z-20"
+                class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 lg:gap-10 mb-16 relative z-20"
               >
                 {
                   cards.map((card, index) => (
@@ -88,24 +68,22 @@ const cards = [
               <img
                 class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 hidden dark:block"
                 src="/images/bg_plugins_shadow.svg"
-                role="banner"
-                alt=""
+                alt="bg_plugins_shadow"
               />
               <img
                 class="absolute -right-72 top-3/4 -translate-y-1/2 hidden dark:block"
                 src="/images/bg_plugins_shadow.svg"
-                role="banner"
-                alt=""
+                alt="bg_plugins_shadow"
               />
             </div>
-            <!-- <div class="flex justify-center relative">
-              <button
-                id="load-more-cards"
-                class="btn-secondary dark:btn-third hidden w-full max-w-xs lg:w-40 transform-gpu"
+            <div class="flex justify-center relative">
+              <a
+                href="https://pub.dev/packages?q=dependency%3Acustom_lint+show%3Ahidden"
+                class="btn-secondary dark:btn-third w-full max-w-xs lg:w-40 transform-gpu"
               >
-                View More
-              </button>
-            </div> -->
+                View more
+              </a>
+            </div>
           </div>
         </div>
       </section>
