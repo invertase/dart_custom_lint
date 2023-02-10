@@ -1,3 +1,8 @@
+## 0.2.5
+
+- Fix custom_lint not correctly killing sub-processes when the IDE stops custom_lint.
+- Export incorrectly unexported `matcherNormalizedPrioritizedSourceChangeSnapshot`
+
 ## 0.2.4
 
 - Added `<DartLintRule/DartFix/DartAssist>.testRun` & `testAnalyzeAndRun` methods, which

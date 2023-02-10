@@ -1,3 +1,7 @@
+## 0.2.5
+
+Fix custom_lint not correctly killing sub-processes when the IDE stops custom_lint.
+
 ## 0.2.2
 
 Fixes an exception thrown when a project contains images.
