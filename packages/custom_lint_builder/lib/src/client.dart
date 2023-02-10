@@ -54,7 +54,7 @@ void runPostRunCallbacks(List<void Function()> postRunCallbacks) {
 }
 
 /// Analysis utilities for custom_lint
-extension AnalysisSessionUtils on AnalysisSession {
+extension AnalysisSessionUtils on AnalysisContext {
   /// Create a [CustomLintResolverImpl] for a file.
   @internal
   CustomLintResolverImpl? createResolverForFile(File file) {
@@ -69,18 +69,22 @@ extension AnalysisSessionUtils on AnalysisSession {
       path: file.path,
     );
   }
+}
 
+extension on AnalysisContext {
   /// Obtains a [ResolvedUnitResult] for the given [path], while catching [InconsistentAnalysisException] and retrying.
   @internal
   Future<ResolvedUnitResult> safeGetResolvedUnitResult(String path) async {
-    while (true) {
+    for (var i = 0; i < 5; i++) {
       try {
-        final result = await getResolvedUnit(path);
+        final result = await currentSession.getResolvedUnit(path);
         return result as ResolvedUnitResult;
       } on InconsistentAnalysisException {
         // Retry analysis on InconsistentAnalysisException
+        await applyPendingFileChanges();
       }
     }
+    throw StateError('Failed to get resolved unit result for $path');
   }
 }
 
@@ -403,7 +407,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     final assists =
         _customLintConfigsForAnalysisContexts[analysisContext]?.assists;
 
-    final resolver = analysisContext.currentSession.createResolverForFile(
+    final resolver = analysisContext.createResolverForFile(
       resourceProvider.getFile(parameters.file),
     );
     if (resolver == null || assists == null || assists.isEmpty) {
@@ -492,7 +496,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     // TODO test
     final contextCollection = await _contextCollection.first;
     final analysisContext = contextCollection.contextFor(parameters.file);
-    final resolver = analysisContext.currentSession.createResolverForFile(
+    final resolver = analysisContext.createResolverForFile(
       resourceProvider.getFile(parameters.file),
     );
     if (resolver == null) return EditGetFixesResult([]);
@@ -727,8 +731,8 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       return;
     }
 
-    final resolver = analysisContext.currentSession
-        .createResolverForFile(resourceProvider.getFile(path));
+    final resolver =
+        analysisContext.createResolverForFile(resourceProvider.getFile(path));
     if (resolver == null) return;
 
     final lints = <AnalysisError>[];

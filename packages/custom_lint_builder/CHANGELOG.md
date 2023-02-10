@@ -1,3 +1,7 @@
+## 0.2.6
+
+Fix infinite loop on InconsistentAnalysisException
+
 ## 0.2.5
 
 - Fix custom_lint not correctly killing sub-processes when the IDE stops custom_lint.
