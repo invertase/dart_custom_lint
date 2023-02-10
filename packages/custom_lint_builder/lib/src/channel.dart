@@ -63,7 +63,12 @@ Future<void> runSocket(
       final socket = await Socket.connect('localhost', port);
       // If the server somehow quit, forcibly stop the client.
       // In theory it should stop naturally, but let's make sure of this to prevent leaks.
-      unawaited(socket.done.then((value) => exit(0)));
+      // Tried with `socket.done` but it doesn't seem to work.
+      socket.listen(
+        (event) {},
+        onError: (err, stack) {},
+        onDone: () => exit(0),
+      );
 
       final socketChannel = JsonSocketChannel(socket);
       final registeredPlugins = <String, PluginBase>{};
