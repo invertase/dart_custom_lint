@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -17,8 +18,9 @@ class StreamToSentPortAdapter {
   /// Converts a Stream/Sink into a Sendport/ReceivePort equivalent
   StreamToSentPortAdapter(
     Stream<Map<String, Object?>> input,
-    void Function(Map<String, Object?> output) output,
-  ) {
+    void Function(Map<String, Object?> output) output, {
+    required void Function() onDone,
+  }) {
     final Stream<Object?> outputStream = _outputReceivePort.asBroadcastStream();
     final inputSendport =
         outputStream.where((e) => e is SendPort).cast<SendPort>().first;
@@ -35,6 +37,7 @@ class StreamToSentPortAdapter {
       onDone: () {
         _outputReceivePort.close();
         sub.cancel();
+        onDone();
       },
     );
   }
@@ -61,22 +64,22 @@ Future<void> runSocket(
     () async {
       // ignore: close_sinks, connection stays open until the plugin is killed
       final socket = await Socket.connect('localhost', port);
-      // If the server somehow quit, forcibly stop the client.
-      // In theory it should stop naturally, but let's make sure of this to prevent leaks.
-      // Tried with `socket.done` but it doesn't seem to work.
-      socket.listen(
-        (event) {},
-        onError: (err, stack) {},
-        onDone: () => exit(0),
-      );
-
       final socketChannel = JsonSocketChannel(socket);
       final registeredPlugins = <String, PluginBase>{};
       client.complete(
         CustomLintPluginClient(
           watchMode: watchMode,
           includeBuiltInLints: includeBuiltInLints,
-          _SocketCustomLintClientChannel(socketChannel, registeredPlugins),
+          _SocketCustomLintClientChannel(
+            socketChannel,
+            registeredPlugins,
+            onDone: () {
+              // If the server somehow quit, forcibly stop the client.
+              // In theory it should stop naturally, but let's make sure of this to prevent leaks.
+              // Tried with `socket.done.then` but it somehow was never invoked
+              exit(0);
+            },
+          ),
         ),
       );
 
@@ -126,14 +129,20 @@ abstract class CustomLintClientChannel {
 }
 
 class _SocketCustomLintClientChannel extends CustomLintClientChannel {
-  _SocketCustomLintClientChannel(this.socket, super.registeredPlugins);
+  _SocketCustomLintClientChannel(
+    this.socket,
+    super.registeredPlugins, {
+    required this.onDone,
+  });
 
   @override
   SendPort get sendPort => _adapter.sendPort;
 
+  final void Function() onDone;
   final JsonSocketChannel socket;
 
   late final StreamToSentPortAdapter _adapter = StreamToSentPortAdapter(
+    onDone: onDone,
     input
         .where((e) => e is CustomLintRequestAnalyzerPluginRequest)
         .cast<CustomLintRequestAnalyzerPluginRequest>()
