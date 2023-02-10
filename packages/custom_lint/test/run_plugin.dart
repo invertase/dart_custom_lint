@@ -22,6 +22,7 @@ CustomLintRunner startRunnerForApp(
   bool ignoreErrors = false,
   bool includeBuiltInLints = true,
 }) {
+  final zone = Zone.current;
   final channel = ServerIsolateChannel();
 
   // TODO use IO override to mock & test stdout/stderr
@@ -37,10 +38,18 @@ CustomLintRunner startRunnerForApp(
       if (!ignoreErrors) {
         runner.channel
           ..responseErrors.listen((event) {
-            fail('${event.message} ${event.code}\n${event.stackTrace}');
+            zone.handleUncaughtError(
+              TestFailure(
+                '${event.message} ${event.code}\n${event.stackTrace}',
+              ),
+              StackTrace.current,
+            );
           })
           ..pluginErrors.listen((event) {
-            fail('${event.message}\n${event.stackTrace}');
+            zone.handleUncaughtError(
+              TestFailure('${event.message}\n${event.stackTrace}'),
+              StackTrace.current,
+            );
           });
       }
 
