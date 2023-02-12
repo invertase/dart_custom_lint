@@ -7,8 +7,7 @@ import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:custom_lint/src/channels.dart';
 // ignore: implementation_imports
 import 'package:custom_lint/src/v2/protocol.dart';
-// ignore: implementation_imports
-import 'package:custom_lint_core/src/plugin_base.dart';
+import 'package:custom_lint_core/custom_lint_core.dart';
 
 import 'client.dart';
 

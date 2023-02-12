@@ -7,6 +7,7 @@ class PeerProjectMeta {
   PeerProjectMeta({
     required this.customLintPath,
     required this.customLintBuilderPath,
+    required this.customLintCorePath,
     required this.exampleAppPath,
     required this.exampleLintPath,
     required this.exampleLintPackageConfigString,
@@ -48,6 +49,7 @@ class PeerProjectMeta {
     return PeerProjectMeta(
       customLintPath: join(packagesPath, 'custom_lint'),
       customLintBuilderPath: join(packagesPath, 'custom_lint_builder'),
+      customLintCorePath: join(packagesPath, 'custom_lint_core'),
       exampleAppPath: normalize(exampleAppDir.path),
       exampleLintPath:
           join(packagesPath, 'custom_lint', 'example', 'example_lint'),
@@ -61,6 +63,7 @@ class PeerProjectMeta {
 
   final String customLintPath;
   final String customLintBuilderPath;
+  final String customLintCorePath;
   final String exampleAppPath;
   final String exampleLintPath;
   final String exampleLintPackageConfigString;
