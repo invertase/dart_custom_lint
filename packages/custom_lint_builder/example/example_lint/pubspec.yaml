@@ -14,3 +14,5 @@ dependencies:
 dependency_overrides:
   custom_lint:
     path: ../../../custom_lint
+  custom_lint_core:
+    path: ../../../custom_lint_core

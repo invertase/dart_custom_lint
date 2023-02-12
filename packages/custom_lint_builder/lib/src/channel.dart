@@ -7,10 +7,9 @@ import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:custom_lint/src/channels.dart';
 // ignore: implementation_imports
 import 'package:custom_lint/src/v2/protocol.dart';
+import 'package:custom_lint_core/custom_lint_core.dart';
 
-import '../../custom_lint_builder.dart';
 import 'client.dart';
-import 'plugin_base.dart';
 
 /// Converts a Stream/Sink into a Sendport/ReceivePort equivalent
 class StreamToSentPortAdapter {

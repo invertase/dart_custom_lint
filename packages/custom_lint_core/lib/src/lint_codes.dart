@@ -7,7 +7,7 @@
 import 'package:analyzer/error/error.dart';
 import 'package:meta/meta.dart';
 
-import '../custom_lint_builder.dart';
+import '../custom_lint_core.dart';
 
 /// A class representing an [ErrorCode] for [LintRule]s.
 @immutable

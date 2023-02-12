@@ -1,20 +1,32 @@
+import 'dart:io' as io;
+import 'dart:io';
+
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/error/error.dart';
-import 'package:custom_lint_builder/src/change_reporter.dart';
-import 'package:custom_lint_builder/src/fixes.dart';
-import 'package:custom_lint_builder/src/lint_rule.dart';
-import 'package:custom_lint_builder/src/matcher.dart';
-import 'package:custom_lint_builder/src/resolver.dart';
+import 'package:analyzer/source/source_range.dart';
+import 'package:custom_lint_core/src/assist.dart';
+import 'package:custom_lint_core/src/change_reporter.dart';
+import 'package:custom_lint_core/src/lint_rule.dart';
+import 'package:custom_lint_core/src/matcher.dart';
+import 'package:custom_lint_core/src/resolver.dart';
+import 'package:path/path.dart';
 import 'package:test/test.dart';
 
-import 'assist_test.dart';
-import 'lint_rule_test.dart';
+File writeToTemporaryFile(String content) {
+  final tempDir = io.Directory.systemTemp.createTempSync();
+  addTearDown(() => tempDir.deleteSync(recursive: true));
+
+  final file = io.File(join(tempDir.path, 'file.dart'))
+    ..createSync(recursive: true)
+    ..writeAsStringSync(content);
+
+  return file;
+}
 
 void main() {
-  test('Fix.testRun', () async {
-    final fix = MyFix('MyAssist');
-    final fix2 = MyFix('Another');
+  test('Assist.testRun', () async {
+    final assist = MyAssist('MyAssist');
+    final assist2 = MyAssist('Another');
 
     final file = writeToTemporaryFile('''
 void main() {
@@ -24,10 +36,8 @@ void main() {
     final result = await resolveFile2(path: file.path);
     result as ResolvedUnitResult;
 
-    final errors = await const MyLintRule().testRun(result);
-
-    final changes = fix.testRun(result, errors.single, errors);
-    final changes2 = fix2.testRun(result, errors.single, errors);
+    final changes = assist.testRun(result, SourceRange.EMPTY);
+    final changes2 = assist2.testRun(result, SourceRange.EMPTY);
 
     expect(
       await changes,
@@ -48,17 +58,18 @@ void main() {
     );
   });
 
-  test('Fix.testAnalyzeRun', () async {
-    final fix = MyFix('MyAssist');
+  test('Assist.testAnalyzeAndRun', () async {
+    final assist = MyAssist('MyAssist');
+    final assist2 = MyAssist('Another');
 
     final file = writeToTemporaryFile('''
 void main() {
   print('Hello world');
 }
 ''');
-    final errors = await const MyLintRule().testAnalyzeAndRun(file);
 
-    final changes = fix.testAnalyzeAndRun(file, errors.single, errors);
+    final changes = assist.testAnalyzeAndRun(file, SourceRange.EMPTY);
+    final changes2 = assist2.testAnalyzeAndRun(file, SourceRange.EMPTY);
 
     expect(
       await changes,
@@ -68,11 +79,20 @@ void main() {
       await changes,
       isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json')),
     );
+
+    expect(
+      await changes2,
+      isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot.json')),
+    );
+    expect(
+      await changes2,
+      matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json'),
+    );
   });
 }
 
-class MyFix extends DartFix {
-  MyFix(this.name);
+class MyAssist extends DartAssist {
+  MyAssist(this.name);
 
   final String name;
 
@@ -81,8 +101,7 @@ class MyFix extends DartFix {
     CustomLintResolver resolver,
     ChangeReporter reporter,
     CustomLintContext context,
-    AnalysisError analysisError,
-    List<AnalysisError> others,
+    SourceRange target,
   ) {
     context.registry.addMethodInvocation((node) {
       final changebuilder = reporter.createChangeBuilder(
