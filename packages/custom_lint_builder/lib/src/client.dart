@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_use_of_internal_member
+
 import 'dart:async';
 import 'dart:developer' as dev;
 import 'dart:io' as io;
@@ -19,6 +21,14 @@ import 'package:analyzer_plugin/utilities/analyzer_converter.dart';
 import 'package:collection/collection.dart';
 // ignore: implementation_imports
 import 'package:custom_lint/src/v2/protocol.dart';
+// ignore: implementation_imports
+import 'package:custom_lint_core/src/change_reporter.dart';
+// ignore: implementation_imports
+import 'package:custom_lint_core/src/node_lint_visitor.dart';
+// ignore: implementation_imports
+import 'package:custom_lint_core/src/plugin_base.dart';
+// ignore: implementation_imports
+import 'package:custom_lint_core/src/resolver.dart';
 import 'package:glob/glob.dart';
 import 'package:hotreloader/hotreloader.dart';
 import 'package:meta/meta.dart';
@@ -26,32 +36,9 @@ import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:rxdart/subjects.dart';
 
-import 'assist.dart';
-import 'change_reporter.dart';
+import '../custom_lint_builder.dart';
 import 'channel.dart';
-import 'configs.dart';
 import 'expect_lint.dart';
-import 'fixes.dart';
-import 'lint_codes.dart';
-import 'lint_rule.dart';
-import 'node_lint_visitor.dart';
-import 'plugin_base.dart';
-import 'resolver.dart';
-
-/// Runs a list of "postRun" callbacks.
-///
-/// Errors are caught to ensure all callbacks are executed.
-@internal
-void runPostRunCallbacks(List<void Function()> postRunCallbacks) {
-  for (final postCallback in postRunCallbacks) {
-    try {
-      postCallback();
-    } catch (err) {
-      // TODO should errors be reported?
-      // All postCallbacks should execute even if one throw
-    }
-  }
-}
 
 /// Analysis utilities for custom_lint
 extension AnalysisSessionUtils on AnalysisContext {

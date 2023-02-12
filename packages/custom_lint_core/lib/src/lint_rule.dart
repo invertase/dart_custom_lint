@@ -7,9 +7,9 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:meta/meta.dart';
-import '../custom_lint_builder.dart';
-import 'client.dart';
+import '../custom_lint_core.dart';
 import 'node_lint_visitor.dart';
+import 'plugin_base.dart';
 import 'resolver.dart';
 
 /// An object for state shared between multiple [LintRule]/[Assist]/[Fix]...

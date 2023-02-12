@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
-import '../custom_lint_builder.dart';
+import '../custom_lint_core.dart';
 
 /// Configurations representing the custom_lint metadata in the project's `analysis_options.yaml`.
 @immutable

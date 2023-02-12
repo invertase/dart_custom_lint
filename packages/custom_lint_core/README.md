@@ -1,6 +1,6 @@
 <p align="center">
-  <h1>custom_lint_builder</h1>
-  <span>An package for defining custom lints.</span>
+  <h1>custom_lint_core</h1>
+  <span>An package exposing base classes for defining lint rules/fixes/assists.</span>
 </p>
 
 <p align="center">
@@ -9,17 +9,11 @@
 
 ## About
 
-`custom_lint_builder` is a package that should be associated with [custom_lint]
-for defining custom_lint plugins.
+`custom_lint_core`, a variant of `custom_lint_builder` which exports lint-utilities without
+causing custom_lint to consider the dependent as a lint plugin.
 
-
-If a package wants to access classes such as `LintRule` or `Assist` but do
-not want to make a custom_lint plugin (such as for exposing new utilities
-for plugin authors), then use `custom_lint_core` instead.
-
-Using `cutom_lint_builder` is reserved to plugin authors. Depending it on it
-will tell custom_lint that your package is a plugin, and therefore will try to
-run it.
+As opposed to `custom_lint_builder` , adding `custom_lint_core` as dependency will not flag
+a package as a "custom_lint plugin".
 
 See [custom_lint] for more informations
 

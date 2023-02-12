@@ -176,6 +176,7 @@ String createPackageConfig({
             (e) =>
                 e['name'] != 'custom_lint' &&
                 e['name'] != 'custom_lint_example_lint' &&
+                e['name'] != 'custom_lint_core' &&
                 e['name'] != 'custom_lint_builder',
           ),
       for (final plugin in plugins.entries)
@@ -202,6 +203,14 @@ String createPackageConfig({
       <String, String>{
         'name': 'custom_lint_builder',
         'rootUri': PeerProjectMeta.current.customLintBuilderPath,
+        'packageUri': 'lib/',
+        'languageVersion': '2.17'
+      },
+      // Custom lint core is always a transitive dev dependency if it is used,
+      // so it will be in the package config
+      <String, String>{
+        'name': 'custom_lint_core',
+        'rootUri': PeerProjectMeta.current.customLintCorePath,
         'packageUri': 'lib/',
         'languageVersion': '2.17'
       },

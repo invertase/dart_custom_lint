@@ -3,8 +3,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:meta/meta.dart';
 
-import 'lint_codes.dart';
-import 'resolver.dart';
+import '../custom_lint_builder.dart';
 
 final _expectLintRegex = RegExp(r'//\s*expect_lint\s*:(.+)$', multiLine: true);
 
