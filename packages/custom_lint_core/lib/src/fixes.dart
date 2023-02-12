@@ -1,32 +1,28 @@
-import 'dart:io' as io;
+import 'dart:io';
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/source/source_range.dart';
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:meta/meta.dart';
 
 import 'change_reporter.dart';
-import 'client.dart';
-import 'fixes.dart';
 import 'lint_rule.dart';
 import 'node_lint_visitor.dart';
+import 'plugin_base.dart';
 import 'resolver.dart';
 
-/// A base class for assists.
+/// {@template custom_lint_builder.lint_rule}
+/// A base class for defining quick-fixes for a [LintRule]
 ///
-/// Assists are more typically known as "refactoring". They are changes
-/// triggered by the user, without an associated problem. As opposed to a [Fix],
-/// which represents a source change but is associated with an issue.
-///
-/// For creating assists inside Dart files, see [DartAssist].
-///
-/// Suclassing [Assist] can be helpful if you wish to implement assists for
+/// For creating assists inside Dart files, see [DartFix].
+/// Suclassing [Fix] can be helpful if you wish to implement assists for
 /// non-Dart files (yaml, json, ...)
 ///
-/// For usage information, see https://github.com/invertase/dart_custom_lint/blob/main/docs/assists.md
+/// For usage information, see https://github.com/invertase/dart_custom_lint/blob/main/docs/fixes.md
+/// {@endtemplate}
 @immutable
-abstract class Assist {
+abstract class Fix {
   /// A list of glob patterns matching the files that [run] cares about.
   ///
   /// This can include Dart files, Yaml files, ...
@@ -38,25 +34,30 @@ abstract class Assist {
   Future<void> startUp(
     CustomLintResolver resolver,
     CustomLintContext context,
-    SourceRange target,
   ) async {}
 
   /// Emits lints for a given file.
   ///
   /// [run] will only be invoked with files respecting [filesToAnalyze]
+  /// Emits source changes for a given error.
+  ///
+  /// Optionally [others] can be specified with a list of similar errors within
+  /// the same file.
+  /// This can be used to provide an option for fixing multiple errors at once.
   void run(
     CustomLintResolver resolver,
     ChangeReporter reporter,
     CustomLintContext context,
-    SourceRange target,
+    AnalysisError analysisError,
+    List<AnalysisError> others,
   );
 }
 
-/// A base class for creating assists inside Dart files.
+/// A base class for defining quick-fixes inside Dart files.
 ///
-/// For usage information, see https://github.com/invertase/dart_custom_lint/blob/main/docs/assists.md#Defining-a-dart-assist
+/// For usage information, see https://github.com/invertase/dart_custom_lint/blob/main/docs/fixes.md#Defining-dart-fix
 @immutable
-abstract class DartAssist extends Assist {
+abstract class DartFix extends Fix {
   static final _stateKey = Object();
 
   @override
@@ -66,7 +67,6 @@ abstract class DartAssist extends Assist {
   Future<void> startUp(
     CustomLintResolver resolver,
     CustomLintContext context,
-    SourceRange target,
   ) async {
     // Relying on shared state to execute all linters in a single AstVisitor
     if (context.sharedState.containsKey(_stateKey)) return;
@@ -81,13 +81,14 @@ abstract class DartAssist extends Assist {
     });
   }
 
-  /// Runs this assist in test mode.
+  /// Runs this fix in test mode.
   ///
   /// The result will contain all the changes that would have been applied by [run].
   @visibleForTesting
   Future<List<PrioritizedSourceChange>> testRun(
     ResolvedUnitResult result,
-    SourceRange target,
+    AnalysisError analysisError,
+    List<AnalysisError> others,
   ) async {
     final registry = LintRuleNodeRegistry(
       NodeLintRegistry(LintRegistry(), enableTiming: false),
@@ -103,28 +104,24 @@ abstract class DartAssist extends Assist {
     );
     final reporter = ChangeReporterImpl(result.session, resolver);
 
-    await startUp(
-      resolver,
-      context,
-      target,
-    );
-
-    run(resolver, reporter, context, target);
+    await startUp(resolver, context);
+    run(resolver, reporter, context, analysisError, others);
     runPostRunCallbacks(postRunCallbacks);
 
     return reporter.waitForCompletion();
   }
 
-  /// Analyze a Dart file and runs this assist in test mode.
+  /// Analyze a Dart file and runs this fix in test mode.
   ///
   /// The result will contain all the changes that would have been applied by [run].
   @visibleForTesting
   Future<List<PrioritizedSourceChange>> testAnalyzeAndRun(
-    io.File file,
-    SourceRange target,
+    File file,
+    AnalysisError analysisError,
+    List<AnalysisError> others,
   ) async {
     final result = await resolveFile2(path: file.path);
     result as ResolvedUnitResult;
-    return testRun(result, target);
+    return testRun(result, analysisError, others);
   }
 }
