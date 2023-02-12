@@ -1,3 +1,8 @@
+## 0.2.7
+
+Extract `LintRule` and similar other utilities to a separate package: `custom_lint_core`.  
+`custom_lint_builder` re-exports `custom_lint_core`, so the utilities are still available.
+
 ## 0.2.6
 
 Fix infinite loop on InconsistentAnalysisException

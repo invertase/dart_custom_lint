@@ -1,3 +1,3 @@
-## Unreleased
+## 0.2.7
 
 Initial release
