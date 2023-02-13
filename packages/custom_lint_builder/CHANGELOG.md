@@ -1,3 +1,7 @@
+## 0.2.8
+
+Fix exception thrown by `TypeChecker.isExactlyType` if `DartType.element` is `null`.
+
 ## 0.2.7
 
 Extract `LintRule` and similar other utilities to a separate package: `custom_lint_core`.  

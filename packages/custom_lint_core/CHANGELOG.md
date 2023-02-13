@@ -1,4 +1,4 @@
-## Unreleased fix
+## 0.2.8
 
 Fix exception thrown by `TypeChecker.isExactlyType` if `DartType.element` is `null`.
 
