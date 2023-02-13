@@ -7,20 +7,32 @@ import Card from '@components/Card.astro';
 
 const cards = [
   {
-    name: 'Riverpod',
-    description: 'A Reactive Caching and Data-binding Framework',
-    link: 'https://riverpod.dev/',
+    name: 'Riverpod Lints',
+    description:
+      'a developper tool for users of Riverpod, designed to help stop common issue and simplify repetetive tasks.',
+    link: 'https://pub.dev/packages/riverpod_lint',
   },
   {
-    name: 'Supernova_lints',
+    name: 'Supernova Lints',
     description: 'Provides custom lint rules broadly used in supernova.io.',
     link: 'https://pub.dev/packages/supernova_lints',
   },
   {
-    name: 'Flutter-ReachFive',
+    name: 'Flutter ReachFive Lints',
     description:
       'This sdk is the flutter interface implementation of the android and ios sdks of ReachFive',
     link: 'https://pub.dev/packages/flutter_reach_five',
+  },
+  {
+    name: 'Equatable Lints',
+    description: 'This is a set of rules to make classes using Equatable more maintainable.',
+    link: 'https://pub.dev/packages/equatable_lint',
+  },
+  {
+    name: 'Hardcoded Strings',
+    description:
+      'Linter which notifies if the user is using hardcoded strings or invalid Ditto keys',
+    link: 'https://pub.dev/packages/hardcoded_strings',
   },
 ];
 ---
@@ -78,7 +90,7 @@ const cards = [
             </div>
             <div class="flex justify-center relative">
               <a
-                href="https://pub.dev/packages?q=dependency%3Acustom_lint+show%3Ahidden"
+                href="https://pub.dev/packages?q=dependency%3Acustom_lint_builder%2Ccustom_lint+show%3Ahidden"
                 class="btn-secondary dark:btn-third w-full max-w-xs lg:w-40 transform-gpu"
               >
                 View more
