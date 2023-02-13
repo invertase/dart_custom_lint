@@ -13,7 +13,12 @@ export interface Props {
   author?: string;
 }
 
-const { title = 'Dart Custom Lint', description = '', image = '', author = '' } = Astro.props;
+const {
+  title = 'Dart Custom Lint',
+  description = 'Build powerful Custom Lint rules for any dart & flutter package',
+  image = '/images/cover.jpg',
+  author = 'Invertase',
+} = Astro.props;
 ---
 
 <html>
@@ -34,7 +39,7 @@ const { title = 'Dart Custom Lint', description = '', image = '', author = '' } 
     <meta name="description" content={description} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content="https://pub.dev/packages/custom_lint" />
+    <meta property="og:url" content="https://custom-lint.dev/" />
     <meta property="og:image" content={image} />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
