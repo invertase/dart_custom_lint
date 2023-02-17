@@ -658,6 +658,8 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     // analyzeFiles reanalizes all files even if nothing changed by default.
     // We customize the behavior to optimize analysis to be performed only
     // if something changed
+    if (paths.isEmpty) return Future.value();
+    
     return super.analyzeFiles(
       analysisContext: analysisContext,
       paths: paths,
@@ -681,6 +683,10 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     required AnalysisContext analysisContext,
     required String path,
   }) async {
+    if(_client.fileList != null && !_client.fileList!.contains(path)) {
+      return;
+    }
+
     if (!analysisContext.contextRoot.isAnalyzed(path)) {
       return;
     }
