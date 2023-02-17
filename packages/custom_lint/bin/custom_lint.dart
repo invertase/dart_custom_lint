@@ -17,17 +17,6 @@ Future<void> entrypoint([List<String> args = const []]) async {
       abbr: 'h',
       negatable: false,
       help: 'Prints command usage',
-    )
-    ..addMultiOption(
-      'files',
-      abbr: 'f',
-      help: 'List of files to scan',
-    )
-    ..addMultiOption(
-      'dirs',
-      abbr: 'd',
-      help: 'List of directories to scan. '
-          'Will recursively run on all the files of these directories.',
     );
   final result = parser.parse(args);
 
@@ -38,30 +27,47 @@ Future<void> entrypoint([List<String> args = const []]) async {
     return;
   }
 
-  final fileList = result['files'] as List<String>;
-  final dirList = result['dirs'] as List<String>;
+  final restArgs = [...result.rest];
+
+  final fileList = <String>[];
   final watchMode = result['watch'] as bool;
 
-  for (var i = 0; i < fileList.length; i++) {
-    if (path.isRelative(fileList[i])) {
-      fileList[i] = path.absolute(fileList[i]);
+  // Coverting to absolute paths as the linter expects
+  for (var i = 0; i < restArgs.length; i++) {
+    if (path.isRelative(restArgs[i])) {
+      restArgs[i] = path.absolute(restArgs[i]);
     }
   }
 
-  for (var i = 0; i < dirList.length; i++) {
-    if (path.isRelative(dirList[i])) {
-      dirList[i] = path.absolute(dirList[i]);
+  // Populating fileList with all the files we can find
+  for (var i = 0; i < restArgs.length; i++) {
+    final pathStats = File(restArgs[i]).statSync();
+    if (pathStats.type == FileSystemEntityType.file) {
+      fileList.add(restArgs[i]);
+    } else {
+      final dir = Directory(restArgs[i]);
+      final fileEntities = dir.listSync(recursive: true);
+
+      for (final fileEntity in fileEntities) {
+        fileList.add(fileEntity.path);
+      }
     }
   }
 
-  for (final dirPath in dirList) {
-    final dir = Directory(dirPath);
-    final fileEntities = dir.listSync(recursive: true);
+  // for (var i = 0; i < dirList.length; i++) {
+  //   if (path.isRelative(dirList[i])) {
+  //     dirList[i] = path.absolute(dirList[i]);
+  //   }
+  // }
 
-    for (final fileEntity in fileEntities) {
-      fileList.add(fileEntity.path);
-    }
-  }
+  // for (final dirPath in dirList) {
+  //   final dir = Directory(dirPath);
+  //   final fileEntities = dir.listSync(recursive: true);
+
+  //   for (final fileEntity in fileEntities) {
+  //     fileList.add(fileEntity.path);
+  //   }
+  // }
 
   await customLint(
     workingDirectory: Directory.current,
