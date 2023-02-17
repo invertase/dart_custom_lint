@@ -33,6 +33,7 @@ q: Quit
 /// Watch mode cannot be enabled if in release mode.
 Future<void> customLint({
   bool watchMode = true,
+  required List<String>? workingFiles,
   required Directory workingDirectory,
 }) async {
   // Reset the code
@@ -46,9 +47,14 @@ Future<void> customLint({
     // rendered separately
     includeBuiltInLints: false,
     delegate: CommandCustomLintDelegate(),
+    fileList: workingFiles,
     (customLintServer) async {
-      final runner =
-          CustomLintRunner(customLintServer, workingDirectory, channel);
+      final runner = CustomLintRunner(
+        customLintServer,
+        workingDirectory,
+        workingFiles,
+        channel,
+      );
 
       try {
         await runner.initialize;

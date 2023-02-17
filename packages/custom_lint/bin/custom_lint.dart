@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:custom_lint/custom_lint.dart';
+import 'package:path/path.dart' as path;
 
 Future<void> entrypoint([List<String> args = const []]) async {
   final parser = ArgParser()
@@ -16,6 +17,17 @@ Future<void> entrypoint([List<String> args = const []]) async {
       abbr: 'h',
       negatable: false,
       help: 'Prints command usage',
+    )
+    ..addMultiOption(
+      'files',
+      abbr: 'f',
+      help: 'List of files to scan',
+    )
+    ..addMultiOption(
+      'dirs',
+      abbr: 'd',
+      help: 'List of directories to scan. '
+          'Will recursively run on all the files of these directories.',
     );
   final result = parser.parse(args);
 
@@ -26,9 +38,36 @@ Future<void> entrypoint([List<String> args = const []]) async {
     return;
   }
 
+  final fileList = result['files'] as List<String>;
+  final dirList = result['dirs'] as List<String>;
   final watchMode = result['watch'] as bool;
 
-  await customLint(workingDirectory: Directory.current, watchMode: watchMode);
+  for (var i = 0; i < fileList.length; i++) {
+    if (path.isRelative(fileList[i])) {
+      fileList[i] = path.absolute(fileList[i]);
+    }
+  }
+
+  for (var i = 0; i < dirList.length; i++) {
+    if (path.isRelative(dirList[i])) {
+      dirList[i] = path.absolute(dirList[i]);
+    }
+  }
+
+  for (final dirPath in dirList) {
+    final dir = Directory(dirPath);
+    final fileEntities = dir.listSync(recursive: true);
+
+    for (final fileEntity in fileEntities) {
+      fileList.add(fileEntity.path);
+    }
+  }
+
+  await customLint(
+    workingDirectory: Directory.current,
+    workingFiles: fileList.isEmpty ? null : fileList,
+    watchMode: watchMode,
+  );
 }
 
 void main([List<String> args = const []]) async {

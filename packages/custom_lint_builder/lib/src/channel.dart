@@ -54,6 +54,7 @@ Future<void> runSocket(
   Map<String, CreatePluginMain> pluginMains, {
   required int port,
   required bool watchMode,
+  required List<String>? fileList,
   required bool includeBuiltInLints,
 }) async {
   final client = Completer<CustomLintPluginClient>();
@@ -67,6 +68,7 @@ Future<void> runSocket(
       client.complete(
         CustomLintPluginClient(
           watchMode: watchMode,
+          fileList: fileList,
           includeBuiltInLints: includeBuiltInLints,
           _SocketCustomLintClientChannel(
             socketChannel,

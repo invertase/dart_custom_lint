@@ -212,6 +212,9 @@ class _SocketCustomLintServerToClientChannel
     final mainFile =
         File(join(_tempDirectory.path, 'lib', 'custom_lint_client.dart'));
     mainFile.createSync(recursive: true);
+
+    final transformedFileList = (_server.fileList?.map((e) => "'$e'"))?.toList();
+
     mainFile.writeAsStringSync('''
 import 'dart:convert';
 import 'dart:io';
@@ -224,6 +227,7 @@ void main(List<String> args) async {
   runSocket(
     port: port,
     watchMode: ${_server.watchMode},
+    fileList: $transformedFileList,
     includeBuiltInLints: ${_server.includeBuiltInLints},
     {$plugins},
   );

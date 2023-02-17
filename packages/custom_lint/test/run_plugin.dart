@@ -10,14 +10,16 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 Future<List<AnalysisErrorsParams>> runServerInCliModeForApp(
+  List<String>? fileList,
   Directory directory,
   // to ignoreErrors as we cannot explictly handle errors
 ) async {
-  final runner = startRunnerForApp(directory, includeBuiltInLints: false);
+  final runner = startRunnerForApp(fileList, directory, includeBuiltInLints: false);
   return runner.getLints(reload: false);
 }
 
 CustomLintRunner startRunnerForApp(
+  List<String>? fileList,
   Directory directory, {
   bool ignoreErrors = false,
   bool includeBuiltInLints = true,
@@ -31,8 +33,9 @@ CustomLintRunner startRunnerForApp(
     delegate: CommandCustomLintDelegate(),
     includeBuiltInLints: includeBuiltInLints,
     watchMode: false,
+    fileList: fileList,
     (customLintServer) {
-      final runner = CustomLintRunner(customLintServer, directory, channel);
+      final runner = CustomLintRunner(customLintServer, directory, fileList, channel);
       addTearDown(runner.close);
 
       if (!ignoreErrors) {

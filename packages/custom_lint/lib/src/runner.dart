@@ -18,12 +18,20 @@ const _analyzerPluginProtocolVersion = '1.0.0-alpha.0';
 /// A runner for programmatically interacting with a plugin.
 class CustomLintRunner {
   /// A runner for programmatically interacting with a plugin.
-  CustomLintRunner(this._server, this.workingDirectory, this.channel);
+  CustomLintRunner(
+    this._server,
+    this.workingDirectory,
+    this.workingFiles,
+    this.channel,
+  );
 
   // SendPort get sendPort => channel.receivePort.sendPort;
 
   /// The directory in which this command is exected in.
   final Directory workingDirectory;
+
+  /// List of directories, files to run the linter on
+  final List<String>? workingFiles;
 
   /// The connection between the server and the plugin.
   final ServerIsolateChannel channel;

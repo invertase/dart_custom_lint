@@ -85,6 +85,7 @@ class CustomLintPluginClient {
   /// The custom_lint client
   CustomLintPluginClient(
     this._channel, {
+    required this.fileList,
     required this.watchMode,
     required this.includeBuiltInLints,
   }) {
@@ -102,6 +103,9 @@ class CustomLintPluginClient {
 
   /// Whether the client should perform a hot-reload when the source of plugins changes.
   final bool watchMode;
+
+  /// List of files to lint
+  List<String>? fileList;
 
   /// Whether
   final bool includeBuiltInLints;
@@ -654,8 +658,6 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     // analyzeFiles reanalizes all files even if nothing changed by default.
     // We customize the behavior to optimize analysis to be performed only
     // if something changed
-    if (paths.isEmpty) return Future.value();
-
     return super.analyzeFiles(
       analysisContext: analysisContext,
       paths: paths,

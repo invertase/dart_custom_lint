@@ -25,6 +25,7 @@ class CustomLintServer {
     required this.watchMode,
     required this.includeBuiltInLints,
     required this.delegate,
+    required this.fileList,
   });
 
   /// Start the server while also capturing prints and errors.
@@ -34,6 +35,7 @@ class CustomLintServer {
     required bool watchMode,
     required bool includeBuiltInLints,
     required CustomLintDelegate delegate,
+    required List<String>? fileList,
   }) {
     late CustomLintServer server;
     final result = runZonedGuarded(
@@ -42,6 +44,7 @@ class CustomLintServer {
           watchMode: watchMode,
           includeBuiltInLints: includeBuiltInLints,
           delegate: delegate,
+          fileList: fileList,
         );
         server._start(sendPort);
 
@@ -71,6 +74,9 @@ class CustomLintServer {
 
   /// Whether plugins should include lints used for debugging.
   final bool includeBuiltInLints;
+
+  /// List of files to lint
+  final List<String>? fileList;
 
   late final StreamSubscription<void> _requestSubscription;
   final _versionCheck = Completer<PluginVersionCheckParams>();
