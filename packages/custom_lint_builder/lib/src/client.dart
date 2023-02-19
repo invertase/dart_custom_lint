@@ -659,7 +659,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     // We customize the behavior to optimize analysis to be performed only
     // if something changed
     if (paths.isEmpty) return Future.value();
-    
+
     return super.analyzeFiles(
       analysisContext: analysisContext,
       paths: paths,

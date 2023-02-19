@@ -54,21 +54,6 @@ Future<void> entrypoint([List<String> args = const []]) async {
     }
   }
 
-  // for (var i = 0; i < dirList.length; i++) {
-  //   if (path.isRelative(dirList[i])) {
-  //     dirList[i] = path.absolute(dirList[i]);
-  //   }
-  // }
-
-  // for (final dirPath in dirList) {
-  //   final dir = Directory(dirPath);
-  //   final fileEntities = dir.listSync(recursive: true);
-
-  //   for (final fileEntity in fileEntities) {
-  //     fileList.add(fileEntity.path);
-  //   }
-  // }
-
   await customLint(
     workingDirectory: Directory.current,
     workingFiles: fileList.isEmpty ? null : fileList,
