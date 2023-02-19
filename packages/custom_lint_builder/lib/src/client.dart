@@ -105,7 +105,7 @@ class CustomLintPluginClient {
   final bool watchMode;
 
   /// List of files to lint
-  List<String>? fileList;
+  final List<String>? fileList;
 
   /// Whether
   final bool includeBuiltInLints;

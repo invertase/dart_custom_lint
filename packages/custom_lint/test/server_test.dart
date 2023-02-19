@@ -29,7 +29,7 @@ void fn2() {}
       name: 'test_app',
     );
 
-    final lints = await runServerInCliModeForApp(null, app);
+    final lints = await runServerInCliModeForApp(app);
 
     expect(
       lints.map((e) => e.file),
@@ -118,7 +118,7 @@ void fn2() {}''',
       name: 'test_app',
     );
 
-    final lints = await runServerInCliModeForApp(null, app);
+    final lints = await runServerInCliModeForApp(app);
 
     expect(
       lints.map((e) => e.file),
@@ -165,7 +165,7 @@ void fn2() {}''',
       name: 'test_app',
     );
 
-    final lints = await runServerInCliModeForApp(null, app);
+    final lints = await runServerInCliModeForApp(app);
 
     expect(
       lints.map((e) => e.file),
@@ -213,7 +213,6 @@ if (node.name.lexeme == "fail") {
 
     await runWithIOOverride((out, err) async {
       final runner = startRunnerForApp(
-        null,
         app,
         // Ignoring errors as we are handling them later
         ignoreErrors: true,
@@ -294,7 +293,7 @@ if (node.name.lexeme == "fail") {
         name: 'test_app',
       );
 
-      final runner = startRunnerForApp(null, app);
+      final runner = startRunnerForApp(app);
 
       await expectLater(
         runner.channel.lints,
@@ -369,7 +368,7 @@ if (node.name.lexeme == "fail") {
       );
 
       await runWithIOOverride((out, err) async {
-        final runner = startRunnerForApp(null, app, ignoreErrors: true);
+        final runner = startRunnerForApp(app, ignoreErrors: true);
 
         await expectLater(
           runner.channel.lints,
