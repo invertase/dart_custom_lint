@@ -1,4 +1,4 @@
-## Unreleased fix
+## 0.2.10
 
 Fix `filesToAnalyze` only working on the file name instead of the file path.
 
