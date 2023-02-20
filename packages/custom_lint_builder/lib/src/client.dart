@@ -699,11 +699,18 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       if (fileIgnoredCodes.contains('type=lint')) return;
     }
 
-    final fileName = basename(path);
     final activeLintRules = configs.rules
         .where(
-          (lintRule) => lintRule.filesToAnalyze
-              .any((glob) => Glob(glob).matches(fileName)),
+          (lintRule) => lintRule.filesToAnalyze.any(
+            (glob) => Glob(
+              glob,
+              context: Context(
+                style: resourceProvider.pathContext.style,
+                // workaround to: https://github.com/dart-lang/glob/issues/72
+                current: analysisContext.contextRoot.root.path,
+              ),
+            ).matches(path),
+          ),
         )
         // Removing lints disabled for the file. No need to call LintRule.run
         // if they are going to immediately get ignored

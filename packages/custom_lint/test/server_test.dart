@@ -12,7 +12,65 @@ import 'matchers.dart';
 import 'mock_fs.dart';
 import 'run_plugin.dart';
 
+final lintRuleWithFilesToAnalayze = createPluginSource([
+  TestLintRule(
+    code: 'hello_world',
+    message: 'Hello world',
+    ruleMembers: '''
+@override
+List<String> get filesToAnalyze => const ['test/*_test.dart'];
+''',
+  )
+]);
+
 void main() {
+  test('List warnings for all files combined', () async {
+    final plugin = createPlugin(
+      name: 'test_lint',
+      main: lintRuleWithFilesToAnalayze,
+    );
+
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': '''
+void fn() {}
+''',
+        'test/another.dart': 'void fn() {}\n',
+        'test/another_test.dart': 'void fn() {}\n',
+      },
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    final rawLints = await runServerInCliModeForApp(app);
+    final lints = rawLints.where((e) => e.errors.isNotEmpty).toList();
+
+    expect(
+      lints.map((e) => e.file),
+      [join(app.path, 'test', 'another_test.dart')],
+    );
+
+    expect(
+      lints.single.errors.single,
+      isA<AnalysisError>()
+          .having((e) => e.code, 'code', 'hello_world')
+          .having(
+            (e) => e.location,
+            'location',
+            Location(
+              join(app.path, 'test', 'another_test.dart'),
+              5,
+              2,
+              1,
+              6,
+              endLine: 1,
+              endColumn: 8,
+            ),
+          )
+          .having((e) => e.message, 'message', 'Hello world'),
+    );
+  });
+
   test('List warnings for all files combined', () async {
     final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
 

@@ -1,3 +1,7 @@
+## Unreleased fix
+
+Update `fileToAnalyze` from `*.dart` to `**.dart` to match the `fileToAnalyze` fix in `custom_lint_builder`
+
 ## 0.2.9
 
 Fix `TypeChecker.fromPackage` not always return `true` when it should
