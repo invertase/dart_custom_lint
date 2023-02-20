@@ -60,7 +60,7 @@ abstract class DartAssist extends Assist {
   static final _stateKey = Object();
 
   @override
-  List<String> get filesToAnalyze => const ['*.dart'];
+  List<String> get filesToAnalyze => const ['**.dart'];
 
   @override
   Future<void> startUp(

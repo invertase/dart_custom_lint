@@ -224,7 +224,7 @@ lib/custom_lint_client.dart:16:26: Error: Undefined name 'createPlugin'.
             contains('''
 Plugin hello_world threw while analyzing ${app.path}/lib/another.dart:
 Bad state: fail
-#0      hello_world.run.<anonymous closure> (package:test_lint/test_lint.dart:25:8)
+#0      hello_world.run.<anonymous closure> (package:test_lint/test_lint.dart:27:8)
 '''),
           ),
         );
