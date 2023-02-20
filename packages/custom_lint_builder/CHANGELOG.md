@@ -1,3 +1,7 @@
+## Unreleased fix
+
+Fix `filesToAnalyze` only working on the file name instead of the file path.
+
 ## 0.2.9
 
 Fix `TypeChecker.fromPackage` not always return `true` when it should

@@ -27,12 +27,14 @@ class TestLintRule {
     required this.message,
     this.onRun = '',
     this.onVariable = '',
+    this.ruleMembers = '',
   });
 
   final String code;
   final String message;
   final String onRun;
   final String onVariable;
+  final String ruleMembers;
 }
 
 String createPluginSource(List<TestLintRule> rules) {
@@ -61,6 +63,8 @@ class ${rule.code} extends DartLintRule {
     : super(
         code: LintCode(name: '${rule.code}', problemMessage: '${rule.message}'),
       );
+
+  ${rule.ruleMembers}
 
   @override
   void run(CustomLintResolver resolver, ErrorReporter reporter, CustomLintContext context) {
