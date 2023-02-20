@@ -1,4 +1,4 @@
-## Unreleased fix
+## 0.2.10
 
 Update `fileToAnalyze` from `*.dart` to `**.dart` to match the `fileToAnalyze` fix in `custom_lint_builder`
 
