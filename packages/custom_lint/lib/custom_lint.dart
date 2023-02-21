@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-import 'package:path/path.dart' as p;
+import 'package:cli_util/cli_logging.dart';
 
+import 'src/output.dart';
 import 'src/plugin_delegate.dart';
 import 'src/runner.dart';
 import 'src/server_isolate_channel.dart';
@@ -33,6 +33,7 @@ q: Quit
 /// Watch mode cannot be enabled if in release mode.
 Future<void> customLint({
   bool watchMode = true,
+  String format = 'default',
   required Directory workingDirectory,
 }) async {
   // Reset the code
@@ -47,8 +48,7 @@ Future<void> customLint({
     includeBuiltInLints: false,
     delegate: CommandCustomLintDelegate(),
     (customLintServer) async {
-      final runner =
-          CustomLintRunner(customLintServer, workingDirectory, channel);
+      final runner = CustomLintRunner(customLintServer, workingDirectory, channel, format);
 
       try {
         await runner.initialize;
@@ -70,6 +70,11 @@ Future<void> _runPlugins(
   CustomLintRunner runner, {
   required bool reload,
 }) async {
+  final ansi = Ansi(Ansi.terminalSupportsAnsi);
+  final log = Logger.standard(ansi: ansi);
+
+  log.progress('Analyzing');
+
   try {
     final lints = await runner.getLints(reload: reload);
 
@@ -77,51 +82,15 @@ Future<void> _runPlugins(
       exitCode = 1;
     }
 
-    _renderLints(lints, workingDirectory: runner.workingDirectory);
+    renderLints(
+      log,
+      lints,
+      workingDirectory: runner.workingDirectory,
+      format: runner.format,
+    );
   } catch (err, stack) {
     exitCode = 1;
-    stderr.writeln('$err\n$stack');
-  }
-
-  // Since no problem happened, we print a message saying everything went well
-  if (exitCode == 0) {
-    stdout.writeln('No issues found!');
-  }
-}
-
-void _renderLints(
-  List<AnalysisErrorsParams> lints, {
-  required Directory workingDirectory,
-}) {
-  lints.sort(
-    (a, b) => a
-        .relativeFilePath(workingDirectory)
-        .compareTo(b.relativeFilePath(workingDirectory)),
-  );
-
-  for (final lintsForFile in lints) {
-    final relativeFilePath = lintsForFile.relativeFilePath(workingDirectory);
-
-    lintsForFile.errors.sort((a, b) {
-      final lineCompare = a.location.startLine.compareTo(b.location.startLine);
-      if (lineCompare != 0) return lineCompare;
-      final columnCompare =
-          a.location.startColumn.compareTo(b.location.startColumn);
-      if (columnCompare != 0) return columnCompare;
-
-      final codeCompare = a.code.compareTo(b.code);
-      if (codeCompare != 0) return codeCompare;
-
-      return a.message.compareTo(b.message);
-    });
-
-    for (final lint in lintsForFile.errors) {
-      exitCode = 1;
-      stdout.writeln(
-        '  $relativeFilePath:${lint.location.startLine}:${lint.location.startColumn}'
-        ' • ${lint.message} • ${lint.code}',
-      );
-    }
+    log.stderr('$err\n$stack');
   }
 }
 
@@ -151,14 +120,5 @@ Future<void> _startWatchMode(CustomLintRunner runner) async {
       default:
       // Unknown command. Nothing to do
     }
-  }
-}
-
-extension on AnalysisErrorsParams {
-  String relativeFilePath(Directory dir) {
-    return p.relative(
-      file,
-      from: dir.path,
-    );
   }
 }

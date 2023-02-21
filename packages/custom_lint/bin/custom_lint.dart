@@ -16,6 +16,18 @@ Future<void> entrypoint([List<String> args = const []]) async {
       abbr: 'h',
       negatable: false,
       help: 'Prints command usage',
+    )
+    ..addOption(
+      'format',
+      valueHelp: 'value',
+      help: 'Specifies the format to display errors.',
+      allowed: ['default', 'json'],
+      allowedHelp: {
+        'default': 'The default output format. This format is intended to be user '
+            'consumable.\nThe format is not specified and can change '
+            'between releases.',
+        'json': 'A machine readable output in a JSON format.',
+      },
     );
   final result = parser.parse(args);
 
@@ -27,8 +39,13 @@ Future<void> entrypoint([List<String> args = const []]) async {
   }
 
   final watchMode = result['watch'] as bool;
+  final format = (result['format'] as String?) ?? 'default';
 
-  await customLint(workingDirectory: Directory.current, watchMode: watchMode);
+  await customLint(
+    workingDirectory: Directory.current,
+    watchMode: watchMode,
+    format: format,
+  );
 }
 
 void main([List<String> args = const []]) async {
