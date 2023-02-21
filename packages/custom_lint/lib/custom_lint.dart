@@ -140,7 +140,7 @@ Future<void> _startWatchMode(CustomLintRunner runner) async {
   await for (final input in stdin.transform(utf8.decoder)) {
     switch (input) {
       case 'r':
-        // Reruning lints
+        // Rerunning lints
         stdout.writeln('Manual Reload...');
         await _runPlugins(runner, reload: true);
         break;
