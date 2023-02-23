@@ -145,7 +145,7 @@ class CustomLintPluginClient {
   Future<void> _handleCustomLintRequest(CustomLintRequest request) async {
     try {
       final response = await request.map<FutureOr<CustomLintResponse?>>(
-        // Analayzer_plugin requests are handles by the _analyzer_plugin client
+        // Analyzer_plugin requests are handles by the _analyzer_plugin client
         analyzerPluginRequest: (_) => null,
         ping: (param) => CustomLintResponse.pong(id: request.id),
         awaitAnalysisDone: (param) async {
@@ -219,7 +219,7 @@ class CustomLintPluginClient {
     _channel.sendEvent(CustomLintEvent.print(message, pluginName: null));
   }
 
-  Future<void> _handlePlugingShutdown() async {
+  Future<void> _handlePluginShutdown() async {
     await Future.wait<void>([
       _channelInputSub.cancel(),
       _hotReloader.catchError((_) => null).then((value) => value?.stop()),
@@ -651,7 +651,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     required AnalysisContext analysisContext,
     required List<String> paths,
   }) {
-    // analyzeFiles reanalizes all files even if nothing changed by default.
+    // analyzeFiles reanalyzes all files even if nothing changed by default.
     // We customize the behavior to optimize analysis to be performed only
     // if something changed
     if (paths.isEmpty) return Future.value();
@@ -685,7 +685,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
 
     /// analyzeFile might be invoked with an analysisContext that's not
     /// part of the enabled context roots. So we separately check that `path`
-    /// is something we want to analize
+    /// is something we want to analyze
     if (!_ownsPath(path)) return;
 
     final configs = _customLintConfigsForAnalysisContexts[analysisContext];
@@ -939,7 +939,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   Future<PluginShutdownResult> handlePluginShutdown(
     PluginShutdownParams parameters,
   ) async {
-    await _client._handlePlugingShutdown();
+    await _client._handlePluginShutdown();
     return super.handlePluginShutdown(parameters);
   }
 }
