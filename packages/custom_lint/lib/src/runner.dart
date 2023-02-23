@@ -22,7 +22,7 @@ class CustomLintRunner {
 
   // SendPort get sendPort => channel.receivePort.sendPort;
 
-  /// The directory in which this command is exected in.
+  /// The directory in which this command is executed in.
   final Directory workingDirectory;
 
   /// The connection between the server and the plugin.
