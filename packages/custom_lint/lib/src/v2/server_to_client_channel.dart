@@ -16,9 +16,22 @@ import '../plugin.dart';
 import 'custom_lint_analyzer_plugin.dart';
 import 'protocol.dart';
 
+class _PackageAndContextRoot {
+  const _PackageAndContextRoot(this.package, this.contextRoot);
+
+  final Package package;
+  final ContextRoot contextRoot;
+}
+
+class _PackageAndContextRootPair {
+  const _PackageAndContextRootPair(this.first, this.second);
+
+  final _PackageAndContextRoot first;
+  final _PackageAndContextRoot second;
+}
+
 Future<int> _findPossiblyUnusedPort() {
-  return _SocketCustomLintServerToClientChannel._createServerSocket()
-      .then((value) => value.port);
+  return _SocketCustomLintServerToClientChannel._createServerSocket().then((value) => value.port);
 }
 
 Future<T> _asyncRetry<T>(
@@ -51,7 +64,8 @@ void _writePackageConfigForTempProject(
     join(tempDirectory.path, '.dart_tool', 'package_config.json'),
   );
 
-  final packageMap = <String, Package>{};
+  final packageMap = <String, _PackageAndContextRoot>{};
+  final packagesInMultipleContextRoots = <_PackageAndContextRootPair>[];
   for (final contextRoot in contextRoots) {
     final contextRootPackageConfigUri = Uri.file(
       join(contextRoot.root, '.dart_tool', 'package_config.json'),
@@ -80,7 +94,6 @@ void _writePackageConfigForTempProject(
       pubspecContent,
       sourceUrl: contextRootPubspecFile.uri,
     );
-
     for (final package in packageConfig.packages) {
       if (package.name == pubspec.name) {
         // Don't include the project that has a plugin enabled in the list
@@ -90,24 +103,42 @@ void _writePackageConfigForTempProject(
         continue;
       }
 
-      final currentPackage = packageMap[package.name];
+      final currentPackageWithContextRoot = packageMap[package.name];
+      final currentPackage = currentPackageWithContextRoot?.package;
 
       if (currentPackage != null && currentPackage.root != package.root) {
-        throw StateError(
-          '''
-Two ContextRoots depend on ${package.name} but use different version,
-therefore custom_lint does not know which one to pick.
-- ${package.root}
-- ${currentPackage.root}
-''',
+        packagesInMultipleContextRoots.add(
+          _PackageAndContextRootPair(
+            currentPackageWithContextRoot!,
+            _PackageAndContextRoot(package, contextRoot),
+          ),
         );
       }
 
-      packageMap[package.name] = package;
+      packageMap[package.name] = _PackageAndContextRoot(package, contextRoot);
     }
+  }
+  if (packagesInMultipleContextRoots.isNotEmpty) {
+    throw StateError(
+      'The following packages are included in multiple ContextRoots:\n'
+      '${[
+        for (final pair in packagesInMultipleContextRoots)
+          '- ${pair.first.package.name}\n'
+              '  -- ContextRoot: ${pair.first.contextRoot.root}\n'
+              '     ${pair.first.package.root}\n'
+              '  -- ContextRoot: ${pair.second.contextRoot.root}\n'
+              '     ${pair.second.package.root}\n\n'
+      ].join()}'
+      'This is not supported.',
+    );
   }
 
   targetFile.createSync(recursive: true);
+
+  final mappedPackageMap = {
+    for(final entry in packageMap.entries)
+      entry.key: entry.value.package,
+  };
 
   targetFile.writeAsStringSync(
     jsonEncode(<String, Object?>{
@@ -116,7 +147,7 @@ therefore custom_lint does not know which one to pick.
       'generator': 'custom_lint',
       'generatorVersion': '0.0.1',
       'packages': <Object?>[
-        for (final package in packageMap.values)
+        for (final package in mappedPackageMap.values)
           <String, String>{
             'name': package.name,
             // This is somehow enough to change relative paths into absolute ones.
@@ -132,8 +163,7 @@ therefore custom_lint does not know which one to pick.
   );
 }
 
-class _SocketCustomLintServerToClientChannel
-    implements CustomLintServerToClientChannel {
+class _SocketCustomLintServerToClientChannel implements CustomLintServerToClientChannel {
   _SocketCustomLintServerToClientChannel(
     this._server,
     this._version,
@@ -199,18 +229,14 @@ class _SocketCustomLintServerToClientChannel
     final imports = _packages
         .map((e) => e.name)
         .map(
-          (packageName) =>
-              "import 'package:$packageName/$packageName.dart' as $packageName;\n",
+          (packageName) => "import 'package:$packageName/$packageName.dart' as $packageName;\n",
         )
         .join();
 
-    final plugins = _packages
-        .map((e) => e.name)
-        .map((packageName) => "'$packageName': $packageName.createPlugin,\n")
-        .join();
+    final plugins =
+        _packages.map((e) => e.name).map((packageName) => "'$packageName': $packageName.createPlugin,\n").join();
 
-    final mainFile =
-        File(join(_tempDirectory.path, 'lib', 'custom_lint_client.dart'));
+    final mainFile = File(join(_tempDirectory.path, 'lib', 'custom_lint_client.dart'));
     mainFile.createSync(recursive: true);
     mainFile.writeAsStringSync('''
 import 'dart:convert';
@@ -232,8 +258,7 @@ void main(List<String> args) async {
   }
 
   void _writePubspec() {
-    final dependencies =
-        _packages.map((package) => '  ${package.name}: any').join();
+    final dependencies = _packages.map((package) => '  ${package.name}: any').join();
 
     final pubspecFile = File(join(_tempDirectory.path, 'pubspec.yaml'));
     pubspecFile.createSync(recursive: true);
@@ -293,9 +318,7 @@ $dependencies
     }
 
     out.listen((event) => _server.handlePrint(event, isClientMessage: true));
-    process.stderr
-        .map(utf8.decode)
-        .listen((e) => _server.handleUncaughtError(e, StackTrace.empty));
+    process.stderr.map(utf8.decode).listen((e) => _server.handleUncaughtError(e, StackTrace.empty));
 
     // Checking process failure _after_ piping stdout/stderr to the log files.
     // This is so that if client failed to boot, logs in it should still be available
@@ -324,9 +347,7 @@ $dependencies
           );
 
           _server.analyzerPluginClientChannel.sendJson(
-            PluginErrorParams(true, 'Failed to start plugins', '')
-                .toNotification()
-                .toJson(),
+            PluginErrorParams(true, 'Failed to start plugins', '').toNotification().toJson(),
           );
 
           throw StateError('Failed to start the plugins.');
