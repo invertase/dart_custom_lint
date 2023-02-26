@@ -81,7 +81,8 @@ class ConflictingPackagesChecker {
         }
         return '- ${package.name} $version\n';
       }).join();
-      final locationName = contextRoot.root.split('/').last;
+      final pubspec = _contextRootPubspecMap[contextRoot]!;
+      final locationName = pubspec.name;
       return '$locationName at ${contextRoot.root}\n'
           '$conflictingPackagesMessage'
           '\n';
