@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:async/async.dart';
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -16,23 +17,66 @@ import '../plugin.dart';
 import 'custom_lint_analyzer_plugin.dart';
 import 'protocol.dart';
 
-class _PackageAndContextRoot {
-  const _PackageAndContextRoot(this.package, this.contextRoot);
+/// A class that checks if there are conflicting packages in the context roots.
+@visibleForTesting
+class ConflictingPackagesChecker {
+  final _contextRootPackagesMap = <ContextRoot, List<Package>>{};
 
-  final Package package;
-  final ContextRoot contextRoot;
-}
+  /// Adds a [contextRoot] and its [packages] to the checker.
+  void addContextRoot(ContextRoot contextRoot, List<Package> packages) {
+    _contextRootPackagesMap[contextRoot] = packages;
+  }
 
-class _PackageAndContextRootPair {
-  const _PackageAndContextRootPair(this.first, this.second);
+  /// Throws an error if there are conflicting packages.
+  void throwErrorIfMultiplePackageVersion() {
+    final packageNameRootMap = <String, Set<Uri>>{};
+    // Group packages by name and collect all unique roots,
+    // since we're using a set
+    for (final packages in _contextRootPackagesMap.values) {
+      for (final package in packages) {
+        final rootSet = packageNameRootMap[package.name] ?? {};
+        packageNameRootMap[package.name] = {...rootSet, package.root};
+      }
+    }
+    // Find packages with more than one root
+    final packagesWithConflictingVersions = packageNameRootMap.entries
+        .where(
+          (entry) => entry.value.length > 1,
+        )
+        .toList();
 
-  final _PackageAndContextRoot first;
-  final _PackageAndContextRoot second;
+    // If there are no conflicting versions, return
+    if (packagesWithConflictingVersions.isEmpty) return;
+
+    final packageMessages = packagesWithConflictingVersions.map((mapEntry) {
+      final packageName = mapEntry.key;
+      final packageRoots = mapEntry.value;
+      // for each packageRoot, find the contextRoots that use it
+      final packageRootsString = packageRoots.map((packageRoot) {
+        final contextRoots = _contextRootPackagesMap.entries
+            .where((element) => element.value.any((package) => package.root == packageRoot))
+            .map((e) => e.key)
+            .toList();
+        final packageVersion = packageRoot.pathSegments[packageRoot.pathSegments.length - 2];
+        return '    -- $packageVersion used in:\n'
+            '${contextRoots.map((c) => '      --- ${c.root}\n').join()}';
+      }).join();
+
+      return '- $packageName\n'
+          '$packageRootsString';
+    }).join('\n');
+
+    throw StateError(
+      'Some packages have conflicting versions:\n'
+      '$packageMessages\n'
+      'This is not supported. Please make sure all packages have the same version.\n'
+      'You could try running `flutter pub upgrade` in the affected directories.',
+    );
+  }
 }
 
 Future<int> _findPossiblyUnusedPort() {
-  return _SocketCustomLintServerToClientChannel._createServerSocket()
-      .then((value) => value.port);
+  return _SocketCustomLintServerToClientChannel._createServerSocket().then((value) => value.port);
 }
 
 Future<T> _asyncRetry<T>(
@@ -65,8 +109,8 @@ void _writePackageConfigForTempProject(
     join(tempDirectory.path, '.dart_tool', 'package_config.json'),
   );
 
-  final packageMap = <String, _PackageAndContextRoot>{};
-  final packagesInMultipleContextRoots = <_PackageAndContextRootPair>[];
+  final packageMap = <String, Package>{};
+  final conflictingPackagesChecker = ConflictingPackagesChecker();
   for (final contextRoot in contextRoots) {
     final contextRootPackageConfigUri = Uri.file(
       join(contextRoot.root, '.dart_tool', 'package_config.json'),
@@ -95,50 +139,30 @@ void _writePackageConfigForTempProject(
       pubspecContent,
       sourceUrl: contextRootPubspecFile.uri,
     );
-    for (final package in packageConfig.packages) {
-      if (package.name == pubspec.name) {
+    final validPackages = [
+      for (final package in packageConfig.packages)
         // Don't include the project that has a plugin enabled in the list
         // of dependencies of the plugin.
         // This avoids the plugin from being hot-reloaded when the analyzed
         // code changes.
-        continue;
-      }
+        if (package.name != pubspec.name) package
+    ];
 
-      final currentPackageWithContextRoot = packageMap[package.name];
-      final currentPackage = currentPackageWithContextRoot?.package;
+    // Add the contextRoot and its packages to the conflicting packages checker
+    conflictingPackagesChecker.addContextRoot(
+      contextRoot,
+      validPackages,
+    );
 
-      if (currentPackage != null && currentPackage.root != package.root) {
-        packagesInMultipleContextRoots.add(
-          _PackageAndContextRootPair(
-            currentPackageWithContextRoot!,
-            _PackageAndContextRoot(package, contextRoot),
-          ),
-        );
-      }
-
-      packageMap[package.name] = _PackageAndContextRoot(package, contextRoot);
+    for (final package in validPackages) {
+      packageMap[package.name] = package;
     }
   }
-  if (packagesInMultipleContextRoots.isNotEmpty) {
-    throw StateError(
-      'The following packages are included in multiple ContextRoots:\n'
-      '${[
-        for (final pair in packagesInMultipleContextRoots)
-          '- ${pair.first.package.name}\n'
-              '  -- ContextRoot: ${pair.first.contextRoot.root}\n'
-              '     ${pair.first.package.root}\n'
-              '  -- ContextRoot: ${pair.second.contextRoot.root}\n'
-              '     ${pair.second.package.root}\n\n'
-      ].join()}'
-      'This is not supported.',
-    );
-  }
+
+  // Check if there are conflicting packages
+  conflictingPackagesChecker.throwErrorIfMultiplePackageVersion();
 
   targetFile.createSync(recursive: true);
-
-  final mappedPackageMap = {
-    for (final entry in packageMap.entries) entry.key: entry.value.package,
-  };
 
   targetFile.writeAsStringSync(
     jsonEncode(<String, Object?>{
@@ -147,7 +171,7 @@ void _writePackageConfigForTempProject(
       'generator': 'custom_lint',
       'generatorVersion': '0.0.1',
       'packages': <Object?>[
-        for (final package in mappedPackageMap.values)
+        for (final package in packageMap.values)
           <String, String>{
             'name': package.name,
             // This is somehow enough to change relative paths into absolute ones.
@@ -163,8 +187,7 @@ void _writePackageConfigForTempProject(
   );
 }
 
-class _SocketCustomLintServerToClientChannel
-    implements CustomLintServerToClientChannel {
+class _SocketCustomLintServerToClientChannel implements CustomLintServerToClientChannel {
   _SocketCustomLintServerToClientChannel(
     this._server,
     this._version,
@@ -230,18 +253,14 @@ class _SocketCustomLintServerToClientChannel
     final imports = _packages
         .map((e) => e.name)
         .map(
-          (packageName) =>
-              "import 'package:$packageName/$packageName.dart' as $packageName;\n",
+          (packageName) => "import 'package:$packageName/$packageName.dart' as $packageName;\n",
         )
         .join();
 
-    final plugins = _packages
-        .map((e) => e.name)
-        .map((packageName) => "'$packageName': $packageName.createPlugin,\n")
-        .join();
+    final plugins =
+        _packages.map((e) => e.name).map((packageName) => "'$packageName': $packageName.createPlugin,\n").join();
 
-    final mainFile =
-        File(join(_tempDirectory.path, 'lib', 'custom_lint_client.dart'));
+    final mainFile = File(join(_tempDirectory.path, 'lib', 'custom_lint_client.dart'));
     mainFile.createSync(recursive: true);
     mainFile.writeAsStringSync('''
 import 'dart:convert';
@@ -263,8 +282,7 @@ void main(List<String> args) async {
   }
 
   void _writePubspec() {
-    final dependencies =
-        _packages.map((package) => '  ${package.name}: any').join();
+    final dependencies = _packages.map((package) => '  ${package.name}: any').join();
 
     final pubspecFile = File(join(_tempDirectory.path, 'pubspec.yaml'));
     pubspecFile.createSync(recursive: true);
@@ -324,9 +342,7 @@ $dependencies
     }
 
     out.listen((event) => _server.handlePrint(event, isClientMessage: true));
-    process.stderr
-        .map(utf8.decode)
-        .listen((e) => _server.handleUncaughtError(e, StackTrace.empty));
+    process.stderr.map(utf8.decode).listen((e) => _server.handleUncaughtError(e, StackTrace.empty));
 
     // Checking process failure _after_ piping stdout/stderr to the log files.
     // This is so that if client failed to boot, logs in it should still be available
@@ -355,9 +371,7 @@ $dependencies
           );
 
           _server.analyzerPluginClientChannel.sendJson(
-            PluginErrorParams(true, 'Failed to start plugins', '')
-                .toNotification()
-                .toJson(),
+            PluginErrorParams(true, 'Failed to start plugins', '').toNotification().toJson(),
           );
 
           throw StateError('Failed to start the plugins.');
