@@ -54,10 +54,12 @@ class ConflictingPackagesChecker {
       // for each packageRoot, find the contextRoots that use it
       final packageRootsString = packageRoots.map((packageRoot) {
         final contextRoots = _contextRootPackagesMap.entries
-            .where((element) => element.value.any((package) => package.root == packageRoot))
+            .where((element) =>
+                element.value.any((package) => package.root == packageRoot))
             .map((e) => e.key)
             .toList();
-        final packageVersion = packageRoot.pathSegments[packageRoot.pathSegments.length - 2];
+        final packageVersion =
+            packageRoot.pathSegments[packageRoot.pathSegments.length - 2];
         return '    -- $packageVersion used in:\n'
             '${contextRoots.map((c) => '      --- ${c.root}\n').join()}';
       }).join();
@@ -76,7 +78,8 @@ class ConflictingPackagesChecker {
 }
 
 Future<int> _findPossiblyUnusedPort() {
-  return _SocketCustomLintServerToClientChannel._createServerSocket().then((value) => value.port);
+  return _SocketCustomLintServerToClientChannel._createServerSocket()
+      .then((value) => value.port);
 }
 
 Future<T> _asyncRetry<T>(
@@ -187,7 +190,8 @@ void _writePackageConfigForTempProject(
   );
 }
 
-class _SocketCustomLintServerToClientChannel implements CustomLintServerToClientChannel {
+class _SocketCustomLintServerToClientChannel
+    implements CustomLintServerToClientChannel {
   _SocketCustomLintServerToClientChannel(
     this._server,
     this._version,
@@ -253,14 +257,18 @@ class _SocketCustomLintServerToClientChannel implements CustomLintServerToClient
     final imports = _packages
         .map((e) => e.name)
         .map(
-          (packageName) => "import 'package:$packageName/$packageName.dart' as $packageName;\n",
+          (packageName) =>
+              "import 'package:$packageName/$packageName.dart' as $packageName;\n",
         )
         .join();
 
-    final plugins =
-        _packages.map((e) => e.name).map((packageName) => "'$packageName': $packageName.createPlugin,\n").join();
+    final plugins = _packages
+        .map((e) => e.name)
+        .map((packageName) => "'$packageName': $packageName.createPlugin,\n")
+        .join();
 
-    final mainFile = File(join(_tempDirectory.path, 'lib', 'custom_lint_client.dart'));
+    final mainFile =
+        File(join(_tempDirectory.path, 'lib', 'custom_lint_client.dart'));
     mainFile.createSync(recursive: true);
     mainFile.writeAsStringSync('''
 import 'dart:convert';
@@ -282,7 +290,8 @@ void main(List<String> args) async {
   }
 
   void _writePubspec() {
-    final dependencies = _packages.map((package) => '  ${package.name}: any').join();
+    final dependencies =
+        _packages.map((package) => '  ${package.name}: any').join();
 
     final pubspecFile = File(join(_tempDirectory.path, 'pubspec.yaml'));
     pubspecFile.createSync(recursive: true);
@@ -342,7 +351,9 @@ $dependencies
     }
 
     out.listen((event) => _server.handlePrint(event, isClientMessage: true));
-    process.stderr.map(utf8.decode).listen((e) => _server.handleUncaughtError(e, StackTrace.empty));
+    process.stderr
+        .map(utf8.decode)
+        .listen((e) => _server.handleUncaughtError(e, StackTrace.empty));
 
     // Checking process failure _after_ piping stdout/stderr to the log files.
     // This is so that if client failed to boot, logs in it should still be available
@@ -371,7 +382,9 @@ $dependencies
           );
 
           _server.analyzerPluginClientChannel.sendJson(
-            PluginErrorParams(true, 'Failed to start plugins', '').toNotification().toJson(),
+            PluginErrorParams(true, 'Failed to start plugins', '')
+                .toNotification()
+                .toJson(),
           );
 
           throw StateError('Failed to start the plugins.');
