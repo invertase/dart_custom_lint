@@ -21,10 +21,18 @@ import 'protocol.dart';
 @visibleForTesting
 class ConflictingPackagesChecker {
   final _contextRootPackagesMap = <ContextRoot, List<Package>>{};
+  final _contextRootPubspecMap = <ContextRoot, Pubspec>{};
 
   /// Adds a [contextRoot] and its [packages] to the checker.
-  void addContextRoot(ContextRoot contextRoot, List<Package> packages) {
+  /// We need to pass the [pubspec] to check if the package is a git dependency
+  /// and to check if the context root is a flutter package.
+  void addContextRoot(
+    ContextRoot contextRoot,
+    List<Package> packages,
+    Pubspec pubspec,
+  ) {
     _contextRootPackagesMap[contextRoot] = packages;
+    _contextRootPubspecMap[contextRoot] = pubspec;
   }
 
   /// Throws an error if there are conflicting packages.
@@ -43,37 +51,109 @@ class ConflictingPackagesChecker {
         .where(
           (entry) => entry.value.length > 1,
         )
+        .map((e) => e.key)
         .toList();
 
     // If there are no conflicting versions, return
     if (packagesWithConflictingVersions.isEmpty) return;
 
-    final packageMessages = packagesWithConflictingVersions.map((mapEntry) {
-      final packageName = mapEntry.key;
-      final packageRoots = mapEntry.value;
-      // for each packageRoot, find the contextRoots that use it
-      final packageRootsString = packageRoots.map((packageRoot) {
-        final contextRoots = _contextRootPackagesMap.entries
-            .where((element) =>
-                element.value.any((package) => package.root == packageRoot))
-            .map((e) => e.key)
-            .toList();
-        final packageVersion =
-            packageRoot.pathSegments[packageRoot.pathSegments.length - 2];
-        return '    -- $packageVersion used in:\n'
-            '${contextRoots.map((c) => '      --- ${c.root}\n').join()}';
-      }).join();
+    final contextRootConflictingPackages =
+        _contextRootPackagesMap.map((contextRoot, packages) {
+      final conflictingPackages = packages.where(
+        (package) => packagesWithConflictingVersions.contains(package.name),
+      );
+      return MapEntry(contextRoot, conflictingPackages);
+    });
 
-      return '- $packageName\n'
-          '$packageRootsString';
+    final contextRootMessage =
+        contextRootConflictingPackages.entries.map((entry) {
+      final contextRoot = entry.key;
+      final conflictingPackages = entry.value;
+      final conflictingPackagesMessage = conflictingPackages.map((package) {
+        final String version;
+        if (_isGitDependency(package)) {
+          final pubspec = _contextRootPubspecMap[contextRoot]!;
+          version = _buildGitPackageVersion(package, pubspec);
+        } else if (_isHostedDependency(package)) {
+          version = _buildHostedPackageVersion(package);
+        } else {
+          version = 'from path ${package.root.path}';
+        }
+        return '- ${package.name} $version\n';
+      }).join();
+      final locationName = contextRoot.root.split('/').last;
+      return '$locationName at ${contextRoot.root}\n'
+          '$conflictingPackagesMessage'
+          '\n';
+    }).join();
+
+    final fixCommands = contextRootConflictingPackages.entries.map((entry) {
+      final contextRoot = entry.key;
+      final pubspec = _contextRootPubspecMap[contextRoot]!;
+      final isFlutter = pubspec.dependencies.containsKey('flutter');
+      final flutterText = isFlutter ? 'flutter ' : '';
+
+      final conflictingPackages = entry.value;
+      final conflictingPackagesNames =
+          conflictingPackages.map((package) => package.name).join(' ');
+      return 'cd ${contextRoot.root}\n'
+          '${flutterText}pub upgrade $conflictingPackagesNames';
     }).join('\n');
 
     throw StateError(
-      'Some packages have conflicting versions:\n'
-      '$packageMessages\n'
-      'This is not supported. Please make sure all packages have the same version.\n'
-      'You could try running `flutter pub upgrade` in the affected directories.',
+      'Some dependencies with conflicting versions were identified:\n'
+      '\n'
+      '$contextRootMessage'
+      'This is not supported. Custom_lint shares the analysis between all'
+      ' packages. As such, all plugins are started under a single process,'
+      ' sharing the dependencies of all the packages that use custom_lint. '
+      "Since there's a single process for all plugins, if 2 plugins try to"
+      ' use different versions for a dependency, the process cannot be '
+      'reasonably started. Please make sure all packages have the same version.\n'
+      'You could run the following commands to try fixing this:\n'
+      '\n'
+      '$fixCommands',
     );
+  }
+
+  bool _isGitDependency(Package package) {
+    return package.root.path.contains('/.pub-cache/git/');
+  }
+
+  bool _isHostedDependency(Package package) {
+    return package.root.path.contains('/.pub-cache/hosted/');
+  }
+
+  String _buildHostedPackageVersion(Package package) {
+    final segments = package.root.pathSegments;
+    final version = segments[segments.length - 2].split('-').last;
+    return 'v$version';
+  }
+
+  String _buildGitPackageVersion(Package package, Pubspec pubspec) {
+    final allDependencies = {
+      ...pubspec.dependencies,
+      ...pubspec.devDependencies,
+    };
+    final dependency = allDependencies[package.name];
+
+    // We might not be able to find a dependency if the package is a transitive dependency
+    if (dependency == null || dependency is! GitDependency) {
+      final version = package.root.path
+          .split('/git/')
+          .last
+          .replaceFirst('${package.name}-', '');
+      // We're not able to find the dependency, so we'll just return
+      // the version from the path, which is not ideal, but better than nothing
+      return 'from git $version';
+    }
+    final dependencyPath = dependency.path;
+    final dependencyPathString =
+        dependencyPath == null ? '' : ' path ${dependency.path}';
+    final dependencyRef = dependency.ref;
+    final dependencyRefString =
+        dependencyRef == null ? '' : ' ref ${dependency.ref}';
+    return 'from git url ${dependency.url}$dependencyRefString$dependencyPathString';
   }
 }
 
@@ -155,6 +235,7 @@ void _writePackageConfigForTempProject(
     conflictingPackagesChecker.addContextRoot(
       contextRoot,
       validPackages,
+      pubspec,
     );
 
     for (final package in validPackages) {

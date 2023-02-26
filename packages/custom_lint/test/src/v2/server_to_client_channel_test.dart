@@ -1,6 +1,7 @@
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint/src/v2/server_to_client_channel.dart';
 import 'package:package_config/package_config.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -11,6 +12,21 @@ void main() {
     );
   }
 
+  Package createGitPackage(String name, String gitPath) {
+    return Package(
+      name,
+      Uri.parse('file:///Users/user/.pub-cache/git/$name-$gitPath/'),
+    );
+  }
+
+  Package createPathPackage(String name, String path) {
+    return Package(
+      name,
+      Uri.parse('file://$path'),
+      relativeRoot: false,
+    );
+  }
+
   ContextRoot createContextRoot(String relativePath) {
     return ContextRoot('/Users/user/project/$relativePath', []);
   }
@@ -18,6 +34,8 @@ void main() {
   group('ConflictingPackagesChecker', () {
     test('should NOT throw error when there are no conflicting packages', () {
       final checker = ConflictingPackagesChecker();
+      // We don't need to pass a real pubspec here
+      final pubspec = Pubspec('fake_package');
       final contextRoots = [
         createContextRoot('app'),
         createContextRoot('app/packages/http'),
@@ -35,8 +53,16 @@ void main() {
         createPackage('http_parser', '4.0.0'),
       ];
 
-      checker.addContextRoot(contextRoots[0], firstContextRootPackages);
-      checker.addContextRoot(contextRoots[1], secondContextRootPackages);
+      checker.addContextRoot(
+        contextRoots[0],
+        firstContextRootPackages,
+        pubspec,
+      );
+      checker.addContextRoot(
+        contextRoots[1],
+        secondContextRootPackages,
+        pubspec,
+      );
 
       expect(
         checker.throwErrorIfConflictingPackages,
@@ -46,11 +72,33 @@ void main() {
 
     test('should throw error when there are conflicting packages', () {
       final checker = ConflictingPackagesChecker();
-      final contextRoots = [
-        createContextRoot('app'),
-        createContextRoot('app/packages/http'),
-        createContextRoot('app/packages/design_system'),
-      ];
+      final flutterDependency = HostedDependency();
+      final firstPubspec = Pubspec(
+        'app',
+        dependencies: {
+          'flutter': flutterDependency,
+        },
+      );
+      final secondPubspec = Pubspec(
+        'http',
+        dependencies: {
+          'flutter': flutterDependency,
+        },
+      );
+      final thirdPubspec = Pubspec(
+        'design_system',
+        dependencies: {
+          'flutter': flutterDependency,
+          'freezed': GitDependency(
+            Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
+            ref: '4cdfbf9159f2e9746fce29d2862f148f901da66a',
+            path: 'packages/freezed',
+          ),
+        },
+      );
+      final firstContextRoot = createContextRoot('app');
+      final secondContextRoot = createContextRoot('app/packages/http');
+      final thirdContextRoot = createContextRoot('app/packages/design_system');
       final firstContextRootPackages = [
         createPackage('riverpod', '2.2.0'),
         createPackage('flutter_hooks', '0.18.6'),
@@ -64,16 +112,40 @@ void main() {
         createPackage('flutter_hooks', '0.18.5'),
         createPackage('http', '0.13.3'),
         createPackage('http_parser', '4.0.0'),
+        createPathPackage('freezed', '/Users/user/freezed/packages/freezed/'),
+        // This is to simulate a transitive git dependency
+        createGitPackage(
+          'http_parser',
+          '4cdfbf9159123746fce29d2862f148f901da66a',
+        ),
       ];
       // Here we want to test that the error message contains multiple locations
       final thirdContextRootPackages = [
         createPackage('riverpod', '2.1.1'),
         createPackage('flutter_hooks', '0.18.5'),
+        // This is a git package, so we want to make sure it's handled correctly
+        createGitPackage(
+          'freezed',
+          '4cdfbf9159f2e9746fce29d2862f148f901da66a/packages/freezed',
+        ),
+        createPackage('http_parser', '4.0.0'),
       ];
 
-      checker.addContextRoot(contextRoots[0], firstContextRootPackages);
-      checker.addContextRoot(contextRoots[1], secondContextRootPackages);
-      checker.addContextRoot(contextRoots[2], thirdContextRootPackages);
+      checker.addContextRoot(
+        firstContextRoot,
+        firstContextRootPackages,
+        firstPubspec,
+      );
+      checker.addContextRoot(
+        secondContextRoot,
+        secondContextRootPackages,
+        secondPubspec,
+      );
+      checker.addContextRoot(
+        thirdContextRoot,
+        thirdContextRootPackages,
+        thirdPubspec,
+      );
 
       expect(
         checker.throwErrorIfConflictingPackages,
@@ -82,24 +154,307 @@ void main() {
             (error) => error.message,
             'message',
             equals(
-              'Some packages have conflicting versions:\n'
-              '- riverpod\n'
-              '    -- riverpod-2.2.0 used in:\n'
-              '      --- /Users/user/project/app\n'
-              '    -- riverpod-2.1.0 used in:\n'
-              '      --- /Users/user/project/app/packages/http\n'
-              '    -- riverpod-2.1.1 used in:\n'
-              '      --- /Users/user/project/app/packages/design_system\n'
+              'Some dependencies with conflicting versions were identified:\n'
               '\n'
-              '- flutter_hooks\n'
-              '    -- flutter_hooks-0.18.6 used in:\n'
-              '      --- /Users/user/project/app\n'
-              '    -- flutter_hooks-0.18.5 used in:\n'
-              '      --- /Users/user/project/app/packages/http\n'
-              '      --- /Users/user/project/app/packages/design_system\n'
+              'app at /Users/user/project/app\n'
+              '- riverpod v2.2.0\n'
+              '- flutter_hooks v0.18.6\n'
+              '- freezed v2.3.2\n'
               '\n'
-              'This is not supported. Please make sure all packages have the same version.\n'
-              'You could try running `flutter pub upgrade` in the affected directories.',
+              'http at /Users/user/project/app/packages/http\n'
+              '- riverpod v2.1.0\n'
+              '- flutter_hooks v0.18.5\n'
+              '- http_parser v4.0.0\n'
+              '- freezed from path /Users/user/freezed/packages/freezed/\n'
+              '- http_parser from git 4cdfbf9159123746fce29d2862f148f901da66a/\n'
+              '\n'
+              'design_system at /Users/user/project/app/packages/design_system\n'
+              '- riverpod v2.1.1\n'
+              '- flutter_hooks v0.18.5\n'
+              '- freezed from git url ssh://git@github.com/rrousselGit/freezed.git ref 4cdfbf9159f2e9746fce29d2862f148f901da66a path packages/freezed\n'
+              '- http_parser v4.0.0\n'
+              '\n'
+              'This is not supported. Custom_lint shares the analysis between all'
+              ' packages. As such, all plugins are started under a single process,'
+              ' sharing the dependencies of all the packages that use custom_lint. '
+              "Since there's a single process for all plugins, if 2 plugins try to"
+              ' use different versions for a dependency, the process cannot be '
+              'reasonably started. Please make sure all packages have the same version.\n'
+              'You could run the following commands to try fixing this:\n'
+              '\n'
+              'cd /Users/user/project/app\n'
+              'flutter pub upgrade riverpod flutter_hooks freezed\n'
+              'cd /Users/user/project/app/packages/http\n'
+              'flutter pub upgrade riverpod flutter_hooks http_parser freezed http_parser\n'
+              'cd /Users/user/project/app/packages/design_system\n'
+              'flutter pub upgrade riverpod flutter_hooks freezed http_parser',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('pure dart packages should have simple pub upgrade command', () {
+      final checker = ConflictingPackagesChecker();
+      final firstPubspec = Pubspec('app');
+      final secondPubspec = Pubspec('http');
+      final firstContextRoot = createContextRoot('app');
+      final secondContextRoot = createContextRoot('app/packages/http');
+      final firstContextRootPackages = [
+        createPackage('riverpod', '2.2.0'),
+        createPackage('freezed', '2.3.2'),
+      ];
+      final secondContextRootPackages = [
+        createPackage('riverpod', '2.1.0'),
+        createPackage('freezed', '2.3.1'),
+      ];
+
+      checker.addContextRoot(
+        firstContextRoot,
+        firstContextRootPackages,
+        firstPubspec,
+      );
+      checker.addContextRoot(
+        secondContextRoot,
+        secondContextRootPackages,
+        secondPubspec,
+      );
+
+      expect(
+        checker.throwErrorIfConflictingPackages,
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            equals(
+              'Some dependencies with conflicting versions were identified:\n'
+              '\n'
+              'app at /Users/user/project/app\n'
+              '- riverpod v2.2.0\n'
+              '- freezed v2.3.2\n'
+              '\n'
+              'http at /Users/user/project/app/packages/http\n'
+              '- riverpod v2.1.0\n'
+              '- freezed v2.3.1\n'
+              '\n'
+              'This is not supported. Custom_lint shares the analysis between all'
+              ' packages. As such, all plugins are started under a single process,'
+              ' sharing the dependencies of all the packages that use custom_lint. '
+              "Since there's a single process for all plugins, if 2 plugins try to"
+              ' use different versions for a dependency, the process cannot be '
+              'reasonably started. Please make sure all packages have the same version.\n'
+              'You could run the following commands to try fixing this:\n'
+              '\n'
+              'cd /Users/user/project/app\n'
+              'pub upgrade riverpod freezed\n' // <--- here
+              'cd /Users/user/project/app/packages/http\n'
+              'pub upgrade riverpod freezed', // <--- here
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('should show git dependency without path and ref', () {
+      final checker = ConflictingPackagesChecker();
+      final firstPubspec = Pubspec('app');
+      final secondPubspec = Pubspec(
+        'http',
+        dependencies: {
+          'freezed': GitDependency(
+            Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
+          ),
+        },
+      );
+      final firstContextRoot = createContextRoot('app');
+      final secondContextRoot = createContextRoot('app/packages/http');
+      final firstContextRootPackages = [
+        createPackage('riverpod', '2.2.0'),
+        createPackage('freezed', '2.3.2'),
+      ];
+      final secondContextRootPackages = [
+        createPackage('riverpod', '2.1.0'),
+        createGitPackage('freezed', '4cdfbf9159f2e9746fce29d2862f148f901da66a'),
+      ];
+
+      checker.addContextRoot(
+        firstContextRoot,
+        firstContextRootPackages,
+        firstPubspec,
+      );
+      checker.addContextRoot(
+        secondContextRoot,
+        secondContextRootPackages,
+        secondPubspec,
+      );
+
+      expect(
+        checker.throwErrorIfConflictingPackages,
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            equals(
+              'Some dependencies with conflicting versions were identified:\n'
+              '\n'
+              'app at /Users/user/project/app\n'
+              '- riverpod v2.2.0\n'
+              '- freezed v2.3.2\n'
+              '\n'
+              'http at /Users/user/project/app/packages/http\n'
+              '- riverpod v2.1.0\n'
+              '- freezed from git url ssh://git@github.com/rrousselGit/freezed.git\n'
+              '\n'
+              'This is not supported. Custom_lint shares the analysis between all'
+              ' packages. As such, all plugins are started under a single process,'
+              ' sharing the dependencies of all the packages that use custom_lint. '
+              "Since there's a single process for all plugins, if 2 plugins try to"
+              ' use different versions for a dependency, the process cannot be '
+              'reasonably started. Please make sure all packages have the same version.\n'
+              'You could run the following commands to try fixing this:\n'
+              '\n'
+              'cd /Users/user/project/app\n'
+              'pub upgrade riverpod freezed\n'
+              'cd /Users/user/project/app/packages/http\n'
+              'pub upgrade riverpod freezed',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('should show git dependency without path', () {
+      final checker = ConflictingPackagesChecker();
+      final firstPubspec = Pubspec('app');
+      final secondPubspec = Pubspec(
+        'http',
+        dependencies: {
+          'freezed': GitDependency(
+            Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
+            ref: '4cdfbf9159f2e9746fce29d2862f148f901da66a',
+          ),
+        },
+      );
+      final firstContextRoot = createContextRoot('app');
+      final secondContextRoot = createContextRoot('app/packages/http');
+      final firstContextRootPackages = [
+        createPackage('riverpod', '2.2.0'),
+        createPackage('freezed', '2.3.2'),
+      ];
+      final secondContextRootPackages = [
+        createPackage('riverpod', '2.1.0'),
+        createGitPackage('freezed', '4cdfbf9159f2e9746fce29d2862f148f901da66a'),
+      ];
+
+      checker.addContextRoot(
+        firstContextRoot,
+        firstContextRootPackages,
+        firstPubspec,
+      );
+      checker.addContextRoot(
+        secondContextRoot,
+        secondContextRootPackages,
+        secondPubspec,
+      );
+
+      expect(
+        checker.throwErrorIfConflictingPackages,
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            equals(
+              'Some dependencies with conflicting versions were identified:\n'
+              '\n'
+              'app at /Users/user/project/app\n'
+              '- riverpod v2.2.0\n'
+              '- freezed v2.3.2\n'
+              '\n'
+              'http at /Users/user/project/app/packages/http\n'
+              '- riverpod v2.1.0\n'
+              '- freezed from git url ssh://git@github.com/rrousselGit/freezed.git ref 4cdfbf9159f2e9746fce29d2862f148f901da66a\n'
+              '\n'
+              'This is not supported. Custom_lint shares the analysis between all'
+              ' packages. As such, all plugins are started under a single process,'
+              ' sharing the dependencies of all the packages that use custom_lint. '
+              "Since there's a single process for all plugins, if 2 plugins try to"
+              ' use different versions for a dependency, the process cannot be '
+              'reasonably started. Please make sure all packages have the same version.\n'
+              'You could run the following commands to try fixing this:\n'
+              '\n'
+              'cd /Users/user/project/app\n'
+              'pub upgrade riverpod freezed\n'
+              'cd /Users/user/project/app/packages/http\n'
+              'pub upgrade riverpod freezed',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('should show git dependency without ref', () {
+      final checker = ConflictingPackagesChecker();
+      final firstPubspec = Pubspec('app');
+      final secondPubspec = Pubspec(
+        'http',
+        dependencies: {
+          'freezed': GitDependency(
+            Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
+            path: 'packages/freezed',
+          ),
+        },
+      );
+      final firstContextRoot = createContextRoot('app');
+      final secondContextRoot = createContextRoot('app/packages/http');
+      final firstContextRootPackages = [
+        createPackage('riverpod', '2.2.0'),
+        createPackage('freezed', '2.3.2'),
+      ];
+      final secondContextRootPackages = [
+        createPackage('riverpod', '2.1.0'),
+        createGitPackage('freezed', '4cdfbf9159f2e9746fce29d2862f148f901da66a'),
+      ];
+
+      checker.addContextRoot(
+        firstContextRoot,
+        firstContextRootPackages,
+        firstPubspec,
+      );
+      checker.addContextRoot(
+        secondContextRoot,
+        secondContextRootPackages,
+        secondPubspec,
+      );
+
+      expect(
+        checker.throwErrorIfConflictingPackages,
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            equals(
+              'Some dependencies with conflicting versions were identified:\n'
+              '\n'
+              'app at /Users/user/project/app\n'
+              '- riverpod v2.2.0\n'
+              '- freezed v2.3.2\n'
+              '\n'
+              'http at /Users/user/project/app/packages/http\n'
+              '- riverpod v2.1.0\n'
+              '- freezed from git url ssh://git@github.com/rrousselGit/freezed.git path packages/freezed\n'
+              '\n'
+              'This is not supported. Custom_lint shares the analysis between all'
+              ' packages. As such, all plugins are started under a single process,'
+              ' sharing the dependencies of all the packages that use custom_lint. '
+              "Since there's a single process for all plugins, if 2 plugins try to"
+              ' use different versions for a dependency, the process cannot be '
+              'reasonably started. Please make sure all packages have the same version.\n'
+              'You could run the following commands to try fixing this:\n'
+              '\n'
+              'cd /Users/user/project/app\n'
+              'pub upgrade riverpod freezed\n'
+              'cd /Users/user/project/app/packages/http\n'
+              'pub upgrade riverpod freezed',
             ),
           ),
         ),
