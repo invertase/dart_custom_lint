@@ -39,7 +39,7 @@ void main() {
       checker.addContextRoot(contextRoots[1], secondContextRootPackages);
 
       expect(
-        checker.throwErrorIfMultiplePackageVersion,
+        checker.throwErrorIfConflictingPackages,
         returnsNormally,
       );
     });
@@ -76,7 +76,7 @@ void main() {
       checker.addContextRoot(contextRoots[2], thirdContextRootPackages);
 
       expect(
-        checker.throwErrorIfMultiplePackageVersion,
+        checker.throwErrorIfConflictingPackages,
         throwsA(
           isA<StateError>().having(
             (error) => error.message,

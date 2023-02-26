@@ -28,7 +28,7 @@ class ConflictingPackagesChecker {
   }
 
   /// Throws an error if there are conflicting packages.
-  void throwErrorIfMultiplePackageVersion() {
+  void throwErrorIfConflictingPackages() {
     final packageNameRootMap = <String, Set<Uri>>{};
     // Group packages by name and collect all unique roots,
     // since we're using a set
@@ -163,7 +163,7 @@ void _writePackageConfigForTempProject(
   }
 
   // Check if there are conflicting packages
-  conflictingPackagesChecker.throwErrorIfMultiplePackageVersion();
+  conflictingPackagesChecker.thowErrorIfConflictingPackages();
 
   targetFile.createSync(recursive: true);
 
