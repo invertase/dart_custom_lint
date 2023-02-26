@@ -460,5 +460,73 @@ void main() {
         ),
       );
     });
+
+    test('should show git dependency from dev dependencies', () {
+      final checker = ConflictingPackagesChecker();
+      final firstPubspec = Pubspec('app');
+      final secondPubspec = Pubspec(
+        'http',
+        devDependencies: {
+          'freezed': GitDependency(
+            Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
+          ),
+        },
+      );
+      final firstContextRoot = createContextRoot('app');
+      final secondContextRoot = createContextRoot('app/packages/http');
+      final firstContextRootPackages = [
+        createPackage('riverpod', '2.2.0'),
+        createPackage('freezed', '2.3.2'),
+      ];
+      final secondContextRootPackages = [
+        createPackage('riverpod', '2.1.0'),
+        createGitPackage('freezed', '4cdfbf9159f2e9746fce29d2862f148f901da66a'),
+      ];
+
+      checker.addContextRoot(
+        firstContextRoot,
+        firstContextRootPackages,
+        firstPubspec,
+      );
+      checker.addContextRoot(
+        secondContextRoot,
+        secondContextRootPackages,
+        secondPubspec,
+      );
+
+      expect(
+        checker.throwErrorIfConflictingPackages,
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            equals(
+              'Some dependencies with conflicting versions were identified:\n'
+              '\n'
+              'app at /Users/user/project/app\n'
+              '- riverpod v2.2.0\n'
+              '- freezed v2.3.2\n'
+              '\n'
+              'http at /Users/user/project/app/packages/http\n'
+              '- riverpod v2.1.0\n'
+              '- freezed from git url ssh://git@github.com/rrousselGit/freezed.git\n'
+              '\n'
+              'This is not supported. Custom_lint shares the analysis between all'
+              ' packages. As such, all plugins are started under a single process,'
+              ' sharing the dependencies of all the packages that use custom_lint. '
+              "Since there's a single process for all plugins, if 2 plugins try to"
+              ' use different versions for a dependency, the process cannot be '
+              'reasonably started. Please make sure all packages have the same version.\n'
+              'You could run the following commands to try fixing this:\n'
+              '\n'
+              'cd /Users/user/project/app\n'
+              'pub upgrade riverpod freezed\n'
+              'cd /Users/user/project/app/packages/http\n'
+              'pub upgrade riverpod freezed',
+            ),
+          ),
+        ),
+      );
+    });
   });
 }
