@@ -163,7 +163,7 @@ void _writePackageConfigForTempProject(
   }
 
   // Check if there are conflicting packages
-  conflictingPackagesChecker.thowErrorIfConflictingPackages();
+  conflictingPackagesChecker.throwErrorIfConflictingPackages();
 
   targetFile.createSync(recursive: true);
 
