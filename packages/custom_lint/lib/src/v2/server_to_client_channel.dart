@@ -17,8 +17,66 @@ import '../plugin.dart';
 import 'custom_lint_analyzer_plugin.dart';
 import 'protocol.dart';
 
+extension on Pubspec {
+  Dependency? getDependency(String name) {
+    return dependencies[name] ??
+        devDependencies[name] ??
+        dependencyOverrides[name];
+  }
+}
+
+extension on Package {
+  bool get isGitDependency => root.path.contains('/.pub-cache/git/');
+
+  bool get isHostedDependency => root.path.contains('/.pub-cache/hosted/');
+
+  String buildConflictingMessage(Pubspec pubspec) {
+    final versionString = _buildVersionString(pubspec);
+    return '- $name $versionString';
+  }
+
+  String _buildVersionString(Pubspec pubspec) {
+    if (isGitDependency) {
+      return _buildGitPackageVersion(pubspec);
+    } else if (isHostedDependency) {
+      return _buildHostedPackageVersion();
+    } else {
+      return _buildPathDependency();
+    }
+  }
+
+  String _buildHostedPackageVersion() {
+    final segments = root.pathSegments;
+    final version = segments[segments.length - 2].split('-').last;
+    return 'v$version';
+  }
+
+  String _buildPathDependency() {
+    return 'from path ${root.path}';
+  }
+
+  String _buildGitPackageVersion(Pubspec pubspec) {
+    final dependency = pubspec.getDependency(name);
+
+    // We might not be able to find a dependency if the package is a transitive dependency
+    if (dependency == null || dependency is! GitDependency) {
+      final version = root.path.split('/git/').last.replaceFirst('$name-', '');
+      // We're not able to find the dependency, so we'll just return
+      // the version from the path, which is not ideal, but better than nothing
+      return 'from git $version';
+    }
+    final dependencyPath = dependency.path;
+    final dependencyPathString =
+        dependencyPath == null ? '' : ' path ${dependency.path}';
+    final dependencyRef = dependency.ref;
+    final dependencyRefString =
+        dependencyRef == null ? '' : ' ref ${dependency.ref}';
+    return 'from git url ${dependency.url}$dependencyRefString$dependencyPathString';
+  }
+}
+
 /// A class that checks if there are conflicting packages in the context roots.
-@visibleForTesting
+@internal
 class ConflictingPackagesChecker {
   final _contextRootPackagesMap = <ContextRoot, List<Package>>{};
   final _contextRootPubspecMap = <ContextRoot, Pubspec>{};
@@ -43,14 +101,12 @@ class ConflictingPackagesChecker {
     for (final packages in _contextRootPackagesMap.values) {
       for (final package in packages) {
         final rootSet = packageNameRootMap[package.name] ?? {};
-        packageNameRootMap[package.name] = {...rootSet, package.root};
+        packageNameRootMap[package.name] = rootSet..add(package.root);
       }
     }
     // Find packages with more than one root
     final packagesWithConflictingVersions = packageNameRootMap.entries
-        .where(
-          (entry) => entry.value.length > 1,
-        )
+        .where((entry) => entry.value.length > 1)
         .map((e) => e.key)
         .toList();
 
@@ -65,30 +121,39 @@ class ConflictingPackagesChecker {
       return MapEntry(contextRoot, conflictingPackages);
     });
 
-    final contextRootMessage =
-        contextRootConflictingPackages.entries.map((entry) {
+    final errorMessageBuilder = StringBuffer();
+
+    errorMessageBuilder
+      ..writeln('Some dependencies with conflicting versions were identified:')
+      ..writeln();
+
+    // Build conflicting packages message
+    for (final entry in contextRootConflictingPackages.entries) {
       final contextRoot = entry.key;
       final conflictingPackages = entry.value;
-      final conflictingPackagesMessage = conflictingPackages.map((package) {
-        final String version;
-        if (_isGitDependency(package)) {
-          final pubspec = _contextRootPubspecMap[contextRoot]!;
-          version = _buildGitPackageVersion(package, pubspec);
-        } else if (_isHostedDependency(package)) {
-          version = _buildHostedPackageVersion(package);
-        } else {
-          version = 'from path ${package.root.path}';
-        }
-        return '- ${package.name} $version\n';
-      }).join();
       final pubspec = _contextRootPubspecMap[contextRoot]!;
       final locationName = pubspec.name;
-      return '$locationName at ${contextRoot.root}\n'
-          '$conflictingPackagesMessage'
-          '\n';
-    }).join();
+      errorMessageBuilder.writeln('$locationName at ${contextRoot.root}');
+      for (final package in conflictingPackages) {
+        errorMessageBuilder.writeln(package.buildConflictingMessage(pubspec));
+      }
+      errorMessageBuilder.writeln();
+    }
 
-    final fixCommands = contextRootConflictingPackages.entries.map((entry) {
+    errorMessageBuilder
+      ..writeln(
+        'This is not supported. Custom_lint shares the analysis between all'
+        ' packages. As such, all plugins are started under a single process,'
+        ' sharing the dependencies of all the packages that use custom_lint. '
+        "Since there's a single process for all plugins, if 2 plugins try to"
+        ' use different versions for a dependency, the process cannot be '
+        'reasonably started. Please make sure all packages have the same version.',
+      )
+      ..writeln('You could run the following commands to try fixing this:')
+      ..writeln();
+
+    // Build fix commands
+    for (final entry in contextRootConflictingPackages.entries) {
       final contextRoot = entry.key;
       final pubspec = _contextRootPubspecMap[contextRoot]!;
       final isFlutter = pubspec.dependencies.containsKey('flutter');
@@ -97,64 +162,12 @@ class ConflictingPackagesChecker {
       final conflictingPackages = entry.value;
       final conflictingPackagesNames =
           conflictingPackages.map((package) => package.name).join(' ');
-      return 'cd ${contextRoot.root}\n'
-          '$command pub upgrade $conflictingPackagesNames';
-    }).join('\n');
-
-    throw StateError(
-      'Some dependencies with conflicting versions were identified:\n'
-      '\n'
-      '$contextRootMessage'
-      'This is not supported. Custom_lint shares the analysis between all'
-      ' packages. As such, all plugins are started under a single process,'
-      ' sharing the dependencies of all the packages that use custom_lint. '
-      "Since there's a single process for all plugins, if 2 plugins try to"
-      ' use different versions for a dependency, the process cannot be '
-      'reasonably started. Please make sure all packages have the same version.\n'
-      'You could run the following commands to try fixing this:\n'
-      '\n'
-      '$fixCommands',
-    );
-  }
-
-  bool _isGitDependency(Package package) {
-    return package.root.path.contains('/.pub-cache/git/');
-  }
-
-  bool _isHostedDependency(Package package) {
-    return package.root.path.contains('/.pub-cache/hosted/');
-  }
-
-  String _buildHostedPackageVersion(Package package) {
-    final segments = package.root.pathSegments;
-    final version = segments[segments.length - 2].split('-').last;
-    return 'v$version';
-  }
-
-  String _buildGitPackageVersion(Package package, Pubspec pubspec) {
-    final allDependencies = {
-      ...pubspec.dependencies,
-      ...pubspec.devDependencies,
-    };
-    final dependency = allDependencies[package.name];
-
-    // We might not be able to find a dependency if the package is a transitive dependency
-    if (dependency == null || dependency is! GitDependency) {
-      final version = package.root.path
-          .split('/git/')
-          .last
-          .replaceFirst('${package.name}-', '');
-      // We're not able to find the dependency, so we'll just return
-      // the version from the path, which is not ideal, but better than nothing
-      return 'from git $version';
+      errorMessageBuilder
+        ..writeln('cd ${contextRoot.root}')
+        ..writeln('$command pub upgrade $conflictingPackagesNames');
     }
-    final dependencyPath = dependency.path;
-    final dependencyPathString =
-        dependencyPath == null ? '' : ' path ${dependency.path}';
-    final dependencyRef = dependency.ref;
-    final dependencyRefString =
-        dependencyRef == null ? '' : ' ref ${dependency.ref}';
-    return 'from git url ${dependency.url}$dependencyRefString$dependencyPathString';
+
+    throw StateError(errorMessageBuilder.toString());
   }
 }
 

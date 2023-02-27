@@ -154,40 +154,37 @@ void main() {
             (error) => error.message,
             'message',
             equals(
-              'Some dependencies with conflicting versions were identified:\n'
-              '\n'
-              'app at /Users/user/project/app\n'
-              '- riverpod v2.2.0\n'
-              '- flutter_hooks v0.18.6\n'
-              '- freezed v2.3.2\n'
-              '\n'
-              'http at /Users/user/project/app/packages/http\n'
-              '- riverpod v2.1.0\n'
-              '- flutter_hooks v0.18.5\n'
-              '- http_parser v4.0.0\n'
-              '- freezed from path /Users/user/freezed/packages/freezed/\n'
-              '- http_parser from git 4cdfbf9159123746fce29d2862f148f901da66a/\n'
-              '\n'
-              'design_system at /Users/user/project/app/packages/design_system\n'
-              '- riverpod v2.1.1\n'
-              '- flutter_hooks v0.18.5\n'
-              '- freezed from git url ssh://git@github.com/rrousselGit/freezed.git ref 4cdfbf9159f2e9746fce29d2862f148f901da66a path packages/freezed\n'
-              '- http_parser v4.0.0\n'
-              '\n'
-              'This is not supported. Custom_lint shares the analysis between all'
-              ' packages. As such, all plugins are started under a single process,'
-              ' sharing the dependencies of all the packages that use custom_lint. '
-              "Since there's a single process for all plugins, if 2 plugins try to"
-              ' use different versions for a dependency, the process cannot be '
-              'reasonably started. Please make sure all packages have the same version.\n'
-              'You could run the following commands to try fixing this:\n'
-              '\n'
-              'cd /Users/user/project/app\n'
-              'flutter pub upgrade riverpod flutter_hooks freezed\n'
-              'cd /Users/user/project/app/packages/http\n'
-              'flutter pub upgrade riverpod flutter_hooks http_parser freezed http_parser\n'
-              'cd /Users/user/project/app/packages/design_system\n'
-              'flutter pub upgrade riverpod flutter_hooks freezed http_parser',
+              '''
+Some dependencies with conflicting versions were identified:
+
+app at /Users/user/project/app
+- riverpod v2.2.0
+- flutter_hooks v0.18.6
+- freezed v2.3.2
+
+http at /Users/user/project/app/packages/http
+- riverpod v2.1.0
+- flutter_hooks v0.18.5
+- http_parser v4.0.0
+- freezed from path /Users/user/freezed/packages/freezed/
+- http_parser from git 4cdfbf9159123746fce29d2862f148f901da66a/
+
+design_system at /Users/user/project/app/packages/design_system
+- riverpod v2.1.1
+- flutter_hooks v0.18.5
+- freezed from git url ssh://git@github.com/rrousselGit/freezed.git ref 4cdfbf9159f2e9746fce29d2862f148f901da66a path packages/freezed
+- http_parser v4.0.0
+
+This is not supported. Custom_lint shares the analysis between all packages. As such, all plugins are started under a single process, sharing the dependencies of all the packages that use custom_lint. Since there's a single process for all plugins, if 2 plugins try to use different versions for a dependency, the process cannot be reasonably started. Please make sure all packages have the same version.
+You could run the following commands to try fixing this:
+
+cd /Users/user/project/app
+flutter pub upgrade riverpod flutter_hooks freezed
+cd /Users/user/project/app/packages/http
+flutter pub upgrade riverpod flutter_hooks http_parser freezed http_parser
+cd /Users/user/project/app/packages/design_system
+flutter pub upgrade riverpod flutter_hooks freezed http_parser
+''',
             ),
           ),
         ),
@@ -227,28 +224,25 @@ void main() {
             (error) => error.message,
             'message',
             equals(
-              'Some dependencies with conflicting versions were identified:\n'
-              '\n'
-              'app at /Users/user/project/app\n'
-              '- riverpod v2.2.0\n'
-              '- freezed v2.3.2\n'
-              '\n'
-              'http at /Users/user/project/app/packages/http\n'
-              '- riverpod v2.1.0\n'
-              '- freezed v2.3.1\n'
-              '\n'
-              'This is not supported. Custom_lint shares the analysis between all'
-              ' packages. As such, all plugins are started under a single process,'
-              ' sharing the dependencies of all the packages that use custom_lint. '
-              "Since there's a single process for all plugins, if 2 plugins try to"
-              ' use different versions for a dependency, the process cannot be '
-              'reasonably started. Please make sure all packages have the same version.\n'
-              'You could run the following commands to try fixing this:\n'
-              '\n'
-              'cd /Users/user/project/app\n'
-              'dart pub upgrade riverpod freezed\n' // <--- here
-              'cd /Users/user/project/app/packages/http\n'
-              'dart pub upgrade riverpod freezed', // <--- here
+              '''
+Some dependencies with conflicting versions were identified:
+
+app at /Users/user/project/app
+- riverpod v2.2.0
+- freezed v2.3.2
+
+http at /Users/user/project/app/packages/http
+- riverpod v2.1.0
+- freezed v2.3.1
+
+This is not supported. Custom_lint shares the analysis between all packages. As such, all plugins are started under a single process, sharing the dependencies of all the packages that use custom_lint. Since there's a single process for all plugins, if 2 plugins try to use different versions for a dependency, the process cannot be reasonably started. Please make sure all packages have the same version.
+You could run the following commands to try fixing this:
+
+cd /Users/user/project/app
+dart pub upgrade riverpod freezed
+cd /Users/user/project/app/packages/http
+dart pub upgrade riverpod freezed
+''',
             ),
           ),
         ),
@@ -295,28 +289,25 @@ void main() {
             (error) => error.message,
             'message',
             equals(
-              'Some dependencies with conflicting versions were identified:\n'
-              '\n'
-              'app at /Users/user/project/app\n'
-              '- riverpod v2.2.0\n'
-              '- freezed v2.3.2\n'
-              '\n'
-              'http at /Users/user/project/app/packages/http\n'
-              '- riverpod v2.1.0\n'
-              '- freezed from git url ssh://git@github.com/rrousselGit/freezed.git\n'
-              '\n'
-              'This is not supported. Custom_lint shares the analysis between all'
-              ' packages. As such, all plugins are started under a single process,'
-              ' sharing the dependencies of all the packages that use custom_lint. '
-              "Since there's a single process for all plugins, if 2 plugins try to"
-              ' use different versions for a dependency, the process cannot be '
-              'reasonably started. Please make sure all packages have the same version.\n'
-              'You could run the following commands to try fixing this:\n'
-              '\n'
-              'cd /Users/user/project/app\n'
-              'dart pub upgrade riverpod freezed\n'
-              'cd /Users/user/project/app/packages/http\n'
-              'dart pub upgrade riverpod freezed',
+              '''
+Some dependencies with conflicting versions were identified:
+
+app at /Users/user/project/app
+- riverpod v2.2.0
+- freezed v2.3.2
+
+http at /Users/user/project/app/packages/http
+- riverpod v2.1.0
+- freezed from git url ssh://git@github.com/rrousselGit/freezed.git
+
+This is not supported. Custom_lint shares the analysis between all packages. As such, all plugins are started under a single process, sharing the dependencies of all the packages that use custom_lint. Since there's a single process for all plugins, if 2 plugins try to use different versions for a dependency, the process cannot be reasonably started. Please make sure all packages have the same version.
+You could run the following commands to try fixing this:
+
+cd /Users/user/project/app
+dart pub upgrade riverpod freezed
+cd /Users/user/project/app/packages/http
+dart pub upgrade riverpod freezed
+''',
             ),
           ),
         ),
@@ -364,28 +355,25 @@ void main() {
             (error) => error.message,
             'message',
             equals(
-              'Some dependencies with conflicting versions were identified:\n'
-              '\n'
-              'app at /Users/user/project/app\n'
-              '- riverpod v2.2.0\n'
-              '- freezed v2.3.2\n'
-              '\n'
-              'http at /Users/user/project/app/packages/http\n'
-              '- riverpod v2.1.0\n'
-              '- freezed from git url ssh://git@github.com/rrousselGit/freezed.git ref 4cdfbf9159f2e9746fce29d2862f148f901da66a\n'
-              '\n'
-              'This is not supported. Custom_lint shares the analysis between all'
-              ' packages. As such, all plugins are started under a single process,'
-              ' sharing the dependencies of all the packages that use custom_lint. '
-              "Since there's a single process for all plugins, if 2 plugins try to"
-              ' use different versions for a dependency, the process cannot be '
-              'reasonably started. Please make sure all packages have the same version.\n'
-              'You could run the following commands to try fixing this:\n'
-              '\n'
-              'cd /Users/user/project/app\n'
-              'dart pub upgrade riverpod freezed\n'
-              'cd /Users/user/project/app/packages/http\n'
-              'dart pub upgrade riverpod freezed',
+              '''
+Some dependencies with conflicting versions were identified:
+
+app at /Users/user/project/app
+- riverpod v2.2.0
+- freezed v2.3.2
+
+http at /Users/user/project/app/packages/http
+- riverpod v2.1.0
+- freezed from git url ssh://git@github.com/rrousselGit/freezed.git ref 4cdfbf9159f2e9746fce29d2862f148f901da66a
+
+This is not supported. Custom_lint shares the analysis between all packages. As such, all plugins are started under a single process, sharing the dependencies of all the packages that use custom_lint. Since there's a single process for all plugins, if 2 plugins try to use different versions for a dependency, the process cannot be reasonably started. Please make sure all packages have the same version.
+You could run the following commands to try fixing this:
+
+cd /Users/user/project/app
+dart pub upgrade riverpod freezed
+cd /Users/user/project/app/packages/http
+dart pub upgrade riverpod freezed
+''',
             ),
           ),
         ),
@@ -433,28 +421,25 @@ void main() {
             (error) => error.message,
             'message',
             equals(
-              'Some dependencies with conflicting versions were identified:\n'
-              '\n'
-              'app at /Users/user/project/app\n'
-              '- riverpod v2.2.0\n'
-              '- freezed v2.3.2\n'
-              '\n'
-              'http at /Users/user/project/app/packages/http\n'
-              '- riverpod v2.1.0\n'
-              '- freezed from git url ssh://git@github.com/rrousselGit/freezed.git path packages/freezed\n'
-              '\n'
-              'This is not supported. Custom_lint shares the analysis between all'
-              ' packages. As such, all plugins are started under a single process,'
-              ' sharing the dependencies of all the packages that use custom_lint. '
-              "Since there's a single process for all plugins, if 2 plugins try to"
-              ' use different versions for a dependency, the process cannot be '
-              'reasonably started. Please make sure all packages have the same version.\n'
-              'You could run the following commands to try fixing this:\n'
-              '\n'
-              'cd /Users/user/project/app\n'
-              'dart pub upgrade riverpod freezed\n'
-              'cd /Users/user/project/app/packages/http\n'
-              'dart pub upgrade riverpod freezed',
+              '''
+Some dependencies with conflicting versions were identified:
+
+app at /Users/user/project/app
+- riverpod v2.2.0
+- freezed v2.3.2
+
+http at /Users/user/project/app/packages/http
+- riverpod v2.1.0
+- freezed from git url ssh://git@github.com/rrousselGit/freezed.git path packages/freezed
+
+This is not supported. Custom_lint shares the analysis between all packages. As such, all plugins are started under a single process, sharing the dependencies of all the packages that use custom_lint. Since there's a single process for all plugins, if 2 plugins try to use different versions for a dependency, the process cannot be reasonably started. Please make sure all packages have the same version.
+You could run the following commands to try fixing this:
+
+cd /Users/user/project/app
+dart pub upgrade riverpod freezed
+cd /Users/user/project/app/packages/http
+dart pub upgrade riverpod freezed
+''',
             ),
           ),
         ),
@@ -501,28 +486,25 @@ void main() {
             (error) => error.message,
             'message',
             equals(
-              'Some dependencies with conflicting versions were identified:\n'
-              '\n'
-              'app at /Users/user/project/app\n'
-              '- riverpod v2.2.0\n'
-              '- freezed v2.3.2\n'
-              '\n'
-              'http at /Users/user/project/app/packages/http\n'
-              '- riverpod v2.1.0\n'
-              '- freezed from git url ssh://git@github.com/rrousselGit/freezed.git\n'
-              '\n'
-              'This is not supported. Custom_lint shares the analysis between all'
-              ' packages. As such, all plugins are started under a single process,'
-              ' sharing the dependencies of all the packages that use custom_lint. '
-              "Since there's a single process for all plugins, if 2 plugins try to"
-              ' use different versions for a dependency, the process cannot be '
-              'reasonably started. Please make sure all packages have the same version.\n'
-              'You could run the following commands to try fixing this:\n'
-              '\n'
-              'cd /Users/user/project/app\n'
-              'dart pub upgrade riverpod freezed\n'
-              'cd /Users/user/project/app/packages/http\n'
-              'dart pub upgrade riverpod freezed',
+              '''
+Some dependencies with conflicting versions were identified:
+
+app at /Users/user/project/app
+- riverpod v2.2.0
+- freezed v2.3.2
+
+http at /Users/user/project/app/packages/http
+- riverpod v2.1.0
+- freezed from git url ssh://git@github.com/rrousselGit/freezed.git
+
+This is not supported. Custom_lint shares the analysis between all packages. As such, all plugins are started under a single process, sharing the dependencies of all the packages that use custom_lint. Since there's a single process for all plugins, if 2 plugins try to use different versions for a dependency, the process cannot be reasonably started. Please make sure all packages have the same version.
+You could run the following commands to try fixing this:
+
+cd /Users/user/project/app
+dart pub upgrade riverpod freezed
+cd /Users/user/project/app/packages/http
+dart pub upgrade riverpod freezed
+''',
             ),
           ),
         ),
