@@ -33,9 +33,11 @@ void renderLints(
       .expand(
         (lintsForFile) => lintsForFile.errors
           ..sort((a, b) {
-            final lineCompare = a.location.startLine.compareTo(b.location.startLine);
+            final lineCompare =
+                a.location.startLine.compareTo(b.location.startLine);
             if (lineCompare != 0) return lineCompare;
-            final columnCompare = a.location.startColumn.compareTo(b.location.startColumn);
+            final columnCompare =
+                a.location.startColumn.compareTo(b.location.startColumn);
             if (columnCompare != 0) return columnCompare;
 
             final codeCompare = a.code.compareTo(b.code);
@@ -48,7 +50,7 @@ void renderLints(
       .sortedBy<num>((e) => -AnalysisErrorSeverity.VALUES.indexOf(e.severity));
 
   if (errors.isEmpty) {
-    log.stdout('No issues found!');
+    log.writeln('No issues found!');
     return;
   }
 
@@ -68,7 +70,8 @@ void emitJsonFormat(
   Logger log,
   Iterable<AnalysisError> errors,
 ) {
-  Map<String, dynamic> location(String filePath, Map<String, dynamic> range) => {
+  Map<String, dynamic> location(String filePath, Map<String, dynamic> range) =>
+      {
         'file': filePath,
         'range': range,
       };
@@ -79,7 +82,11 @@ void emitJsonFormat(
         'column': column,
       };
 
-  Map<String, dynamic> range(Map<String, dynamic> start, Map<String, dynamic> end) => {
+  Map<String, dynamic> range(
+    Map<String, dynamic> start,
+    Map<String, dynamic> end,
+  ) =>
+      {
         'start': start,
         'end': end,
       };
@@ -136,7 +143,7 @@ void emitJsonFormat(
       if (error.url != null) 'documentation': error.url,
     });
   }
-  log.stdout(json.encode({'version': 1, 'diagnostics': diagnostics}));
+  log.writeln(json.encode({'version': 1, 'diagnostics': diagnostics}));
 }
 
 /// Emits a list of lints in the Dart analyzer style default format.
@@ -153,7 +160,7 @@ void emitDefaultFormat(
       ? null
       : (_dartdevUsageLineLength! - _bodyIndentWidth);
 
-  log.stdout('');
+  log.writeln('');
 
   for (final error in errors) {
     var severity = error.severity.name.toLowerCase().padLeft(_severityWidth);
@@ -168,14 +175,15 @@ void emitDefaultFormat(
       message += ' ${error.correction}';
     }
 
-    final location = '$filePath:${error.location.startLine}:${error.location.startColumn}';
+    final location =
+        '$filePath:${error.location.startLine}:${error.location.startColumn}';
     var output = '$location $bullet '
         '$message $bullet '
         '${ansi.green}${error.code}${ansi.none}';
 
     // performing line wrapping.
     output = _wrapText(output, width: wrapWidth);
-    log.stdout(
+    log.writeln(
       '$severity $bullet '
       '${output.replaceAll('\n', '\n$_bodyIndent')}',
     );
@@ -183,30 +191,34 @@ void emitDefaultFormat(
     // Add any context messages as bullet list items.
     if (error.contextMessages != null) {
       for (final message in error.contextMessages!) {
-        final contextPath = _relativeFilePath(error.location.file, workingDirectory);
+        final contextPath =
+            _relativeFilePath(error.location.file, workingDirectory);
         var messageSentenceFragment = message.message;
         messageSentenceFragment = messageSentenceFragment.endsWith('.')
-            ? messageSentenceFragment.replaceRange(messageSentenceFragment.length - 1, messageSentenceFragment.length, '')
+            ? messageSentenceFragment.replaceRange(
+                messageSentenceFragment.length - 1,
+                messageSentenceFragment.length,
+                '',
+              )
             : messageSentenceFragment;
 
-        log.stdout('$_bodyIndent'
+        log.writeln('$_bodyIndent'
             ' - ${message.message.endsWith('.')} at '
             '$contextPath:${message.location.startLine}:${message.location.startColumn}.');
       }
     }
   }
 
-  log.stdout('');
+  log.writeln('');
 
   final errorCount = errors.length;
-  log.stdout('$errorCount issue${errorCount > 1 ? 's' : ''} found.');
+  log.writeln('$errorCount issue${errorCount > 1 ? 's' : ''} found.');
 }
 
 String _relativeFilePath(String file, Directory fromDir) {
-  final fromPath = fromDir.absolute.resolveSymbolicLinksSync();
   return p.relative(
     file,
-    from: fromPath,
+    from: fromDir.absolute.path,
   );
 }
 
@@ -247,4 +259,11 @@ String _wrapText(String text, {int? width}) {
     lineMaxEndIndex = lineStartIndex + width;
   }
   return buffer.toString();
+}
+
+extension on Logger {
+  void writeln(String message) {
+    write(message);
+    write('\n');
+  }
 }

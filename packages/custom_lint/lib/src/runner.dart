@@ -18,7 +18,12 @@ const _analyzerPluginProtocolVersion = '1.0.0-alpha.0';
 /// A runner for programmatically interacting with a plugin.
 class CustomLintRunner {
   /// A runner for programmatically interacting with a plugin.
-  CustomLintRunner(this._server, this.workingDirectory, this.channel, this.format);
+  CustomLintRunner(
+    this._server,
+    this.workingDirectory,
+    this.channel,
+    this.format,
+  );
 
   // SendPort get sendPort => channel.receivePort.sendPort;
 
@@ -42,14 +47,16 @@ class CustomLintRunner {
 
   late final _sdkPath = getSdkPath();
 
-  late final _contextLocator = ContextLocator(resourceProvider: _resourceProvider);
+  late final _contextLocator =
+      ContextLocator(resourceProvider: _resourceProvider);
   late final _allContextRoots = _contextLocator.locateRoots(
     includedPaths: [workingDirectory.path],
   );
 
   late final _contextRoots = _allContextRoots
       .where(
-        (contextRoot) => File(p.join(contextRoot.root.path, 'pubspec.yaml')).existsSync(),
+        (contextRoot) =>
+            File(p.join(contextRoot.root.path, 'pubspec.yaml')).existsSync(),
       )
       .toList();
 
@@ -84,7 +91,8 @@ class CustomLintRunner {
 
     await _server.awaitAnalysisDone(reload: reload);
 
-    return _accumulatedLints.values.toList()..sort((a, b) => a.file.compareTo(b.file));
+    return _accumulatedLints.values.toList()
+      ..sort((a, b) => a.file.compareTo(b.file));
   }
 
   /// Obtains the list of fixes for a given file/offset combo

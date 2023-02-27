@@ -48,13 +48,12 @@ class CustomLintServer {
         return cb(server);
       },
       (err, stack) => server.handleUncaughtError(err, stack),
-      // TODO
-      // zoneSpecification: ZoneSpecification(
-      //   print: (self, parent, zone, line) => server.handlePrint(
-      //     line,
-      //     isClientMessage: false,
-      //   ),
-      // ),
+      zoneSpecification: ZoneSpecification(
+        print: (self, parent, zone, line) => server.handlePrint(
+          line,
+          isClientMessage: false,
+        ),
+      ),
     );
 
     return result;

@@ -32,7 +32,12 @@ CustomLintRunner startRunnerForApp(
     includeBuiltInLints: includeBuiltInLints,
     watchMode: false,
     (customLintServer) {
-      final runner = CustomLintRunner(customLintServer, directory, channel);
+      final runner = CustomLintRunner(
+        customLintServer,
+        directory,
+        channel,
+        'default',
+      );
       addTearDown(runner.close);
 
       if (!ignoreErrors) {

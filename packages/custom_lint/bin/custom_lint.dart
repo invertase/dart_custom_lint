@@ -23,9 +23,10 @@ Future<void> entrypoint([List<String> args = const []]) async {
       help: 'Specifies the format to display errors.',
       allowed: ['default', 'json'],
       allowedHelp: {
-        'default': 'The default output format. This format is intended to be user '
-            'consumable.\nThe format is not specified and can change '
-            'between releases.',
+        'default':
+            'The default output format. This format is intended to be user '
+                'consumable.\nThe format is not specified and can change '
+                'between releases.',
         'json': 'A machine readable output in a JSON format.',
       },
     );

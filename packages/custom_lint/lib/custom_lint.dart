@@ -48,7 +48,12 @@ Future<void> customLint({
     includeBuiltInLints: false,
     delegate: CommandCustomLintDelegate(),
     (customLintServer) async {
-      final runner = CustomLintRunner(customLintServer, workingDirectory, channel, format);
+      final runner = CustomLintRunner(
+        customLintServer,
+        workingDirectory,
+        channel,
+        format,
+      );
 
       try {
         await runner.initialize;
@@ -70,8 +75,7 @@ Future<void> _runPlugins(
   CustomLintRunner runner, {
   required bool reload,
 }) async {
-  final ansi = Ansi(Ansi.terminalSupportsAnsi);
-  final log = Logger.standard(ansi: ansi);
+  final log = Logger.standard();
 
   log.progress('Analyzing');
 

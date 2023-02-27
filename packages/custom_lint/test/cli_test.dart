@@ -38,9 +38,7 @@ void main() {
         expect(exitCode, 0);
         expect(
           out.join(),
-          completion('''
-No issues found!
-'''),
+          completion(contains('No issues found!')),
         );
         expect(err, emitsDone);
       },
@@ -106,12 +104,17 @@ lib/custom_lint_client.dart:14:29: Error: Undefined name 'createPlugin'.
         expect(err, emitsDone);
         expect(
           out.join(),
-          completion('''
-  lib/another.dart:1:6 • Hello world • hello_world
-  lib/another.dart:1:6 • Oy • oy
-  lib/main.dart:1:6 • Hello world • hello_world
-  lib/main.dart:1:6 • Oy • oy
+          completion(
+            allOf(
+              matchIgnoringAnsi(contains, '''
+   info • lib/another.dart:1:6 • Hello world • hello_world
+   info • lib/another.dart:1:6 • Oy • oy
+   info • lib/main.dart:1:6 • Hello world • hello_world
+   info • lib/main.dart:1:6 • Oy • oy
 '''),
+              endsWith('4 issues found.\n'),
+            ),
+          ),
         );
         expect(exitCode, 1);
       },
@@ -208,13 +211,11 @@ lib/custom_lint_client.dart:16:26: Error: Undefined name 'createPlugin'.
 [hello_world] Hello
 [hello_world] world
 '''),
-              endsWith(
-                '''
-  lib/another.dart:1:6 • Oy • oy
-  lib/main.dart:1:6 • Hello world • hello_world
-  lib/main.dart:1:6 • Oy • oy
-''',
-              ),
+              matchIgnoringAnsi(contains, '''
+   info • lib/another.dart:1:6 • Oy • oy
+   info • lib/main.dart:1:6 • Hello world • hello_world
+   info • lib/main.dart:1:6 • Oy • oy
+'''),
             ),
           ),
         );
@@ -311,16 +312,16 @@ void main() {
         expect(
           out.join(),
           completion(
-            predicate((value) {
-              expect(value, '''
-  lib/main.dart:1:1 • z • z
-  lib/main.dart:2:1 • y • y
-  lib/main.dart:2:2 • a • a
-  lib/main.dart:2:2 • x • x
-  lib/main.dart:2:2 • x2 • x2
-''');
-              return true;
-            }),
+            allOf(
+              matchIgnoringAnsi(contains, '''
+   info • lib/main.dart:1:1 • z • z
+   info • lib/main.dart:2:1 • y • y
+   info • lib/main.dart:2:2 • a • a
+   info • lib/main.dart:2:2 • x • x
+   info • lib/main.dart:2:2 • x2 • x2
+'''),
+              endsWith('5 issues found.\n'),
+            ),
           ),
         );
       },
