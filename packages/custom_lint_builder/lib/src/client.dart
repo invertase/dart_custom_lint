@@ -480,7 +480,6 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   Future<EditGetFixesResult> handleEditGetFixes(
     EditGetFixesParams parameters,
   ) async {
-    // TODO test
     final contextCollection = await _contextCollection.first;
     final analysisContext = contextCollection.contextFor(parameters.file);
     final resolver = analysisContext.createResolverForFile(
@@ -500,7 +499,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
         .where(
           (error) =>
               parameters.offset >= error.offset &&
-              parameters.offset < error.offset + error.length,
+              parameters.offset <= error.offset + error.length,
         )
         .toList();
 

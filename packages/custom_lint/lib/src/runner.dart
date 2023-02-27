@@ -87,6 +87,17 @@ class CustomLintRunner {
       ..sort((a, b) => a.file.compareTo(b.file));
   }
 
+  /// Obtains the list of fixes for a given file/offset combo
+  Future<EditGetFixesResult> getFixes(
+    String path,
+    int offset,
+  ) async {
+    final result = await channel.sendRequest(
+      EditGetFixesParams(path, offset),
+    );
+    return EditGetFixesResult.fromResponse(result);
+  }
+
   /// Stop the command runner, sending a [PluginShutdownParams] request in the process.
   Future<void> close() async {
     if (_closed) return;
