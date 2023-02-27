@@ -1,4 +1,4 @@
-## Unreleased fix
+## 0.2.11
 
 - Fixes `LintCode.url` no-longer showing-up in the IDE
 - Fix quick-fixes not working on the last offset of an analysis error
