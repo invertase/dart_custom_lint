@@ -241,6 +241,7 @@ Bad state: fail
     final plugin = createPlugin(
       name: 'test_lint',
       main: '''
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -286,6 +287,21 @@ class _Lint extends DartLintRule {
       0,
       1,
     );
+    reporter.reportErrorForOffset(
+      const LintCode(name: 'w', problemMessage: 'w', errorSeverity: ErrorSeverity.WARNING),
+      0,
+      1,
+    );
+    reporter.reportErrorForOffset(
+      const LintCode(name: 'e', problemMessage: 'e', errorSeverity: ErrorSeverity.ERROR),
+      0,
+      1,
+    );
+    reporter.reportErrorForOffset(
+      const LintCode(name: 'e', problemMessage: 'e', errorSeverity: ErrorSeverity.ERROR),
+      1,
+      2,
+    );
   }
 }
 ''',
@@ -317,13 +333,16 @@ void main() {
           completion(
             allOf(
               matchIgnoringAnsi(contains, '''
+  error ${ansi.bullet} lib/main.dart:1:1 ${ansi.bullet} e ${ansi.bullet} e
+  error ${ansi.bullet} lib/main.dart:1:2 ${ansi.bullet} e ${ansi.bullet} e
+warning ${ansi.bullet} lib/main.dart:1:1 ${ansi.bullet} w ${ansi.bullet} w
    info ${ansi.bullet} lib/main.dart:1:1 ${ansi.bullet} z ${ansi.bullet} z
    info ${ansi.bullet} lib/main.dart:2:1 ${ansi.bullet} y ${ansi.bullet} y
    info ${ansi.bullet} lib/main.dart:2:2 ${ansi.bullet} a ${ansi.bullet} a
    info ${ansi.bullet} lib/main.dart:2:2 ${ansi.bullet} x ${ansi.bullet} x
    info ${ansi.bullet} lib/main.dart:2:2 ${ansi.bullet} x2 ${ansi.bullet} x2
 '''),
-              endsWith('5 issues found.\n'),
+              endsWith('8 issues found.\n'),
             ),
           ),
         );
