@@ -17,7 +17,6 @@ import 'package:analyzer/source/source_range.dart';
 import 'package:analyzer_plugin/plugin/plugin.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:analyzer_plugin/starter.dart';
-import 'package:analyzer_plugin/utilities/analyzer_converter.dart';
 import 'package:collection/collection.dart';
 // ignore: implementation_imports
 import 'package:custom_lint/src/v2/protocol.dart';
@@ -38,6 +37,7 @@ import 'package:rxdart/subjects.dart';
 
 import '../custom_lint_builder.dart';
 import 'channel.dart';
+import 'custom_analyzer_converter.dart';
 import 'expect_lint.dart';
 
 /// Analysis utilities for custom_lint
@@ -582,7 +582,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     runPostRunCallbacks(postRunCallbacks);
 
     return AnalysisErrorFixes(
-      AnalyzerConverter().convertAnalysisError(
+      CustomAnalyzerConverter().convertAnalysisError(
         analysisError,
         lineInfo: resolver.lineInfo,
         severity: analysisError.errorCode.errorSeverity,
@@ -802,7 +802,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
         CustomLintEvent.analyzerPluginNotification(
           AnalysisErrorsParams(
             path,
-            AnalyzerConverter().convertAnalysisErrors(
+            CustomAnalyzerConverter().convertAnalysisErrors(
               allAnalysisErrors,
               lineInfo: resolver.lineInfo,
               options: analysisContext.analysisOptions,

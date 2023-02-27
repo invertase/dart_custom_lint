@@ -1,3 +1,7 @@
+## Unreleased fix
+
+Fixes `LintCode.url` no-longer showing-up in the IDE
+
 ## 0.2.10
 
 Fix `filesToAnalyze` only working on the file name instead of the file path.
