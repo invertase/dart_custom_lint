@@ -10,22 +10,33 @@ void main() {
     final source = resourceProvider
         .newFile('/home/user/project/lib/main.dart', 'void main() {}')
         .createSource();
+    final source2 = resourceProvider
+        .newFile('/home/user/project/lib/main2.dart', 'void main2() {}')
+        .createSource();
 
     final another = AnalysisError(
       source,
-      42,
-      10,
-      const LintCode(name: 'another', problemMessage: 'another message'),
+      11,
+      12,
+      const LintCode(
+        name: 'another',
+        problemMessage: 'another message',
+        url: 'https://dart.dev/diagnostics/another',
+      ),
     );
 
     expect(
       CustomAnalyzerConverter()
           .convertAnalysisError(
             AnalysisError(
-              source,
-              42,
-              10,
-              const LintCode(name: 'foo', problemMessage: 'bar'),
+              source2,
+              13,
+              14,
+              const LintCode(
+                name: 'foo',
+                problemMessage: 'bar',
+                url: 'https://google.com/diagnostics/foo',
+              ),
               [],
               [another.problemMessage],
             ),
@@ -35,9 +46,9 @@ void main() {
         'severity': 'INFO',
         'type': 'LINT',
         'location': {
-          'file': '/home/user/project/lib/main.dart',
-          'offset': 42,
-          'length': 10,
+          'file': '/home/user/project/lib/main2.dart',
+          'offset': 13,
+          'length': 14,
           'startLine': -1,
           'startColumn': -1,
           'endLine': -1,
@@ -45,21 +56,21 @@ void main() {
         },
         'message': 'bar',
         'code': 'foo',
-        'url': 'https://dart.dev/diagnostics/foo',
+        'url': 'https://google.com/diagnostics/foo',
         'contextMessages': [
           {
             'message': 'another message',
             'location': {
               'file': '/home/user/project/lib/main.dart',
-              'offset': 42,
-              'length': 10,
+              'offset': 11,
+              'length': 12,
               'startLine': -1,
               'startColumn': -1,
               'endLine': -1,
               'endColumn': -1
             }
           }
-        ],
+        ]
       },
     );
   });
