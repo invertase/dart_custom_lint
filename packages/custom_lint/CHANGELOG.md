@@ -1,3 +1,7 @@
+## Unreleased patch
+
+Improved the error message when there is a version conflict in mono-repos (thanks to @@adsonpleal)
+
 ## 0.2.5
 
 Fix custom_lint not correctly killing sub-processes when the IDE stops custom_lint.
