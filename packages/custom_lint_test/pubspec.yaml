@@ -1,9 +1,0 @@
-name: custom_lint_test
-version: 0.0.1
-repository: https://github.com/invertase/custom_lint
-
-environment:
-  sdk: ">=2.16.0 <3.0.0"
-
-dependencies:
-  analyzer: ^5.0.0
