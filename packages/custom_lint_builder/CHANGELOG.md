@@ -2,6 +2,7 @@
 
 - Fixes `LintCode.url` no-longer showing-up in the IDE
 - Fix quick-fixes not working on the last offset of an analysis error
+- Bump minimum Dart SDK to `sdk: ">=2.19.0 <3.0.0"`
 
 ## 0.2.10
 
