@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cli_util/cli_logging.dart';
 import 'package:test/test.dart';
 
 import '../bin/custom_lint.dart' as cli;
@@ -20,6 +21,8 @@ final helloWordPluginSource = createPluginSource([
     message: 'Hello world',
   )
 ]);
+
+final ansi = Ansi(Ansi.terminalSupportsAnsi);
 
 void main() {
   test('exits with 0 when no lint and no error are found', () async {
@@ -107,10 +110,10 @@ lib/custom_lint_client.dart:14:29: Error: Undefined name 'createPlugin'.
           completion(
             allOf(
               matchIgnoringAnsi(contains, '''
-   info • lib/another.dart:1:6 • Hello world • hello_world
-   info • lib/another.dart:1:6 • Oy • oy
-   info • lib/main.dart:1:6 • Hello world • hello_world
-   info • lib/main.dart:1:6 • Oy • oy
+   info ${ansi.bullet} lib/another.dart:1:6 ${ansi.bullet} Hello world ${ansi.bullet} hello_world
+   info ${ansi.bullet} lib/another.dart:1:6 ${ansi.bullet} Oy ${ansi.bullet} oy
+   info ${ansi.bullet} lib/main.dart:1:6 ${ansi.bullet} Hello world ${ansi.bullet} hello_world
+   info ${ansi.bullet} lib/main.dart:1:6 ${ansi.bullet} Oy ${ansi.bullet} oy
 '''),
               endsWith('4 issues found.\n'),
             ),
@@ -212,9 +215,9 @@ lib/custom_lint_client.dart:16:26: Error: Undefined name 'createPlugin'.
 [hello_world] world
 '''),
               matchIgnoringAnsi(contains, '''
-   info • lib/another.dart:1:6 • Oy • oy
-   info • lib/main.dart:1:6 • Hello world • hello_world
-   info • lib/main.dart:1:6 • Oy • oy
+   info ${ansi.bullet} lib/another.dart:1:6 ${ansi.bullet} Oy ${ansi.bullet} oy
+   info ${ansi.bullet} lib/main.dart:1:6 ${ansi.bullet} Hello world ${ansi.bullet} hello_world
+   info ${ansi.bullet} lib/main.dart:1:6 ${ansi.bullet} Oy ${ansi.bullet} oy
 '''),
             ),
           ),
@@ -314,11 +317,11 @@ void main() {
           completion(
             allOf(
               matchIgnoringAnsi(contains, '''
-   info • lib/main.dart:1:1 • z • z
-   info • lib/main.dart:2:1 • y • y
-   info • lib/main.dart:2:2 • a • a
-   info • lib/main.dart:2:2 • x • x
-   info • lib/main.dart:2:2 • x2 • x2
+   info ${ansi.bullet} lib/main.dart:1:1 ${ansi.bullet} z ${ansi.bullet} z
+   info ${ansi.bullet} lib/main.dart:2:1 ${ansi.bullet} y ${ansi.bullet} y
+   info ${ansi.bullet} lib/main.dart:2:2 ${ansi.bullet} a ${ansi.bullet} a
+   info ${ansi.bullet} lib/main.dart:2:2 ${ansi.bullet} x ${ansi.bullet} x
+   info ${ansi.bullet} lib/main.dart:2:2 ${ansi.bullet} x2 ${ansi.bullet} x2
 '''),
               endsWith('5 issues found.\n'),
             ),
