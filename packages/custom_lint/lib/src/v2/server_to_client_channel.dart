@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:async/async.dart';
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -15,6 +16,165 @@ import '../channels.dart';
 import '../plugin.dart';
 import 'custom_lint_analyzer_plugin.dart';
 import 'protocol.dart';
+
+extension on Pubspec {
+  Dependency? getDependency(String name) {
+    return dependencies[name] ??
+        devDependencies[name] ??
+        dependencyOverrides[name];
+  }
+}
+
+extension on Package {
+  bool get isGitDependency => root.path.contains('/.pub-cache/git/');
+
+  bool get isHostedDependency => root.path.contains('/.pub-cache/hosted/');
+
+  String buildConflictingMessage(Pubspec pubspec) {
+    final versionString = _buildVersionString(pubspec);
+    return '- $name $versionString';
+  }
+
+  String _buildVersionString(Pubspec pubspec) {
+    if (isGitDependency) {
+      return _buildGitPackageVersion(pubspec);
+    } else if (isHostedDependency) {
+      return _buildHostedPackageVersion();
+    } else {
+      return _buildPathDependency();
+    }
+  }
+
+  String _buildHostedPackageVersion() {
+    final segments = root.pathSegments;
+    final version = segments[segments.length - 2].split('-').last;
+    return 'v$version';
+  }
+
+  String _buildPathDependency() {
+    return 'from path ${root.path}';
+  }
+
+  String _buildGitPackageVersion(Pubspec pubspec) {
+    final dependency = pubspec.getDependency(name);
+
+    // We might not be able to find a dependency if the package is a transitive dependency
+    if (dependency == null || dependency is! GitDependency) {
+      final version = root.path.split('/git/').last.replaceFirst('$name-', '');
+      // We're not able to find the dependency, so we'll just return
+      // the version from the path, which is not ideal, but better than nothing
+      return 'from git $version';
+    }
+    final versionBuilder = StringBuffer();
+    versionBuilder.write('from git url ${dependency.url}');
+    final dependencyRef = dependency.ref;
+    if (dependencyRef != null) {
+      versionBuilder.write(' ref $dependencyRef');
+    }
+    final dependencyPath = dependency.path;
+    if (dependencyPath != null) {
+      versionBuilder.write(' path $dependencyPath');
+    }
+
+    return versionBuilder.toString();
+  }
+}
+
+/// A class that checks if there are conflicting packages in the context roots.
+@internal
+class ConflictingPackagesChecker {
+  final _contextRootPackagesMap = <ContextRoot, List<Package>>{};
+  final _contextRootPubspecMap = <ContextRoot, Pubspec>{};
+
+  /// Adds a [contextRoot] and its [packages] to the checker.
+  /// We need to pass the [pubspec] to check if the package is a git dependency
+  /// and to check if the context root is a flutter package.
+  void addContextRoot(
+    ContextRoot contextRoot,
+    List<Package> packages,
+    Pubspec pubspec,
+  ) {
+    _contextRootPackagesMap[contextRoot] = packages;
+    _contextRootPubspecMap[contextRoot] = pubspec;
+  }
+
+  /// Throws an error if there are conflicting packages.
+  void throwErrorIfConflictingPackages() {
+    final packageNameRootMap = <String, Set<Uri>>{};
+    // Group packages by name and collect all unique roots,
+    // since we're using a set
+    for (final packages in _contextRootPackagesMap.values) {
+      for (final package in packages) {
+        final rootSet = packageNameRootMap[package.name] ?? {};
+        packageNameRootMap[package.name] = rootSet..add(package.root);
+      }
+    }
+    // Find packages with more than one root
+    final packagesWithConflictingVersions = packageNameRootMap.entries
+        .where((entry) => entry.value.length > 1)
+        .map((e) => e.key)
+        .toList();
+
+    // If there are no conflicting versions, return
+    if (packagesWithConflictingVersions.isEmpty) return;
+
+    final contextRootConflictingPackages =
+        _contextRootPackagesMap.map((contextRoot, packages) {
+      final conflictingPackages = packages.where(
+        (package) => packagesWithConflictingVersions.contains(package.name),
+      );
+      return MapEntry(contextRoot, conflictingPackages);
+    });
+
+    final errorMessageBuilder = StringBuffer();
+
+    errorMessageBuilder
+      ..writeln('Some dependencies with conflicting versions were identified:')
+      ..writeln();
+
+    // Build conflicting packages message
+    for (final entry in contextRootConflictingPackages.entries) {
+      final contextRoot = entry.key;
+      final conflictingPackages = entry.value;
+      final pubspec = _contextRootPubspecMap[contextRoot]!;
+      final locationName = pubspec.name;
+      errorMessageBuilder.writeln('$locationName at ${contextRoot.root}');
+      for (final package in conflictingPackages) {
+        errorMessageBuilder.writeln(package.buildConflictingMessage(pubspec));
+      }
+      errorMessageBuilder.writeln();
+    }
+
+    errorMessageBuilder
+      ..writeln(
+        'This is not supported. Custom_lint shares the analysis between all'
+        ' packages. As such, all plugins are started under a single process,'
+        ' sharing the dependencies of all the packages that use custom_lint. '
+        "Since there's a single process for all plugins, if 2 plugins try to"
+        ' use different versions for a dependency, the process cannot be '
+        'reasonably started. Please make sure all packages have the same version.',
+      )
+      ..writeln('You could run the following commands to try fixing this:')
+      ..writeln();
+
+    // Build fix commands
+    for (final entry in contextRootConflictingPackages.entries) {
+      final contextRoot = entry.key;
+      final pubspec = _contextRootPubspecMap[contextRoot]!;
+      final isFlutter = pubspec.dependencies.containsKey('flutter');
+      final command = isFlutter ? 'flutter' : 'dart';
+
+      final conflictingPackages = entry.value;
+      final conflictingPackagesNames =
+          conflictingPackages.map((package) => package.name).join(' ');
+      errorMessageBuilder
+        ..writeln('cd ${contextRoot.root}')
+        ..writeln('$command pub upgrade $conflictingPackagesNames');
+    }
+
+    throw StateError(errorMessageBuilder.toString());
+  }
+}
 
 Future<int> _findPossiblyUnusedPort() {
   return _SocketCustomLintServerToClientChannel._createServerSocket()
@@ -52,6 +212,7 @@ void _writePackageConfigForTempProject(
   );
 
   final packageMap = <String, Package>{};
+  final conflictingPackagesChecker = ConflictingPackagesChecker();
   for (final contextRoot in contextRoots) {
     final contextRootPackageConfigUri = Uri.file(
       join(contextRoot.root, '.dart_tool', 'package_config.json'),
@@ -80,32 +241,29 @@ void _writePackageConfigForTempProject(
       pubspecContent,
       sourceUrl: contextRootPubspecFile.uri,
     );
-
-    for (final package in packageConfig.packages) {
-      if (package.name == pubspec.name) {
+    final validPackages = [
+      for (final package in packageConfig.packages)
         // Don't include the project that has a plugin enabled in the list
         // of dependencies of the plugin.
         // This avoids the plugin from being hot-reloaded when the analyzed
         // code changes.
-        continue;
-      }
+        if (package.name != pubspec.name) package
+    ];
 
-      final currentPackage = packageMap[package.name];
+    // Add the contextRoot and its packages to the conflicting packages checker
+    conflictingPackagesChecker.addContextRoot(
+      contextRoot,
+      validPackages,
+      pubspec,
+    );
 
-      if (currentPackage != null && currentPackage.root != package.root) {
-        throw StateError(
-          '''
-Two ContextRoots depend on ${package.name} but use different version,
-therefore custom_lint does not know which one to pick.
-- ${package.root}
-- ${currentPackage.root}
-''',
-        );
-      }
-
+    for (final package in validPackages) {
       packageMap[package.name] = package;
     }
   }
+
+  // Check if there are conflicting packages
+  conflictingPackagesChecker.throwErrorIfConflictingPackages();
 
   targetFile.createSync(recursive: true);
 
