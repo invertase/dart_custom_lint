@@ -65,13 +65,18 @@ extension on Package {
       // the version from the path, which is not ideal, but better than nothing
       return 'from git $version';
     }
-    final dependencyPath = dependency.path;
-    final dependencyPathString =
-        dependencyPath == null ? '' : ' path ${dependency.path}';
+    final versionBuilder = StringBuffer();
+    versionBuilder.write('from git url ${dependency.url}');
     final dependencyRef = dependency.ref;
-    final dependencyRefString =
-        dependencyRef == null ? '' : ' ref ${dependency.ref}';
-    return 'from git url ${dependency.url}$dependencyRefString$dependencyPathString';
+    if (dependencyRef != null) {
+      versionBuilder.write(' ref $dependencyRef');
+    }
+    final dependencyPath = dependency.path;
+    if (dependencyPath != null) {
+      versionBuilder.write(' path $dependencyPath');
+    }
+
+    return versionBuilder.toString();
   }
 }
 
