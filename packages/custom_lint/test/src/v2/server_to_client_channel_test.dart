@@ -246,9 +246,9 @@ void main() {
               'You could run the following commands to try fixing this:\n'
               '\n'
               'cd /Users/user/project/app\n'
-              'pub upgrade riverpod freezed\n' // <--- here
+              'dart pub upgrade riverpod freezed\n' // <--- here
               'cd /Users/user/project/app/packages/http\n'
-              'pub upgrade riverpod freezed', // <--- here
+              'dart pub upgrade riverpod freezed', // <--- here
             ),
           ),
         ),
@@ -314,9 +314,9 @@ void main() {
               'You could run the following commands to try fixing this:\n'
               '\n'
               'cd /Users/user/project/app\n'
-              'pub upgrade riverpod freezed\n'
+              'dart pub upgrade riverpod freezed\n'
               'cd /Users/user/project/app/packages/http\n'
-              'pub upgrade riverpod freezed',
+              'dart pub upgrade riverpod freezed',
             ),
           ),
         ),
@@ -383,9 +383,9 @@ void main() {
               'You could run the following commands to try fixing this:\n'
               '\n'
               'cd /Users/user/project/app\n'
-              'pub upgrade riverpod freezed\n'
+              'dart pub upgrade riverpod freezed\n'
               'cd /Users/user/project/app/packages/http\n'
-              'pub upgrade riverpod freezed',
+              'dart pub upgrade riverpod freezed',
             ),
           ),
         ),
@@ -452,9 +452,9 @@ void main() {
               'You could run the following commands to try fixing this:\n'
               '\n'
               'cd /Users/user/project/app\n'
-              'pub upgrade riverpod freezed\n'
+              'dart pub upgrade riverpod freezed\n'
               'cd /Users/user/project/app/packages/http\n'
-              'pub upgrade riverpod freezed',
+              'dart pub upgrade riverpod freezed',
             ),
           ),
         ),
@@ -520,9 +520,9 @@ void main() {
               'You could run the following commands to try fixing this:\n'
               '\n'
               'cd /Users/user/project/app\n'
-              'pub upgrade riverpod freezed\n'
+              'dart pub upgrade riverpod freezed\n'
               'cd /Users/user/project/app/packages/http\n'
-              'pub upgrade riverpod freezed',
+              'dart pub upgrade riverpod freezed',
             ),
           ),
         ),

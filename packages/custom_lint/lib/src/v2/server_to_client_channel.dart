@@ -92,13 +92,13 @@ class ConflictingPackagesChecker {
       final contextRoot = entry.key;
       final pubspec = _contextRootPubspecMap[contextRoot]!;
       final isFlutter = pubspec.dependencies.containsKey('flutter');
-      final flutterText = isFlutter ? 'flutter ' : '';
+      final command = isFlutter ? 'flutter' : 'dart';
 
       final conflictingPackages = entry.value;
       final conflictingPackagesNames =
           conflictingPackages.map((package) => package.name).join(' ');
       return 'cd ${contextRoot.root}\n'
-          '${flutterText}pub upgrade $conflictingPackagesNames';
+          '$command pub upgrade $conflictingPackagesNames';
     }).join('\n');
 
     throw StateError(
