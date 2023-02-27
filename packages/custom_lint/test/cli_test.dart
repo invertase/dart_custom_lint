@@ -125,6 +125,55 @@ lib/custom_lint_client.dart:14:29: Error: Undefined name 'createPlugin'.
     );
   });
 
+  test('CLI lists warnings from all plugins and set exit code with json format',
+      () async {
+    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
+    final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
+
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': 'void fn() {}',
+        'lib/another.dart': 'void fail() {}',
+      },
+      plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
+      name: 'test_app',
+    );
+
+    await runWithIOOverride(
+      (out, err) async {
+        await cli.entrypoint(['--format=json']);
+
+        expect(err, emitsDone);
+        expect(
+          out.join(),
+          completion(
+            allOf([
+              contains('{"version":1,"diagnostics":['),
+              contains(
+                  '{"code":"hello_world","severity":"INFO","type":"LINT","location":{"file":'),
+              contains(
+                  '"range":{"start":{"offset":5,"line":1,"column":6},"end":{"offset":9,"line":1,"column":10}}},"problemMessage":"Hello world"}'),
+              contains(
+                  '{"code":"oy","severity":"INFO","type":"LINT","location":{"file":'),
+              contains(
+                  '"range":{"start":{"offset":5,"line":1,"column":6},"end":{"offset":9,"line":1,"column":10}}},"problemMessage":"Oy"}'),
+              contains(
+                  '{"code":"hello_world","severity":"INFO","type":"LINT","location":{"file":'),
+              contains(
+                  '"range":{"start":{"offset":5,"line":1,"column":6},"end":{"offset":7,"line":1,"column":8}}},"problemMessage":"Hello world"}'),
+              contains(
+                  '{"code":"oy","severity":"INFO","type":"LINT","location":{"file":'),
+              contains(
+                  '"range":{"start":{"offset":5,"line":1,"column":6},"end":{"offset":7,"line":1,"column":8}}},"problemMessage":"Oy"}]}'),
+            ]),
+          ),
+        );
+        expect(exitCode, 1);
+      },
+      currentDirectory: app,
+    );
+  });
+
   test('supports plugins that do not compile', () async {
     final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
     final plugin2 = createPlugin(
