@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.2.11
 
 - Improved the error message when there is a version conflict in mono-repos (thanks to @@adsonpleal)
 - Bump minimum Dart SDK to `sdk: ">=2.19.0 <3.0.0"`
