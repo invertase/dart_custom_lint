@@ -28,6 +28,7 @@ class TestLintRule {
     this.onRun = '',
     this.onVariable = '',
     this.ruleMembers = '',
+    this.fixes = const [],
   });
 
   final String code;
@@ -35,6 +36,13 @@ class TestLintRule {
   final String onRun;
   final String onVariable;
   final String ruleMembers;
+  final List<TestLintFix> fixes;
+}
+
+class TestLintFix {
+  TestLintFix({required this.name});
+
+  final String name;
 }
 
 String createPluginSource(List<TestLintRule> rules) {
@@ -43,6 +51,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/error/listener.dart';
+import 'package:analyzer/error/error.dart';
 
 PluginBase createPlugin() => _Plugin();
 
@@ -56,6 +65,38 @@ class _Plugin extends PluginBase {
   buffer.write(']; }');
 
   for (final rule in rules) {
+    final fixes = rule.fixes.isEmpty
+        ? ''
+        : '''
+@override
+List<Fix> getFixes() => [${rule.fixes.map((e) => '${e.name}()').join(',')}];
+''';
+
+    for (final fix in rule.fixes) {
+      buffer.write('''
+class ${fix.name} extends DartFix {
+  @override
+  void run(
+    CustomLintResolver resolver,
+    ChangeReporter reporter,
+    CustomLintContext context,
+    AnalysisError analysisError,
+    List<AnalysisError> others,
+  ) {
+    context.registry.addVariableDeclarationList((node) {
+      if (!analysisError.sourceRange.intersects(node.sourceRange)) return;
+
+      final changeBuilder = reporter.createChangeBuilder(
+        priority: 1,
+        message: 'Fix ${rule.code}',
+      );
+      changeBuilder.addDartFileEdit((builder) {});
+    });
+  }
+}
+''');
+    }
+
     buffer.write(
       '''
 class ${rule.code} extends DartLintRule {
@@ -64,7 +105,8 @@ class ${rule.code} extends DartLintRule {
         code: LintCode(name: '${rule.code}', problemMessage: '${rule.message}'),
       );
 
-  ${rule.ruleMembers}
+$fixes
+${rule.ruleMembers}
 
   @override
   void run(CustomLintResolver resolver, ErrorReporter reporter, CustomLintContext context) {
