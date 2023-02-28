@@ -1,3 +1,7 @@
+## 0.2.12
+
+Upgrade custom_lint
+
 ## 0.2.11
 
 - Fixes `LintCode.url` no-longer showing-up in the IDE
