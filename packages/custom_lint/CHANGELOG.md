@@ -1,3 +1,7 @@
+## Unreleased fix
+
+Move json_serializable to dev dependencies
+
 ## 0.2.11
 
 - Improved the error message when there is a version conflict in mono-repos (thanks to @@adsonpleal)
