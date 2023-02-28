@@ -16,7 +16,6 @@ dependencies:
   collection: ^1.15.0
   freezed_annotation: ^2.2.0
   json_annotation: ^4.7.0
-  json_serializable: ^6.5.4
   # Dependency used by custom_lint_builder. And since custom_lint's package_config.json
   # is forked to build custom_lint_builder's package_config.json, then custom_lint needs
   # to depend on it too.
@@ -38,6 +37,7 @@ dev_dependencies:
   benchmark_harness: ^2.2.0
   build_runner: ^2.3.2
   freezed: ^2.3.2
+  json_serializable: ^6.5.4
   test: ^1.20.2
 
 executables:
