@@ -1,4 +1,4 @@
-## Unreleased fix
+## 0.2.12
 
 Move json_serializable to dev dependencies
 
