@@ -294,7 +294,6 @@ Directory createTmpFolder(Map<String, String> files, String name) {
 
     final file = File(join(newFolder.path, fileEntry.key));
     file.createSync(recursive: true);
-    addTearDown(file.deleteSync);
     file.writeAsStringSync(fileEntry.value);
   }
 

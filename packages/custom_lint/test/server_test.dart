@@ -71,6 +71,55 @@ void fn() {}
     );
   });
 
+  test('Handles files getting deleted', () async {
+    // Regression test for https://github.com/invertase/dart_custom_lint/issues/105
+    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
+
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': '''
+void fn() {}
+
+void fn2() {}
+''',
+        'lib/another.dart': 'void fn() {}\n',
+      },
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    final runner = startRunnerForApp(app, includeBuiltInLints: false);
+    final lints = await runner.getLints(reload: false);
+
+    expect(
+      lints.map((e) => e.file),
+      [
+        join(app.path, 'lib', 'another.dart'),
+        join(app.path, 'lib', 'main.dart'),
+      ],
+    );
+    expect(lints[0].errors, hasLength(1));
+    expect(lints[1].errors, hasLength(2));
+
+    final another = File(join(app.path, 'lib', 'another.dart'));
+    another.deleteSync();
+    await runner.channel.sendRequest(
+      AnalysisUpdateContentParams({
+        another.path: RemoveContentOverlay(),
+      }),
+    );
+
+    final lints2 = await runner.getLints(reload: true);
+
+    expect(
+      lints2.map((e) => e.file),
+      [join(app.path, 'lib', 'main.dart')],
+    );
+    expect(lints2[0].errors, hasLength(2));
+
+    await runner.close();
+  });
+
   test('List warnings for all files combined', () async {
     final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
 
