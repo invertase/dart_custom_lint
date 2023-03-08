@@ -35,6 +35,48 @@ class LinterVisitor implements AstVisitor<void> {
   final NodeLintRegistry _registry;
 
   @override
+  void visitLogicalAndPattern(LogicalAndPattern node) {
+    _runSubscriptions(node, _registry._forLogicalAndPattern);
+    node.visitChildren(this);
+  }
+
+  @override
+  void visitLogicalOrPattern(LogicalOrPattern node) {
+    _runSubscriptions(node, _registry._forLogicalOrPattern);
+    node.visitChildren(this);
+  }
+
+  @override
+  void visitNullAssertPattern(NullAssertPattern node) {
+    _runSubscriptions(node, _registry._forNullAssertPattern);
+    node.visitChildren(this);
+  }
+
+  @override
+  void visitNullCheckPattern(NullCheckPattern node) {
+    _runSubscriptions(node, _registry._forNullCheckPattern);
+    node.visitChildren(this);
+  }
+
+  @override
+  void visitPatternField(PatternField node) {
+    _runSubscriptions(node, _registry._forPatternField);
+    node.visitChildren(this);
+  }
+
+  @override
+  void visitPatternFieldName(PatternFieldName node) {
+    _runSubscriptions(node, _registry._forPatternFieldName);
+    node.visitChildren(this);
+  }
+
+  @override
+  void visitWildcardPattern(WildcardPattern node) {
+    _runSubscriptions(node, _registry._forWildcardPattern);
+    node.visitChildren(this);
+  }
+
+  @override
   void visitAdjacentStrings(AdjacentStrings node) {
     _runSubscriptions(node, _registry._forAdjacentStrings);
     node.visitChildren(this);
@@ -91,12 +133,6 @@ class LinterVisitor implements AstVisitor<void> {
   @override
   void visitBinaryExpression(BinaryExpression node) {
     _runSubscriptions(node, _registry._forBinaryExpression);
-    node.visitChildren(this);
-  }
-
-  @override
-  void visitBinaryPattern(BinaryPattern node) {
-    _runSubscriptions(node, _registry._forBinaryPattern);
     node.visitChildren(this);
   }
 
@@ -703,12 +739,6 @@ class LinterVisitor implements AstVisitor<void> {
   }
 
   @override
-  void visitPostfixPattern(PostfixPattern node) {
-    _runSubscriptions(node, _registry._forPostfixPattern);
-    node.visitChildren(this);
-  }
-
-  @override
   void visitPrefixedIdentifier(PrefixedIdentifier node) {
     _runSubscriptions(node, _registry._forPrefixedIdentifier);
     node.visitChildren(this);
@@ -735,18 +765,6 @@ class LinterVisitor implements AstVisitor<void> {
   @override
   void visitRecordPattern(RecordPattern node) {
     _runSubscriptions(node, _registry._forRecordPattern);
-    node.visitChildren(this);
-  }
-
-  @override
-  void visitRecordPatternField(RecordPatternField node) {
-    _runSubscriptions(node, _registry._forRecordPatternField);
-    node.visitChildren(this);
-  }
-
-  @override
-  void visitRecordPatternFieldName(RecordPatternFieldName node) {
-    _runSubscriptions(node, _registry._forRecordPatternFieldName);
     node.visitChildren(this);
   }
 
@@ -1050,6 +1068,14 @@ class NodeLintRegistry {
 
   final LintRegistry _lintRegistry;
   final bool _enableTiming;
+
+  final List<_Subscription<LogicalAndPattern>> _forLogicalAndPattern = [];
+  final List<_Subscription<LogicalOrPattern>> _forLogicalOrPattern = [];
+  final List<_Subscription<NullAssertPattern>> _forNullAssertPattern = [];
+  final List<_Subscription<NullCheckPattern>> _forNullCheckPattern = [];
+  final List<_Subscription<PatternField>> _forPatternField = [];
+  final List<_Subscription<PatternFieldName>> _forPatternFieldName = [];
+  final List<_Subscription<WildcardPattern>> _forWildcardPattern = [];
   final List<_Subscription<AdjacentStrings>> _forAdjacentStrings = [];
   final List<_Subscription<Annotation>> _forAnnotation = [];
   final List<_Subscription<ArgumentList>> _forArgumentList = [];
@@ -1061,7 +1087,6 @@ class NodeLintRegistry {
       _forAugmentationImportDirective = [];
   final List<_Subscription<AwaitExpression>> _forAwaitExpression = [];
   final List<_Subscription<BinaryExpression>> _forBinaryExpression = [];
-  final List<_Subscription<BinaryPattern>> _forBinaryPattern = [];
   final List<_Subscription<Block>> _forBlock = [];
   final List<_Subscription<BlockFunctionBody>> _forBlockFunctionBody = [];
   final List<_Subscription<BooleanLiteral>> _forBooleanLiteral = [];
@@ -1184,14 +1209,11 @@ class NodeLintRegistry {
   final List<_Subscription<PatternVariableDeclarationStatement>>
       _forPatternVariableDeclarationStatement = [];
   final List<_Subscription<PostfixExpression>> _forPostfixExpression = [];
-  final List<_Subscription<PostfixPattern>> _forPostfixPattern = [];
   final List<_Subscription<PrefixedIdentifier>> _forPrefixedIdentifier = [];
   final List<_Subscription<PrefixExpression>> _forPrefixExpression = [];
   final List<_Subscription<PropertyAccess>> _forPropertyAccess = [];
   final List<_Subscription<RecordLiteral>> _forRecordLiterals = [];
-  final List<_Subscription<RecordPatternField>> _forRecordPatternField = [];
-  final List<_Subscription<RecordPatternFieldName>> _forRecordPatternFieldName =
-      [];
+
   final List<_Subscription<RecordPattern>> _forRecordPattern = [];
   final List<_Subscription<RecordTypeAnnotation>> _forRecordTypeAnnotation = [];
   final List<_Subscription<RecordTypeAnnotationNamedField>>
@@ -1248,6 +1270,61 @@ class NodeLintRegistry {
       _forAssignedVariablePattern = [];
   final List<_Subscription<DeclaredVariablePattern>>
       _forDeclaredVariablePattern = [];
+
+  void addLogicalAndPattern(
+    String key,
+    void Function(LogicalAndPattern node) listener,
+  ) {
+    _forLogicalAndPattern
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  void addLogicalOrPattern(
+    String key,
+    void Function(LogicalOrPattern node) listener,
+  ) {
+    _forLogicalOrPattern
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  void addNullAssertPattern(
+    String key,
+    void Function(NullAssertPattern node) listener,
+  ) {
+    _forNullAssertPattern
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  void addNullCheckPattern(
+    String key,
+    void Function(NullCheckPattern node) listener,
+  ) {
+    _forNullCheckPattern
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  void addPatternField(
+    String key,
+    void Function(PatternField node) listener,
+  ) {
+    _forPatternField.add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  void addPatternFieldName(
+    String key,
+    void Function(PatternFieldName node) listener,
+  ) {
+    _forPatternFieldName
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  void addWildcardPattern(
+    String key,
+    void Function(WildcardPattern node) listener,
+  ) {
+    _forWildcardPattern
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
 
   void addAdjacentStrings(
     String key,
@@ -1315,22 +1392,6 @@ class NodeLintRegistry {
     void Function(AwaitExpression node) listener,
   ) {
     _forAwaitExpression
-        .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
-  void addBinaryExpression(
-    String key,
-    void Function(BinaryExpression node) listener,
-  ) {
-    _forBinaryExpression
-        .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
-  void addBinaryPattern(
-    String key,
-    void Function(BinaryPattern node) listener,
-  ) {
-    _forBinaryPattern
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
@@ -2114,14 +2175,6 @@ class NodeLintRegistry {
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
-  void addPostfixPattern(
-    String key,
-    void Function(PostfixPattern node) listener,
-  ) {
-    _forPostfixPattern
-        .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
   void addPrefixedIdentifier(
     String key,
     void Function(PrefixedIdentifier node) listener,
@@ -2159,22 +2212,6 @@ class NodeLintRegistry {
     void Function(RecordPattern node) listener,
   ) {
     _forRecordPattern
-        .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
-  void addRecordPatternField(
-    String key,
-    void Function(RecordPatternField node) listener,
-  ) {
-    _forRecordPatternField
-        .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
-  void addRecordPatternFieldName(
-    String key,
-    void Function(RecordPatternFieldName node) listener,
-  ) {
-    _forRecordPatternFieldName
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
@@ -2588,20 +2625,6 @@ class LintRuleNodeRegistry {
     void Function(AwaitExpression node) listener,
   ) {
     nodeLintRegistry.addAwaitExpression(name, listener);
-  }
-
-  @preferInline
-  void addBinaryExpression(
-    void Function(BinaryExpression node) listener,
-  ) {
-    nodeLintRegistry.addBinaryExpression(name, listener);
-  }
-
-  @preferInline
-  void addBinaryPattern(
-    void Function(BinaryPattern node) listener,
-  ) {
-    nodeLintRegistry.addBinaryPattern(name, listener);
   }
 
   @preferInline
@@ -3311,13 +3334,6 @@ class LintRuleNodeRegistry {
   }
 
   @preferInline
-  void addPostfixPattern(
-    void Function(PostfixPattern node) listener,
-  ) {
-    nodeLintRegistry.addPostfixPattern(name, listener);
-  }
-
-  @preferInline
   void addPrefixedIdentifier(
     void Function(PrefixedIdentifier node) listener,
   ) {
@@ -3350,20 +3366,6 @@ class LintRuleNodeRegistry {
     void Function(RecordPattern node) listener,
   ) {
     nodeLintRegistry.addRecordPattern(name, listener);
-  }
-
-  @preferInline
-  void addRecordPatternField(
-    void Function(RecordPatternField node) listener,
-  ) {
-    nodeLintRegistry.addRecordPatternField(name, listener);
-  }
-
-  @preferInline
-  void addRecordPatternFieldName(
-    void Function(RecordPatternFieldName node) listener,
-  ) {
-    nodeLintRegistry.addRecordPatternFieldName(name, listener);
   }
 
   @preferInline
