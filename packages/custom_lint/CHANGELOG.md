@@ -1,3 +1,7 @@
+## Unreleased breaking
+
+- Update analyzer to >=5.7.0 <5.8.0
+
 ## 0.2.12
 
 Move json_serializable to dev dependencies
