@@ -16,7 +16,7 @@
 [hello_world] 1990-01-01T00:00:00.000 #12     _CustomZone.run (dart:async/zone.dart:1300:19)
 [hello_world] 1990-01-01T00:00:00.000 #13     _CustomZone.bindCallback.<anonymous closure> (dart:async/zone.dart:1232:23)
 [hello_world] 1990-01-01T00:00:00.000 #14     runPostRunCallbacks (package:custom_lint_core/src/plugin_base.dart:14:19)
-[hello_world] 1990-01-01T00:00:00.000 #15     _ClientAnalyzerPlugin.analyzeFile.<anonymous closure> (package:custom_lint_builder/src/client.dart:778:7)
+[hello_world] 1990-01-01T00:00:00.000 #15     _ClientAnalyzerPlugin.analyzeFile.<anonymous closure> (package:custom_lint_builder/src/client.dart:779:7)
 [hello_world] 1990-01-01T00:00:00.000 <asynchronous suspension>
 [hello_world] 1990-01-01T00:00:00.000 #16     _ClientAnalyzerPlugin._runOperation (package:custom_lint_builder/src/client.dart:821:14)
 [hello_world] 1990-01-01T00:00:00.000 <asynchronous suspension>
