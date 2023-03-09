@@ -12,7 +12,12 @@ jobs:
     container: cirrusci/flutter:stable
     steps:
       - uses: actions/checkout@v3
-      - run: cd packages/custom_lint_problem
       - run: flutter pub get
+        with:
+          working-directory: packages/custom_lint_problem
       - run: flutter analyze
+        with:
+          working-directory: packages/custom_lint_problem
       - run: flutter pub run custom_lint
+        with:
+          working-directory: packages/custom_lint_problem
