@@ -1,4 +1,8 @@
+## 0.3.1 - 2023-03-09
+Update dependencies
+
 ## 0.3.0 - 2023-03-09
+
 - Update analyzer to >=5.7.0 <5.8.0
 
 ## 0.2.12
