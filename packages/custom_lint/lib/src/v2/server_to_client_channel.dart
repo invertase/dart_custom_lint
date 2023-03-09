@@ -409,27 +409,29 @@ $dependencies
 
   @override
   Future<void> init() async {
-    _writePackageConfigForTempProject(
-      _tempDirectory,
-      _contextRoots.roots,
-    );
-    _writePubspec();
-    _writeEntrypoint();
-
-    final processFuture = _asyncRetry(retryCount: 5, () async {
-      // Using "late" to fetch the port only if needed (in watch mode)
-      late final port = _findPossiblyUnusedPort();
-      final process = await Process.start(
-        Platform.resolvedExecutable,
-        [
-          if (_server.watchMode) '--enable-vm-service=${await port}',
-          join('lib', 'custom_lint_client.dart'),
-          await _serverSocket.then((value) => value.port.toString())
-        ],
-        workingDirectory: _tempDirectory.path,
+    final processFuture = Future.sync(() {
+      _writePackageConfigForTempProject(
+        _tempDirectory,
+        _contextRoots.roots,
       );
-      return process;
-    });
+      _writePubspec();
+      _writeEntrypoint();
+    }).then(
+      (_) => _asyncRetry(retryCount: 5, () async {
+        // Using "late" to fetch the port only if needed (in watch mode)
+        late final port = _findPossiblyUnusedPort();
+        final process = await Process.start(
+          Platform.resolvedExecutable,
+          [
+            if (_server.watchMode) '--enable-vm-service=${await port}',
+            join('lib', 'custom_lint_client.dart'),
+            await _serverSocket.then((value) => value.port.toString())
+          ],
+          workingDirectory: _tempDirectory.path,
+        );
+        return process;
+      }),
+    );
 
     await processFuture.then(
       _process.complete,
