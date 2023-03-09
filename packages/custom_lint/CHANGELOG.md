@@ -1,4 +1,4 @@
-## Unreleased fix
+## 0.3.2 - 2023-03-09
 
 - Revert "Fixed an issue that caused a "Port already in use" error when
   trying to start custom_lint".
