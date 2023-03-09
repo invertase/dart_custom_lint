@@ -1,5 +1,5 @@
 name: custom_lint_core
-version: 0.2.12
+version: 0.3.0
 description: A package to help writing custom linters
 repository: https://github.com/invertase/dart_custom_lint
 
