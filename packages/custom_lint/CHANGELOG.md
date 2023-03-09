@@ -1,4 +1,11 @@
+## Unreleased fix
+
+- Revert "Fixed an issue that caused a "Port already in use" error when
+  trying to start custom_lint".
+  This had the opposite effect of what's expected.
+
 ## 0.3.0 - 2023-03-09
+
 - Update analyzer to >=5.7.0 <5.8.0
 - Fixed an issue that caused a "Port already in use" error when trying to
   start custom_lint
