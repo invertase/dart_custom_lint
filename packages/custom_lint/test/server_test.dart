@@ -384,7 +384,7 @@ if (node.name.lexeme == "fail") {
     });
   });
 
-  group('hot-restart', skip: true, () {
+  group('hot-reload', skip: true, () {
     test('handles the source change of one plugin and restart it', () async {
       final plugin = createPlugin(
         name: 'test_lint',
