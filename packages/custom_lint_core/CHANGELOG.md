@@ -1,3 +1,7 @@
+## 0.3.2 - 2023-03-09
+
+- `custom_lint` upgraded to `0.3.2`
+
 ## 0.3.1 - 2023-03-09
 Update dependencies
 
