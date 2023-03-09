@@ -1,6 +1,12 @@
+## 0.3.1 - 2023-03-09
+
+- `custom_lint_core` upgraded to `0.3.1`
+
 ## 0.3.0 - 2023-03-09
+
 - Fix FileSystemException thrown when deleting a file
 - Update analyzer to >=5.7.0 <5.8.0
+- Upgrade dependencies
 
 ## 0.2.12
 
