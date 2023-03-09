@@ -11,6 +11,7 @@ import 'package:test/test.dart';
 
 Future<List<AnalysisErrorsParams>> runServerInCliModeForApp(
   Directory directory,
+
   // to ignoreErrors as we cannot explictly handle errors
 ) async {
   final runner = startRunnerForApp(directory, includeBuiltInLints: false);
@@ -21,6 +22,7 @@ CustomLintRunner startRunnerForApp(
   Directory directory, {
   bool ignoreErrors = false,
   bool includeBuiltInLints = true,
+  bool watchMode = false,
 }) {
   final zone = Zone.current;
   final channel = ServerIsolateChannel();
@@ -30,7 +32,7 @@ CustomLintRunner startRunnerForApp(
     sendPort: channel.receivePort.sendPort,
     delegate: CommandCustomLintDelegate(),
     includeBuiltInLints: includeBuiltInLints,
-    watchMode: false,
+    watchMode: watchMode,
     (customLintServer) {
       final runner = CustomLintRunner(customLintServer, directory, channel);
       addTearDown(runner.close);
