@@ -475,19 +475,21 @@ $dependencies
           // As such, the process correctly started
           if (!running) return;
 
+          final processStderr =
+              await process.stderr.transform(utf8.decoder).join();
+          final errorMessage = 'Failed to start plugins\n$processStderr';
+
           _server.delegate.pluginInitializationFail(
             _server,
-            'Failed to start plugins',
+            errorMessage,
             allContextRoots: _contextRoots.roots,
           );
 
           _server.analyzerPluginClientChannel.sendJson(
-            PluginErrorParams(true, 'Failed to start plugins', '')
-                .toNotification()
-                .toJson(),
+            PluginErrorParams(true, errorMessage, '').toNotification().toJson(),
           );
 
-          throw StateError('Failed to start the plugins.');
+          throw StateError(errorMessage);
         }),
       ]);
     } finally {
