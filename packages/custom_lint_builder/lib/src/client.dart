@@ -85,7 +85,6 @@ class CustomLintPluginClient {
   /// The custom_lint client
   CustomLintPluginClient(
     this._channel, {
-    required this.watchMode,
     required this.includeBuiltInLints,
   }) {
     _analyzerPlugin = _ClientAnalyzerPlugin(
@@ -93,15 +92,12 @@ class CustomLintPluginClient {
       this,
       resourceProvider: PhysicalResourceProvider.INSTANCE,
     );
-    _hotReloader = watchMode ? _maybeStartHotLoad() : Future.value();
+    _hotReloader = _maybeStartHotLoad();
     final starter = ServerPluginStarter(_analyzerPlugin);
     starter.start(_channel.sendPort);
 
     _channelInputSub = _channel.input.listen(_handleCustomLintRequest);
   }
-
-  /// Whether the client should perform a hot-reload when the source of plugins changes.
-  final bool watchMode;
 
   /// Whether
   final bool includeBuiltInLints;
@@ -171,6 +167,10 @@ class CustomLintPluginClient {
   Future<void> _handleSetContextRoots(
     AnalysisSetContextRootsParams params,
   ) async {
+    // Wait for hot reload to start.
+    // Otherwise tests may miss the first hot reload.
+    await _hotReloader;
+
     _contextRootsForPlugin = {};
 
     for (final contextRoot in params.roots) {

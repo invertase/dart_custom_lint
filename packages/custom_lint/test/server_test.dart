@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:async/async.dart';
 import 'package:path/path.dart';
 import 'package:test/test.dart';
 
@@ -384,88 +385,67 @@ if (node.name.lexeme == "fail") {
     });
   });
 
-  group('hot-restart', skip: true, () {
+  group('hot-reload', () {
+    test('Supports starting custom_lint twice in watch mode at once', () async {
+      final plugin = createPlugin(
+        name: 'test_lint',
+        main: helloWordPluginSource,
+      );
+      final pluginMain = File(join(plugin.path, 'lib', 'test_lint.dart'));
+
+      final app = createLintUsage(
+        source: {'lib/main.dart': 'void fn() {}\n'},
+        plugins: {'test_lint': plugin.uri},
+        name: 'test_app',
+      );
+
+      await runWithIOOverride((out, err) async {
+        final runner = startRunnerForApp(app, watchMode: true);
+        final lints = StreamQueue(runner.channel.lints);
+
+        final runner2 = startRunnerForApp(app, watchMode: true);
+        final lints2 = StreamQueue(runner.channel.lints);
+
+        expect(
+          await lints.next.then((value) => value.errors.map((e) => e.code)),
+          ['hello_world'],
+        );
+        expect(
+          await lints2.next.then((value) => value.errors.map((e) => e.code)),
+          ['hello_world'],
+        );
+
+        pluginMain.writeAsStringSync(
+          createPluginSource([
+            TestLintRule(
+              code: 'hello_reload',
+              message: 'Hello reload',
+            ),
+          ]),
+          flush: true,
+        );
+
+        expect(
+          await lints.next.then((value) => value.errors.map((e) => e.code)),
+          ['hello_reload'],
+        );
+        expect(
+          await lints2.next.then((value) => value.errors.map((e) => e.code)),
+          ['hello_reload'],
+        );
+
+        await runner.close();
+        await runner2.close();
+      });
+    });
+
     test('handles the source change of one plugin and restart it', () async {
       final plugin = createPlugin(
         name: 'test_lint',
         main: helloWordPluginSource,
       );
-      final pluginMain = File(join(plugin.path, 'lib', 'test_lint'));
+      final pluginMain = File(join(plugin.path, 'lib', 'test_lint.dart'));
 
-      final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
-
-      final app = createLintUsage(
-        source: {'lib/main.dart': 'void fn() {}\n'},
-        plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
-        name: 'test_app',
-      );
-
-      final runner = startRunnerForApp(app);
-
-      await expectLater(
-        runner.channel.lints,
-        // Using emitsThrough as depending on how fast lints are emitted,
-        // the 2 lints can be received accross two events instead of one.
-        emitsThrough(
-          isA<AnalysisErrorsParams>()
-              .having(
-                (e) => e.file,
-                'file',
-                join(app.path, 'lib', 'main.dart'),
-              )
-              .having(
-                (e) => e.errors.map((e) => e.code),
-                'errors',
-                unorderedEquals(<Object?>['hello_world', 'oy']),
-              ),
-        ),
-      );
-
-      pluginMain.writeAsStringSync(
-        createPluginSource([
-          TestLintRule(
-            code: 'hello_reload',
-            message: 'Hello reload',
-          ),
-        ]),
-      );
-
-      await expectLater(
-        runner.channel.lints,
-        emitsInOrder(<Object?>[
-          predicate<AnalysisErrorsParams>((value) {
-            expect(value.file, join(app.path, 'lib', 'main.dart'));
-            // Clears lints previously emitted by the reloaded plugin
-            expect(value.errors.single.code, 'oy');
-            return true;
-          }),
-          predicate<AnalysisErrorsParams>((value) {
-            expect(value.file, join(app.path, 'lib', 'main.dart'));
-            expect(
-              value.errors.map((e) => e.code),
-              unorderedEquals(<Object?>['hello_reload', 'oy']),
-            );
-            return true;
-          }),
-        ]),
-      );
-
-      expect(runner.channel.lints, emitsDone);
-
-      // Closing so that previous error matchers relying on stream
-      // closing can complete
-      await runner.close();
-
-      expect(plugin.log.existsSync(), false);
-      expect(plugin2.log.existsSync(), false);
-    });
-
-    test('supports reloading a working plugin into one that fails', () async {
-      final plugin = createPlugin(
-        name: 'test_lint',
-        main: helloWordPluginSource,
-      );
-      final pluginMain = File(join(plugin.path, 'lib', 'test_lint'));
       final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
 
       final app = createLintUsage(
@@ -475,77 +455,45 @@ if (node.name.lexeme == "fail") {
       );
 
       await runWithIOOverride((out, err) async {
-        final runner = startRunnerForApp(app, ignoreErrors: true);
+        final runner = startRunnerForApp(app, watchMode: true);
+        final lints = StreamQueue(runner.channel.lints);
 
-        await expectLater(
-          runner.channel.lints,
-          // Using emitsThrough as depending on how fast lints are emitted,
-          // the 2 lints can be received accross two events instead of one.
-          emitsThrough(
-            isA<AnalysisErrorsParams>()
-                .having(
-                  (e) => e.file,
-                  'file',
-                  join(app.path, 'lib', 'main.dart'),
-                )
-                .having(
-                  (e) => e.errors.map((e) => e.code),
-                  'errors',
-                  unorderedEquals(<Object?>['hello_world', 'oy']),
-                ),
-          ),
+        expect(err, emitsDone);
+
+        expect(
+          await lints.next.then((value) => value.errors.map((e) => e.code)),
+          ['hello_world', 'oy'],
         );
 
-        expect(plugin.log.existsSync(), false);
-        expect(plugin2.log.existsSync(), false);
-
-        pluginMain.writeAsStringSync('''
-invalid;
-''');
-
-        // Plugin errors will be emitted as notifications, not as part of the response
-        expect(runner.channel.responseErrors, emitsDone);
-
-        // The error in our plugin will be reported as PluginErrorParams
-        // We don't immediately await it, as we could otherwise miss the lint update
-
-        final awaitError = expectLater(
-          runner.channel.pluginErrors,
-          emits(
-            isA<PluginErrorParams>().having(
-              (e) => e.message,
-              'message',
-              equalsIgnoringAnsi('''
-IsolateSpawnException: Unable to spawn isolate: ${plugin.path}/bin/custom_lint.dart:1:1: Error: Variables must be declared using the keywords 'const', 'final', 'var' or a type name.
-Try adding the name of the type of the variable or the keyword 'var'.
-invalid;
-^^^^^^^'''),
+        pluginMain.writeAsStringSync(
+          createPluginSource([
+            TestLintRule(
+              code: 'hello_reload',
+              message: 'Hello reload',
             ),
-          ),
-        );
-        await expectLater(
-          runner.channel.lints,
-          emits(
-            predicate<AnalysisErrorsParams>((value) {
-              expect(value.file, join(app.path, 'lib', 'main.dart'));
-              // Clears lints previously emitted by the reloaded plugin
-              expect(value.errors.single.code, 'oy');
-              return true;
-            }),
-          ),
+          ]),
         );
 
-        await awaitError;
+        expect(
+          await lints.next.then((value) => value.errors.map((e) => e.code)),
+          ['hello_reload', 'oy'],
+        );
 
-        expect(runner.channel.pluginErrors, emitsDone);
-        expect(runner.channel.lints, emitsDone);
+        expect(lints.rest, emitsDone);
 
         // Closing so that previous error matchers relying on stream
         // closing can complete
         await runner.close();
 
-        expect(plugin.log.existsSync(), false);
-        expect(plugin2.log.existsSync(), false);
+        expect(
+          app.log.readAsStringSync(),
+          matches(
+            RegExp('''
+The Dart VM service is listening on .+?=/
+The Dart DevTools debugger and profiler is available at: .+?ws
+'''),
+          ),
+        );
       });
     });
   });

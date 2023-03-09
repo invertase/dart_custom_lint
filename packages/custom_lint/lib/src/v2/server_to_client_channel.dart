@@ -176,6 +176,11 @@ class ConflictingPackagesChecker {
   }
 }
 
+Future<int> _findPossiblyUnusedPort() {
+  return _SocketCustomLintServerToClientChannel._createServerSocket()
+      .then((value) => value.port);
+}
+
 Future<T> _asyncRetry<T>(
   Future<T> Function() cb, {
   required int retryCount,
@@ -376,7 +381,6 @@ void main(List<String> args) async {
 
   runSocket(
     port: port,
-    watchMode: ${_server.watchMode},
     includeBuiltInLints: ${_server.includeBuiltInLints},
     {$plugins},
   );
@@ -413,10 +417,12 @@ $dependencies
     _writeEntrypoint();
 
     final processFuture = _asyncRetry(retryCount: 5, () async {
+      // Using "late" to fetch the port only if needed (in watch mode)
+      late final port = _findPossiblyUnusedPort();
       final process = await Process.start(
         Platform.resolvedExecutable,
         [
-          '--enable-vm-service',
+          if (_server.watchMode) '--enable-vm-service=${await port}',
           join('lib', 'custom_lint_client.dart'),
           await _serverSocket.then((value) => value.port.toString())
         ],
