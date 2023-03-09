@@ -693,6 +693,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     var fileIgnoredCodes = <String>{};
     if (path.endsWith('.dart')) {
       final source = resourceProvider.getFile(path).createSource();
+      if (!source.exists()) return;
       fileIgnoredCodes = _getAllIgnoredForFileCodes(source.contents.data);
       // Lints are disabled for the entire file, so no point in executing lints
       if (fileIgnoredCodes.contains('type=lint')) return;

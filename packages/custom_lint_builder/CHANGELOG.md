@@ -1,5 +1,6 @@
 ## Unreleased breaking
 
+- Fix FileSystemException thrown when deleting a file
 - Update analyzer to >=5.7.0 <5.8.0
 
 ## 0.2.12
