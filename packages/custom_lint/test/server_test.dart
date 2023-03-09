@@ -8,7 +8,6 @@ import 'package:test/test.dart';
 
 import 'cli_test.dart';
 import 'create_project.dart';
-import 'equals_ignoring_ansi.dart';
 import 'matchers.dart';
 import 'mock_fs.dart';
 import 'run_plugin.dart';
@@ -494,6 +493,40 @@ The Dart DevTools debugger and profiler is available at: .+?ws
 '''),
           ),
         );
+      });
+    });
+
+    test('is disabled if watch mode is off', () async {
+      final plugin = createPlugin(
+        name: 'test_lint',
+        main: helloWordPluginSource,
+      );
+
+      final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
+
+      final app = createLintUsage(
+        source: {'lib/main.dart': 'void fn() {}\n'},
+        plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
+        name: 'test_app',
+      );
+
+      await runWithIOOverride((out, err) async {
+        final runner = startRunnerForApp(app);
+        final lints = await runner.getLints(reload: false);
+
+        expect(err, emitsDone);
+
+        expect(
+          lints.single.errors.map((e) => e.code),
+          ['hello_world', 'oy'],
+        );
+
+        // Closing so that previous error matchers relying on stream
+        // closing can complete
+        await runner.close();
+
+        // Check that there is no vm-service-uri in the logs
+        expect(app.log.existsSync(), false);
       });
     });
   });
