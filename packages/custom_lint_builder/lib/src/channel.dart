@@ -53,7 +53,6 @@ typedef CreatePluginMain = PluginBase Function();
 Future<void> runSocket(
   Map<String, CreatePluginMain> pluginMains, {
   required int port,
-  required bool watchMode,
   required bool includeBuiltInLints,
 }) async {
   final client = Completer<CustomLintPluginClient>();
@@ -66,7 +65,6 @@ Future<void> runSocket(
       final registeredPlugins = <String, PluginBase>{};
       client.complete(
         CustomLintPluginClient(
-          watchMode: watchMode,
           includeBuiltInLints: includeBuiltInLints,
           _SocketCustomLintClientChannel(
             socketChannel,
