@@ -1,0 +1,4 @@
+name: custom_lint_workspace
+
+packages:
+  - packages/**
