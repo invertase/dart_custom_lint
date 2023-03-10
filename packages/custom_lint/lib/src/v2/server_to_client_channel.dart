@@ -409,14 +409,7 @@ $dependencies
 
   @override
   Future<void> init() async {
-    final processFuture = Future.sync(() {
-      _writePackageConfigForTempProject(
-        _tempDirectory,
-        _contextRoots.roots,
-      );
-      _writePubspec();
-      _writeEntrypoint();
-    }).then(
+    final processFuture = _writeTempProjectFiles().then(
       (_) => _asyncRetry(retryCount: 5, () async {
         // Using "late" to fetch the port only if needed (in watch mode)
         late final port = _findPossiblyUnusedPort();
@@ -464,6 +457,15 @@ $dependencies
       sendAnalyzerPluginRequest(_version.toRequest(const Uuid().v4())),
       sendAnalyzerPluginRequest(_contextRoots.toRequest(const Uuid().v4())),
     ]);
+  }
+
+  Future<void> _writeTempProjectFiles() async {
+    _writePackageConfigForTempProject(
+      _tempDirectory,
+      _contextRoots.roots,
+    );
+    _writePubspec();
+    _writeEntrypoint();
   }
 
   Future<void> _checkInitializationFail(Process process) async {
