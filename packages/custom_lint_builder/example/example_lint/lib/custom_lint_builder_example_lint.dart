@@ -44,7 +44,7 @@ class PreferFinalProviders extends DartLintRule {
 
   /// The core logic for our custom lint rule.
   /// In our case, it will search over all variables defined in a Dart file and
-  /// search for the ones that implement a specific type (see [__providerBaseChecker]).
+  /// search for the ones that implement a specific type (see [_providerBaseChecker]).
   @override
   void run(
     // This object contains metadata about the analyzed file
