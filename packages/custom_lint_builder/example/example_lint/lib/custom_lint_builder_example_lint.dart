@@ -83,7 +83,7 @@ class PreferFinalProviders extends DartLintRule {
 /// We define a quick fix for an issue.
 ///
 /// Our quick fix wants to analyze Dart files, so we subclass [DartFix].
-/// Fox quick-fixes on non-Dart files, see [Fix].
+/// For quick-fixes on non-Dart files, see [Fix].
 class _MakeProviderFinalFix extends DartFix {
   /// Similarly to [LintRule.run], [Fix.run] is the core logic of a fix.
   /// It will take care or proposing edits within a file.
