@@ -1,3 +1,8 @@
+## Unreleeased patch
+
+Improve the error message when a plugin fails to initialize.  
+This is in an attempt to find-out what's causing issues with custom_lint on certain platforms
+
 ## 0.3.2 - 2023-03-09
 
 - Revert "Fixed an issue that caused a "Port already in use" error when

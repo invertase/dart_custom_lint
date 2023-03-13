@@ -449,14 +449,14 @@ $dependencies
       );
     }
 
+    // Checking process failure _after_ piping stdout/stderr to the log files.
+    // This is so that if client failed to boot, logs in it should still be available
+    await _checkInitializationFail(process);
+
     out.listen((event) => _server.handlePrint(event, isClientMessage: true));
     process.stderr
         .map(utf8.decode)
         .listen((e) => _server.handleUncaughtError(e, StackTrace.empty));
-
-    // Checking process failure _after_ piping stdout/stderr to the log files.
-    // This is so that if client failed to boot, logs in it should still be available
-    await _checkInitializationFail(process);
 
     await Future.wait([
       sendAnalyzerPluginRequest(_version.toRequest(const Uuid().v4())),
@@ -467,28 +467,38 @@ $dependencies
   Future<void> _checkInitializationFail(Process process) async {
     var running = true;
     try {
-      return await Future.any<void>([
-        _socket,
+      final didFail = await Future.any<bool>([
+        _socket.then((value) => false),
         process.exitCode.then((exitCode) async {
           // A socket was returned before the exitCode was obtained.
           // As such, the process correctly started
-          if (!running) return;
+          if (!running) return false;
 
-          _server.delegate.pluginInitializationFail(
-            _server,
-            'Failed to start plugins',
-            allContextRoots: _contextRoots.roots,
-          );
-
-          _server.analyzerPluginClientChannel.sendJson(
-            PluginErrorParams(true, 'Failed to start plugins', '')
-                .toNotification()
-                .toJson(),
-          );
-
-          throw StateError('Failed to start the plugins.');
+          return true;
         }),
       ]);
+
+      if (didFail) {
+        final error = CustomLintClientInitializationException._(
+          exitCode: await process.exitCode,
+          stdout: await process.stdout.map(utf8.decode).join(),
+          stderr: await process.stderr.map(utf8.decode).join(),
+        );
+
+        _server.delegate.pluginInitializationFail(
+          _server,
+          error.toString(),
+          allContextRoots: _contextRoots.roots,
+        );
+
+        _server.analyzerPluginClientChannel.sendJson(
+          PluginErrorParams(true, error.toString(), '')
+              .toNotification()
+              .toJson(),
+        );
+
+        throw error;
+      }
     } finally {
       running = false;
     }
@@ -556,6 +566,34 @@ $dependencies
     );
 
     return response;
+  }
+}
+
+/// The error thrown when plugins fail to start.
+class CustomLintClientInitializationException implements Exception {
+  CustomLintClientInitializationException._({
+    required this.exitCode,
+    required this.stdout,
+    required this.stderr,
+  });
+
+  /// The exit code of the process
+  final int exitCode;
+
+  /// The error logs of the process;
+  final String stderr;
+
+  /// The output logs of the process;
+  final String stdout;
+
+  @override
+  String toString() {
+    return 'Failed to start plugin. '
+        'Process exited with code $exitCode.\n'
+        'Stderr:\n'
+        '$stderr\n'
+        'Stdout:\n'
+        '$stdout\n';
   }
 }
 
