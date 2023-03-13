@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_common.dart';

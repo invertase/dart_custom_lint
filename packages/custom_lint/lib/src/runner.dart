@@ -81,16 +81,10 @@ class CustomLintRunner {
   Future<List<AnalysisErrorsParams>> getLints({required bool reload}) async {
     if (reload) _accumulatedLints.clear();
 
-    print('-a');
     await _server.awaitAnalysisDone(reload: reload);
-    print('-b');
 
-    try {
-      return _accumulatedLints.values.toList()
-        ..sort((a, b) => a.file.compareTo(b.file));
-    } finally {
-      print('-c');
-    }
+    return _accumulatedLints.values.toList()
+      ..sort((a, b) => a.file.compareTo(b.file));
   }
 
   /// Obtains the list of fixes for a given file/offset combo
