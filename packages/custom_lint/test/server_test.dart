@@ -313,37 +313,40 @@ PluginBase createPlugin() {
       name: 'test_app',
     );
 
-    final runner = startRunnerForApp(
-      app,
-      // Ignoring errors as we are handling them later
-      ignoreErrors: true,
-    );
+    await runWithIOOverride((out, err) async {
+      final runner = startRunnerForApp(
+        app,
+        // Ignoring errors as we are handling them later
+        ignoreErrors: true,
+      );
 
-    print('Here');
-    await runner
-        .getLints(reload: false)
-        .catchError((e) => print('Error: ${e.runtimeType}'));
+      await runner.channel.pluginErrors.first;
 
-    print('a');
-    expect(
-      app.log.readAsStringSync(),
-      '''
-The request analysis.setContextRoots failed with the following error:
-RequestErrorCode.PLUGIN_ERROR
+      const errorMessage = '''
 Failed to start plugin. Process exited with code 42.
 Stderr:
 Error
 
 Stdout:
 Output
-''',
-    );
-    print('b');
+''';
 
-    // Closing so that previous error matchers relying on stream
-    // closing can complete
-    await runner.close();
-    print('c');
+      expect(
+        app.log.readAsStringSync(),
+        startsWith(errorMessage),
+      );
+
+      expect(
+        err.join(),
+        completion(
+          contains(errorMessage),
+        ),
+      );
+
+      // Closing so that previous error matchers relying on stream
+      // closing can complete
+      await runner.close();
+    });
   });
 
   test('redirect prints and errors to log files', () async {

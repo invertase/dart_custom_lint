@@ -1,3 +1,8 @@
+## Unreleased patch
+
+- Improve error message when plugins fail to start.
+- Fix the CLI never terminating if a plugins fail to start (@thanks to @kuhnroyal)
+
 ## 0.3.2 - 2023-03-09
 
 - `custom_lint` upgraded to `0.3.2`

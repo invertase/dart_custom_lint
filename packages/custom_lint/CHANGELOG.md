@@ -1,7 +1,7 @@
 ## Unreleeased patch
 
-Improve the error message when a plugin fails to initialize.  
-This is in an attempt to find-out what's causing issues with custom_lint on certain platforms
+- Improve error message when plugins fail to start.
+- Fix the CLI never terminating if a plugins fail to start (@thanks to @kuhnroyal)
 
 ## 0.3.2 - 2023-03-09
 
