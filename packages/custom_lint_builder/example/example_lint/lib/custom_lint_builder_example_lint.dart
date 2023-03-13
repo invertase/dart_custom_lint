@@ -44,7 +44,7 @@ class PreferFinalProviders extends DartLintRule {
 
   /// The core logic for our custom lint rule.
   /// In our case, it will search over all variables defined in a Dart file and
-  /// search for the ones that implement a specific type (see [__providerBaseChecker]).
+  /// search for the ones that implement a specific type (see [_providerBaseChecker]).
   @override
   void run(
     // This object contains metadata about the analyzed file
@@ -83,7 +83,7 @@ class PreferFinalProviders extends DartLintRule {
 /// We define a quick fix for an issue.
 ///
 /// Our quick fix wants to analyze Dart files, so we subclass [DartFix].
-/// Fox quick-fixes on non-Dart files, see [Fix].
+/// For quick-fixes on non-Dart files, see [Fix].
 class _MakeProviderFinalFix extends DartFix {
   /// Similarly to [LintRule.run], [Fix.run] is the core logic of a fix.
   /// It will take care or proposing edits within a file.
