@@ -59,10 +59,19 @@ Future<void> runSocket(
 
   await runZonedGuarded(
     () async {
+      // Calling the plugin's `createPlugin` entrypoint function before
+      // connecting to the server, to allow tests to mimic crash before the
+      // connection is established.
+      final registeredPlugins = <String, PluginBase>{};
+      for (final main in pluginMains.entries) {
+        Zone.current.runGuarded(
+          () => registeredPlugins[main.key] = main.value(),
+        );
+      }
+
       // ignore: close_sinks, connection stays open until the plugin is killed
       final socket = await Socket.connect('localhost', port);
       final socketChannel = JsonSocketChannel(socket);
-      final registeredPlugins = <String, PluginBase>{};
       client.complete(
         CustomLintPluginClient(
           includeBuiltInLints: includeBuiltInLints,
@@ -78,12 +87,6 @@ Future<void> runSocket(
           ),
         ),
       );
-
-      for (final main in pluginMains.entries) {
-        Zone.current.runGuarded(
-          () => registeredPlugins[main.key] = main.value(),
-        );
-      }
     },
     (error, stackTrace) {
       client.future.then((value) => value.handleError(error, stackTrace));

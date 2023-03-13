@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
@@ -290,6 +291,59 @@ void fn2() {}''',
       lints.last.errors.map((e) => e.code),
       unorderedEquals(<Object?>['hello_world', 'oy']),
     );
+  });
+
+  test('If a plugin fails to start, logs the stderr/stdout', () async {
+    final plugin = createPlugin(
+      name: 'test_lint',
+      main: '''
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'dart:io';
+
+PluginBase createPlugin() {
+  stderr.writeln('Error');
+  stdout.writeln('Output');
+  exit(42);
+}''',
+    );
+
+    final app = createLintUsage(
+      source: {'lib/main.dart': 'void fn() {}\n'},
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    final runner = startRunnerForApp(
+      app,
+      // Ignoring errors as we are handling them later
+      ignoreErrors: true,
+    );
+
+    print('Here');
+    await runner
+        .getLints(reload: false)
+        .catchError((e) => print('Error: ${e.runtimeType}'));
+
+    print('a');
+    expect(
+      app.log.readAsStringSync(),
+      '''
+The request analysis.setContextRoots failed with the following error:
+RequestErrorCode.PLUGIN_ERROR
+Failed to start plugin. Process exited with code 42.
+Stderr:
+Error
+
+Stdout:
+Output
+''',
+    );
+    print('b');
+
+    // Closing so that previous error matchers relying on stream
+    // closing can complete
+    await runner.close();
+    print('c');
   });
 
   test('redirect prints and errors to log files', () async {

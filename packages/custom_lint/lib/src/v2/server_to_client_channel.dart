@@ -469,7 +469,11 @@ $dependencies
     try {
       final didFail = await Future.any<bool>([
         _socket.then((value) => false),
-        process.exitCode.then((exitCode) async {
+        process.exitCode.then((exitCode) {
+          // Even though we could throw here, we don't want to as
+          // the error message needs to read stdout/sterr – which requires an await.
+          // This would impact the Future.any and could cause a race condition.
+
           // A socket was returned before the exitCode was obtained.
           // As such, the process correctly started
           if (!running) return false;
