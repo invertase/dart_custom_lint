@@ -89,10 +89,15 @@ Future<void> runSocket(
       );
     },
     (error, stackTrace) {
+      exitCode++;
+      stderr.writeln(error.toString());
+      stderr.writeln(stackTrace.toString());
+
       client.future.then((value) => value.handleError(error, stackTrace));
     },
     zoneSpecification: ZoneSpecification(
       print: (self, parent, zone, line) {
+        stdout.writeln(line);
         client.future.then((value) => value.handlePrint(line));
       },
     ),
