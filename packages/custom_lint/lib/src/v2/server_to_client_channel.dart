@@ -222,15 +222,7 @@ void _writePackageConfigForTempProject(
       join(contextRoot.root, 'pubspec.yaml'),
     );
 
-    String packageConfigContent;
-    try {
-      packageConfigContent = packageConfigFile.readAsStringSync();
-    } on FileSystemException {
-      throw StateError(
-        'No package_config.json found. Did you forget to run `pub get`?\n'
-        'Tried to look in:\n${contextRoots.map((e) => '- ${e.root}\n').join()}',
-      );
-    }
+    final packageConfigContent = packageConfigFile.readAsStringSync();
     final packageConfig = PackageConfig.parseString(
       packageConfigContent,
       contextRootPackageConfigUri,
@@ -296,8 +288,7 @@ class _SocketCustomLintServerToClientChannel
     this._server,
     this._version,
     this._contextRoots,
-  )   : _packages = getPackageListForContextRoots(_contextRoots.roots),
-        _serverSocket = _createServerSocket() {
+  ) : _serverSocket = _createServerSocket() {
     _socket = _serverSocket.then(
       (server) async {
         // ignore: close_sinks
@@ -310,7 +301,7 @@ class _SocketCustomLintServerToClientChannel
 
   final CustomLintServer _server;
   final PluginVersionCheckParams _version;
-  final List<Package> _packages;
+  late final List<Package> _packages;
   final Directory _tempDirectory = Directory.systemTemp.createTempSync();
   final Future<ServerSocket> _serverSocket;
   late final Future<JsonSocketChannel?> _socket;
@@ -409,27 +400,30 @@ $dependencies
 
   @override
   Future<void> init() async {
-    final processFuture = _writeTempProjectFiles().then(
-      (_) => _asyncRetry(retryCount: 5, () async {
-        // Using "late" to fetch the port only if needed (in watch mode)
-        late final port = _findPossiblyUnusedPort();
-        final process = await Process.start(
-          Platform.resolvedExecutable,
-          [
-            if (_server.watchMode) '--enable-vm-service=${await port}',
-            join('lib', 'custom_lint_client.dart'),
-            await _serverSocket.then((value) => value.port.toString())
-          ],
-          workingDirectory: _tempDirectory.path,
-        );
-        return process;
-      }),
+    _packages = getPackageListForContextRoots(_contextRoots.roots);
+    _writePackageConfigForTempProject(
+      _tempDirectory,
+      _contextRoots.roots,
     );
+    _writePubspec();
+    _writeEntrypoint();
 
-    await processFuture.then(
-      _process.complete,
-      onError: _process.completeError,
-    );
+    final processFuture = _asyncRetry(retryCount: 5, () async {
+      // Using "late" to fetch the port only if needed (in watch mode)
+      late final port = _findPossiblyUnusedPort();
+      final process = await Process.start(
+        Platform.resolvedExecutable,
+        [
+          if (_server.watchMode) '--enable-vm-service=${await port}',
+          join('lib', 'custom_lint_client.dart'),
+          await _serverSocket.then((value) => value.port.toString())
+        ],
+        workingDirectory: _tempDirectory.path,
+      );
+      return process;
+    });
+
+    await processFuture.then(_process.complete);
     final process = await processFuture;
 
     var out = process.stdout.map(utf8.decode);
@@ -457,15 +451,6 @@ $dependencies
       sendAnalyzerPluginRequest(_version.toRequest(const Uuid().v4())),
       sendAnalyzerPluginRequest(_contextRoots.toRequest(const Uuid().v4())),
     ]);
-  }
-
-  Future<void> _writeTempProjectFiles() async {
-    _writePackageConfigForTempProject(
-      _tempDirectory,
-      _contextRoots.roots,
-    );
-    _writePubspec();
-    _writeEntrypoint();
   }
 
   Future<void> _checkInitializationFail(Process process) async {
@@ -503,7 +488,7 @@ $dependencies
     await Future.wait([
       _tempDirectory.delete(recursive: true),
       _serverSocket.then((value) => value.close()),
-      _process.future.then((value) => value.kill()),
+      if (_process.isCompleted) _process.future.then((value) => value.kill()),
     ]);
   }
 
@@ -615,5 +600,5 @@ abstract class CustomLintServerToClientChannel {
   Future<Response> sendAnalyzerPluginRequest(Request request);
 
   /// Stops the client, liberating the resources.
-  void close();
+  Future<void> close();
 }

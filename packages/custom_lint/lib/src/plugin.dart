@@ -11,7 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:riverpod/riverpod.dart';
 
-/// Obtains the list of plugins enables at given context roots.
+/// Obtains the list of plugins enabled at given context roots.
 List<Package> getPackageListForContextRoots(List<ContextRoot> contextRoots) {
   final container = ProviderContainer();
   try {

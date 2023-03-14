@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:test/test.dart';
+import 'package:path/path.dart' as p;
 
 import '../bin/custom_lint.dart' as cli;
 import 'create_project.dart';
@@ -322,6 +323,45 @@ void main() {
               return true;
             }),
           ),
+        );
+      },
+      currentDirectory: app,
+    );
+  });
+
+  test('Correctly exits with errors in ServerToClientChannel.init', () async {
+    final plugin = createPlugin(name: 'test_lint', main: emptyPluginSource);
+
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': 'void fn() {}',
+        'lib/another.dart': 'void fail() {}',
+      },
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    // create error during initialization
+    final packageConfig =
+        File(p.join(app.path, '.dart_tool', 'package_config.json'))
+          ..deleteSync();
+
+    await runWithIOOverride(
+      (out, err) async {
+        await cli.entrypoint();
+
+        expect(exitCode, 1);
+        expect(
+          err,
+          emitsInOrder([
+            emits(
+              startsWith('''
+The request analysis.setContextRoots failed with the following error:
+RequestErrorCode.PLUGIN_ERROR
+Bad state: No ${packageConfig.path} found. Make sure to run `pub get` first.'''),
+            ),
+            emitsDone,
+          ]),
         );
       },
       currentDirectory: app,
