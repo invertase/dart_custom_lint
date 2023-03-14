@@ -70,7 +70,7 @@ Future<void> runSocket(
       }
 
       // ignore: close_sinks, connection stays open until the plugin is killed
-      final socket = await Socket.connect('127.0.0.1', port);
+      final socket = await Socket.connect('localhost', port);
       final socketChannel = JsonSocketChannel(socket);
       client.complete(
         CustomLintPluginClient(
