@@ -59,6 +59,8 @@ Future<void> runSocket(
 
   await runZonedGuarded(
     () async {
+      print('Client connected on port $port.');
+
       // Calling the plugin's `createPlugin` entrypoint function before
       // connecting to the server, to allow tests to mimic crash before the
       // connection is established.

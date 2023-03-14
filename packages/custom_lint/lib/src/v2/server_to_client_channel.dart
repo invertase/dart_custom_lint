@@ -416,15 +416,18 @@ $dependencies
     _writePubspec();
     _writeEntrypoint();
 
+    final serverPort = await _serverSocket.then((value) => value.port);
+    print('Starting server on $serverPort');
+
     final processFuture = _asyncRetry(retryCount: 5, () async {
       // Using "late" to fetch the port only if needed (in watch mode)
-      late final port = _findPossiblyUnusedPort();
+      late final vmServicePort = _findPossiblyUnusedPort();
       final process = await Process.start(
         Platform.resolvedExecutable,
         [
-          if (_server.watchMode) '--enable-vm-service=${await port}',
+          if (_server.watchMode) '--enable-vm-service=${await vmServicePort}',
           join('lib', 'custom_lint_client.dart'),
-          await _serverSocket.then((value) => value.port.toString())
+          serverPort.toString(),
         ],
         workingDirectory: _tempDirectory.path,
       );
@@ -510,9 +513,13 @@ $dependencies
 
   @override
   Future<void> close() async {
+    print('Closing server');
     await Future.wait([
       _tempDirectory.delete(recursive: true),
-      _serverSocket.then((value) => value.close()),
+      _serverSocket.then((value) {
+        print('Closing server ${value.port}}');
+        return value.close();
+      }),
       _process.future.then((value) => value.kill()),
     ]);
   }
