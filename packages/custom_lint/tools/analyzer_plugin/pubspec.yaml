@@ -11,9 +11,6 @@ dependencies:
 
 # TODO: If you want to contribute to custom_lint, add a pubspec_overrides.yaml file
 # in this folder, containing the following:
-dependency_overrides:
-  custom_lint:
-    git:
-      url: https://github.com/invertase/dart_custom_lint/
-      ref: fix-114
-      path: packages/custom_lint
+# dependency_overrides:
+#   custom_lint:
+#     path: /absolute/path/to/custom_lint/folder
