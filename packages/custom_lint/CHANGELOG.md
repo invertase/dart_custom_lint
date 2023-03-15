@@ -1,3 +1,8 @@
+## Unreleased fix
+
+- Fix `dart analyze` crashing on large projects in the CI due to custom_lint
+  incorrectly trying to run plugins in debug mode.
+
 ## 0.3.2 - 2023-03-09
 
 - Revert "Fixed an issue that caused a "Port already in use" error when
