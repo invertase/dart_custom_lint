@@ -416,10 +416,6 @@ $dependencies
     _writePubspec();
     _writeEntrypoint();
 
-    throw Exception(
-      'Starting client process (watchMode: ${_server.watchMode}: ${stdin.hasTerminal} //\n${Platform.environment})',
-    );
-
     final processFuture = _asyncRetry(retryCount: 5, () async {
       // Using "late" to fetch the port only if needed (in watch mode)
       late final port = _findPossiblyUnusedPort();
