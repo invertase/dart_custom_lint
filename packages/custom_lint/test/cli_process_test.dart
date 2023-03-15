@@ -166,23 +166,20 @@ void main() {
       // Create a dependency conflict by manually fetching
       // analyzer and overriding it in pubspec and package config.
       // Fetching is required, otherwise there is no pubspec.yaml available.
-      const version = '5.7.0';
+      const version = '1.8.0';
       await Process.run(
         'dart',
-        ['pub', 'add', 'analyzer:$version'],
-        workingDirectory: innerContextRoot.path,
-      );
-      await Process.run(
-        'dart',
-        ['pub', 'get'],
+        ['pub', 'add', 'meta:$version'],
         workingDirectory: innerContextRoot.path,
       );
       final packageConfig = File(
         p.join(innerContextRoot.path, '.dart_tool', 'package_config.json'),
       );
       var contents = packageConfig.readAsStringSync();
-      contents =
-          contents.replaceAll(RegExp('analyzer-.*",'), 'analyzer-$version",');
+      contents = contents.replaceAll(
+        RegExp('meta-.*",'),
+        'meta-$version",',
+      );
       packageConfig.writeAsStringSync(contents);
 
       final process = await TestProcess.start(
