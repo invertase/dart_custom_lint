@@ -488,6 +488,9 @@ $dependencies
     await Future.wait([
       _tempDirectory.delete(recursive: true),
       _serverSocket.then((value) => value.close()),
+      // If [init] never completed launching the process because of
+      // prio errors, then Completer is never completed. Awaiting
+      // [_process.future] will wait "forever".
       if (_process.isCompleted) _process.future.then((value) => value.kill()),
     ]);
   }
