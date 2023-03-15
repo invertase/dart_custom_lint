@@ -32,24 +32,11 @@ void main() {
         workingDirectory: app.path,
       );
 
-      expect(
-        process.stderr,
-        emitsInOrder(
-          [
-            mayEmit(contains('Warning: You are using these overridden dependencies')),
-            mayEmit(contains('! custom_lint')),
-            mayEmit(contains('! custom_lint_core')),
-            emitsDone,
-          ],
-        ),
-      );
+      expect(process.stderr, emitsThrough(emitsDone));
       expect(
         process.stdout,
         emitsInOrder(
           [
-            mayEmit(contains('Warning: You are using these overridden dependencies')),
-            mayEmit(contains('! custom_lint')),
-            mayEmit(contains('! custom_lint_core')),
             'No issues found!',
             emitsDone,
           ],
@@ -81,17 +68,7 @@ void main() {
         workingDirectory: app.path,
       );
 
-      expect(
-        process.stderr,
-        emitsInOrder(
-          [
-            mayEmit(contains('Warning: You are using these overridden dependencies')),
-            mayEmit(contains('! custom_lint')),
-            mayEmit(contains('! custom_lint_core')),
-            emitsDone,
-          ],
-        ),
-      );
+      expect(process.stderr, emitsThrough(emitsDone));
       expect(
         process.stdout,
         emitsInOrder(
@@ -130,7 +107,8 @@ void main() {
       );
 
       // create error during initialization because of missing package_config.json
-      final packageConfig = File(p.join(innerContextRoot.path, '.dart_tool', 'package_config.json'));
+      final packageConfig = File(
+          p.join(innerContextRoot.path, '.dart_tool', 'package_config.json'));
       // Potentially resolve the file system link, temp folders are links on macOs into /private/var
       final missingPackageConfig = await packageConfig.resolveSymbolicLinks();
       packageConfig.deleteSync();
@@ -151,9 +129,6 @@ void main() {
         emitsThrough(
           emitsInOrder(
             [
-              mayEmit(contains('Warning: You are using these overridden dependencies')),
-              mayEmit(contains('! custom_lint')),
-              mayEmit(contains('! custom_lint_core')),
               'The request analysis.setContextRoots failed with the following error:',
               'RequestErrorCode.PLUGIN_ERROR',
               'Bad state: No $missingPackageConfig found. Make sure to run `pub get` first.',
@@ -192,12 +167,14 @@ void main() {
       // analyzer and overriding it in pubspec and package config.
       // Fetching is required, otherwise there is no pubspec.yaml available.
       const version = '5.7.0';
-      await Process.run('dart', ['pub', 'add', 'analyzer:$version'], workingDirectory: innerContextRoot.path);
+      await Process.run('dart', ['pub', 'add', 'analyzer:$version'],
+          workingDirectory: innerContextRoot.path);
       final packageConfig = File(
         p.join(innerContextRoot.path, '.dart_tool', 'package_config.json'),
       );
       var contents = packageConfig.readAsStringSync();
-      contents = contents.replaceAll(RegExp('analyzer-.*",'), 'analyzer-$version",');
+      contents =
+          contents.replaceAll(RegExp('analyzer-.*",'), 'analyzer-$version",');
       packageConfig.writeAsStringSync(contents);
 
       final process = await TestProcess.start(
@@ -216,9 +193,6 @@ void main() {
         emitsThrough(
           emitsInOrder(
             [
-              mayEmit(contains('Warning: You are using these overridden dependencies')),
-              mayEmit(contains('! custom_lint')),
-              mayEmit(contains('! custom_lint_core')),
               'The request analysis.setContextRoots failed with the following error:',
               'RequestErrorCode.PLUGIN_ERROR',
               'Bad state: Some dependencies with conflicting versions were identified:',
