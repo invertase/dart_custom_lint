@@ -416,6 +416,8 @@ $dependencies
     _writePubspec();
     _writeEntrypoint();
 
+    stdout.writeln('Starting client process (watchMode: ${_server.watchMode})');
+
     final processFuture = _asyncRetry(retryCount: 5, () async {
       // Using "late" to fetch the port only if needed (in watch mode)
       late final port = _findPossiblyUnusedPort();
