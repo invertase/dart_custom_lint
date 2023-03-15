@@ -167,8 +167,16 @@ void main() {
       // analyzer and overriding it in pubspec and package config.
       // Fetching is required, otherwise there is no pubspec.yaml available.
       const version = '5.7.0';
-      await Process.run('dart', ['pub', 'add', 'analyzer:$version'],
-          workingDirectory: innerContextRoot.path);
+      await Process.run(
+        'dart',
+        ['pub', 'add', 'analyzer:$version'],
+        workingDirectory: innerContextRoot.path,
+      );
+      await Process.run(
+        'dart',
+        ['pub', 'get'],
+        workingDirectory: innerContextRoot.path,
+      );
       final packageConfig = File(
         p.join(innerContextRoot.path, '.dart_tool', 'package_config.json'),
       );
