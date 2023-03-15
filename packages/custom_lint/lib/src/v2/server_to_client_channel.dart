@@ -417,7 +417,7 @@ $dependencies
     _writeEntrypoint();
 
     throw Exception(
-      'Starting client process (watchMode: ${_server.watchMode}: ${stdin.hasTerminal} // ${Platform.environment['CI']})',
+      'Starting client process (watchMode: ${_server.watchMode}: ${stdin.hasTerminal} //\n${Platform.environment})',
     );
 
     final processFuture = _asyncRetry(retryCount: 5, () async {
