@@ -126,6 +126,7 @@ ${rule.ruleMembers}
 
 Directory createPlugin({
   required String name,
+  Directory? parent,
   String? pubpsec = _pluginDefaultPubspec,
   String? analysisOptions,
   String? main,
@@ -133,6 +134,7 @@ Directory createPlugin({
   bool omitPackageConfig = false,
 }) {
   return createDartProject(
+    parent: parent,
     sources: {
       ...?sources,
       if (main != null) join('lib', '$name.dart'): main,
@@ -162,9 +164,11 @@ dependencies:
 }
 
 Directory createLintUsage({
+  Directory? parent,
   Map<String, Uri> plugins = const {},
   Map<String, String> source = const {},
   required String name,
+  bool createDependencyOverrides = false,
 }) {
   final pluginDevDependencies = plugins.entries
       .map(
@@ -199,12 +203,21 @@ dev_dependencies:
   custom_lint:
     path: ${PeerProjectMeta.current.customLintPath}
 $pluginDevDependencies
+
+${createDependencyOverrides ? '''
+dependency_overrides:
+  custom_lint:
+    path: ${PeerProjectMeta.current.customLintPath}
+  custom_lint_core:
+    path: ${PeerProjectMeta.current.customLintCorePath}
+''' : ''}
 ''',
     packageConfig: createPackageConfig(
       plugins: plugins,
       name: name,
     ),
     name: name,
+    parent: parent,
   );
 }
 
@@ -265,6 +278,7 @@ String createPackageConfig({
 }
 
 Directory createDartProject({
+  Directory? parent,
   String? analysisOptions,
   String? pubspec,
   String? packageConfig,
@@ -274,6 +288,7 @@ Directory createDartProject({
   // TODO import .dart_tool/package_config.json by default for speed, avoiding unnecessary pub get
 
   return createTmpFolder(
+    parent: parent,
     {
       ...?sources,
       if (analysisOptions != null) 'analysis_options.yaml': analysisOptions,
@@ -285,8 +300,20 @@ Directory createDartProject({
   );
 }
 
-Directory createTmpFolder(Map<String, String> files, String name) {
-  final newFolder = Directory.systemTemp.createTempSync(name);
+/// Creates a temporary folder with the given [files] and [name].
+///
+/// The folder will be automatically deleted after the pending test ends.
+Directory createTmpFolder(
+  Map<String, String> files,
+  String name, {
+  Directory? parent,
+}) {
+  late Directory newFolder;
+  if (parent == null) {
+    newFolder = Directory.systemTemp.createTempSync(name);
+  } else {
+    newFolder = Directory(join(parent.path, name))..createSync();
+  }
   addTearDown(() => newFolder.deleteSync(recursive: true));
 
   for (final fileEntry in files.entries) {

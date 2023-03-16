@@ -12,7 +12,7 @@ import 'package:test/test.dart';
 Future<List<AnalysisErrorsParams>> runServerInCliModeForApp(
   Directory directory,
 
-  // to ignoreErrors as we cannot explictly handle errors
+  // to ignoreErrors as we cannot explicitly handle errors
 ) async {
   final runner = startRunnerForApp(directory, includeBuiltInLints: false);
   return runner.getLints(reload: false);

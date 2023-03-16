@@ -2,6 +2,8 @@
 
 - Fix `dart analyze` crashing on large projects in the CI due to custom_lint
   incorrectly trying to run plugins in debug mode.
+- Fix the `custom_lint` command line never terminating in some cases where plugins
+  fail to start (thanks to @kuhnroyal).
 
 ## 0.3.2 - 2023-03-09
 
