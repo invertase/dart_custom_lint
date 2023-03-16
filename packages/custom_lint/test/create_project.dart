@@ -170,7 +170,7 @@ Directory createLintUsage({
       .map(
         (e) => '''
   ${e.key}:
-    path: ${e.value}
+    path: ${e.value.toFilePath()}
 ''',
       )
       .join('\n');
@@ -212,7 +212,7 @@ String createPackageConfig({
   Map<String, Uri> plugins = const {},
   required String name,
 }) {
-  return jsonEncode({
+  return const JsonEncoder.withIndent('  ').convert({
     ...PeerProjectMeta.current.exampleLintPackageConfig,
     'packages': <Object?>[
       ...(PeerProjectMeta.current.exampleLintPackageConfig['packages']!
@@ -228,7 +228,7 @@ String createPackageConfig({
       for (final plugin in plugins.entries)
         {
           'name': plugin.key,
-          'rootUri': plugin.value.toFilePath(),
+          'rootUri': plugin.value.toString(),
           'packageUri': 'lib/',
           'languageVersion': '2.17'
         },
@@ -240,7 +240,7 @@ String createPackageConfig({
       },
       <String, String>{
         'name': 'custom_lint',
-        'rootUri': PeerProjectMeta.current.customLintPath,
+        'rootUri': 'file://${PeerProjectMeta.current.customLintPath}',
         'packageUri': 'lib/',
         'languageVersion': '2.17'
       },
@@ -248,7 +248,7 @@ String createPackageConfig({
       // so it will be in the package config
       <String, String>{
         'name': 'custom_lint_builder',
-        'rootUri': PeerProjectMeta.current.customLintBuilderPath,
+        'rootUri': 'file://${PeerProjectMeta.current.customLintBuilderPath}',
         'packageUri': 'lib/',
         'languageVersion': '2.17'
       },
@@ -256,7 +256,7 @@ String createPackageConfig({
       // so it will be in the package config
       <String, String>{
         'name': 'custom_lint_core',
-        'rootUri': PeerProjectMeta.current.customLintCorePath,
+        'rootUri': 'file://${PeerProjectMeta.current.customLintCorePath}',
         'packageUri': 'lib/',
         'languageVersion': '2.17'
       },
@@ -279,7 +279,7 @@ Directory createDartProject({
       if (analysisOptions != null) 'analysis_options.yaml': analysisOptions,
       if (pubspec != null) 'pubspec.yaml': pubspec,
       if (packageConfig != null)
-        '.dart_tool/package_config.json': packageConfig,
+        join('.dart_tool', 'package_config.json'): packageConfig,
     },
     name,
   );
