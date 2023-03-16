@@ -222,15 +222,7 @@ void _writePackageConfigForTempProject(
       join(contextRoot.root, 'pubspec.yaml'),
     );
 
-    String packageConfigContent;
-    try {
-      packageConfigContent = packageConfigFile.readAsStringSync();
-    } on FileSystemException {
-      throw StateError(
-        'No package_config.json found. Did you forget to run `pub get`?\n'
-        'Tried to look in:\n${contextRoots.map((e) => '- ${e.root}\n').join()}',
-      );
-    }
+    final packageConfigContent = packageConfigFile.readAsStringSync();
     final packageConfig = PackageConfig.parseString(
       packageConfigContent,
       contextRootPackageConfigUri,
@@ -296,8 +288,7 @@ class _SocketCustomLintServerToClientChannel
     this._server,
     this._version,
     this._contextRoots,
-  )   : _packages = getPackageListForContextRoots(_contextRoots.roots),
-        _serverSocket = _createServerSocket() {
+  ) : _serverSocket = _createServerSocket() {
     _socket = _serverSocket.then(
       (server) async {
         // ignore: close_sinks
@@ -310,13 +301,12 @@ class _SocketCustomLintServerToClientChannel
 
   final CustomLintServer _server;
   final PluginVersionCheckParams _version;
-  final List<Package> _packages;
   final Directory _tempDirectory = Directory.systemTemp.createTempSync();
   final Future<ServerSocket> _serverSocket;
   late final Future<JsonSocketChannel?> _socket;
+  late final Future<Process> _processFuture;
 
   AnalysisSetContextRootsParams _contextRoots;
-  final _process = Completer<Process>();
 
   late final Stream<CustomLintMessage> _messages = Stream.fromFuture(_socket)
       .whereNotNull()
@@ -353,8 +343,37 @@ class _SocketCustomLintServerToClientChannel
     throw UnimplementedError();
   }
 
-  void _writeEntrypoint() {
-    final imports = _packages
+  /// Encapsulates all the logic for initializing the process,
+  /// without setting up the connection.
+  ///
+  /// Will throw if the process fails to start.
+  Future<Process> _startProcess() async {
+    final packages = getPackageListForContextRoots(_contextRoots.roots);
+    _writePackageConfigForTempProject(
+      _tempDirectory,
+      _contextRoots.roots,
+    );
+    _writePubspec(packages);
+    _writeEntrypoint(packages);
+
+    return _asyncRetry(retryCount: 5, () async {
+      // Using "late" to fetch the port only if needed (in watch mode)
+      late final port = _findPossiblyUnusedPort();
+      final process = await Process.start(
+        Platform.resolvedExecutable,
+        [
+          if (_server.watchMode) '--enable-vm-service=${await port}',
+          join('lib', 'custom_lint_client.dart'),
+          await _serverSocket.then((value) => value.port.toString())
+        ],
+        workingDirectory: _tempDirectory.path,
+      );
+      return process;
+    });
+  }
+
+  void _writeEntrypoint(List<Package> packages) {
+    final imports = packages
         .map((e) => e.name)
         .map(
           (packageName) =>
@@ -362,7 +381,7 @@ class _SocketCustomLintServerToClientChannel
         )
         .join();
 
-    final plugins = _packages
+    final plugins = packages
         .map((e) => e.name)
         .map((packageName) => "'$packageName': $packageName.createPlugin,\n")
         .join();
@@ -388,9 +407,9 @@ void main(List<String> args) async {
 ''');
   }
 
-  void _writePubspec() {
+  void _writePubspec(List<Package> packages) {
     final dependencies =
-        _packages.map((package) => '  ${package.name}: any').join();
+        packages.map((package) => '  ${package.name}: any').join();
 
     final pubspecFile = File(join(_tempDirectory.path, 'pubspec.yaml'));
     pubspecFile.createSync(recursive: true);
@@ -409,33 +428,8 @@ $dependencies
 
   @override
   Future<void> init() async {
-    _writePackageConfigForTempProject(
-      _tempDirectory,
-      _contextRoots.roots,
-    );
-    _writePubspec();
-    _writeEntrypoint();
-
-    final processFuture = _asyncRetry(retryCount: 5, () async {
-      // Using "late" to fetch the port only if needed (in watch mode)
-      late final port = _findPossiblyUnusedPort();
-      final process = await Process.start(
-        Platform.resolvedExecutable,
-        [
-          if (_server.watchMode) '--enable-vm-service=${await port}',
-          join('lib', 'custom_lint_client.dart'),
-          await _serverSocket.then((value) => value.port.toString())
-        ],
-        workingDirectory: _tempDirectory.path,
-      );
-      return process;
-    });
-
-    await processFuture.then(
-      _process.complete,
-      onError: _process.completeError,
-    );
-    final process = await processFuture;
+    _processFuture = _startProcess();
+    final process = await _processFuture;
 
     var out = process.stdout.map(utf8.decode);
     // Let's not log the VM service prints unless in watch mode
@@ -499,7 +493,11 @@ $dependencies
     await Future.wait([
       _tempDirectory.delete(recursive: true),
       _serverSocket.then((value) => value.close()),
-      _process.future.then((value) => value.kill()),
+      _processFuture.then(
+        (value) => value.kill(),
+        // The process wasn't started. No need to do anything.
+        onError: (_) {},
+      ),
     ]);
   }
 
@@ -611,5 +609,5 @@ abstract class CustomLintServerToClientChannel {
   Future<Response> sendAnalyzerPluginRequest(Request request);
 
   /// Stops the client, liberating the resources.
-  void close();
+  Future<void> close();
 }
