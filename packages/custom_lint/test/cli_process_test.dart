@@ -108,7 +108,8 @@ void main() {
 
       // create error during initialization because of missing package_config.json
       final packageConfig = File(
-          p.join(innerContextRoot.path, '.dart_tool', 'package_config.json'));
+        p.join(innerContextRoot.path, '.dart_tool', 'package_config.json'),
+      );
       // Potentially resolve the file system link, temp folders are links on macOs into /private/var
       final missingPackageConfig = await packageConfig.resolveSymbolicLinks();
       packageConfig.deleteSync();

@@ -288,6 +288,7 @@ Directory createDartProject({
   // TODO import .dart_tool/package_config.json by default for speed, avoiding unnecessary pub get
 
   return createTmpFolder(
+    parent: parent,
     {
       ...?sources,
       if (analysisOptions != null) 'analysis_options.yaml': analysisOptions,
@@ -296,12 +297,17 @@ Directory createDartProject({
         join('.dart_tool', 'package_config.json'): packageConfig,
     },
     name,
-    parent,
   );
 }
 
+/// Creates a temporary folder with the given [files] and [name].
+///
+/// The folder will be automatically deleted after the pending test ends.
 Directory createTmpFolder(
-    Map<String, String> files, String name, Directory? parent) {
+  Map<String, String> files,
+  String name, {
+  Directory? parent,
+}) {
   late Directory newFolder;
   if (parent == null) {
     newFolder = Directory.systemTemp.createTempSync(name);
