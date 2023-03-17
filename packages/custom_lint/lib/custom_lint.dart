@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 
 import 'src/plugin_delegate.dart';
@@ -82,46 +83,44 @@ Future<void> _runPlugins(
     exitCode = 1;
     stderr.writeln('$err\n$stack');
   }
-
-  // Since no problem happened, we print a message saying everything went well
-  if (exitCode == 0) {
-    stdout.writeln('No issues found!');
-  }
 }
 
 void _renderLints(
   List<AnalysisErrorsParams> lints, {
   required Directory workingDirectory,
 }) {
-  lints.sort(
-    (a, b) => a
-        .relativeFilePath(workingDirectory)
-        .compareTo(b.relativeFilePath(workingDirectory)),
-  );
+  var errors = lints.expand((lint) => lint.errors);
 
-  for (final lintsForFile in lints) {
-    final relativeFilePath = lintsForFile.relativeFilePath(workingDirectory);
+  // Sort errors by file, line, column, code, message
+  errors = errors.sorted((a, b) {
+    final fileCompare = _relativeFilePath(a.location.file, workingDirectory)
+        .compareTo(_relativeFilePath(b.location.file, workingDirectory));
+    if (fileCompare != 0) return fileCompare;
 
-    lintsForFile.errors.sort((a, b) {
-      final lineCompare = a.location.startLine.compareTo(b.location.startLine);
-      if (lineCompare != 0) return lineCompare;
-      final columnCompare =
-          a.location.startColumn.compareTo(b.location.startColumn);
-      if (columnCompare != 0) return columnCompare;
+    final lineCompare = a.location.startLine.compareTo(b.location.startLine);
+    if (lineCompare != 0) return lineCompare;
 
-      final codeCompare = a.code.compareTo(b.code);
-      if (codeCompare != 0) return codeCompare;
+    final columnCompare =
+        a.location.startColumn.compareTo(b.location.startColumn);
+    if (columnCompare != 0) return columnCompare;
 
-      return a.message.compareTo(b.message);
-    });
+    final codeCompare = a.code.compareTo(b.code);
+    if (codeCompare != 0) return codeCompare;
 
-    for (final lint in lintsForFile.errors) {
-      exitCode = 1;
-      stdout.writeln(
-        '  $relativeFilePath:${lint.location.startLine}:${lint.location.startColumn}'
-        ' • ${lint.message} • ${lint.code}',
-      );
-    }
+    return a.message.compareTo(b.message);
+  });
+
+  if (errors.isEmpty) {
+    stdout.writeln('No issues found!');
+    return;
+  }
+
+  exitCode = 1;
+  for (final error in errors) {
+    stdout.writeln(
+      '  ${_relativeFilePath(error.location.file, workingDirectory)}:${error.location.startLine}:${error.location.startColumn}'
+      ' • ${error.message} • ${error.code}',
+    );
   }
 }
 
@@ -154,11 +153,9 @@ Future<void> _startWatchMode(CustomLintRunner runner) async {
   }
 }
 
-extension on AnalysisErrorsParams {
-  String relativeFilePath(Directory dir) {
-    return p.relative(
-      file,
-      from: dir.path,
-    );
-  }
+String _relativeFilePath(String file, Directory fromDir) {
+  return p.relative(
+    file,
+    from: fromDir.absolute.path,
+  );
 }
