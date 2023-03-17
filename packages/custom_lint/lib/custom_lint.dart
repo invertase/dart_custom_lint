@@ -78,10 +78,6 @@ Future<void> _runPlugins(
   try {
     final lints = await runner.getLints(reload: reload);
 
-    if (lints.any((lintsForFile) => lintsForFile.errors.isNotEmpty)) {
-      exitCode = 1;
-    }
-
     _renderLints(
       log,
       progress,
