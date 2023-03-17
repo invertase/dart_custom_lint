@@ -20,14 +20,14 @@ jobs:
     strategy:
       matrix:
         channel:
-          - master
+          - stable
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: subosito/flutter-action@v2
+      - uses: dart-lang/setup-dart@v1
         with:
-          channel: ${{ matrix.channel }}
+          sdk: ${{ matrix.channel }}
 
       - name: Add pub cache bin to PATH
         run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
@@ -44,7 +44,7 @@ jobs:
         run: melos bootstrap
 
       - name: Check format
-        run: flutter format --set-exit-if-changed .
+        run: dart format --set-exit-if-changed .
 
       - name: Analyze
         run: dart analyze
