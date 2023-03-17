@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 
 import 'src/plugin_delegate.dart';
@@ -88,24 +89,26 @@ void _renderLints(
   List<AnalysisErrorsParams> lints, {
   required Directory workingDirectory,
 }) {
-  final errors = lints.expand((lintsForFile) => lintsForFile.errors).toList()
-    ..sort((a, b) {
-      final fileCompare = _relativeFilePath(a.location.file, workingDirectory)
-          .compareTo(_relativeFilePath(b.location.file, workingDirectory));
-      if (fileCompare != 0) return fileCompare;
+  var errors = lints.expand((lint) => lint.errors);
 
-      final lineCompare = a.location.startLine.compareTo(b.location.startLine);
-      if (lineCompare != 0) return lineCompare;
+  // Sort errors by file, line, column, code, message
+  errors = errors.sorted((a, b) {
+    final fileCompare = _relativeFilePath(a.location.file, workingDirectory)
+        .compareTo(_relativeFilePath(b.location.file, workingDirectory));
+    if (fileCompare != 0) return fileCompare;
 
-      final columnCompare =
-          a.location.startColumn.compareTo(b.location.startColumn);
-      if (columnCompare != 0) return columnCompare;
+    final lineCompare = a.location.startLine.compareTo(b.location.startLine);
+    if (lineCompare != 0) return lineCompare;
 
-      final codeCompare = a.code.compareTo(b.code);
-      if (codeCompare != 0) return codeCompare;
+    final columnCompare =
+        a.location.startColumn.compareTo(b.location.startColumn);
+    if (columnCompare != 0) return columnCompare;
 
-      return a.message.compareTo(b.message);
-    });
+    final codeCompare = a.code.compareTo(b.code);
+    if (codeCompare != 0) return codeCompare;
+
+    return a.message.compareTo(b.message);
+  });
 
   if (errors.isEmpty) {
     stdout.writeln('No issues found!');
