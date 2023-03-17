@@ -72,7 +72,9 @@ Future<void> _runPlugins(
   CustomLintRunner runner, {
   required bool reload,
 }) async {
-  final log = Logger.standard()..progress('Analyzing');
+  final log = Logger.standard();
+  final progress = log.progress('Analyzing');
+
   try {
     final lints = await runner.getLints(reload: reload);
 
@@ -80,7 +82,12 @@ Future<void> _runPlugins(
       exitCode = 1;
     }
 
-    _renderLints(log, lints, workingDirectory: runner.workingDirectory);
+    _renderLints(
+      log,
+      progress,
+      lints,
+      workingDirectory: runner.workingDirectory,
+    );
   } catch (err, stack) {
     exitCode = 1;
     log.stderr(err.toString());
@@ -90,6 +97,7 @@ Future<void> _runPlugins(
 
 void _renderLints(
   Logger log,
+  Progress progress,
   List<AnalysisErrorsParams> lints, {
   required Directory workingDirectory,
 }) {
@@ -113,6 +121,9 @@ void _renderLints(
 
     return a.message.compareTo(b.message);
   });
+
+  // Finish progress and display duration (only when ANSI is supported)
+  progress.finish(showTiming: true);
 
   // Separate progress from results
   log.stdout('');

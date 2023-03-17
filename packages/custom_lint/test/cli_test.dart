@@ -24,7 +24,7 @@ final helloWordPluginSource = createPluginSource([
 String progressMessage({required bool supportsAnsiEscapes}) {
   const analyzing = 'Analyzing...';
   if (supportsAnsiEscapes) {
-    return '$analyzing                            \b/\b ';
+    return '$analyzing                            \b/\b0.0s';
   }
   return analyzing;
 }
