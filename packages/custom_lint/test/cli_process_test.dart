@@ -15,6 +15,7 @@ void main() {
   group('Correctly exits with', () {
     test(
       'no issues found',
+      timeout: timeout,
       () async {
         final plugin = createPlugin(name: 'test_lint', main: emptyPluginSource);
 
@@ -30,11 +31,7 @@ void main() {
 
         final process = await TestProcess.start(
           'dart',
-          [
-            'run',
-            'custom_lint',
-            '.',
-          ],
+          ['run', 'custom_lint', '.'],
           workingDirectory: app.path,
         );
 
@@ -42,11 +39,11 @@ void main() {
         expect(process.stdout, emitsThrough(emitsDone));
         expect(process.exitCode, completion(0));
       },
-      timeout: timeout,
     );
 
     test(
       'found lints',
+      timeout: timeout,
       () async {
         final plugin = createPlugin(name: 'test_lint', main: oyPluginSource);
 
@@ -62,11 +59,7 @@ void main() {
 
         final process = await TestProcess.start(
           'dart',
-          [
-            'run',
-            'custom_lint',
-            '.',
-          ],
+          ['run', 'custom_lint', '.'],
           workingDirectory: app.path,
         );
 
@@ -74,11 +67,11 @@ void main() {
         expect(process.stdout, emitsThrough(emitsDone));
         expect(process.exitCode, completion(1));
       },
-      timeout: timeout,
     );
 
     test(
       'missing package_config.json',
+      timeout: timeout,
       () async {
         final plugin = createPlugin(name: 'test_lint', main: oyPluginSource);
 
@@ -113,11 +106,7 @@ void main() {
 
         final process = await TestProcess.start(
           'dart',
-          [
-            'run',
-            'custom_lint',
-            '.',
-          ],
+          ['run', 'custom_lint', '.'],
           workingDirectory: app.path,
         );
 
@@ -134,11 +123,11 @@ void main() {
         );
         expect(process.exitCode, completion(1));
       },
-      timeout: timeout,
     );
 
     test(
       'dependency conflict',
+      timeout: timeout,
       () async {
         final plugin = createPlugin(name: 'test_lint', main: oyPluginSource);
 
@@ -184,11 +173,7 @@ void main() {
 
         final process = await TestProcess.start(
           'dart',
-          [
-            'run',
-            'custom_lint',
-            '.',
-          ],
+          ['run', 'custom_lint', '.'],
           workingDirectory: app.path,
         );
 
@@ -205,7 +190,6 @@ void main() {
         );
         expect(process.exitCode, completion(1));
       },
-      timeout: timeout,
     );
   });
 }
