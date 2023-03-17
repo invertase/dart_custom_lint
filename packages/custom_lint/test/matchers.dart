@@ -10,8 +10,8 @@ Matcher matchesLogGolden(
   String goldenPath, {
   Map<Uri, String>? paths,
 }) {
-  return isA<File>().having(
-    (e) => _normalizeLog(e.readAsStringSync(), paths: paths),
+  return isA<String>().having(
+    (e) => _normalizeLog(e, paths: paths),
     'normalized log matches golden file $goldenPath',
     _normalizeLog(File(goldenPath).readAsStringSync(), paths: paths),
   );
