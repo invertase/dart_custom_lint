@@ -37,6 +37,8 @@ void main() {
         process.stdout,
         emitsInOrder(
           [
+            'Analyzing...',
+            '',
             'No issues found!',
             emitsDone,
           ],
@@ -73,8 +75,12 @@ void main() {
         process.stdout,
         emitsInOrder(
           [
+            'Analyzing...',
+            '',
             '  lib/another.dart:1:6 • Oy • oy',
             '  lib/main.dart:1:6 • Oy • oy',
+            '',
+            '2 issues found.',
             emitsDone,
           ],
         ),
@@ -128,13 +134,11 @@ void main() {
       expect(
         process.stderr,
         emitsThrough(
-          emitsInOrder(
-            [
-              'The request analysis.setContextRoots failed with the following error:',
-              'RequestErrorCode.PLUGIN_ERROR',
-              'Bad state: No $missingPackageConfig found. Make sure to run `pub get` first.',
-            ],
-          ),
+          emitsInOrder([
+            'The request analysis.setContextRoots failed with the following error:',
+            'RequestErrorCode.PLUGIN_ERROR',
+            'Bad state: No $missingPackageConfig found. Make sure to run `pub get` first.',
+          ]),
         ),
       );
       expect(process.exitCode, completion(1));
@@ -197,13 +201,11 @@ void main() {
       expect(
         process.stderr,
         emitsThrough(
-          emitsInOrder(
-            [
-              'The request analysis.setContextRoots failed with the following error:',
-              'RequestErrorCode.PLUGIN_ERROR',
-              'Bad state: Some dependencies with conflicting versions were identified:',
-            ],
-          ),
+          emitsInOrder([
+            'The request analysis.setContextRoots failed with the following error:',
+            'RequestErrorCode.PLUGIN_ERROR',
+            'Bad state: Some dependencies with conflicting versions were identified:',
+          ]),
         ),
       );
       expect(process.exitCode, completion(1));

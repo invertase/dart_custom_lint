@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 
@@ -71,6 +72,7 @@ Future<void> _runPlugins(
   CustomLintRunner runner, {
   required bool reload,
 }) async {
+  final log = Logger.standard()..progress('Analyzing');
   try {
     final lints = await runner.getLints(reload: reload);
 
@@ -78,14 +80,16 @@ Future<void> _runPlugins(
       exitCode = 1;
     }
 
-    _renderLints(lints, workingDirectory: runner.workingDirectory);
+    _renderLints(log, lints, workingDirectory: runner.workingDirectory);
   } catch (err, stack) {
     exitCode = 1;
-    stderr.writeln('$err\n$stack');
+    log.stderr(err.toString());
+    log.stderr(stack.toString());
   }
 }
 
 void _renderLints(
+  Logger log,
   List<AnalysisErrorsParams> lints, {
   required Directory workingDirectory,
 }) {
@@ -110,18 +114,25 @@ void _renderLints(
     return a.message.compareTo(b.message);
   });
 
+  // Separate progress from results
+  log.stdout('');
   if (errors.isEmpty) {
-    stdout.writeln('No issues found!');
+    log.stdout('No issues found!');
     return;
   }
 
   exitCode = 1;
   for (final error in errors) {
-    stdout.writeln(
+    log.stdout(
       '  ${_relativeFilePath(error.location.file, workingDirectory)}:${error.location.startLine}:${error.location.startColumn}'
       ' • ${error.message} • ${error.code}',
     );
   }
+
+  // Display a summary separated from the lints
+  log.stdout('');
+  final errorCount = errors.length;
+  log.stdout('$errorCount issue${errorCount > 1 ? 's' : ''} found.');
 }
 
 Future<void> _startWatchMode(CustomLintRunner runner) async {

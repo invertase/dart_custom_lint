@@ -21,32 +21,87 @@ final helloWordPluginSource = createPluginSource([
   )
 ]);
 
+String progressMessage({required bool supportsAnsiEscapes}) {
+  const analyzing = 'Analyzing...';
+  if (supportsAnsiEscapes) {
+    return '$analyzing                            \b/\b ';
+  }
+  return analyzing;
+}
+
 void main() {
-  test('exits with 0 when no lint and no error are found', () async {
-    final plugin = createPlugin(name: 'test_lint', main: emptyPluginSource);
+  // Run 2 tests, one with ANSI escapes and one without
+  // One test has no lints, the other has some, this should be enough.
+  for (final supportsAnsiEscapes in [true, false]) {
+    group('With${supportsAnsiEscapes ? '' : 'out'} ANSI escapes', () {
+      test('exits with 0 when no lint and no error are found', () async {
+        final plugin = createPlugin(name: 'test_lint', main: emptyPluginSource);
 
-    final app = createLintUsage(
-      source: {'lib/main.dart': 'void fn() {}'},
-      plugins: {'test_lint': plugin.uri},
-      name: 'test_app',
-    );
+        final app = createLintUsage(
+          source: {'lib/main.dart': 'void fn() {}'},
+          plugins: {'test_lint': plugin.uri},
+          name: 'test_app',
+        );
+        await runWithIOOverride(
+          (out, err) async {
+            await cli.entrypoint();
 
-    await runWithIOOverride(
-      (out, err) async {
-        await cli.entrypoint();
+            expect(exitCode, 0);
+            expect(
+              out.join(),
+              completion('''
+${progressMessage(supportsAnsiEscapes: supportsAnsiEscapes)}
 
-        expect(exitCode, 0);
-        expect(
-          out.join(),
-          completion('''
 No issues found!
 '''),
+            );
+            expect(err, emitsDone);
+          },
+          currentDirectory: app,
+          supportsAnsiEscapes: supportsAnsiEscapes,
         );
-        expect(err, emitsDone);
-      },
-      currentDirectory: app,
-    );
-  });
+      });
+
+      test('CLI lists warnings from all plugins and set exit code', () async {
+        final plugin =
+            createPlugin(name: 'test_lint', main: helloWordPluginSource);
+        final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
+
+        final app = createLintUsage(
+          source: {
+            'lib/main.dart': 'void fn() {}',
+            'lib/another.dart': 'void fail() {}',
+          },
+          plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
+          name: 'test_app',
+        );
+
+        await runWithIOOverride(
+          (out, err) async {
+            await cli.entrypoint();
+
+            expect(err, emitsDone);
+            expect(
+              out.join(),
+              completion('''
+${progressMessage(supportsAnsiEscapes: supportsAnsiEscapes)}
+
+  lib/another.dart:1:6 • Hello world • hello_world
+  lib/another.dart:1:6 • Oy • oy
+  lib/main.dart:1:6 • Hello world • hello_world
+  lib/main.dart:1:6 • Oy • oy
+
+4 issues found.
+'''),
+            );
+            expect(exitCode, 1);
+          },
+          currentDirectory: app,
+          supportsAnsiEscapes: supportsAnsiEscapes,
+        );
+      });
+    });
+  }
 
   test('exits with 1 if only an error but no lint are found', () async {
     final plugin = createPlugin(name: 'test_lint', main: 'invalid;');
@@ -81,39 +136,6 @@ lib/custom_lint_client.dart:13:29: Error: Undefined name 'createPlugin'.
           ),
         );
         expect(out, emitsDone);
-      },
-      currentDirectory: app,
-    );
-  });
-
-  test('CLI lists warnings from all plugins and set exit code', () async {
-    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
-    final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
-
-    final app = createLintUsage(
-      source: {
-        'lib/main.dart': 'void fn() {}',
-        'lib/another.dart': 'void fail() {}',
-      },
-      plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
-      name: 'test_app',
-    );
-
-    await runWithIOOverride(
-      (out, err) async {
-        await cli.entrypoint();
-
-        expect(err, emitsDone);
-        expect(
-          out.join(),
-          completion('''
-  lib/another.dart:1:6 • Hello world • hello_world
-  lib/another.dart:1:6 • Oy • oy
-  lib/main.dart:1:6 • Hello world • hello_world
-  lib/main.dart:1:6 • Oy • oy
-'''),
-        );
-        expect(exitCode, 1);
       },
       currentDirectory: app,
     );
@@ -210,9 +232,13 @@ lib/custom_lint_client.dart:15:26: Error: Undefined name 'createPlugin'.
 '''),
               endsWith(
                 '''
+Analyzing...
+
   lib/another.dart:1:6 • Oy • oy
   lib/main.dart:1:6 • Hello world • hello_world
   lib/main.dart:1:6 • Oy • oy
+
+3 issues found.
 ''',
               ),
             ),
@@ -310,18 +336,17 @@ void main() {
 
         expect(
           out.join(),
-          completion(
-            predicate((value) {
-              expect(value, '''
+          completion('''
+Analyzing...
+
   lib/main.dart:1:1 • z • z
   lib/main.dart:2:1 • y • y
   lib/main.dart:2:2 • a • a
   lib/main.dart:2:2 • x • x
   lib/main.dart:2:2 • x2 • x2
-''');
-              return true;
-            }),
-          ),
+
+5 issues found.
+'''),
         );
       },
       currentDirectory: app,

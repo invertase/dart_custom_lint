@@ -9,15 +9,25 @@ import 'dart:io';
 Future<T> runWithIOOverride<T>(
   FutureOr<T> Function(Stream<String> out, Stream<String> err) testBody, {
   Directory? currentDirectory,
+  bool supportsAnsiEscapes = false,
 }) async {
   final fs = _MockFs(
     stdout,
     currentDirectory ?? Directory.current,
+    supportsAnsiEscapes: supportsAnsiEscapes,
   );
 
   try {
     return await IOOverrides.runWithIOOverrides(
-      () => testBody(fs.stdout.stream, fs.stderr.stream),
+      () => runZoned(
+        () => testBody(fs.stdout.stream, fs.stderr.stream),
+        zoneSpecification: ZoneSpecification(
+          print: (self, parent, zone, line) {
+            // Send the print message to the output stream as well
+            fs.stdout.writeln(line);
+          },
+        ),
+      ),
       fs,
     );
   } finally {
@@ -30,7 +40,10 @@ Future<T> runWithIOOverride<T>(
 }
 
 class _StdoutOverride implements Stdout {
-  _StdoutOverride(this._stdout);
+  _StdoutOverride(
+    this._stdout, {
+    required this.supportsAnsiEscapes,
+  });
 
   final Stdout _stdout;
 
@@ -72,7 +85,7 @@ class _StdoutOverride implements Stdout {
   IOSink get nonBlocking => _stdout.nonBlocking;
 
   @override
-  bool get supportsAnsiEscapes => _stdout.supportsAnsiEscapes;
+  final bool supportsAnsiEscapes;
 
   @override
   int get terminalColumns => _stdout.terminalColumns;
@@ -112,9 +125,12 @@ class _StdoutOverride implements Stdout {
 /// Alternatively, set [IOOverrides.global] to a [_MockFs] instance in your
 /// test's `setUp`, and to `null` in the `tearDown`.
 class _MockFs extends IOOverrides {
-  _MockFs(Stdout out, this._directory)
-      : stdout = _StdoutOverride(out),
-        stderr = _StdoutOverride(out);
+  _MockFs(
+    Stdout out,
+    this._directory, {
+    required bool supportsAnsiEscapes,
+  })  : stdout = _StdoutOverride(out, supportsAnsiEscapes: supportsAnsiEscapes),
+        stderr = _StdoutOverride(out, supportsAnsiEscapes: supportsAnsiEscapes);
 
   @override
   final _StdoutOverride stdout;
