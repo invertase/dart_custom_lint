@@ -33,7 +33,6 @@ dev_dependencies:
   freezed: ^2.3.2
   json_serializable: ^6.5.4
   test: ^1.20.2
-  test_process: ^2.0.3
 
 executables:
   custom_lint: custom_lint
