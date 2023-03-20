@@ -1,8 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
-import 'package:test_process/test_process.dart';
 
 import 'cli_test.dart';
 import 'create_project.dart';
@@ -29,15 +29,17 @@ void main() {
           createDependencyOverrides: true,
         );
 
-        final process = await TestProcess.start(
+        final process = Process.runSync(
           'dart',
           ['run', 'custom_lint', '.'],
           workingDirectory: app.path,
+          stdoutEncoding: utf8,
+          stderrEncoding: utf8,
         );
 
-        expect(process.stderr, emitsThrough(emitsDone));
-        expect(process.stdout, emitsThrough(emitsDone));
-        expect(process.exitCode, completion(0));
+        expect(process.stderr, isEmpty);
+        expect(process.stdout, 'No issues found!\n');
+        expect(process.exitCode, 0);
       },
     );
 
@@ -57,15 +59,18 @@ void main() {
           createDependencyOverrides: true,
         );
 
-        final process = await TestProcess.start(
+        final process = Process.runSync(
           'dart',
           ['run', 'custom_lint', '.'],
           workingDirectory: app.path,
         );
 
-        expect(process.stderr, emitsThrough(emitsDone));
-        expect(process.stdout, emitsThrough(emitsDone));
-        expect(process.exitCode, completion(1));
+        expect(process.stderr, isEmpty);
+        expect(process.stdout, '''
+  lib/another.dart:1:6 • Oy • oy
+  lib/main.dart:1:6 • Oy • oy
+''');
+        expect(process.exitCode, 1);
       },
     );
 
@@ -104,24 +109,23 @@ void main() {
         final missingPackageConfig = await packageConfig.resolveSymbolicLinks();
         packageConfig.deleteSync();
 
-        final process = await TestProcess.start(
+        final process = Process.runSync(
           'dart',
           ['run', 'custom_lint', '.'],
           workingDirectory: app.path,
         );
 
-        expect(process.stdout, emitsDone);
+        expect(process.stdout, isEmpty);
         expect(
           process.stderr,
-          emitsThrough(
-            emitsInOrder([
-              'The request analysis.setContextRoots failed with the following error:',
-              'RequestErrorCode.PLUGIN_ERROR',
-              'Bad state: No $missingPackageConfig found. Make sure to run `pub get` first.',
-            ]),
+          startsWith(
+            '''
+The request analysis.setContextRoots failed with the following error:
+RequestErrorCode.PLUGIN_ERROR
+Bad state: No $missingPackageConfig found. Make sure to run `pub get` first.''',
           ),
         );
-        expect(process.exitCode, completion(1));
+        expect(process.exitCode, 1);
       },
     );
 
@@ -158,6 +162,7 @@ void main() {
         const version = '1.8.0';
         await Process.run(
           'dart',
+          // TODO remove pub call as this involes a network request
           ['pub', 'add', 'meta:$version'],
           workingDirectory: innerContextRoot.path,
         );
@@ -171,24 +176,24 @@ void main() {
         );
         packageConfig.writeAsStringSync(contents);
 
-        final process = await TestProcess.start(
+        final process = Process.runSync(
           'dart',
           ['run', 'custom_lint', '.'],
           workingDirectory: app.path,
         );
 
-        expect(process.stdout, emitsDone);
+        expect(process.stdout, isEmpty);
         expect(
           process.stderr,
-          emitsThrough(
-            emitsInOrder([
-              'The request analysis.setContextRoots failed with the following error:',
-              'RequestErrorCode.PLUGIN_ERROR',
-              'Bad state: Some dependencies with conflicting versions were identified:',
-            ]),
+          startsWith(
+            '''
+The request analysis.setContextRoots failed with the following error:
+RequestErrorCode.PLUGIN_ERROR
+Bad state: Some dependencies with conflicting versions were identified:
+''',
           ),
         );
-        expect(process.exitCode, completion(1));
+        expect(process.exitCode, 1);
       },
     );
   });
