@@ -7,6 +7,15 @@ import 'package:test/test.dart';
 import 'cli_test.dart';
 import 'create_project.dart';
 
+String trimDependencyOverridesWarning(Object? input) {
+  final string = input.toString();
+  if (string
+      .startsWith('Warning: You are using these overridden dependencies:')) {
+    return string.split('\n').skip(3).join('\n');
+  }
+  return string;
+}
+
 void main() {
   // These tests may take longer than the default timeout
   // due to them being run in separate processes and VMs.
@@ -38,7 +47,10 @@ void main() {
         );
 
         expect(process.stderr, isEmpty);
-        expect(process.stdout, 'No issues found!\n');
+        expect(
+          trimDependencyOverridesWarning(process.stdout),
+          'No issues found!\n',
+        );
         expect(process.exitCode, 0);
       },
     );
@@ -66,7 +78,7 @@ void main() {
         );
 
         expect(process.stderr, isEmpty);
-        expect(process.stdout, '''
+        expect(trimDependencyOverridesWarning(process.stdout), '''
   lib/another.dart:1:6 • Oy • oy
   lib/main.dart:1:6 • Oy • oy
 ''');
@@ -115,7 +127,7 @@ void main() {
           workingDirectory: app.path,
         );
 
-        expect(process.stdout, isEmpty);
+        expect(trimDependencyOverridesWarning(process.stdout), isEmpty);
         expect(
           process.stderr,
           startsWith(
@@ -182,7 +194,7 @@ Bad state: No $missingPackageConfig found. Make sure to run `pub get` first.''',
           workingDirectory: app.path,
         );
 
-        expect(process.stdout, isEmpty);
+        expect(trimDependencyOverridesWarning(process.stdout), isEmpty);
         expect(
           process.stderr,
           startsWith(
