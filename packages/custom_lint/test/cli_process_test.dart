@@ -46,11 +46,8 @@ void main() {
           stderrEncoding: utf8,
         );
 
-        expect(process.stderr, isEmpty);
-        expect(
-          trimDependencyOverridesWarning(process.stdout),
-          'No issues found!\n',
-        );
+        expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
+        expect(process.stdout, 'No issues found!\n');
         expect(process.exitCode, 0);
       },
     );
@@ -77,8 +74,8 @@ void main() {
           workingDirectory: app.path,
         );
 
-        expect(process.stderr, isEmpty);
-        expect(trimDependencyOverridesWarning(process.stdout), '''
+        expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
+        expect(process.stdout, '''
   lib/another.dart:1:6 • Oy • oy
   lib/main.dart:1:6 • Oy • oy
 ''');
@@ -127,9 +124,9 @@ void main() {
           workingDirectory: app.path,
         );
 
-        expect(trimDependencyOverridesWarning(process.stdout), isEmpty);
+        expect(process.stdout, isEmpty);
         expect(
-          process.stderr,
+          trimDependencyOverridesWarning(process.stderr),
           startsWith(
             '''
 The request analysis.setContextRoots failed with the following error:
@@ -194,9 +191,9 @@ Bad state: No $missingPackageConfig found. Make sure to run `pub get` first.''',
           workingDirectory: app.path,
         );
 
-        expect(trimDependencyOverridesWarning(process.stdout), isEmpty);
+        expect(process.stdout, isEmpty);
         expect(
-          process.stderr,
+          trimDependencyOverridesWarning(process.stderr),
           startsWith(
             '''
 The request analysis.setContextRoots failed with the following error:
