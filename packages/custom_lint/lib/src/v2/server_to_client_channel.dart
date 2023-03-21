@@ -83,14 +83,14 @@ extension on Package {
 /// A class that checks if there are conflicting packages in the context roots.
 @internal
 class ConflictingPackagesChecker {
-  final _contextRootPackagesMap = <ContextRoot, List<Package>>{};
-  final _contextRootPubspecMap = <ContextRoot, Pubspec>{};
+  final _contextRootPackagesMap = <String, List<Package>>{};
+  final _contextRootPubspecMap = <String, Pubspec>{};
 
   /// Adds a [contextRoot] and its [packages] to the checker.
   /// We need to pass the [pubspec] to check if the package is a git dependency
   /// and to check if the context root is a flutter package.
   void addContextRoot(
-    ContextRoot contextRoot,
+    String contextRoot,
     List<Package> packages,
     Pubspec pubspec,
   ) {
@@ -138,7 +138,7 @@ class ConflictingPackagesChecker {
       final conflictingPackages = entry.value;
       final pubspec = _contextRootPubspecMap[contextRoot]!;
       final locationName = pubspec.name;
-      errorMessageBuilder.writeln('$locationName at ${contextRoot.root}');
+      errorMessageBuilder.writeln('$locationName at $contextRoot');
       for (final package in conflictingPackages) {
         errorMessageBuilder.writeln(package.buildConflictingMessage(pubspec));
       }
@@ -168,7 +168,7 @@ class ConflictingPackagesChecker {
       final conflictingPackagesNames =
           conflictingPackages.map((package) => package.name).join(' ');
       errorMessageBuilder
-        ..writeln('cd ${contextRoot.root}')
+        ..writeln('cd $contextRoot')
         ..writeln('$command pub upgrade $conflictingPackagesNames');
     }
 
@@ -205,7 +205,7 @@ Future<T> _asyncRetry<T>(
 /// This also changes relative paths into absolute paths.
 void _writePackageConfigForTempProject(
   Directory tempDirectory,
-  List<ContextRoot> contextRoots,
+  List<String> contextRoots,
 ) {
   final targetFile = File(
     join(tempDirectory.path, '.dart_tool', 'package_config.json'),
@@ -215,11 +215,11 @@ void _writePackageConfigForTempProject(
   final conflictingPackagesChecker = ConflictingPackagesChecker();
   for (final contextRoot in contextRoots) {
     final contextRootPackageConfigUri = Uri.file(
-      join(contextRoot.root, '.dart_tool', 'package_config.json'),
+      join(contextRoot, '.dart_tool', 'package_config.json'),
     );
     final packageConfigFile = File.fromUri(contextRootPackageConfigUri);
     final contextRootPubspecFile = File(
-      join(contextRoot.root, 'pubspec.yaml'),
+      join(contextRoot, 'pubspec.yaml'),
     );
 
     final packageConfigContent = packageConfigFile.readAsStringSync();
@@ -351,7 +351,7 @@ class _SocketCustomLintServerToClientChannel
     final packages = getPackageListForContextRoots(_contextRoots.roots);
     _writePackageConfigForTempProject(
       _tempDirectory,
-      _contextRoots.roots,
+      _contextRoots.roots.map((e) => e.root).toList(),
     );
     _writePubspec(packages);
     _writeEntrypoint(packages);

@@ -54,12 +54,12 @@ void main() {
       ];
 
       checker.addContextRoot(
-        contextRoots[0],
+        contextRoots[0].root,
         firstContextRootPackages,
         pubspec,
       );
       checker.addContextRoot(
-        contextRoots[1],
+        contextRoots[1].root,
         secondContextRootPackages,
         pubspec,
       );
@@ -132,17 +132,17 @@ void main() {
       ];
 
       checker.addContextRoot(
-        firstContextRoot,
+        firstContextRoot.root,
         firstContextRootPackages,
         firstPubspec,
       );
       checker.addContextRoot(
-        secondContextRoot,
+        secondContextRoot.root,
         secondContextRootPackages,
         secondPubspec,
       );
       checker.addContextRoot(
-        thirdContextRoot,
+        thirdContextRoot.root,
         thirdContextRootPackages,
         thirdPubspec,
       );
@@ -207,12 +207,12 @@ flutter pub upgrade riverpod flutter_hooks freezed http_parser
       ];
 
       checker.addContextRoot(
-        firstContextRoot,
+        firstContextRoot.root,
         firstContextRootPackages,
         firstPubspec,
       );
       checker.addContextRoot(
-        secondContextRoot,
+        secondContextRoot.root,
         secondContextRootPackages,
         secondPubspec,
       );
@@ -272,12 +272,12 @@ dart pub upgrade riverpod freezed
       ];
 
       checker.addContextRoot(
-        firstContextRoot,
+        firstContextRoot.root,
         firstContextRootPackages,
         firstPubspec,
       );
       checker.addContextRoot(
-        secondContextRoot,
+        secondContextRoot.root,
         secondContextRootPackages,
         secondPubspec,
       );
@@ -338,12 +338,12 @@ dart pub upgrade riverpod freezed
       ];
 
       checker.addContextRoot(
-        firstContextRoot,
+        firstContextRoot.root,
         firstContextRootPackages,
         firstPubspec,
       );
       checker.addContextRoot(
-        secondContextRoot,
+        secondContextRoot.root,
         secondContextRootPackages,
         secondPubspec,
       );
@@ -404,12 +404,12 @@ dart pub upgrade riverpod freezed
       ];
 
       checker.addContextRoot(
-        firstContextRoot,
+        firstContextRoot.root,
         firstContextRootPackages,
         firstPubspec,
       );
       checker.addContextRoot(
-        secondContextRoot,
+        secondContextRoot.root,
         secondContextRootPackages,
         secondPubspec,
       );
@@ -469,12 +469,12 @@ dart pub upgrade riverpod freezed
       ];
 
       checker.addContextRoot(
-        firstContextRoot,
+        firstContextRoot.root,
         firstContextRootPackages,
         firstPubspec,
       );
       checker.addContextRoot(
-        secondContextRoot,
+        secondContextRoot.root,
         secondContextRootPackages,
         secondPubspec,
       );
