@@ -168,8 +168,12 @@ class CustomLintWorkspace {
     );
 
     await Future.wait([
-      pubspecFile.writeAsString(pubspecContent),
-      packageConfigFile.writeAsString(packageConfigContent),
+      pubspecFile
+          .create(recursive: true)
+          .then((_) => pubspecFile.writeAsString(pubspecContent)),
+      packageConfigFile
+          .create(recursive: true)
+          .then((_) => packageConfigFile.writeAsString(packageConfigContent)),
     ]);
 
     return tempDir;
@@ -271,8 +275,9 @@ class CustomLintProject {
     Directory directory,
     CustomLintPluginCheckerCache cache,
   ) async {
-    final pubspecFuture = _parsePubspec(directory.path);
-    final packageConfigFuture = _parsePackageConfig(directory.path);
+    // ignore() the errors as we want to throw a custom error.
+    final pubspecFuture = _parsePubspec(directory.path)..ignore();
+    final packageConfigFuture = _parsePackageConfig(directory.path)..ignore();
 
     final pubspec = await pubspecFuture.catchError((err) {
       throw MissingPubspecError._(directory.path);

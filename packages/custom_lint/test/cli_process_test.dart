@@ -115,7 +115,8 @@ void main() {
           p.join(innerContextRoot.path, '.dart_tool', 'package_config.json'),
         );
         // Potentially resolve the file system link, temp folders are links on macOs into /private/var
-        final missingPackageConfig = await packageConfig.resolveSymbolicLinks();
+        final missingPackageConfig =
+            await innerContextRoot.resolveSymbolicLinks();
         packageConfig.deleteSync();
 
         final process = Process.runSync(
@@ -131,7 +132,7 @@ void main() {
             '''
 The request analysis.setContextRoots failed with the following error:
 RequestErrorCode.PLUGIN_ERROR
-Bad state: No $missingPackageConfig found. Make sure to run `pub get` first.''',
+No .dart_tool/package_config.json found at $missingPackageConfig. Make sure to run `pub get` first.''',
           ),
         );
         expect(process.exitCode, 1);
