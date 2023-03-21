@@ -397,7 +397,8 @@ abstract class PubspecDependency {
   PubspecDependency? intersect(PubspecDependency dependency) {
     if (!isCompatibleWith(dependency)) return null;
 
-    return dependency;
+    // ignore: avoid_returning_this
+    return this;
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint/src/workspace.dart';
 import 'package:package_config/package_config.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
@@ -31,9 +32,333 @@ void main() {
     return ContextRoot('/Users/user/project/$relativePath', []);
   }
 
-  group('CustomLintWorkspace', () {});
+  group(CustomLintWorkspace, () {});
 
-  group('ConflictingPackagesChecker', () {
+  group(PubspecDependency, () {
+    group('fromHostedDependency', () {
+      test('intersect', () {
+        final beforeV2 = PubspecDependency.fromDependency(
+          HostedDependency(version: VersionConstraint.parse('<2.0.0')),
+        );
+        final afterV1 = PubspecDependency.fromDependency(
+          HostedDependency(version: VersionConstraint.parse('>=1.0.0')),
+        );
+
+        expect(
+          afterV1.intersect(
+            PubspecDependency.fromDependency(
+              HostedDependency(version: Version(0, 0, 1)),
+            ),
+          ),
+          null,
+        );
+
+        final intersection = afterV1.intersect(beforeV2)!;
+        final intersection2 = beforeV2.intersect(afterV1)!;
+
+        for (final intersection in [intersection, intersection2]) {
+          expect(
+            intersection.isCompatibleWith(
+              PubspecDependency.fromDependency(
+                HostedDependency(version: Version(1, 0, 0)),
+              ),
+            ),
+            true,
+          );
+          expect(
+            intersection.isCompatibleWith(
+              PubspecDependency.fromDependency(
+                HostedDependency(version: Version(1, 1, 0)),
+              ),
+            ),
+            true,
+          );
+          expect(
+            intersection.isCompatibleWith(
+              PubspecDependency.fromDependency(
+                HostedDependency(version: Version(2, 0, 0)),
+              ),
+            ),
+            false,
+          );
+          expect(
+            intersection.isCompatibleWith(
+              PubspecDependency.fromDependency(
+                HostedDependency(version: Version(0, 1, 0)),
+              ),
+            ),
+            false,
+          );
+        }
+      });
+
+      test('isCompatibleWith', () {
+        final from10 = PubspecDependency.fromDependency(
+          HostedDependency(version: VersionConstraint.parse('^1.0.0')),
+        );
+        final from11 = PubspecDependency.fromDependency(
+          HostedDependency(version: VersionConstraint.parse('^1.1.0')),
+        );
+
+        expect(from10.isCompatibleWith(from10), true);
+        expect(from10.isCompatibleWith(from11), true);
+        expect(from11.isCompatibleWith(from10), true);
+        expect(
+          from10.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              HostedDependency(version: Version(1, 0, 0)),
+            ),
+          ),
+          true,
+        );
+        expect(
+          from10.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              HostedDependency(version: Version(2, 0, 0)),
+            ),
+          ),
+          false,
+        );
+
+        final hosted = PubspecDependency.fromDependency(
+          HostedDependency(
+            version: Version(1, 0, 0),
+            hosted: HostedDetails('name', Uri.parse('google.com')),
+          ),
+        );
+        expect(
+          hosted.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              HostedDependency(
+                version: Version(1, 0, 0),
+                hosted: HostedDetails('name', Uri.parse('google.com')),
+              ),
+            ),
+          ),
+          true,
+        );
+        expect(
+          hosted.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              HostedDependency(
+                version: Version(1, 0, 0),
+                hosted: HostedDetails('name2', Uri.parse('google.com')),
+              ),
+            ),
+          ),
+          false,
+        );
+        expect(
+          hosted.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              HostedDependency(
+                version: Version(1, 0, 0),
+                hosted: HostedDetails('name', Uri.parse('google2.com')),
+              ),
+            ),
+          ),
+          false,
+        );
+      });
+    });
+
+    group('fromSdkDependency', () {
+      test('intersect', () {
+        final dependency = PubspecDependency.fromDependency(
+          SdkDependency('path'),
+        );
+
+        expect(
+          dependency.intersect(
+            PubspecDependency.fromDependency(
+              SdkDependency('path'),
+            ),
+          ),
+          same(dependency),
+        );
+        expect(
+          dependency.intersect(
+            PubspecDependency.fromDependency(
+              SdkDependency('path2'),
+            ),
+          ),
+          null,
+        );
+      });
+
+      test('isCompatibleWith', () {
+        final dependency = PubspecDependency.fromDependency(
+          SdkDependency('path'),
+        );
+
+        expect(dependency.isCompatibleWith(dependency), true);
+        expect(
+          dependency.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              SdkDependency('path'),
+            ),
+          ),
+          true,
+        );
+        expect(
+          dependency.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              SdkDependency('path2'),
+            ),
+          ),
+          false,
+        );
+      });
+    });
+
+    group('fromPathDependency', () {
+      test('intersect', () {
+        final dependency = PubspecDependency.fromDependency(
+          PathDependency('path'),
+        );
+
+        expect(
+          dependency.intersect(
+            PubspecDependency.fromDependency(
+              PathDependency('path'),
+            ),
+          ),
+          same(dependency),
+        );
+        expect(
+          dependency.intersect(
+            PubspecDependency.fromDependency(
+              PathDependency('path2'),
+            ),
+          ),
+          null,
+        );
+      });
+
+      test('isCompatibleWith', () {
+        final dependency = PubspecDependency.fromDependency(
+          PathDependency('path'),
+        );
+
+        expect(dependency.isCompatibleWith(dependency), true);
+        expect(
+          dependency.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              PathDependency('path'),
+            ),
+          ),
+          true,
+        );
+        expect(
+          dependency.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              PathDependency('path2'),
+            ),
+          ),
+          false,
+        );
+      });
+    });
+
+    group('fromGitDependency', () {
+      test('intersect', () {
+        final dependency = PubspecDependency.fromDependency(
+          GitDependency(
+            Uri.parse('google.com'),
+            path: 'path',
+            ref: '01',
+          ),
+        );
+
+        expect(
+          dependency.intersect(
+            PubspecDependency.fromDependency(
+              GitDependency(
+                Uri.parse('google.com'),
+                path: 'path',
+                ref: '01',
+              ),
+            ),
+          ),
+          same(dependency),
+        );
+        expect(
+          dependency.intersect(
+            PubspecDependency.fromDependency(
+              GitDependency(
+                Uri.parse('google.com2'),
+                path: 'path',
+                ref: '01',
+              ),
+            ),
+          ),
+          null,
+        );
+      });
+
+      test('isCompatibleWith', () {
+        final dependency = PubspecDependency.fromDependency(
+          GitDependency(
+            Uri.parse('google.com'),
+            path: 'path',
+            ref: '01',
+          ),
+        );
+
+        expect(dependency.isCompatibleWith(dependency), true);
+        expect(
+          dependency.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              GitDependency(
+                Uri.parse('google.com'),
+                path: 'path',
+                ref: '01',
+              ),
+            ),
+          ),
+          true,
+        );
+        expect(
+          dependency.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              GitDependency(
+                Uri.parse('google2.com'),
+                path: 'path',
+                ref: '01',
+              ),
+            ),
+          ),
+          false,
+        );
+        expect(
+          dependency.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              GitDependency(
+                Uri.parse('google.com'),
+                path: 'path2',
+                ref: '01',
+              ),
+            ),
+          ),
+          false,
+        );
+        expect(
+          dependency.isCompatibleWith(
+            PubspecDependency.fromDependency(
+              GitDependency(
+                Uri.parse('google.com'),
+                path: 'path',
+                ref: '013',
+              ),
+            ),
+          ),
+          false,
+        );
+      });
+    });
+  });
+
+  group(ConflictingPackagesChecker, () {
     test('should NOT throw error when there are no conflicting packages', () {
       final checker = ConflictingPackagesChecker();
       // We don't need to pass a real pubspec here
