@@ -9,6 +9,13 @@ import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 
+extension on Directory {
+  File get pubspec => File(join(path, 'pubspec.yaml'));
+
+  File get packageConfig =>
+      File(join(path, '.dart_tool', 'package_config.json'));
+}
+
 String _computePubspec(Iterable<String> plugins) {
   // TODO handle environment constraints conflicts.
   final dependencies = plugins.map((plugin) => '  $plugin: any').join();
@@ -30,32 +37,39 @@ $dependencies
 /// the contextRoots.
 ///
 /// This also changes relative paths into absolute paths.
-String _computePackageConfigForTempProject(List<String> contextRoots) {
+Future<String> _computePackageConfigForTempProject(
+  List<String> contextRoots,
+) async {
   final packageMap = <String, Package>{};
   final conflictingPackagesChecker = ConflictingPackagesChecker();
   for (final contextRoot in contextRoots) {
+    final contextRootDir = Directory(contextRoot);
+
+    final packageConfigFile = contextRootDir.packageConfig;
+    final pubspecFile = contextRootDir.pubspec;
+
     // TODO Refactor to use async IO operations and Future.wait
-    final contextRootPackageConfigUri = Uri.file(
-      join(contextRoot, '.dart_tool', 'package_config.json'),
-    );
-    final packageConfigFile = File.fromUri(contextRootPackageConfigUri);
-    final contextRootPubspecFile = File(
-      join(contextRoot, 'pubspec.yaml'),
-    );
 
     // TODO handle errors
-    final packageConfigContent = packageConfigFile.readAsStringSync();
-    final packageConfig = PackageConfig.parseString(
-      packageConfigContent,
-      contextRootPackageConfigUri,
-    );
+    final packageConfigFuture =
+        packageConfigFile.readAsString().then((content) {
+      return PackageConfig.parseString(
+        content,
+        packageConfigFile.uri,
+      );
+    });
 
     // TODO handle errors
-    final pubspecContent = contextRootPubspecFile.readAsStringSync();
-    final pubspec = Pubspec.parse(
-      pubspecContent,
-      sourceUrl: contextRootPubspecFile.uri,
-    );
+    final pubspecFuture = packageConfigFile.readAsString().then((content) {
+      return Pubspec.parse(
+        content,
+        sourceUrl: pubspecFile.uri,
+      );
+    });
+
+    final pubspec = await pubspecFuture;
+    final packageConfig = await packageConfigFuture;
+
     final validPackages = [
       for (final package in packageConfig.packages)
         // Don't include the project that has a plugin enabled in the list
@@ -171,9 +185,10 @@ class CustomLintWorkspace {
       pubspecFile
           .create(recursive: true)
           .then((_) => pubspecFile.writeAsString(pubspecContent)),
-      packageConfigFile
-          .create(recursive: true)
-          .then((_) => packageConfigFile.writeAsString(packageConfigContent)),
+      Future(() async {
+        await packageConfigFile.create(recursive: true);
+        await packageConfigFile.writeAsString(await packageConfigContent);
+      }),
     ]);
 
     return tempDir;
@@ -199,6 +214,20 @@ class CustomLintPluginCheckerCache {
       // TODO test that dependency_overrides & dev_dependencies aren't checked.
       return pubspec.dependencies.containsKey('custom_lint_builder');
     });
+  }
+}
+
+/// An util for deduplicating file reads.
+@internal
+class CustomLintFileCache {
+  final _cache = <File, Future<String>>{};
+
+  /// Reads a file and caches the result.
+  Future<String> read(File path) {
+    final cached = _cache[path];
+    if (cached != null) return cached;
+
+    return _cache[path] = path.readAsString();
   }
 }
 

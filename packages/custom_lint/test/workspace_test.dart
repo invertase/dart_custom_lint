@@ -31,6 +31,8 @@ void main() {
     return ContextRoot('/Users/user/project/$relativePath', []);
   }
 
+  group('CustomLintWorkspace', () {});
+
   group('ConflictingPackagesChecker', () {
     test('should NOT throw error when there are no conflicting packages', () {
       final checker = ConflictingPackagesChecker();
