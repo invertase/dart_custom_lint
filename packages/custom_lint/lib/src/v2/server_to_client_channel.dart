@@ -228,11 +228,11 @@ void main(List<String> args) async {
     await Future.wait([
       if (_tempDirectory != null) _tempDirectory!.delete(recursive: true),
       _serverSocket.then((value) => value.close()),
-      _processFuture.then(
+      _processFuture.then<void>(
         (value) => value.kill(),
         // The process wasn't started. No need to do anything.
         onError: (_) {},
-      ),
+      )
     ]);
   }
 

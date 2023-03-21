@@ -197,8 +197,6 @@ No .dart_tool/package_config.json found at $missingPackageConfig. Make sure to r
           trimDependencyOverridesWarning(process.stderr),
           startsWith(
             '''
-The request analysis.setContextRoots failed with the following error:
-RequestErrorCode.PLUGIN_ERROR
 Bad state: Some dependencies with conflicting versions were identified:
 ''',
           ),
