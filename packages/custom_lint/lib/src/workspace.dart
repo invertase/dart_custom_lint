@@ -86,9 +86,7 @@ class CustomLintWorkspace {
   /// the contextRoots.
   ///
   /// This also changes relative paths into absolute paths.
-  Future<String> _computePackageConfigForTempProject(
-    List<String> contextRoots,
-  ) async {
+  Future<String> _computePackageConfigForTempProject() async {
     final packageMap = <String, Package>{};
     final conflictingPackagesChecker = ConflictingPackagesChecker();
     for (final contextRoot in contextRoots) {
@@ -166,9 +164,7 @@ class CustomLintWorkspace {
 
   /// Create the Dart project which will contain all the custom_lint plugins.
   Future<Directory> createPluginHostDirectory() async {
-    final packageConfigContent = _computePackageConfigForTempProject(
-      contextRoots,
-    );
+    final packageConfigContent = _computePackageConfigForTempProject();
     // The previous line will throw if there are conflicting packages.
     // So it is safe to deduplicate the plugins by name here.
     final pubspecContent = _computePubspec(uniquePluginNames);
@@ -176,10 +172,8 @@ class CustomLintWorkspace {
     // We only create the temporary directories after computing all the files.
     // This avoids creating a temporary directory if we're going to throw anyway.
     final tempDir = Directory.systemTemp.createTempSync('custom_lint_client');
-    final pubspecFile = File(join(tempDir.path, 'pubspec.yaml'));
-    final packageConfigFile = File(
-      join(tempDir.path, '.dart_tool', 'package_config.json'),
-    );
+    final pubspecFile = tempDir.pubspec;
+    final packageConfigFile = tempDir.packageConfig;
 
     await Future.wait([
       pubspecFile
@@ -198,18 +192,18 @@ class CustomLintWorkspace {
 /// An util for detecting if a project is a custom_lint plugin.
 @internal
 class CustomLintPluginCheckerCache {
-  final _cache = <String, Future<bool>>{};
+  final _cache = <Directory, Future<bool>>{};
 
-  /// Returns `true` if the project at [path] is a custom_lint plugin.
+  /// Returns `true` if the project at [directory] is a custom_lint plugin.
   ///
   /// A project is considered a custom_lint plugin if it has a dependency on
   /// `custom_lint_builder`.
-  Future<bool> isPlugin(String path) {
-    final cached = _cache[path];
+  Future<bool> isPlugin(Directory directory) {
+    final cached = _cache[directory];
     if (cached != null) return cached;
 
-    return _cache[path] = Future(() async {
-      final pubspec = await _parsePubspec(path);
+    return _cache[directory] = Future(() async {
+      final pubspec = await _parsePubspec(directory);
 
       // TODO test that dependency_overrides & dev_dependencies aren't checked.
       return pubspec.dependencies.containsKey('custom_lint_builder');
@@ -231,17 +225,15 @@ class CustomLintFileCache {
   }
 }
 
-Future<Pubspec> _parsePubspec(String path) async {
-  final pubspecFile = File(join(path, 'pubspec.yaml'));
+Future<Pubspec> _parsePubspec(Directory dir) async {
+  final pubspecFile = dir.pubspec;
   final pubspecContent = pubspecFile.readAsString();
 
   return Pubspec.parse(await pubspecContent, sourceUrl: pubspecFile.uri);
 }
 
-Future<PackageConfig> _parsePackageConfig(String path) async {
-  final packageConfigFile = File(
-    join(path, '.dart_tool', 'package_config.json'),
-  );
+Future<PackageConfig> _parsePackageConfig(Directory dir) async {
+  final packageConfigFile = dir.packageConfig;
   final packageConfigContent = packageConfigFile.readAsBytes();
 
   return PackageConfig.parseBytes(
@@ -305,8 +297,8 @@ class CustomLintProject {
     CustomLintPluginCheckerCache cache,
   ) async {
     // ignore() the errors as we want to throw a custom error.
-    final pubspecFuture = _parsePubspec(directory.path)..ignore();
-    final packageConfigFuture = _parsePackageConfig(directory.path)..ignore();
+    final pubspecFuture = _parsePubspec(directory)..ignore();
+    final packageConfigFuture = _parsePackageConfig(directory)..ignore();
 
     final pubspec = await pubspecFuture.catchError((err) {
       throw MissingPubspecError._(directory.path);
@@ -326,7 +318,7 @@ class CustomLintProject {
           throw PluginNotFoundInPackageConfigError._(e.key, directory.path);
         }
 
-        final isPlugin = await cache.isPlugin(dependencyPath);
+        final isPlugin = await cache.isPlugin(Directory(dependencyPath));
         if (!isPlugin) return null;
 
         return CustomLintPlugin._(
