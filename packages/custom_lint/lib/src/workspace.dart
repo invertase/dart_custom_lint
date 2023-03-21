@@ -89,48 +89,21 @@ class CustomLintWorkspace {
   Future<String> _computePackageConfigForTempProject() async {
     final packageMap = <String, Package>{};
     final conflictingPackagesChecker = ConflictingPackagesChecker();
-    for (final contextRoot in contextRoots) {
-      final contextRootDir = Directory(contextRoot);
-
-      final packageConfigFile = contextRootDir.packageConfig;
-      final pubspecFile = contextRootDir.pubspec;
-
-      // TODO Refactor to use async IO operations and Future.wait
-
-      // TODO handle errors
-      final packageConfigFuture =
-          packageConfigFile.readAsString().then((content) {
-        return PackageConfig.parseString(
-          content,
-          packageConfigFile.uri,
-        );
-      });
-
-      // TODO handle errors
-      final pubspecFuture = packageConfigFile.readAsString().then((content) {
-        return Pubspec.parse(
-          content,
-          sourceUrl: pubspecFile.uri,
-        );
-      });
-
-      final pubspec = await pubspecFuture;
-      final packageConfig = await packageConfigFuture;
-
+    for (final project in projects) {
       final validPackages = [
-        for (final package in packageConfig.packages)
+        for (final package in project.packageConfig.packages)
           // Don't include the project that has a plugin enabled in the list
           // of dependencies of the plugin.
           // This avoids the plugin from being hot-reloaded when the analyzed
           // code changes.
-          if (package.name != pubspec.name) package
+          if (package.name != project.pubspec.name) package
       ];
 
       // Add the contextRoot and its packages to the conflicting packages checker
       conflictingPackagesChecker.addContextRoot(
-        contextRoot,
+        project.directory.path,
         validPackages,
-        pubspec,
+        project.pubspec,
       );
 
       for (final package in validPackages) {
@@ -289,6 +262,8 @@ class CustomLintProject {
   CustomLintProject._({
     required this.plugins,
     required this.directory,
+    required this.packageConfig,
+    required this.pubspec,
   });
 
   /// Decode a [CustomLintProject] from a directory.
@@ -332,8 +307,16 @@ class CustomLintProject {
     return CustomLintProject._(
       plugins: plugins.whereNotNull().toList(),
       directory: directory,
+      packageConfig: packageConfig,
+      pubspec: pubspec,
     );
   }
+
+  /// The resolved package_config.json at the moment of parsing.
+  final PackageConfig packageConfig;
+
+  /// The pubspec.yaml at the moment of parsing.
+  final Pubspec pubspec;
 
   /// The folder of the project being analyzed.
   final Directory directory;
