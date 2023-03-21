@@ -33,88 +33,6 @@ $dependencies
 ''';
 }
 
-/// Generate a package_config.json combining all the dependencies from all
-/// the contextRoots.
-///
-/// This also changes relative paths into absolute paths.
-Future<String> _computePackageConfigForTempProject(
-  List<String> contextRoots,
-) async {
-  final packageMap = <String, Package>{};
-  final conflictingPackagesChecker = ConflictingPackagesChecker();
-  for (final contextRoot in contextRoots) {
-    final contextRootDir = Directory(contextRoot);
-
-    final packageConfigFile = contextRootDir.packageConfig;
-    final pubspecFile = contextRootDir.pubspec;
-
-    // TODO Refactor to use async IO operations and Future.wait
-
-    // TODO handle errors
-    final packageConfigFuture =
-        packageConfigFile.readAsString().then((content) {
-      return PackageConfig.parseString(
-        content,
-        packageConfigFile.uri,
-      );
-    });
-
-    // TODO handle errors
-    final pubspecFuture = packageConfigFile.readAsString().then((content) {
-      return Pubspec.parse(
-        content,
-        sourceUrl: pubspecFile.uri,
-      );
-    });
-
-    final pubspec = await pubspecFuture;
-    final packageConfig = await packageConfigFuture;
-
-    final validPackages = [
-      for (final package in packageConfig.packages)
-        // Don't include the project that has a plugin enabled in the list
-        // of dependencies of the plugin.
-        // This avoids the plugin from being hot-reloaded when the analyzed
-        // code changes.
-        if (package.name != pubspec.name) package
-    ];
-
-    // Add the contextRoot and its packages to the conflicting packages checker
-    conflictingPackagesChecker.addContextRoot(
-      contextRoot,
-      validPackages,
-      pubspec,
-    );
-
-    for (final package in validPackages) {
-      packageMap[package.name] = package;
-    }
-  }
-
-  // Check if there are conflicting packages
-  conflictingPackagesChecker.throwErrorIfConflictingPackages();
-
-  return jsonEncode(<String, Object?>{
-    'configVersion': 2,
-    'generated': DateTime.now().toIso8601String(),
-    'generator': 'custom_lint',
-    'generatorVersion': '0.0.1',
-    'packages': <Object?>[
-      for (final package in packageMap.values)
-        <String, String>{
-          'name': package.name,
-          // This is somehow enough to change relative paths into absolute ones.
-          // It seems that PackageConfig.parse already converts the paths into
-          // absolute ones.
-          'rootUri': package.root.toString(),
-          'packageUri': package.packageUriRoot.toString(),
-          'languageVersion': package.languageVersion.toString(),
-          'extraData': package.extraData.toString(),
-        }
-    ],
-  });
-}
-
 /// The holder of metadatas related to the enabled plugins and analyzed projects.
 @internal
 class CustomLintWorkspace {
@@ -163,6 +81,88 @@ class CustomLintWorkspace {
 
   /// The names of all enabled plugins.
   final Set<String> uniquePluginNames;
+
+  /// Generate a package_config.json combining all the dependencies from all
+  /// the contextRoots.
+  ///
+  /// This also changes relative paths into absolute paths.
+  Future<String> _computePackageConfigForTempProject(
+    List<String> contextRoots,
+  ) async {
+    final packageMap = <String, Package>{};
+    final conflictingPackagesChecker = ConflictingPackagesChecker();
+    for (final contextRoot in contextRoots) {
+      final contextRootDir = Directory(contextRoot);
+
+      final packageConfigFile = contextRootDir.packageConfig;
+      final pubspecFile = contextRootDir.pubspec;
+
+      // TODO Refactor to use async IO operations and Future.wait
+
+      // TODO handle errors
+      final packageConfigFuture =
+          packageConfigFile.readAsString().then((content) {
+        return PackageConfig.parseString(
+          content,
+          packageConfigFile.uri,
+        );
+      });
+
+      // TODO handle errors
+      final pubspecFuture = packageConfigFile.readAsString().then((content) {
+        return Pubspec.parse(
+          content,
+          sourceUrl: pubspecFile.uri,
+        );
+      });
+
+      final pubspec = await pubspecFuture;
+      final packageConfig = await packageConfigFuture;
+
+      final validPackages = [
+        for (final package in packageConfig.packages)
+          // Don't include the project that has a plugin enabled in the list
+          // of dependencies of the plugin.
+          // This avoids the plugin from being hot-reloaded when the analyzed
+          // code changes.
+          if (package.name != pubspec.name) package
+      ];
+
+      // Add the contextRoot and its packages to the conflicting packages checker
+      conflictingPackagesChecker.addContextRoot(
+        contextRoot,
+        validPackages,
+        pubspec,
+      );
+
+      for (final package in validPackages) {
+        packageMap[package.name] = package;
+      }
+    }
+
+    // Check if there are conflicting packages
+    conflictingPackagesChecker.throwErrorIfConflictingPackages();
+
+    return jsonEncode(<String, Object?>{
+      'configVersion': 2,
+      'generated': DateTime.now().toIso8601String(),
+      'generator': 'custom_lint',
+      'generatorVersion': '0.0.1',
+      'packages': <Object?>[
+        for (final package in packageMap.values)
+          <String, String>{
+            'name': package.name,
+            // This is somehow enough to change relative paths into absolute ones.
+            // It seems that PackageConfig.parse already converts the paths into
+            // absolute ones.
+            'rootUri': package.root.toString(),
+            'packageUri': package.packageUriRoot.toString(),
+            'languageVersion': package.languageVersion.toString(),
+            'extraData': package.extraData.toString(),
+          }
+      ],
+    });
+  }
 
   /// Create the Dart project which will contain all the custom_lint plugins.
   Future<Directory> createPluginHostDirectory() async {
