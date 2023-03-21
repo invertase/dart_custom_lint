@@ -5,33 +5,33 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
+Package createPackage(String name, String version) {
+  return Package(
+    name,
+    Uri.parse('file:///Users/user/.pub-cache/hosted/pub.dev/$name-$version/'),
+  );
+}
+
+Package createGitPackage(String name, String gitPath) {
+  return Package(
+    name,
+    Uri.parse('file:///Users/user/.pub-cache/git/$name-$gitPath/'),
+  );
+}
+
+Package createPathPackage(String name, String path) {
+  return Package(
+    name,
+    Uri.parse('file://$path'),
+    relativeRoot: false,
+  );
+}
+
+ContextRoot createContextRoot(String relativePath) {
+  return ContextRoot('/Users/user/project/$relativePath', []);
+}
+
 void main() {
-  Package createPackage(String name, String version) {
-    return Package(
-      name,
-      Uri.parse('file:///Users/user/.pub-cache/hosted/pub.dev/$name-$version/'),
-    );
-  }
-
-  Package createGitPackage(String name, String gitPath) {
-    return Package(
-      name,
-      Uri.parse('file:///Users/user/.pub-cache/git/$name-$gitPath/'),
-    );
-  }
-
-  Package createPathPackage(String name, String path) {
-    return Package(
-      name,
-      Uri.parse('file://$path'),
-      relativeRoot: false,
-    );
-  }
-
-  ContextRoot createContextRoot(String relativePath) {
-    return ContextRoot('/Users/user/project/$relativePath', []);
-  }
-
   group(CustomLintWorkspace, () {});
 
   group(PubspecDependency, () {
