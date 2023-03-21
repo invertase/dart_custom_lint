@@ -1,5 +1,5 @@
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-import 'package:custom_lint/src/v2/server_to_client_channel.dart';
+import 'package:custom_lint/src/workspace.dart';
 import 'package:package_config/package_config.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
