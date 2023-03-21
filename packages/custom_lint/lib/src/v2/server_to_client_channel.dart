@@ -56,7 +56,7 @@ class _SocketCustomLintServerToClientChannel
 
   final CustomLintServer _server;
   final PluginVersionCheckParams _version;
-  late final Directory _tempDirectory;
+  Directory? _tempDirectory;
   final Future<ServerSocket> _serverSocket;
   late final Future<JsonSocketChannel?> _socket;
   late final Future<Process> _processFuture;
@@ -107,8 +107,9 @@ class _SocketCustomLintServerToClientChannel
       _contextRoots.roots.map((e) => e.root).toList(),
     );
 
-    _tempDirectory = await workspace.createPluginHostDirectory();
-    _writeEntrypoint(workspace.uniquePluginNames);
+    final tempDirectory =
+        _tempDirectory = await workspace.createPluginHostDirectory();
+    _writeEntrypoint(workspace.uniquePluginNames, tempDirectory);
 
     return _asyncRetry(retryCount: 5, () async {
       // Using "late" to fetch the port only if needed (in watch mode)
@@ -120,13 +121,16 @@ class _SocketCustomLintServerToClientChannel
           join('lib', 'custom_lint_client.dart'),
           await _serverSocket.then((value) => value.port.toString())
         ],
-        workingDirectory: _tempDirectory.path,
+        workingDirectory: tempDirectory.path,
       );
       return process;
     });
   }
 
-  void _writeEntrypoint(Iterable<String> pluginNames) {
+  void _writeEntrypoint(
+    Iterable<String> pluginNames,
+    Directory tempDirectory,
+  ) {
     final imports = pluginNames
         .map((name) => "import 'package:$name/$name.dart' as $name;\n")
         .join();
@@ -136,7 +140,7 @@ class _SocketCustomLintServerToClientChannel
         .join();
 
     final mainFile = File(
-      join(_tempDirectory.path, 'lib', 'custom_lint_client.dart'),
+      join(tempDirectory.path, 'lib', 'custom_lint_client.dart'),
     );
     mainFile.createSync(recursive: true);
     mainFile.writeAsStringSync('''
@@ -222,7 +226,7 @@ void main(List<String> args) async {
   @override
   Future<void> close() async {
     await Future.wait([
-      _tempDirectory.delete(recursive: true),
+      if (_tempDirectory != null) _tempDirectory!.delete(recursive: true),
       _serverSocket.then((value) => value.close()),
       _processFuture.then(
         (value) => value.kill(),
