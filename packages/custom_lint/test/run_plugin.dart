@@ -23,6 +23,8 @@ CustomLintRunner startRunnerForApp(
   bool ignoreErrors = false,
   bool includeBuiltInLints = true,
   bool watchMode = false,
+  bool fatalInfos = false,
+  bool fatalWarnings = false,
 }) {
   final zone = Zone.current;
   final channel = ServerIsolateChannel();

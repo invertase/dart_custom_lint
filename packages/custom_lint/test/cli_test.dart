@@ -11,6 +11,7 @@ final oyPluginSource = createPluginSource([
   TestLintRule(
     code: 'oy',
     message: 'Oy',
+    errorSeverity: 'ErrorSeverity.WARNING',
   )
 ]);
 
@@ -18,6 +19,14 @@ final helloWordPluginSource = createPluginSource([
   TestLintRule(
     code: 'hello_world',
     message: 'Hello world',
+    errorSeverity: 'ErrorSeverity.WARNING',
+  )
+]);
+
+final helloDartPluginSource = createPluginSource([
+  TestLintRule(
+    code: 'hello_dart',
+    message: 'Hello Dart',
   )
 ]);
 
@@ -81,6 +90,72 @@ lib/custom_lint_client.dart:13:29: Error: Undefined name 'createPlugin'.
           ),
         );
         expect(out, emitsDone);
+      },
+      currentDirectory: app,
+    );
+  });
+
+  test('exits with 0 when pass argument `--no-fatal-warnings`', () async {
+    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
+
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': 'void fn() {}',
+      },
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    await runWithIOOverride(
+      (out, err) async {
+        await cli.entrypoint(['--no-fatal-warnings']);
+
+        expect(err, emitsDone);
+        expect(exitCode, 0);
+      },
+      currentDirectory: app,
+    );
+  });
+
+  test('exits with 1 when pass argument `--fatal-warnings`', () async {
+    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
+
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': 'void fn() {}',
+      },
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    await runWithIOOverride(
+      (out, err) async {
+        await cli.entrypoint(['--fatal-warnings']);
+
+        expect(err, emitsDone);
+        expect(exitCode, 1);
+      },
+      currentDirectory: app,
+    );
+  });
+
+  test('exits with 1 when pass argument `--fatal-infos`', () async {
+    final plugin = createPlugin(name: 'test_lint', main: helloDartPluginSource);
+
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': 'void fn() {}',
+      },
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    await runWithIOOverride(
+      (out, err) async {
+        await cli.entrypoint(['--fatal-infos']);
+
+        expect(err, emitsDone);
+        expect(exitCode, 1);
       },
       currentDirectory: app,
     );
@@ -237,6 +312,7 @@ Bad state: fail
     final plugin = createPlugin(
       name: 'test_lint',
       main: '''
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -248,7 +324,7 @@ class _HelloWorldLint extends PluginBase {
 }
 
 class _Lint extends DartLintRule {
-  const _Lint() : super(code: const LintCode(name: 'a', problemMessage: 'a'));
+  const _Lint() : super(code: const LintCode(name: 'a', problemMessage: 'a', errorSeverity: ErrorSeverity.WARNING));
 
   @override
   void run(
@@ -258,27 +334,27 @@ class _Lint extends DartLintRule {
   ) {
     final line2 = resolver.lineInfo.getOffsetOfLine(1);
     reporter.reportErrorForOffset(
-      const LintCode(name: 'x2', problemMessage: 'x2'),
+      const LintCode(name: 'x2', problemMessage: 'x2', errorSeverity: ErrorSeverity.WARNING),
       line2 + 1,
       1,
     );
     reporter.reportErrorForOffset(
-      const LintCode(name: 'a', problemMessage: 'a'),
+      const LintCode(name: 'a', problemMessage: 'a', errorSeverity: ErrorSeverity.WARNING),
       line2 + 1,
       1,
     );
     reporter.reportErrorForOffset(
-      const LintCode(name: 'x', problemMessage: 'x'),
+      const LintCode(name: 'x', problemMessage: 'x', errorSeverity: ErrorSeverity.WARNING),
       line2 + 1,
       1,
     );
     reporter.reportErrorForOffset(
-      const LintCode(name: 'y', problemMessage: 'y'),
+      const LintCode(name: 'y', problemMessage: 'y', errorSeverity: ErrorSeverity.WARNING),
       line2,
       1,
     );
     reporter.reportErrorForOffset(
-      const LintCode(name: 'z', problemMessage: 'z'),
+      const LintCode(name: 'z', problemMessage: 'z', errorSeverity: ErrorSeverity.WARNING),
       0,
       1,
     );
