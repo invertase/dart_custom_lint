@@ -1,13 +1,17 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/context_locator.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:async/async.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:yaml/yaml.dart';
 
 extension on Directory {
   File get pubspec => File(join(path, 'pubspec.yaml'));
@@ -33,6 +37,98 @@ $dependencies
 ''';
 }
 
+/// An exception thrown by [visitAnalysisOptionAndIncludes] when an "include"
+/// directive creates a cycle.
+class CyclicIncludeException implements Exception {
+  CyclicIncludeException._(this.path);
+
+  /// The path that ends-up including itself.
+  final String path;
+
+  @override
+  String toString() => 'Cyclic include detected: $path';
+}
+
+/// Returns a stream of YAML maps obtained by recursively following the "include"
+/// keys in an analysis options file, starting from the given [analysisOptionsFile].
+///
+/// The function yields the YAML map in the original analysis options file first,
+/// and then yields the YAML maps in the included files in order.
+
+/// If the analysis options file does not exist or is not a YAML map, or if
+/// any included file does not exist or is not a YAML map, the function skips
+/// that file and will end execution. If no YAML maps are found in the
+/// analysis options file or its included files, the function returns
+/// an empty stream.
+///
+///
+/// If an included file contains a "package" URI scheme, the function resolves
+/// the URI using the `package_config.json` file in the same directory as the
+/// [analysisOptionsFile].
+/// If the `package_config.json` file does not exist or the `package_config.json`
+/// does not contain the imported package, the function will stop its execution.
+///
+/// If any included file is visited multiple times, the function throws a
+/// [CyclicIncludeException] indicating a cycle in the include graph.
+Stream<YamlMap> visitAnalysisOptionAndIncludes(
+  File analysisOptionsFile,
+) async* {
+  final visited = <String>{};
+  late final packageConfigFuture = loadPackageConfig(
+    File(
+      join(analysisOptionsFile.parent.path, '.dart_tool/package_config.json'),
+    ),
+  ).then<PackageConfig?>(
+    (value) => value,
+    // On error, return null to not throw. The function later handles the null
+    onError: (e, s) => null,
+  );
+
+  for (Uri? optionsPath = analysisOptionsFile.uri; optionsPath != null;) {
+    final optionsFile = File.fromUri(optionsPath);
+    if (!visited.add(optionsFile.path)) {
+      // The file was visited multiple times. This is a cycle.
+      throw CyclicIncludeException._(optionsFile.path);
+    }
+
+    if (!optionsFile.existsSync()) return;
+
+    final yaml = loadYaml(optionsFile.readAsStringSync());
+    if (yaml is! YamlMap) return;
+
+    yield yaml;
+
+    final includePath = yaml['include'];
+    if (includePath is! String) return;
+
+    final includeUri = Uri.tryParse(includePath);
+    if (includeUri == null) return;
+
+    if (includeUri.scheme == 'package') {
+      final packageName = includeUri.pathSegments.first;
+      final packageConfig = await packageConfigFuture;
+
+      // Search for the package with matching name in packageConfig
+      final package = packageConfig?.packages.firstWhereOrNull(
+        (package) => package.name == packageName,
+      );
+      if (package == null) return;
+
+      final packageRoot = Directory.fromUri(package.packageUriRoot);
+      final packagePath = join(
+        packageRoot.path,
+        // Skip the first segment, which is the package name.
+        // In package:foo/src/file.dart, we only care about src/file.dart
+        joinAll(includeUri.pathSegments.skip(1)),
+      );
+      optionsPath = Uri.file(packagePath);
+      continue;
+    }
+
+    optionsPath = optionsPath.resolveUri(includeUri);
+  }
+}
+
 /// The holder of metadatas related to the enabled plugins and analyzed projects.
 @internal
 class CustomLintWorkspace {
@@ -52,9 +148,46 @@ class CustomLintWorkspace {
       includedPaths: [directory.path],
     );
 
-    return fromContextRoots(
-      allContextRoots.map((e) => e.root.path).toList(),
+    final contextRootsWithCustomLint = await Future.wait(
+      allContextRoots.map((contextRoot) async {
+        final pubspecFile = Directory(contextRoot.root.path).pubspec;
+        if (!pubspecFile.existsSync()) {
+          return null;
+        }
+
+        final optionFile = contextRoot.optionsFile;
+        if (optionFile == null) {
+          return null;
+        }
+        final options = File(optionFile.path);
+
+        final pluginDefinition = await _isCustomLintEnabled(options);
+        if (!pluginDefinition) {
+          return null;
+        }
+
+        return contextRoot.root.path;
+      }),
     );
+
+    return fromContextRoots(
+      contextRootsWithCustomLint.whereNotNull().toList(),
+    );
+  }
+
+  static Future<bool> _isCustomLintEnabled(File options) async {
+    final enabledPlugins = await visitAnalysisOptionAndIncludes(options)
+        .map((event) {
+          final analyzerMap = event['analyzer'];
+          if (analyzerMap is! YamlMap) return null;
+          return analyzerMap['plugins'];
+        })
+        .whereNotNull()
+        .firstOrNull;
+
+    if (enabledPlugins is! YamlList) return false;
+
+    return enabledPlugins.contains('custom_lint');
   }
 
   /// Initializes the custom_lint workspace from a compilation of context roots.
@@ -181,20 +314,6 @@ class CustomLintPluginCheckerCache {
       // TODO test that dependency_overrides & dev_dependencies aren't checked.
       return pubspec.dependencies.containsKey('custom_lint_builder');
     });
-  }
-}
-
-/// An util for deduplicating file reads.
-@internal
-class CustomLintFileCache {
-  final _cache = <File, Future<String>>{};
-
-  /// Reads a file and caches the result.
-  Future<String> read(File path) {
-    final cached = _cache[path];
-    if (cached != null) return cached;
-
-    return _cache[path] = path.readAsString();
   }
 }
 
@@ -357,19 +476,19 @@ abstract class PubspecDependency {
 
   /// A dependency using `git`
   factory PubspecDependency.fromGitDependency(GitDependency dependency) =
-      _GitPubspecDependency;
+      GitPubspecDependency;
 
   /// A path dependency.
   factory PubspecDependency.fromPathDependency(PathDependency dependency) =
-      _PathPubspecDependency;
+      PathPubspecDependency;
 
   /// A dependency using `hosted` (pub.dev)
   factory PubspecDependency.fromHostedDependency(HostedDependency dependency) =
-      _HostedPubspecDependency;
+      HostedPubspecDependency;
 
   /// A dependency using `sdk`
   factory PubspecDependency.fromSdkDependency(SdkDependency dependency) =
-      _SdkPubspecDependency;
+      SdkPubspecDependency;
 
   /// Automatically converts any [Dependency] into a [PubspecDependency].
   factory PubspecDependency.fromDependency(Dependency dependency) {
@@ -402,40 +521,49 @@ abstract class PubspecDependency {
   }
 }
 
-class _GitPubspecDependency extends PubspecDependency {
-  _GitPubspecDependency(this.dependency) : super._();
+/// A dependency using `git`.
+class GitPubspecDependency extends PubspecDependency {
+  /// A dependency using `git`.
+  GitPubspecDependency(this.dependency) : super._();
 
+  /// The original git dependency
   final GitDependency dependency;
 
   @override
   bool isCompatibleWith(PubspecDependency dependency) {
-    return dependency is _GitPubspecDependency &&
+    return dependency is GitPubspecDependency &&
         this.dependency.url == dependency.dependency.url &&
         this.dependency.ref == dependency.dependency.ref &&
         this.dependency.path == dependency.dependency.path;
   }
 }
 
-class _PathPubspecDependency extends PubspecDependency {
-  _PathPubspecDependency(this.dependency) : super._();
+/// A dependency using `path`
+class PathPubspecDependency extends PubspecDependency {
+  /// A dependency using `path`
+  PathPubspecDependency(this.dependency) : super._();
 
+  /// The original path dependency
   final PathDependency dependency;
 
   @override
   bool isCompatibleWith(PubspecDependency dependency) {
-    return dependency is _PathPubspecDependency &&
+    return dependency is PathPubspecDependency &&
         this.dependency.path == dependency.dependency.path;
   }
 }
 
-class _HostedPubspecDependency extends PubspecDependency {
-  _HostedPubspecDependency(this.dependency) : super._();
+/// A dependency using `hosted` (pub.dev)
+class HostedPubspecDependency extends PubspecDependency {
+  /// A dependency using `hosted` (pub.dev)
+  HostedPubspecDependency(this.dependency) : super._();
 
+  /// The original hosted dependency
   final HostedDependency dependency;
 
   @override
   bool isCompatibleWith(PubspecDependency dependency) {
-    return dependency is _HostedPubspecDependency &&
+    return dependency is HostedPubspecDependency &&
         this.dependency.hosted?.name == dependency.dependency.hosted?.name &&
         this.dependency.hosted?.url == dependency.dependency.hosted?.url &&
         this.dependency.version.allowsAny(dependency.dependency.version);
@@ -445,8 +573,8 @@ class _HostedPubspecDependency extends PubspecDependency {
   PubspecDependency? intersect(PubspecDependency dependency) {
     if (!isCompatibleWith(dependency)) return null;
 
-    dependency as _HostedPubspecDependency;
-    return _HostedPubspecDependency(
+    dependency as HostedPubspecDependency;
+    return HostedPubspecDependency(
       HostedDependency(
         hosted: this.dependency.hosted,
         version: this.dependency.version.intersect(
@@ -457,14 +585,17 @@ class _HostedPubspecDependency extends PubspecDependency {
   }
 }
 
-class _SdkPubspecDependency extends PubspecDependency {
-  _SdkPubspecDependency(this.dependency) : super._();
+/// A dependency using `sdk`
+class SdkPubspecDependency extends PubspecDependency {
+  /// A dependency using `sdk`
+  SdkPubspecDependency(this.dependency) : super._();
 
+  /// The original sdk dependency
   final SdkDependency dependency;
 
   @override
   bool isCompatibleWith(PubspecDependency dependency) {
-    return dependency is _SdkPubspecDependency &&
+    return dependency is SdkPubspecDependency &&
         this.dependency.sdk == dependency.dependency.sdk;
   }
 }
