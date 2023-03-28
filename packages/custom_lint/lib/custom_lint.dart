@@ -10,6 +10,7 @@ import 'src/plugin_delegate.dart';
 import 'src/runner.dart';
 import 'src/server_isolate_channel.dart';
 import 'src/v2/custom_lint_analyzer_plugin.dart';
+import 'src/workspace.dart';
 
 const _help = '''
 
@@ -48,15 +49,20 @@ Future<void> customLint({
     includeBuiltInLints: false,
     delegate: CommandCustomLintDelegate(),
     (customLintServer) async {
-      final runner =
-          CustomLintRunner(customLintServer, workingDirectory, channel);
+      final workspace =
+          await CustomLintWorkspace.fromDirectory(workingDirectory);
+      final runner = CustomLintRunner(customLintServer, workspace, channel);
 
       try {
         await runner.initialize;
-        await _runPlugins(runner, reload: false);
+        await _runPlugins(
+          runner,
+          reload: false,
+          workingDirectory: workingDirectory,
+        );
 
         if (watchMode) {
-          await _startWatchMode(runner);
+          await _startWatchMode(runner, workingDirectory: workingDirectory);
         }
       } catch (err) {
         exitCode = 1;
@@ -70,6 +76,7 @@ Future<void> customLint({
 Future<void> _runPlugins(
   CustomLintRunner runner, {
   required bool reload,
+  required Directory workingDirectory,
 }) async {
   try {
     final lints = await runner.getLints(reload: reload);
@@ -78,7 +85,7 @@ Future<void> _runPlugins(
       exitCode = 1;
     }
 
-    _renderLints(lints, workingDirectory: runner.workingDirectory);
+    _renderLints(lints, workingDirectory: workingDirectory);
   } catch (err, stack) {
     exitCode = 1;
     stderr.writeln('$err\n$stack');
@@ -124,7 +131,10 @@ void _renderLints(
   }
 }
 
-Future<void> _startWatchMode(CustomLintRunner runner) async {
+Future<void> _startWatchMode(
+  CustomLintRunner runner, {
+  required Directory workingDirectory,
+}) async {
   if (stdin.hasTerminal) {
     stdin
       // Let's not pollute the output with whatever the user types
@@ -141,7 +151,11 @@ Future<void> _startWatchMode(CustomLintRunner runner) async {
       case 'r':
         // Rerunning lints
         stdout.writeln('Manual Reload...');
-        await _runPlugins(runner, reload: true);
+        await _runPlugins(
+          runner,
+          reload: true,
+          workingDirectory: workingDirectory,
+        );
         break;
       case 'q':
         // Let's quit the command line

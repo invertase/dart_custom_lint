@@ -51,7 +51,7 @@ void fn3() {}
       name: 'test_app',
     );
 
-    final runner = startRunnerForApp(app);
+    final runner = await startRunnerForApp(app);
     final lints = await runner.getLints(reload: false).then((lints) {
       final result = <String, AnalysisErrorsParams>{};
       for (final lint in lints) {
@@ -146,7 +146,7 @@ void ignore() {}
       name: 'test_app',
     );
 
-    final runner = startRunnerForApp(app);
+    final runner = await startRunnerForApp(app);
     final lints = StreamQueue(runner.channel.lints);
 
     expect(

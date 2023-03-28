@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:analyzer/dart/analysis/context_locator.dart';
+import 'package:analyzer/dart/analysis/context_root.dart' as analyzer;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint/src/workspace.dart';
 import 'package:package_config/package_config.dart';
@@ -601,15 +603,23 @@ void main() {
     });
 
     group('fromContextRoots', () {
+      /// Shorthand for calling [CustomLintWorkspace.fromContextRoots] from
+      /// a list of path.
+      Future<CustomLintWorkspace> fromContextRootsFromPaths(
+        List<String> paths,
+      ) {
+        return CustomLintWorkspace.fromContextRoots(
+          ContextLocator().locateRoots(includedPaths: paths),
+        );
+      }
+
       test('throws MissingPubspecError if package does not contain a pubspec',
           () async {
         final workspace = await createSimpleWorkspace([]);
         workspace.dir('package').createSync(recursive: true);
 
         expect(
-          () => CustomLintWorkspace.fromContextRoots([
-            p.join(workspace.path, 'package'),
-          ]),
+          () => fromContextRootsFromPaths([p.join(workspace.path, 'package')]),
           throwsA(isA<MissingPubspecError>()),
         );
       });
@@ -621,7 +631,7 @@ void main() {
         workspace.dir('package').dir('.dart_tool').deleteSync(recursive: true);
 
         expect(
-          () => CustomLintWorkspace.fromContextRoots([
+          () => fromContextRootsFromPaths([
             p.join(workspace.path, 'package'),
           ]),
           throwsA(isA<MissingPackageConfigError>()),
@@ -629,8 +639,7 @@ void main() {
       });
 
       test('Supports empty workspace', () async {
-        final customLintWorkspace =
-            await CustomLintWorkspace.fromContextRoots([]);
+        final customLintWorkspace = await fromContextRootsFromPaths([]);
 
         expect(customLintWorkspace.contextRoots, isEmpty);
         expect(customLintWorkspace.uniquePluginNames, isEmpty);
@@ -640,12 +649,12 @@ void main() {
       test('Supports projects with no plugins', () async {
         final workspace = await createSimpleWorkspace(['package']);
 
-        final customLintWorkspace = await CustomLintWorkspace.fromContextRoots([
+        final customLintWorkspace = await fromContextRootsFromPaths([
           p.join(workspace.path, 'package'),
         ]);
 
         expect(
-          customLintWorkspace.contextRoots,
+          customLintWorkspace.contextRoots.map((e) => e.root.path),
           [p.join(workspace.path, 'package')],
         );
         // No plugin is used, so the list of unique plugin names is empty.
@@ -703,13 +712,13 @@ void main() {
           ),
         ]);
 
-        final customLintWorkspace = await CustomLintWorkspace.fromContextRoots([
+        final customLintWorkspace = await fromContextRootsFromPaths([
           p.join(workspace.path, 'a'),
           p.join(workspace.path, 'b'),
         ]);
 
         expect(
-          customLintWorkspace.contextRoots,
+          customLintWorkspace.contextRoots.map((e) => e.root.path),
           [p.join(workspace.path, 'a'), p.join(workspace.path, 'b')],
         );
         // No plugin is used, so the list of unique plugin names is empty.

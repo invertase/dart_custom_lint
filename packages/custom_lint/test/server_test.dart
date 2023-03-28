@@ -88,7 +88,7 @@ void fn2() {}
       name: 'test_app',
     );
 
-    final runner = startRunnerForApp(app, includeBuiltInLints: false);
+    final runner = await startRunnerForApp(app, includeBuiltInLints: false);
     final lints = await runner.getLints(reload: false);
 
     expect(
@@ -319,7 +319,7 @@ if (node.name.lexeme == "fail") {
     );
 
     await runWithIOOverride((out, err) async {
-      final runner = startRunnerForApp(
+      final runner = await startRunnerForApp(
         app,
         // Ignoring errors as we are handling them later
         ignoreErrors: true,
@@ -399,10 +399,10 @@ if (node.name.lexeme == "fail") {
       );
 
       await runWithIOOverride((out, err) async {
-        final runner = startRunnerForApp(app, watchMode: true);
+        final runner = await startRunnerForApp(app, watchMode: true);
         final lints = StreamQueue(runner.channel.lints);
 
-        final runner2 = startRunnerForApp(app, watchMode: true);
+        final runner2 = await startRunnerForApp(app, watchMode: true);
         final lints2 = StreamQueue(runner.channel.lints);
 
         expect(
@@ -454,7 +454,7 @@ if (node.name.lexeme == "fail") {
       );
 
       await runWithIOOverride((out, err) async {
-        final runner = startRunnerForApp(app, watchMode: true);
+        final runner = await startRunnerForApp(app, watchMode: true);
         final lints = StreamQueue(runner.channel.lints);
 
         expect(err, emitsDone);
@@ -511,7 +511,7 @@ The Dart DevTools debugger and profiler is available at: .+?ws
       );
 
       await runWithIOOverride((out, err) async {
-        final runner = startRunnerForApp(app);
+        final runner = await startRunnerForApp(app);
         final lints = await runner.getLints(reload: false);
 
         expect(err, emitsDone);
