@@ -35,7 +35,9 @@ Future<CustomLintRunner> startRunnerForApp(
     includeBuiltInLints: includeBuiltInLints,
     watchMode: watchMode,
     (customLintServer) async {
-      final workspace = await CustomLintWorkspace.fromDirectory(directory);
+      final workspace = await CustomLintWorkspace.fromPaths([
+        directory.path,
+      ]);
       final runner = CustomLintRunner(customLintServer, workspace, channel);
       addTearDown(runner.close);
 

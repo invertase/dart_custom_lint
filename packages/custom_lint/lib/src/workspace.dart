@@ -142,12 +142,12 @@ class CustomLintWorkspace {
   );
 
   /// Initializes the custom_lint workspace from a directory.
-  static Future<CustomLintWorkspace> fromDirectory(Directory directory) async {
+  static Future<CustomLintWorkspace> fromPaths(List<String> paths) async {
     final contextLocator = ContextLocator(
       resourceProvider: PhysicalResourceProvider.INSTANCE,
     );
     final allContextRoots = contextLocator.locateRoots(
-      includedPaths: [directory.path],
+      includedPaths: paths.map(absolute).toList(),
     );
 
     final contextRootsWithCustomLint = await Future.wait(

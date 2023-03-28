@@ -508,7 +508,30 @@ void main() {
   });
 
   group(CustomLintWorkspace, () {
-    group('fromDirectory', () {
+    group(CustomLintWorkspace.fromPaths, () {
+      test('Handles relative paths', () async {
+        final workspace = await createSimpleWorkspace(['package']);
+
+        writeFile(
+          workspace.dir('package').analysisOptions,
+          analysisOptionsWithCustomLintEnabled,
+        );
+
+        final customLintWorkspace =
+            await CustomLintWorkspace.fromPaths(['package']);
+
+        expect(customLintWorkspace.contextRoots, hasLength(1));
+        expect(
+          customLintWorkspace.contextRoots.first.root,
+          workspace.dir('package').path,
+        );
+
+        expect(
+          customLintWorkspace.projects.map((e) => e.pubspec.name),
+          ['package'],
+        );
+      });
+
       test('Decodes contextRoots', () async {
         final workspace = await createSimpleWorkspace([
           'package',
@@ -521,7 +544,7 @@ void main() {
         );
 
         final customLintWorkspace =
-            await CustomLintWorkspace.fromDirectory(workspace);
+            await CustomLintWorkspace.fromPaths([workspace.path]);
 
         expect(customLintWorkspace.contextRoots, hasLength(2));
 
@@ -581,8 +604,8 @@ void main() {
           'include: ${disabledAnalysisOptions.path}',
         );
 
-        final customLintWorkspace = await CustomLintWorkspace.fromDirectory(
-          workspace,
+        final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+          [workspace.path],
         );
 
         expect(
@@ -626,8 +649,8 @@ void main() {
           analysisOptionsWithCustomLintDisabled,
         );
 
-        final customLintWorkspace = await CustomLintWorkspace.fromDirectory(
-          workspace,
+        final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+          [workspace.path],
         );
 
         expect(
