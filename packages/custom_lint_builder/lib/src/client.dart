@@ -19,6 +19,8 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:analyzer_plugin/starter.dart';
 import 'package:collection/collection.dart';
 // ignore: implementation_imports
+import 'package:custom_lint/src/package_utils.dart';
+// ignore: implementation_imports
 import 'package:custom_lint/src/v2/protocol.dart';
 // ignore: implementation_imports
 import 'package:custom_lint_core/src/change_reporter.dart';
@@ -32,7 +34,6 @@ import 'package:glob/glob.dart';
 import 'package:hotreloader/hotreloader.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
-import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:rxdart/subjects.dart';
 
 import '../custom_lint_builder.dart';
@@ -174,15 +175,8 @@ class CustomLintPluginClient {
     _contextRootsForPlugin = {};
 
     for (final contextRoot in params.roots) {
-      final pubspecFile = io.File(join(contextRoot.root, 'pubspec.yaml'));
-      if (!pubspecFile.existsSync()) {
-        continue;
-      }
-
-      final pubspec = Pubspec.parse(
-        pubspecFile.readAsStringSync(),
-        sourceUrl: pubspecFile.uri,
-      );
+      final pubspec = tryParsePubspecSync(io.Directory(contextRoot.root));
+      if (pubspec == null) continue;
 
       for (final pluginName in _channel.registeredPlugins.keys) {
         final isPluginEnabledInContext =

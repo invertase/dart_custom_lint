@@ -15,12 +15,7 @@ import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:yaml/yaml.dart';
 
-extension on Directory {
-  File get pubspec => File(join(path, 'pubspec.yaml'));
-
-  File get packageConfig =>
-      File(join(path, '.dart_tool', 'package_config.json'));
-}
+import 'package_utils.dart';
 
 String _computePubspec(Iterable<String> plugins) {
   // TODO handle environment constraints conflicts.
@@ -316,29 +311,12 @@ class CustomLintPluginCheckerCache {
     if (cached != null) return cached;
 
     return _cache[directory] = Future(() async {
-      final pubspec = await _parsePubspec(directory);
+      final pubspec = await parsePubspec(directory);
 
       // TODO test that dependency_overrides & dev_dependencies aren't checked.
       return pubspec.dependencies.containsKey('custom_lint_builder');
     });
   }
-}
-
-Future<Pubspec> _parsePubspec(Directory dir) async {
-  final pubspecFile = dir.pubspec;
-  final pubspecContent = pubspecFile.readAsString();
-
-  return Pubspec.parse(await pubspecContent, sourceUrl: pubspecFile.uri);
-}
-
-Future<PackageConfig> _parsePackageConfig(Directory dir) async {
-  final packageConfigFile = dir.packageConfig;
-  final packageConfigContent = packageConfigFile.readAsBytes();
-
-  return PackageConfig.parseBytes(
-    await packageConfigContent,
-    packageConfigFile.uri,
-  );
 }
 
 /// No pubspec.yaml file was found for a plugin.
@@ -400,8 +378,8 @@ class CustomLintProject {
     final directory = Directory(contextRoot.root);
 
     // ignore() the errors as we want to throw a custom error.
-    final pubspecFuture = _parsePubspec(directory)..ignore();
-    final packageConfigFuture = _parsePackageConfig(directory)..ignore();
+    final pubspecFuture = parsePubspec(directory)..ignore();
+    final packageConfigFuture = parsePackageConfig(directory)..ignore();
 
     final pubspec = await pubspecFuture.catchError((err) {
       throw MissingPubspecError._(directory.path);
