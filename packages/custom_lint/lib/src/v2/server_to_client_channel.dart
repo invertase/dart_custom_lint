@@ -103,9 +103,8 @@ class _SocketCustomLintServerToClientChannel
   ///
   /// Will throw if the process fails to start.
   Future<Process> _startProcess() async {
-    final workspace = await CustomLintWorkspace.fromContextRoots(
-      _contextRoots.roots.map((e) => e.root).toList(),
-    );
+    final workspace =
+        await CustomLintWorkspace.fromContextRoots(_contextRoots.roots);
 
     final tempDirectory =
         _tempDirectory = await workspace.createPluginHostDirectory();

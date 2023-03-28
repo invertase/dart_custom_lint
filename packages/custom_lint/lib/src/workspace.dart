@@ -3,8 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/context_locator.dart';
-import 'package:analyzer/dart/analysis/context_root.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:analyzer_plugin/protocol/protocol_generated.dart'
+    as analyzer_plugin;
 import 'package:async/async.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
@@ -167,7 +168,12 @@ class CustomLintWorkspace {
           return null;
         }
 
-        return contextRoot;
+        // TODO test
+        return analyzer_plugin.ContextRoot(
+          contextRoot.root.path,
+          contextRoot.excluded.map((e) => e.path).toList(),
+          optionsFile: contextRoot.optionsFile?.path,
+        );
       }),
     );
 
@@ -193,7 +199,7 @@ class CustomLintWorkspace {
 
   /// Initializes the custom_lint workspace from a compilation of context roots.
   static Future<CustomLintWorkspace> fromContextRoots(
-    List<ContextRoot> contextRoots,
+    List<analyzer_plugin.ContextRoot> contextRoots,
   ) async {
     final cache = CustomLintPluginCheckerCache();
     final projects = await Future.wait([
@@ -208,7 +214,7 @@ class CustomLintWorkspace {
   }
 
   /// The list of analyzed projects.
-  final List<ContextRoot> contextRoots;
+  final List<analyzer_plugin.ContextRoot> contextRoots;
 
   /// The list of analyzed projects.
   final List<CustomLintProject> projects;
@@ -388,10 +394,10 @@ class CustomLintProject {
 
   /// Decode a [CustomLintProject] from a directory.
   static Future<CustomLintProject> parse(
-    ContextRoot contextRoot,
+    analyzer_plugin.ContextRoot contextRoot,
     CustomLintPluginCheckerCache cache,
   ) async {
-    final directory = Directory(contextRoot.root.path);
+    final directory = Directory(contextRoot.root);
 
     // ignore() the errors as we want to throw a custom error.
     final pubspecFuture = _parsePubspec(directory)..ignore();

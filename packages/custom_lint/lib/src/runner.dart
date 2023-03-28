@@ -49,14 +49,7 @@ class CustomLintRunner {
       ),
     );
     await channel.sendRequest(
-      AnalysisSetContextRootsParams([
-        for (final contextRoot in workspace.contextRoots)
-          ContextRoot(
-            contextRoot.root.path,
-            contextRoot.excludedPaths.toList(),
-            optionsFile: contextRoot.optionsFile?.path,
-          ),
-      ]),
+      AnalysisSetContextRootsParams(workspace.contextRoots),
     );
   });
 

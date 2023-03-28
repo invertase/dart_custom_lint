@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/context_locator.dart';
-import 'package:analyzer/dart/analysis/context_root.dart' as analyzer;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint/src/workspace.dart';
 import 'package:package_config/package_config.dart';
@@ -609,7 +607,7 @@ void main() {
         List<String> paths,
       ) {
         return CustomLintWorkspace.fromContextRoots(
-          ContextLocator().locateRoots(includedPaths: paths),
+          paths.map((path) => ContextRoot(path, [])).toList(),
         );
       }
 
@@ -654,7 +652,7 @@ void main() {
         ]);
 
         expect(
-          customLintWorkspace.contextRoots.map((e) => e.root.path),
+          customLintWorkspace.contextRoots.map((e) => e.root),
           [p.join(workspace.path, 'package')],
         );
         // No plugin is used, so the list of unique plugin names is empty.
@@ -718,7 +716,7 @@ void main() {
         ]);
 
         expect(
-          customLintWorkspace.contextRoots.map((e) => e.root.path),
+          customLintWorkspace.contextRoots.map((e) => e.root),
           [p.join(workspace.path, 'a'), p.join(workspace.path, 'b')],
         );
         // No plugin is used, so the list of unique plugin names is empty.
