@@ -509,6 +509,46 @@ void main() {
 
   group(CustomLintWorkspace, () {
     group('fromDirectory', () {
+      test('Decodes contextRoots', () async {
+        final workspace = await createSimpleWorkspace([
+          'package',
+          p.join('package', 'subpackage'),
+        ]);
+
+        writeFile(
+          workspace.dir('package').analysisOptions,
+          analysisOptionsWithCustomLintEnabled,
+        );
+
+        final customLintWorkspace =
+            await CustomLintWorkspace.fromDirectory(workspace);
+
+        expect(customLintWorkspace.contextRoots, hasLength(2));
+
+        expect(
+          customLintWorkspace.contextRoots.first.root,
+          workspace.dir('package').path,
+        );
+        expect(
+          customLintWorkspace.contextRoots.first.exclude,
+          [workspace.dir('package').dir('subpackage').path],
+        );
+        expect(
+          customLintWorkspace.contextRoots.first.optionsFile,
+          workspace.dir('package').analysisOptions.path,
+        );
+
+        expect(
+          customLintWorkspace.contextRoots[1].root,
+          workspace.dir('package').dir('subpackage').path,
+        );
+        expect(customLintWorkspace.contextRoots[1].exclude, isEmpty);
+        expect(
+          customLintWorkspace.contextRoots[1].optionsFile,
+          workspace.dir('package').analysisOptions.path,
+        );
+      });
+
       test(
           'When looking for projects with custom_lint enabled, '
           'supports analysis_options.yaml imports', () async {
