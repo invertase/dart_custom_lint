@@ -17,32 +17,6 @@ const conflictExplanation =
     'different versions for a dependency, the process cannot be reasonably started. '
     'Please make sure all packages have the same version.';
 
-Package _createPackage(String name, String version) {
-  return Package(
-    name,
-    Uri.parse('file:///Users/user/.pub-cache/hosted/pub.dev/$name-$version/'),
-  );
-}
-
-Package _createGitPackage(String name, String gitPath) {
-  return Package(
-    name,
-    Uri.parse('file:///Users/user/.pub-cache/git/$name-$gitPath/'),
-  );
-}
-
-Package createPathPackage(String name, String path) {
-  return Package(
-    name,
-    Uri.parse('file://$path'),
-    relativeRoot: false,
-  );
-}
-
-ContextRoot createContextRoot(String relativePath) {
-  return ContextRoot('/Users/user/project/$relativePath', []);
-}
-
 extension on Dependency {
   Map<String, Object?> toPackageJson({
     required String name,
@@ -1266,9 +1240,9 @@ void main() {
           ),
         },
       );
-      final firstContextRoot = createContextRoot('app');
-      final secondContextRoot = createContextRoot('app/packages/http');
-      final thirdContextRoot = createContextRoot('app/packages/design_system');
+      final firstContextRoot = _createContextRoot('app');
+      final secondContextRoot = _createContextRoot('app/packages/http');
+      final thirdContextRoot = _createContextRoot('app/packages/design_system');
       final firstContextRootPackages = [
         _createPackage('riverpod', '2.2.0'),
         _createPackage('flutter_hooks', '0.18.6'),
@@ -1282,7 +1256,7 @@ void main() {
         _createPackage('flutter_hooks', '0.18.5'),
         _createPackage('http', '0.13.3'),
         _createPackage('http_parser', '4.0.0'),
-        createPathPackage('freezed', '/Users/user/freezed/packages/freezed/'),
+        _createPathPackage('freezed', '/Users/user/freezed/packages/freezed/'),
         // This is to simulate a transitive git dependency
         _createGitPackage(
           'http_parser',
