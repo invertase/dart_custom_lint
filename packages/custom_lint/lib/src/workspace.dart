@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
@@ -18,6 +19,7 @@ import 'package:yaml/yaml.dart';
 import 'package_utils.dart';
 
 String _computePubspec(Iterable<String> plugins) {
+  // TODO should import dependency_overrides related to the plugin too
   // TODO handle environment constraints conflicts.
   final dependencies = plugins.map((plugin) => '  $plugin: any').join();
 
@@ -126,6 +128,21 @@ Stream<YamlMap> visitAnalysisOptionAndIncludes(
   }
 }
 
+/// An error thrown when [CustomLintPlugin.visitSelfAndTransitiveDependencies] tries to iterate over
+/// the dependencies of a package, but the package cannot be found in
+/// the `package_config.json`.
+class UnresolvedTransitiveDependencyException implements Exception {
+  UnresolvedTransitiveDependencyException._(this.dependencyName);
+
+  /// The dependency that failed to resolve
+  final String dependencyName;
+
+  @override
+  String toString() {
+    return 'Unresolved transitive dependency: $dependencyName. Did you forget to run "pub get"?';
+  }
+}
+
 /// The holder of metadatas related to the enabled plugins and analyzed projects.
 @internal
 class CustomLintWorkspace {
@@ -137,12 +154,15 @@ class CustomLintWorkspace {
   );
 
   /// Initializes the custom_lint workspace from a directory.
-  static Future<CustomLintWorkspace> fromPaths(List<String> paths) async {
+  static Future<CustomLintWorkspace> fromPaths(
+    List<String> paths, {
+    required Directory workingDirectory,
+  }) async {
     final contextLocator = ContextLocator(
       resourceProvider: PhysicalResourceProvider.INSTANCE,
     );
     final allContextRoots = contextLocator.locateRoots(
-      includedPaths: paths.map(absolute).toList(),
+      includedPaths: paths.map((e) => join(workingDirectory.path, e)).toList(),
     );
 
     final contextRootsWithCustomLint = await Future.wait(
@@ -222,52 +242,56 @@ class CustomLintWorkspace {
   ///
   /// This also changes relative paths into absolute paths.
   Future<String> _computePackageConfigForTempProject() async {
-    final packageMap = <String, Package>{};
     final conflictingPackagesChecker = ConflictingPackagesChecker();
-    for (final project in projects) {
-      final validPackages = [
-        for (final package in project.packageConfig.packages)
-          // Don't include the project that has a plugin enabled in the list
-          // of dependencies of the plugin.
-          // This avoids the plugin from being hot-reloaded when the analyzed
-          // code changes.
-          if (package.name != project.pubspec.name) package
-      ];
 
-      // Add the contextRoot and its packages to the conflicting packages checker
-      conflictingPackagesChecker.addContextRoot(
-        project.directory.path,
-        validPackages,
-        project.pubspec,
-      );
+    Iterable<Package> visitPluginsAndDependencies() sync* {
+      final visitedPackages = <String>{};
 
-      for (final package in validPackages) {
-        packageMap[package.name] = package;
+      for (final project in projects) {
+        for (final plugin in project.plugins) {
+          final packages = plugin.visitSelfAndTransitiveDependencies(
+            // This ensures that we do not visit nor parse the same package twice.
+            shouldVisit: (package) => visitedPackages.add(package.root.path),
+          );
+
+          for (final package in packages) {
+            conflictingPackagesChecker.addPluginPackage(
+              project,
+              plugin,
+              package,
+            );
+            yield package;
+          }
+        }
       }
     }
 
-    // Check if there are conflicting packages
-    conflictingPackagesChecker.throwErrorIfConflictingPackages();
-
-    return jsonEncode(<String, Object?>{
+    final result = jsonEncode(<String, Object?>{
       'configVersion': 2,
       'generated': DateTime.now().toIso8601String(),
       'generator': 'custom_lint',
       'generatorVersion': '0.0.1',
       'packages': <Object?>[
-        for (final package in packageMap.values)
-          <String, String>{
-            'name': package.name,
+        for (final dependency in visitPluginsAndDependencies())
+          {
+            'name': dependency.name,
             // This is somehow enough to change relative paths into absolute ones.
             // It seems that PackageConfig.parse already converts the paths into
             // absolute ones.
-            'rootUri': package.root.toString(),
-            'packageUri': package.packageUriRoot.toString(),
-            'languageVersion': package.languageVersion.toString(),
-            'extraData': package.extraData.toString(),
+            'rootUri': dependency.root.toString(),
+            'packageUri': dependency.packageUriRoot.toString(),
+            'languageVersion': dependency.languageVersion.toString(),
+            'extraData': dependency.extraData.toString(),
           }
       ],
     });
+
+    // Check if there are conflicting packages.
+    // We do so after computing the result to avoid allocating a temporary
+    // list of packages, by visiting dependencies using an Iterable instead of List.
+    conflictingPackagesChecker.throwErrorIfConflictingPackages();
+
+    return result;
   }
 
   /// Create the Dart project which will contain all the custom_lint plugins.
@@ -321,27 +345,54 @@ class CustomLintPluginCheckerCache {
 
 /// No pubspec.yaml file was found for a plugin.
 @internal
-class MissingPubspecError extends Error {
-  MissingPubspecError._(this.path);
+class PubspecParseError extends Error {
+  PubspecParseError._(
+    this.path, {
+    required this.error,
+    required this.errorStackTrace,
+  });
 
   /// The path where the pubspec.yaml file was expected.
   final String path;
 
+  /// The inner error that was thrown when trying to parse the pubspec.
+  final Object error;
+
+  /// The stacktrace of [error].
+  final StackTrace errorStackTrace;
+
   @override
-  String toString() => 'Missing pubspec.yaml at $path';
+  String toString() {
+    return 'Failed to read pubspec.yaml at $path:\n'
+        '$error\n'
+        '$errorStackTrace';
+  }
 }
 
 /// No .dart_tool/package_config.json file was found for a plugin.
 @internal
-class MissingPackageConfigError extends Error {
-  MissingPackageConfigError._(this.path);
+class PackageConfigParseError extends Error {
+  PackageConfigParseError._(
+    this.path, {
+    required this.error,
+    required this.errorStackTrace,
+  });
 
   /// The path where the pubspec.yaml file was expected.
   final String path;
 
+  /// The inner error that was thrown when trying to parse the pubspec.
+  final Object error;
+
+  /// The stacktrace of [error].
+  final StackTrace errorStackTrace;
+
   @override
-  String toString() => 'No .dart_tool/package_config.json found at $path. '
-      'Make sure to run `pub get` first.';
+  String toString() =>
+      'Failed to decode .dart_tool/package_config.json at $path. '
+      'Make sure to run `pub get` first.\n'
+      '$error\n'
+      '$errorStackTrace';
 }
 
 /// The plugin was not found in the package config.
@@ -381,31 +432,44 @@ class CustomLintProject {
     final pubspecFuture = parsePubspec(directory)..ignore();
     final packageConfigFuture = parsePackageConfig(directory)..ignore();
 
-    final pubspec = await pubspecFuture.catchError((err) {
-      throw MissingPubspecError._(directory.path);
+    final pubspec =
+        // ignore: avoid_types_on_closure_parameters
+        await pubspecFuture.catchError((Object err, StackTrace stack) {
+      throw PubspecParseError._(
+        directory.path,
+        error: err,
+        errorStackTrace: stack,
+      );
     });
-    final packageConfig = await packageConfigFuture.catchError((err) {
-      throw MissingPackageConfigError._(directory.path);
+    final packageConfig =
+        // ignore: avoid_types_on_closure_parameters
+        await packageConfigFuture.catchError((Object err, StackTrace stack) {
+      throw PackageConfigParseError._(
+        directory.path,
+        error: err,
+        errorStackTrace: stack,
+      );
     });
 
     // TODO check that only dev_dependencies are checked
     final plugins = await Future.wait(
       pubspec.devDependencies.entries.map((e) async {
-        final dependencyPath = packageConfig.packages
-            .firstWhereOrNull((p) => p.name == e.key)
-            ?.root
-            .path;
-        if (dependencyPath == null) {
+        final packageWithName =
+            packageConfig.packages.firstWhereOrNull((p) => p.name == e.key);
+        if (packageWithName == null) {
           throw PluginNotFoundInPackageConfigError._(e.key, directory.path);
         }
 
-        final isPlugin = await cache.isPlugin(Directory(dependencyPath));
+        final packageDirectory = Directory(packageWithName.root.path);
+        final isPlugin = await cache.isPlugin(packageDirectory);
         if (!isPlugin) return null;
 
         return CustomLintPlugin._(
           name: e.key,
-          resolvedPluginPath: dependencyPath,
+          directory: packageDirectory,
+          package: packageWithName,
           constraint: PubspecDependency.fromDependency(e.value),
+          ownerPackageConfig: packageConfig,
         );
       }),
     );
@@ -436,19 +500,103 @@ class CustomLintProject {
 class CustomLintPlugin {
   CustomLintPlugin._({
     required this.name,
-    required this.resolvedPluginPath,
+    required this.directory,
     required this.constraint,
+    required this.ownerPackageConfig,
+    required this.package,
   });
 
   /// The plugin name.
   final String name;
 
-  /// The file system location of where the plugin is location according to the
+  /// The directory containing the source of the plugin according to the
   /// project's package_config.json.
-  final String resolvedPluginPath;
+  ///
+  /// See also [ownerPackageConfig].
+  final Directory directory;
+
+  /// The resolved package_config.json metadata of this plugin.
+  ///
+  /// This can be found in [ownerPackageConfig].
+  final Package package;
+
+  /// The resolved package_config.json of the project which depends on this plugin.
+  final PackageConfig ownerPackageConfig;
 
   /// The version constraints in the project's `pubspec.yaml`.
   final PubspecDependency constraint;
+
+  /// Returns an iterable of the transitive dependencies of a Dart project
+  /// located at the given [directory]. The function uses the `pubspec.yaml`
+  /// and `package_config.json` files of the project to resolve the
+  /// transitive dependencies.
+  ///
+  /// The function uses a breadth-first search algorithm to traverse the
+  /// dependency tree. The root project's dependencies are processed first,
+  /// followed by their transitive dependencies, and so on.
+  ///
+  /// The function will only visit a dependency if the [shouldVisit] function
+  /// returns `true`.
+  /// If it returns `false`, the dependency and all of its transitive
+  /// dependencies will be skipped.
+  ///
+  /// If a transitive dependency cannot be resolved (i.e., it is not listed
+  /// in the `package_config.json` file), the function throws an
+  /// [UnresolvedTransitiveDependencyException].
+  ///
+  /// The function will also throw if a pubspec/package_config.json could not
+  /// be decoded, such as if the file is missing or incorrectly formatted.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// final dependencies = _listTransitiveDependencies('/path/to/my/project').toList();
+  /// ```
+  Iterable<Package> visitSelfAndTransitiveDependencies({
+    required bool Function(Package) shouldVisit,
+  }) sync* {
+    if (!shouldVisit(package)) return;
+    yield package;
+
+    // A map of of the packages defined in package_config.json for fast lookup.
+    // This avoids an O(n^2) lookup in the loop below.
+    final packages = Map.fromEntries(
+      ownerPackageConfig.packages.map((e) => MapEntry(e.name, e)),
+    );
+
+    // TODO test error
+    final pubspec = parsePubspecSync(directory);
+
+    final dependenciesToVisit =
+        ListQueue<String>.from(pubspec.dependencies.keys);
+    // TODO test that dev_dependencies and dependency_overrides are visited on the
+    // root projects but not on the transitive dependencies
+    dependenciesToVisit.addAll(pubspec.devDependencies.keys);
+    dependenciesToVisit.addAll(pubspec.dependencyOverrides.keys);
+
+    /// The set of already visited pubspecs
+    final visited = <String>{};
+
+    while (dependenciesToVisit.isNotEmpty) {
+      // Check if the dependency is already visited
+      final dependency = dependenciesToVisit.removeFirst();
+      if (visited.add(dependency)) continue;
+
+      // Emit the dependency's package metadata.
+      final package = packages[dependency];
+      if (package == null) {
+        throw UnresolvedTransitiveDependencyException._(dependency);
+      }
+
+      if (!shouldVisit(package)) continue;
+      yield package;
+
+      /// Now queue the dependencies of the dependency to be emitted too.
+      final packageDir = Directory.fromUri(package.root);
+      // TODO test error
+      final dependencyPubspec = parsePubspecSync(packageDir);
+      dependenciesToVisit.addAll(dependencyPubspec.dependencies.keys);
+    }
+  }
 }
 
 /// A dependency in a `pubspec.yaml`.
@@ -587,124 +735,37 @@ class SdkPubspecDependency extends PubspecDependency {
   }
 }
 
-/// A class that checks if there are conflicting packages in the context roots.
-@internal
-class ConflictingPackagesChecker {
-  final _contextRootPackagesMap = <String, List<Package>>{};
-  final _contextRootPubspecMap = <String, Pubspec>{};
+class _ConflictEntry {
+  _ConflictEntry(this.plugin, this.project, this.package);
 
-  /// Adds a [contextRoot] and its [packages] to the checker.
-  /// We need to pass the [pubspec] to check if the package is a git dependency
-  /// and to check if the context root is a flutter package.
-  void addContextRoot(
-    String contextRoot,
-    List<Package> packages,
-    Pubspec pubspec,
-  ) {
-    _contextRootPackagesMap[contextRoot] = packages;
-    _contextRootPubspecMap[contextRoot] = pubspec;
-  }
+  final CustomLintPlugin plugin;
+  final CustomLintProject project;
+  final Package package;
 
-  /// Throws an error if there are conflicting packages.
-  void throwErrorIfConflictingPackages() {
-    final packageNameRootMap = <String, Set<Uri>>{};
-    // Group packages by name and collect all unique roots,
-    // since we're using a set
-    for (final packages in _contextRootPackagesMap.values) {
-      for (final package in packages) {
-        final rootSet = packageNameRootMap[package.name] ?? {};
-        packageNameRootMap[package.name] = rootSet..add(package.root);
-      }
-    }
-    // Find packages with more than one root
-    final packagesWithConflictingVersions = packageNameRootMap.entries
-        .where((entry) => entry.value.length > 1)
-        .map((e) => e.key)
-        .toList();
+  String get _name => package.name;
 
-    // If there are no conflicting versions, return
-    if (packagesWithConflictingVersions.isEmpty) return;
+  bool get _isGitDependency => package.root.path.contains('/.pub-cache/git/');
 
-    final contextRootConflictingPackages =
-        _contextRootPackagesMap.map((contextRoot, packages) {
-      final conflictingPackages = packages.where(
-        (package) => packagesWithConflictingVersions.contains(package.name),
-      );
-      return MapEntry(contextRoot, conflictingPackages);
-    });
+  bool get _isHostedDependency =>
+      package.root.path.contains('/.pub-cache/hosted/');
 
-    final errorMessageBuilder = StringBuffer();
-
-    errorMessageBuilder
-      ..writeln('Some dependencies with conflicting versions were identified:')
-      ..writeln();
-
-    // Build conflicting packages message
-    for (final entry in contextRootConflictingPackages.entries) {
-      final contextRoot = entry.key;
-      final conflictingPackages = entry.value;
-      final pubspec = _contextRootPubspecMap[contextRoot]!;
-      final locationName = pubspec.name;
-      errorMessageBuilder.writeln('$locationName at $contextRoot');
-      for (final package in conflictingPackages) {
-        errorMessageBuilder.writeln(package.buildConflictingMessage(pubspec));
-      }
-      errorMessageBuilder.writeln();
+  String buildConflictingMessage() {
+    final versionString = _buildVersionString();
+    if (package.name == plugin.name) {
+      return '''
+- Plugin $_name $versionString
+  Used by the project ${project.pubspec.name}.''';
     }
 
-    errorMessageBuilder
-      ..writeln(
-        'This is not supported. Custom_lint shares the analysis between all'
-        ' packages. As such, all plugins are started under a single process,'
-        ' sharing the dependencies of all the packages that use custom_lint. '
-        "Since there's a single process for all plugins, if 2 plugins try to"
-        ' use different versions for a dependency, the process cannot be '
-        'reasonably started. Please make sure all packages have the same version.',
-      )
-      ..writeln('You could run the following commands to try fixing this:')
-      ..writeln();
-
-    // Build fix commands
-    for (final entry in contextRootConflictingPackages.entries) {
-      final contextRoot = entry.key;
-      final pubspec = _contextRootPubspecMap[contextRoot]!;
-      final isFlutter = pubspec.dependencies.containsKey('flutter');
-      final command = isFlutter ? 'flutter' : 'dart';
-
-      final conflictingPackages = entry.value;
-      final conflictingPackagesNames =
-          conflictingPackages.map((package) => package.name).join(' ');
-      errorMessageBuilder
-        ..writeln('cd $contextRoot')
-        ..writeln('$command pub upgrade $conflictingPackagesNames');
-    }
-
-    throw StateError(errorMessageBuilder.toString());
-  }
-}
-
-extension on Pubspec {
-  Dependency? getDependency(String name) {
-    return dependencies[name] ??
-        devDependencies[name] ??
-        dependencyOverrides[name];
-  }
-}
-
-extension on Package {
-  bool get isGitDependency => root.path.contains('/.pub-cache/git/');
-
-  bool get isHostedDependency => root.path.contains('/.pub-cache/hosted/');
-
-  String buildConflictingMessage(Pubspec pubspec) {
-    final versionString = _buildVersionString(pubspec);
-    return '- $name $versionString';
+    return '''
+- Package $_name $versionString
+  Used by plugin ${plugin.name} in the project ${project.pubspec.name}.''';
   }
 
-  String _buildVersionString(Pubspec pubspec) {
-    if (isGitDependency) {
-      return _buildGitPackageVersion(pubspec);
-    } else if (isHostedDependency) {
+  String _buildVersionString() {
+    if (_isGitDependency) {
+      return _buildGitPackageVersion();
+    } else if (_isHostedDependency) {
       return _buildHostedPackageVersion();
     } else {
       return _buildPathDependency();
@@ -712,21 +773,22 @@ extension on Package {
   }
 
   String _buildHostedPackageVersion() {
-    final segments = root.pathSegments;
+    final segments = package.root.pathSegments;
     final version = segments[segments.length - 2].split('-').last;
     return 'v$version';
   }
 
   String _buildPathDependency() {
-    return 'from path ${root.path}';
+    return 'from path ${package.root.path}';
   }
 
-  String _buildGitPackageVersion(Pubspec pubspec) {
-    final dependency = pubspec.getDependency(name);
+  String _buildGitPackageVersion() {
+    final dependency = project.pubspec.getDependency(_name);
 
     // We might not be able to find a dependency if the package is a transitive dependency
     if (dependency == null || dependency is! GitDependency) {
-      final version = root.path.split('/git/').last.replaceFirst('$name-', '');
+      final version =
+          package.root.path.split('/git/').last.replaceFirst('$_name-', '');
       // We're not able to find the dependency, so we'll just return
       // the version from the path, which is not ideal, but better than nothing
       return 'from git $version';
@@ -743,5 +805,143 @@ extension on Package {
     }
 
     return versionBuilder.toString();
+  }
+}
+
+/// A class that checks if there are conflicting packages in the context roots.
+@internal
+class ConflictingPackagesChecker {
+  final _entries = <_ConflictEntry>[];
+
+  /// Adds a [contextRoot] and its [packages] to the checker.
+  /// We need to pass the [pubspec] to check if the package is a git dependency
+  /// and to check if the context root is a flutter package.
+  void addPluginPackage(
+    CustomLintProject project,
+    CustomLintPlugin plugin,
+    Package package,
+  ) {
+    _entries.add(
+      _ConflictEntry(
+        plugin,
+        project,
+        package,
+      ),
+    );
+  }
+
+  /// Throws an error if there are conflicting packages.
+  void throwErrorIfConflictingPackages() {
+    final packageNameRootMap = <String, Set<Uri>>{};
+    // Group packages by name and collect all unique roots,
+    // since we're using a set
+    for (final entry in _entries) {
+      final rootSet = packageNameRootMap[entry.package.name] ?? {};
+      rootSet.add(entry.package.root);
+    }
+
+    // Find packages with more than one root
+    final packagesWithConflictingVersions = packageNameRootMap.entries
+        .where((entry) => entry.value.length > 1)
+        .map((e) => e.key)
+        .toSet();
+
+    // If there are no conflicting versions, return
+    if (packagesWithConflictingVersions.isEmpty) return;
+
+    throw PackageVersionConflictError._(
+      packagesWithConflictingVersions,
+      _entries,
+    );
+  }
+}
+
+class PackageVersionConflictError extends Error {
+  PackageVersionConflictError._(
+    this._packagesWithConflictingVersions,
+    this._entries,
+  );
+
+  final Set<String> _packagesWithConflictingVersions;
+  final List<_ConflictEntry> _entries;
+
+  @override
+  String toString() {
+    final conflictingEntriesByPackages = Map.fromEntries(
+      _packagesWithConflictingVersions.map(
+        (packageName) => MapEntry(
+          packageName,
+          _entries.where((entry) => entry.package.name == packageName).toList(),
+        ),
+      ),
+    );
+
+    final errorMessageBuilder = StringBuffer('''
+PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+
+''');
+
+    // Build conflicting packages message
+    for (final conflictingEntriesForPackage
+        in conflictingEntriesByPackages.values) {
+      for (final conflictEntry in conflictingEntriesForPackage) {
+        errorMessageBuilder.writeln(conflictEntry.buildConflictingMessage());
+      }
+      errorMessageBuilder.writeln();
+    }
+
+    errorMessageBuilder
+      ..writeln(
+        'This is not supported. Custom_lint shares the analysis between all'
+        ' packages. As such, all plugins are started under a single process,'
+        ' sharing the dependencies of all the packages that use custom_lint. '
+        "Since there's a single process for all plugins, if 2 plugins try to"
+        ' use different versions for a dependency, the process cannot be '
+        'reasonably started. Please make sure all packages have the same version.',
+      )
+      ..writeln('You could run the following commands to try fixing this:')
+      ..writeln();
+
+    // Organize conflicting packages by project instead of by name
+    final conflictingEntriesByProjects =
+        <CustomLintProject, List<_ConflictEntry>>{};
+    for (final conflictingEntriesForPackage
+        in conflictingEntriesByPackages.values) {
+      for (final conflictEntry in conflictingEntriesForPackage) {
+        final project = conflictEntry.project;
+        final projectConflictingEntries =
+            conflictingEntriesByProjects[project] ?? [];
+        projectConflictingEntries.add(conflictEntry);
+        conflictingEntriesByProjects[project] = projectConflictingEntries;
+      }
+    }
+
+    // Build fix commands
+    for (final conflictingEntriesForProject
+        in conflictingEntriesByProjects.entries) {
+      final pubspec = conflictingEntriesForProject.key.pubspec;
+      final isFlutter = pubspec.dependencies.containsKey('flutter');
+
+      final command = isFlutter ? 'flutter' : 'dart';
+
+      final conflictingPackageEntries = conflictingEntriesForProject.value;
+      final conflictingPackagesNames = conflictingPackageEntries
+          .map((entry) => entry.package.name)
+          .join(' ');
+
+      errorMessageBuilder
+        ..writeln('cd ${conflictingEntriesForProject.key.directory.path}')
+        ..writeln('$command pub upgrade $conflictingPackagesNames');
+    }
+
+    return errorMessageBuilder.toString();
+  }
+}
+
+extension on Pubspec {
+  Dependency? getDependency(String name) {
+    return dependencies[name] ??
+        devDependencies[name] ??
+        dependencyOverrides[name];
   }
 }

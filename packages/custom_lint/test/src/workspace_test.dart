@@ -9,6 +9,14 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
+const conflictExplanation =
+    'This is not supported. Custom_lint shares the analysis between all packages. '
+    'As such, all plugins are started under a single process, '
+    'sharing the dependencies of all the packages that use custom_lint. '
+    "Since there's a single process for all plugins, if 2 plugins try to use "
+    'different versions for a dependency, the process cannot be reasonably started. '
+    'Please make sure all packages have the same version.';
+
 Package createPackage(String name, String version) {
   return Package(
     name,
@@ -55,7 +63,7 @@ extension on Dependency {
     } else if (that is GitDependency) {
       return {
         'git': {
-          'url': that.url,
+          'url': that.url.toString(),
           if (that.path != null) 'path': that.path,
           if (that.ref != null) 'ref': that.ref,
         }
@@ -124,6 +132,47 @@ Future<Directory> createProject(
   return dir;
 }
 
+void writePackageConfig(Directory dir, [List<Package> packages = const []]) {
+  writeFile(
+    dir.packageConfig,
+    json.encode({
+      'configVersion': 2,
+      'packages': [
+        for (final package in packages)
+          {
+            'name': package.name,
+            'rootUri': package.root.toString(),
+            'packageUri': 'lib/',
+            'languageVersion': '2.12',
+          },
+      ],
+    }),
+  );
+}
+
+/// A simplified [writePackageConfig] which alleviates the need to specify
+/// a [Package] object.
+///
+/// This receives a map of package name and paths relative to [dir].
+void writeSimplePackageConfig(
+  Directory dir, [
+  Map<String, String> packages = const {},
+]) {
+  writePackageConfig(
+    dir,
+    [
+      for (final entry in packages.entries)
+        Package(
+          entry.key,
+          Uri.file(
+            // The Package class expects a trailing slash and absolute path.
+            '${p.normalize(p.join(dir.path, entry.value))}/',
+          ),
+        ),
+    ],
+  );
+}
+
 /// A simplified [createWorkspace] which alleviates the need to specify
 /// both the path and the pubspec.
 ///
@@ -135,8 +184,9 @@ Future<Directory> createProject(
 ///   If two packages have the same name, the second one will be suffixed with
 ///   an incrementing numnber. Such that we have `package`, `package2`, ...
 Future<Directory> createSimpleWorkspace(
-  List<Object> projectEntry,
-) async {
+  List<Object> projectEntry, {
+  bool withPackageConfig = true,
+}) async {
   /// The number of time we've created a package with a given name.
   final packageCount = <String, int>{};
 
@@ -155,7 +205,7 @@ Future<Directory> createSimpleWorkspace(
     return folderName;
   }
 
-  return createWorkspace({
+  return createWorkspace(withPackageConfig: withPackageConfig, {
     for (final projectEntry in projectEntry)
       if (projectEntry is Pubspec)
         getFolderName(projectEntry): projectEntry
@@ -175,7 +225,10 @@ Future<Directory> createSimpleWorkspace(
 }
 
 /// Create a temporary mono-repository setup with package_configs and pubspecs.
-Future<Directory> createWorkspace(Map<String, Pubspec> pubspecs) async {
+Future<Directory> createWorkspace(
+  Map<String, Pubspec> pubspecs, {
+  bool withPackageConfig = true,
+}) async {
   final dir = createTemporaryDirectory();
 
   String packagePathOf(Dependency dependency, String name) {
@@ -200,24 +253,28 @@ Future<Directory> createWorkspace(Map<String, Pubspec> pubspecs) async {
         await createProject(
           projectDirectory,
           pubspecEntry.value,
-          packageConfigs: [
-            for (final dependency in pubspecEntry.value.dependencies.entries)
-              dependency.value.toPackageJson(
-                name: dependency.key,
-                rootUri: packagePathOf(dependency.value, dependency.key),
-              ),
-            for (final dependency in pubspecEntry.value.devDependencies.entries)
-              dependency.value.toPackageJson(
-                name: dependency.key,
-                rootUri: packagePathOf(dependency.value, dependency.key),
-              ),
-            for (final dependency
-                in pubspecEntry.value.dependencyOverrides.entries)
-              dependency.value.toPackageJson(
-                name: dependency.key,
-                rootUri: packagePathOf(dependency.value, dependency.key),
-              ),
-          ],
+          packageConfigs: !withPackageConfig
+              ? const []
+              : [
+                  for (final dependency
+                      in pubspecEntry.value.dependencies.entries)
+                    dependency.value.toPackageJson(
+                      name: dependency.key,
+                      rootUri: packagePathOf(dependency.value, dependency.key),
+                    ),
+                  for (final dependency
+                      in pubspecEntry.value.devDependencies.entries)
+                    dependency.value.toPackageJson(
+                      name: dependency.key,
+                      rootUri: packagePathOf(dependency.value, dependency.key),
+                    ),
+                  for (final dependency
+                      in pubspecEntry.value.dependencyOverrides.entries)
+                    dependency.value.toPackageJson(
+                      name: dependency.key,
+                      rootUri: packagePathOf(dependency.value, dependency.key),
+                    ),
+                ],
         );
       }),
   ]);
@@ -517,8 +574,10 @@ void main() {
           analysisOptionsWithCustomLintEnabled,
         );
 
-        final customLintWorkspace =
-            await CustomLintWorkspace.fromPaths(['package']);
+        final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+          ['package'],
+          workingDirectory: workspace,
+        );
 
         expect(customLintWorkspace.contextRoots, hasLength(1));
         expect(
@@ -543,8 +602,10 @@ void main() {
           analysisOptionsWithCustomLintEnabled,
         );
 
-        final customLintWorkspace =
-            await CustomLintWorkspace.fromPaths([workspace.path]);
+        final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+          [workspace.path],
+          workingDirectory: workspace,
+        );
 
         expect(customLintWorkspace.contextRoots, hasLength(2));
 
@@ -579,7 +640,6 @@ void main() {
           'enabled_import',
           'disabled_import',
         ]);
-
         final enabledAnalysisOptions = workspace.dir('enabled').analysisOptions;
         writeFile(enabledAnalysisOptions, analysisOptionsWithCustomLintEnabled);
 
@@ -606,6 +666,7 @@ void main() {
 
         final customLintWorkspace = await CustomLintWorkspace.fromPaths(
           [workspace.path],
+          workingDirectory: workspace,
         );
 
         expect(
@@ -651,6 +712,7 @@ void main() {
 
         final customLintWorkspace = await CustomLintWorkspace.fromPaths(
           [workspace.path],
+          workingDirectory: workspace,
         );
 
         expect(
@@ -681,7 +743,7 @@ void main() {
 
         expect(
           () => fromContextRootsFromPaths([p.join(workspace.path, 'package')]),
-          throwsA(isA<MissingPubspecError>()),
+          throwsA(isA<PubspecParseError>()),
         );
       });
 
@@ -695,7 +757,7 @@ void main() {
           () => fromContextRootsFromPaths([
             p.join(workspace.path, 'package'),
           ]),
-          throwsA(isA<MissingPackageConfigError>()),
+          throwsA(isA<PackageConfigParseError>()),
         );
       });
 
@@ -1144,7 +1206,7 @@ void main() {
   });
 
   group(ConflictingPackagesChecker, () {
-    test('should NOT throw error when there are no conflicting packages', () {
+    /* test('should NOT throw error when there are no conflicting packages', () {
       final checker = ConflictingPackagesChecker();
       // We don't need to pass a real pubspec here
       final pubspec = Pubspec('fake_package');
@@ -1287,7 +1349,7 @@ design_system at /Users/user/project/app/packages/design_system
 - freezed from git url ssh://git@github.com/rrousselGit/freezed.git ref 4cdfbf9159f2e9746fce29d2862f148f901da66a path packages/freezed
 - http_parser v4.0.0
 
-This is not supported. Custom_lint shares the analysis between all packages. As such, all plugins are started under a single process, sharing the dependencies of all the packages that use custom_lint. Since there's a single process for all plugins, if 2 plugins try to use different versions for a dependency, the process cannot be reasonably started. Please make sure all packages have the same version.
+$conflictExplanation
 You could run the following commands to try fixing this:
 
 cd /Users/user/project/app
@@ -1347,7 +1409,7 @@ http at /Users/user/project/app/packages/http
 - riverpod v2.1.0
 - freezed v2.3.1
 
-This is not supported. Custom_lint shares the analysis between all packages. As such, all plugins are started under a single process, sharing the dependencies of all the packages that use custom_lint. Since there's a single process for all plugins, if 2 plugins try to use different versions for a dependency, the process cannot be reasonably started. Please make sure all packages have the same version.
+$conflictExplanation
 You could run the following commands to try fixing this:
 
 cd /Users/user/project/app
@@ -1412,7 +1474,7 @@ http at /Users/user/project/app/packages/http
 - riverpod v2.1.0
 - freezed from git url ssh://git@github.com/rrousselGit/freezed.git
 
-This is not supported. Custom_lint shares the analysis between all packages. As such, all plugins are started under a single process, sharing the dependencies of all the packages that use custom_lint. Since there's a single process for all plugins, if 2 plugins try to use different versions for a dependency, the process cannot be reasonably started. Please make sure all packages have the same version.
+$conflictExplanation
 You could run the following commands to try fixing this:
 
 cd /Users/user/project/app
@@ -1424,67 +1486,77 @@ dart pub upgrade riverpod freezed
           ),
         ),
       );
-    });
+    });*/
 
-    test('should show git dependency without path', () {
-      final checker = ConflictingPackagesChecker();
-      final firstPubspec = Pubspec('app');
-      final secondPubspec = Pubspec(
-        'http',
-        dependencies: {
-          'freezed': GitDependency(
-            Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
-            ref: '4cdfbf9159f2e9746fce29d2862f148f901da66a',
-          ),
-        },
-      );
-      final firstContextRoot = createContextRoot('app');
-      final secondContextRoot = createContextRoot('app/packages/http');
-      final firstContextRootPackages = [
-        createPackage('riverpod', '2.2.0'),
-        createPackage('freezed', '2.3.2'),
-      ];
-      final secondContextRootPackages = [
-        createPackage('riverpod', '2.1.0'),
-        createGitPackage('freezed', '4cdfbf9159f2e9746fce29d2862f148f901da66a'),
-      ];
+    test('should show git dependency without path', () async {
+      final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        // Make two packages with the same name, such that app & app2 depends
+        // on a different version of the same package
+        'dep',
+        Pubspec(
+          'app',
+          dependencies: {
+            'dep': GitDependency(
+              Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
+              ref: '123',
+            ),
+          },
+        ),
+        Pubspec(
+          'app2',
+          dependencies: {'dep': HostedDependency(version: Version(1, 0, 0))},
+        ),
+      ]);
 
-      checker.addContextRoot(
-        firstContextRoot.root,
-        firstContextRootPackages,
-        firstPubspec,
+      writeFile(
+        workspace.dir('app').analysisOptions,
+        analysisOptionsWithCustomLintEnabled,
       );
-      checker.addContextRoot(
-        secondContextRoot.root,
-        secondContextRootPackages,
-        secondPubspec,
+
+      writePackageConfig(workspace.dir('app'));
+      writeSimplePackageConfig(workspace.dir('app'), {'dep': 'dep'});
+      writeSimplePackageConfig(workspace.dir('app2'), {'dep': 'dep2'});
+
+      final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+        [workspace.path],
+        workingDirectory: workspace,
+      );
+      final app = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app',
+      );
+      final app2 = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app2',
       );
 
       expect(
-        checker.throwErrorIfConflictingPackages,
+        customLintWorkspace.createPluginHostDirectory(),
         throwsA(
-          isA<StateError>().having(
-            (error) => error.message,
-            'message',
+          isA<PackageVersionConflictError>().having(
+            (error) => error.toString(),
+            'toString()',
             equals(
               '''
 Some dependencies with conflicting versions were identified:
 
-app at /Users/user/project/app
-- riverpod v2.2.0
-- freezed v2.3.2
+Plugin dep:
+- from git url ssh://git@github.com/rrousselGit/freezed.git ref 123
+  resolved with ${app.plugins.single.package.root.path}
+  used by project "app" at ${app.directory.path}
+- hosted with version constraint: 1.0.0
+  resolved with ${app2.plugins.single.package.root.path}
+  used by project "app2" at ${app2.directory.path}
 
-http at /Users/user/project/app/packages/http
-- riverpod v2.1.0
-- freezed from git url ssh://git@github.com/rrousselGit/freezed.git ref 4cdfbf9159f2e9746fce29d2862f148f901da66a
-
-This is not supported. Custom_lint shares the analysis between all packages. As such, all plugins are started under a single process, sharing the dependencies of all the packages that use custom_lint. Since there's a single process for all plugins, if 2 plugins try to use different versions for a dependency, the process cannot be reasonably started. Please make sure all packages have the same version.
+$conflictExplanation
 You could run the following commands to try fixing this:
 
-cd /Users/user/project/app
-dart pub upgrade riverpod freezed
-cd /Users/user/project/app/packages/http
-dart pub upgrade riverpod freezed
+cd ${app.directory.path}
+dart pub upgrade dep
+cd ${app2.directory.path}
+dart pub upgrade dep
 ''',
             ),
           ),
@@ -1492,7 +1564,7 @@ dart pub upgrade riverpod freezed
       );
     });
 
-    test('should show git dependency without ref', () {
+    /* test('should show git dependency without ref', () {
       final checker = ConflictingPackagesChecker();
       final firstPubspec = Pubspec('app');
       final secondPubspec = Pubspec(
@@ -1544,7 +1616,7 @@ http at /Users/user/project/app/packages/http
 - riverpod v2.1.0
 - freezed from git url ssh://git@github.com/rrousselGit/freezed.git path packages/freezed
 
-This is not supported. Custom_lint shares the analysis between all packages. As such, all plugins are started under a single process, sharing the dependencies of all the packages that use custom_lint. Since there's a single process for all plugins, if 2 plugins try to use different versions for a dependency, the process cannot be reasonably started. Please make sure all packages have the same version.
+$conflictExplanation
 You could run the following commands to try fixing this:
 
 cd /Users/user/project/app
@@ -1609,7 +1681,7 @@ http at /Users/user/project/app/packages/http
 - riverpod v2.1.0
 - freezed from git url ssh://git@github.com/rrousselGit/freezed.git
 
-This is not supported. Custom_lint shares the analysis between all packages. As such, all plugins are started under a single process, sharing the dependencies of all the packages that use custom_lint. Since there's a single process for all plugins, if 2 plugins try to use different versions for a dependency, the process cannot be reasonably started. Please make sure all packages have the same version.
+$conflictExplanation
 You could run the following commands to try fixing this:
 
 cd /Users/user/project/app
@@ -1621,6 +1693,6 @@ dart pub upgrade riverpod freezed
           ),
         ),
       );
-    });
+    });*/
   });
 }

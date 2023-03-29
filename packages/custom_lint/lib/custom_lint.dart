@@ -49,9 +49,10 @@ Future<void> customLint({
     includeBuiltInLints: false,
     delegate: CommandCustomLintDelegate(),
     (customLintServer) async {
-      final workspace = await CustomLintWorkspace.fromPaths([
-        workingDirectory.path,
-      ]);
+      final workspace = await CustomLintWorkspace.fromPaths(
+        [workingDirectory.path],
+        workingDirectory: workingDirectory,
+      );
       final runner = CustomLintRunner(customLintServer, workspace, channel);
 
       try {
