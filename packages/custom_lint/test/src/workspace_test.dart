@@ -17,14 +17,14 @@ const conflictExplanation =
     'different versions for a dependency, the process cannot be reasonably started. '
     'Please make sure all packages have the same version.';
 
-Package createPackage(String name, String version) {
+Package _createPackage(String name, String version) {
   return Package(
     name,
     Uri.parse('file:///Users/user/.pub-cache/hosted/pub.dev/$name-$version/'),
   );
 }
 
-Package createGitPackage(String name, String gitPath) {
+Package _createGitPackage(String name, String gitPath) {
   return Package(
     name,
     Uri.parse('file:///Users/user/.pub-cache/git/$name-$gitPath/'),
@@ -84,7 +84,7 @@ extension on Pubspec {
   Map<String, Object?> toJson() {
     return {
       'name': name,
-      'version': version.toString(),
+      if (version != null) 'version': version.toString(),
       if (environment != null)
         'environment': {
           for (final env in environment!.entries)
@@ -300,6 +300,10 @@ extension on Directory {
 void writeFile(File file, String content) {
   file.createSync(recursive: true);
   file.writeAsStringSync(content);
+}
+
+void enableCustomLint(Directory directory) {
+  writeFile(directory.analysisOptions, analysisOptionsWithCustomLintEnabled);
 }
 
 const analysisOptionsWithCustomLintEnabled = '''
@@ -1215,16 +1219,16 @@ void main() {
         createContextRoot('app/packages/http'),
       ];
       final firstContextRootPackages = [
-        createPackage('riverpod', '2.2.0'),
-        createPackage('flutter_hooks', '0.18.6'),
-        createPackage('freezed', '2.3.2'),
+        _createPackage('riverpod', '2.2.0'),
+        _createPackage('flutter_hooks', '0.18.6'),
+        _createPackage('freezed', '2.3.2'),
       ];
       final secondContextRootPackages = [
         // Same package as in the first context root
         // so there is no conflict here
-        createPackage('riverpod', '2.2.0'),
-        createPackage('http', '0.13.3'),
-        createPackage('http_parser', '4.0.0'),
+        _createPackage('riverpod', '2.2.0'),
+        _createPackage('http', '0.13.3'),
+        _createPackage('http_parser', '4.0.0'),
       ];
 
       checker.addContextRoot(
@@ -1274,35 +1278,35 @@ void main() {
       final secondContextRoot = createContextRoot('app/packages/http');
       final thirdContextRoot = createContextRoot('app/packages/design_system');
       final firstContextRootPackages = [
-        createPackage('riverpod', '2.2.0'),
-        createPackage('flutter_hooks', '0.18.6'),
-        createPackage('freezed', '2.3.2'),
+        _createPackage('riverpod', '2.2.0'),
+        _createPackage('flutter_hooks', '0.18.6'),
+        _createPackage('freezed', '2.3.2'),
       ];
       final secondContextRootPackages = [
         // Same package as in the first context root, but with different version
         // this should cause an error
-        createPackage('riverpod', '2.1.0'),
+        _createPackage('riverpod', '2.1.0'),
         // This should also be shown in the error message
-        createPackage('flutter_hooks', '0.18.5'),
-        createPackage('http', '0.13.3'),
-        createPackage('http_parser', '4.0.0'),
+        _createPackage('flutter_hooks', '0.18.5'),
+        _createPackage('http', '0.13.3'),
+        _createPackage('http_parser', '4.0.0'),
         createPathPackage('freezed', '/Users/user/freezed/packages/freezed/'),
         // This is to simulate a transitive git dependency
-        createGitPackage(
+        _createGitPackage(
           'http_parser',
           '4cdfbf9159123746fce29d2862f148f901da66a',
         ),
       ];
       // Here we want to test that the error message contains multiple locations
       final thirdContextRootPackages = [
-        createPackage('riverpod', '2.1.1'),
-        createPackage('flutter_hooks', '0.18.5'),
+        _createPackage('riverpod', '2.1.1'),
+        _createPackage('flutter_hooks', '0.18.5'),
         // This is a git package, so we want to make sure it's handled correctly
-        createGitPackage(
+        _createGitPackage(
           'freezed',
           '4cdfbf9159f2e9746fce29d2862f148f901da66a/packages/freezed',
         ),
-        createPackage('http_parser', '4.0.0'),
+        _createPackage('http_parser', '4.0.0'),
       ];
 
       checker.addContextRoot(
@@ -1372,12 +1376,12 @@ flutter pub upgrade riverpod flutter_hooks freezed http_parser
       final firstContextRoot = createContextRoot('app');
       final secondContextRoot = createContextRoot('app/packages/http');
       final firstContextRootPackages = [
-        createPackage('riverpod', '2.2.0'),
-        createPackage('freezed', '2.3.2'),
+        _createPackage('riverpod', '2.2.0'),
+        _createPackage('freezed', '2.3.2'),
       ];
       final secondContextRootPackages = [
-        createPackage('riverpod', '2.1.0'),
-        createPackage('freezed', '2.3.1'),
+        _createPackage('riverpod', '2.1.0'),
+        _createPackage('freezed', '2.3.1'),
       ];
 
       checker.addContextRoot(
@@ -1421,74 +1425,9 @@ dart pub upgrade riverpod freezed
           ),
         ),
       );
-    });
+    }); */
 
-    test('should show git dependency without path and ref', () {
-      final checker = ConflictingPackagesChecker();
-      final firstPubspec = Pubspec('app');
-      final secondPubspec = Pubspec(
-        'http',
-        dependencies: {
-          'freezed': GitDependency(
-            Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
-          ),
-        },
-      );
-      final firstContextRoot = createContextRoot('app');
-      final secondContextRoot = createContextRoot('app/packages/http');
-      final firstContextRootPackages = [
-        createPackage('riverpod', '2.2.0'),
-        createPackage('freezed', '2.3.2'),
-      ];
-      final secondContextRootPackages = [
-        createPackage('riverpod', '2.1.0'),
-        createGitPackage('freezed', '4cdfbf9159f2e9746fce29d2862f148f901da66a'),
-      ];
-
-      checker.addContextRoot(
-        firstContextRoot.root,
-        firstContextRootPackages,
-        firstPubspec,
-      );
-      checker.addContextRoot(
-        secondContextRoot.root,
-        secondContextRootPackages,
-        secondPubspec,
-      );
-
-      expect(
-        checker.throwErrorIfConflictingPackages,
-        throwsA(
-          isA<StateError>().having(
-            (error) => error.message,
-            'message',
-            equals(
-              '''
-Some dependencies with conflicting versions were identified:
-
-app at /Users/user/project/app
-- riverpod v2.2.0
-- freezed v2.3.2
-
-http at /Users/user/project/app/packages/http
-- riverpod v2.1.0
-- freezed from git url ssh://git@github.com/rrousselGit/freezed.git
-
-$conflictExplanation
-You could run the following commands to try fixing this:
-
-cd /Users/user/project/app
-dart pub upgrade riverpod freezed
-cd /Users/user/project/app/packages/http
-dart pub upgrade riverpod freezed
-''',
-            ),
-          ),
-        ),
-      );
-    });*/
-
-    test('should show git dependency without path', () async {
+    test('should show git dependency without path and ref', () async {
       final workspace = await createSimpleWorkspace(withPackageConfig: false, [
         Pubspec(
           'dep',
@@ -1496,30 +1435,29 @@ dart pub upgrade riverpod freezed
         ),
         // Make two packages with the same name, such that app & app2 depends
         // on a different version of the same package
-        'dep',
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
         Pubspec(
           'app',
-          dependencies: {
+          devDependencies: {
             'dep': GitDependency(
               Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
-              ref: '123',
             ),
           },
         ),
         Pubspec(
           'app2',
-          dependencies: {'dep': HostedDependency(version: Version(1, 0, 0))},
+          devDependencies: {'dep': HostedDependency(version: Version(1, 0, 0))},
         ),
       ]);
 
-      writeFile(
-        workspace.dir('app').analysisOptions,
-        analysisOptionsWithCustomLintEnabled,
-      );
+      enableCustomLint(workspace.dir('app'));
+      enableCustomLint(workspace.dir('app2'));
 
-      writePackageConfig(workspace.dir('app'));
-      writeSimplePackageConfig(workspace.dir('app'), {'dep': 'dep'});
-      writeSimplePackageConfig(workspace.dir('app2'), {'dep': 'dep2'});
+      writeSimplePackageConfig(workspace.dir('app'), {'dep': '../dep'});
+      writeSimplePackageConfig(workspace.dir('app2'), {'dep': '../dep2'});
 
       final customLintWorkspace = await CustomLintWorkspace.fromPaths(
         [workspace.path],
@@ -1540,15 +1478,15 @@ dart pub upgrade riverpod freezed
             'toString()',
             equals(
               '''
-Some dependencies with conflicting versions were identified:
+PackageVersionConflictError – Some dependencies with conflicting versions were identified:
 
 Plugin dep:
-- from git url ssh://git@github.com/rrousselGit/freezed.git ref 123
-  resolved with ${app.plugins.single.package.root.path}
-  used by project "app" at ${app.directory.path}
-- hosted with version constraint: 1.0.0
-  resolved with ${app2.plugins.single.package.root.path}
-  used by project "app2" at ${app2.directory.path}
+- From git url ssh://git@github.com/rrousselGit/freezed.git
+  Resolved with ${app.plugins.single.package.root.path}
+  Used by project "app" at ${app.directory.path}
+- Hosted with version constraint: 1.0.0
+  Resolved with ${app2.plugins.single.package.root.path}
+  Used by project "app2" at ${app2.directory.path}
 
 $conflictExplanation
 You could run the following commands to try fixing this:
@@ -1564,65 +1502,75 @@ dart pub upgrade dep
       );
     });
 
-    /* test('should show git dependency without ref', () {
-      final checker = ConflictingPackagesChecker();
-      final firstPubspec = Pubspec('app');
-      final secondPubspec = Pubspec(
-        'http',
-        dependencies: {
-          'freezed': GitDependency(
-            Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
-            path: 'packages/freezed',
-          ),
-        },
-      );
-      final firstContextRoot = createContextRoot('app');
-      final secondContextRoot = createContextRoot('app/packages/http');
-      final firstContextRootPackages = [
-        createPackage('riverpod', '2.2.0'),
-        createPackage('freezed', '2.3.2'),
-      ];
-      final secondContextRootPackages = [
-        createPackage('riverpod', '2.1.0'),
-        createGitPackage('freezed', '4cdfbf9159f2e9746fce29d2862f148f901da66a'),
-      ];
+    test('should show git dependency without path', () async {
+      final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        // Make two packages with the same name, such that app & app2 depends
+        // on a different version of the same package
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        Pubspec(
+          'app',
+          devDependencies: {
+            'dep': GitDependency(
+              Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
+              path: 'packages/freezed',
+            ),
+          },
+        ),
+        Pubspec(
+          'app2',
+          devDependencies: {'dep': HostedDependency(version: Version(1, 0, 0))},
+        ),
+      ]);
 
-      checker.addContextRoot(
-        firstContextRoot.root,
-        firstContextRootPackages,
-        firstPubspec,
+      enableCustomLint(workspace.dir('app'));
+      enableCustomLint(workspace.dir('app2'));
+
+      writeSimplePackageConfig(workspace.dir('app'), {'dep': '../dep'});
+      writeSimplePackageConfig(workspace.dir('app2'), {'dep': '../dep2'});
+
+      final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+        [workspace.path],
+        workingDirectory: workspace,
       );
-      checker.addContextRoot(
-        secondContextRoot.root,
-        secondContextRootPackages,
-        secondPubspec,
+      final app = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app',
+      );
+      final app2 = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app2',
       );
 
       expect(
-        checker.throwErrorIfConflictingPackages,
+        customLintWorkspace.createPluginHostDirectory(),
         throwsA(
-          isA<StateError>().having(
-            (error) => error.message,
-            'message',
+          isA<PackageVersionConflictError>().having(
+            (error) => error.toString(),
+            'toString()',
             equals(
               '''
-Some dependencies with conflicting versions were identified:
+PackageVersionConflictError – Some dependencies with conflicting versions were identified:
 
-app at /Users/user/project/app
-- riverpod v2.2.0
-- freezed v2.3.2
-
-http at /Users/user/project/app/packages/http
-- riverpod v2.1.0
-- freezed from git url ssh://git@github.com/rrousselGit/freezed.git path packages/freezed
+Plugin dep:
+- From git url ssh://git@github.com/rrousselGit/freezed.git path packages/freezed
+  Resolved with ${app.plugins.single.package.root.path}
+  Used by project "app" at ${app.directory.path}
+- Hosted with version constraint: 1.0.0
+  Resolved with ${app2.plugins.single.package.root.path}
+  Used by project "app2" at ${app2.directory.path}
 
 $conflictExplanation
 You could run the following commands to try fixing this:
 
-cd /Users/user/project/app
-dart pub upgrade riverpod freezed
-cd /Users/user/project/app/packages/http
-dart pub upgrade riverpod freezed
+cd ${app.directory.path}
+dart pub upgrade dep
+cd ${app2.directory.path}
+dart pub upgrade dep
 ''',
             ),
           ),
@@ -1630,6 +1578,82 @@ dart pub upgrade riverpod freezed
       );
     });
 
+    test('should show git dependency without ref', () async {
+      final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        // Make two packages with the same name, such that app & app2 depends
+        // on a different version of the same package
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        Pubspec(
+          'app',
+          devDependencies: {
+            'dep': GitDependency(
+              Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
+              ref: '123',
+            ),
+          },
+        ),
+        Pubspec(
+          'app2',
+          devDependencies: {'dep': HostedDependency(version: Version(1, 0, 0))},
+        ),
+      ]);
+
+      enableCustomLint(workspace.dir('app'));
+      enableCustomLint(workspace.dir('app2'));
+
+      writeSimplePackageConfig(workspace.dir('app'), {'dep': '../dep'});
+      writeSimplePackageConfig(workspace.dir('app2'), {'dep': '../dep2'});
+
+      final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+        [workspace.path],
+        workingDirectory: workspace,
+      );
+      final app = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app',
+      );
+      final app2 = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app2',
+      );
+
+      expect(
+        customLintWorkspace.createPluginHostDirectory(),
+        throwsA(
+          isA<PackageVersionConflictError>().having(
+            (error) => error.toString(),
+            'toString()',
+            equals(
+              '''
+PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+
+Plugin dep:
+- From git url ssh://git@github.com/rrousselGit/freezed.git ref 123
+  Resolved with ${app.plugins.single.package.root.path}
+  Used by project "app" at ${app.directory.path}
+- Hosted with version constraint: 1.0.0
+  Resolved with ${app2.plugins.single.package.root.path}
+  Used by project "app2" at ${app2.directory.path}
+
+$conflictExplanation
+You could run the following commands to try fixing this:
+
+cd ${app.directory.path}
+dart pub upgrade dep
+cd ${app2.directory.path}
+dart pub upgrade dep
+''',
+            ),
+          ),
+        ),
+      );
+    });
+/*
     test('should show git dependency from dev dependencies', () {
       final checker = ConflictingPackagesChecker();
       final firstPubspec = Pubspec('app');
@@ -1644,12 +1668,12 @@ dart pub upgrade riverpod freezed
       final firstContextRoot = createContextRoot('app');
       final secondContextRoot = createContextRoot('app/packages/http');
       final firstContextRootPackages = [
-        createPackage('riverpod', '2.2.0'),
-        createPackage('freezed', '2.3.2'),
+        _createPackage('riverpod', '2.2.0'),
+        _createPackage('freezed', '2.3.2'),
       ];
       final secondContextRootPackages = [
-        createPackage('riverpod', '2.1.0'),
-        createGitPackage('freezed', '4cdfbf9159f2e9746fce29d2862f148f901da66a'),
+        _createPackage('riverpod', '2.1.0'),
+        _createGitPackage('freezed', '4cdfbf9159f2e9746fce29d2862f148f901da66a'),
       ];
 
       checker.addContextRoot(

@@ -241,7 +241,7 @@ class CustomLintWorkspace {
   /// the contextRoots.
   ///
   /// This also changes relative paths into absolute paths.
-  Future<String> _computePackageConfigForTempProject() async {
+  String _computePackageConfigForTempProject() {
     final conflictingPackagesChecker = ConflictingPackagesChecker();
 
     Iterable<Package> visitPluginsAndDependencies() sync* {
@@ -313,7 +313,7 @@ class CustomLintWorkspace {
           .then((_) => pubspecFile.writeAsString(pubspecContent)),
       Future(() async {
         await packageConfigFile.create(recursive: true);
-        await packageConfigFile.writeAsString(await packageConfigContent);
+        await packageConfigFile.writeAsString(packageConfigContent);
       }),
     ]);
 
@@ -464,9 +464,13 @@ class CustomLintProject {
         final isPlugin = await cache.isPlugin(packageDirectory);
         if (!isPlugin) return null;
 
+        // TODO test error
+        final pubspec = await parsePubspec(packageDirectory);
+
         return CustomLintPlugin._(
           name: e.key,
           directory: packageDirectory,
+          pubspec: pubspec,
           package: packageWithName,
           constraint: PubspecDependency.fromDependency(e.value),
           ownerPackageConfig: packageConfig,
@@ -504,6 +508,7 @@ class CustomLintPlugin {
     required this.constraint,
     required this.ownerPackageConfig,
     required this.package,
+    required this.pubspec,
   });
 
   /// The plugin name.
@@ -514,6 +519,9 @@ class CustomLintPlugin {
   ///
   /// See also [ownerPackageConfig].
   final Directory directory;
+
+  /// The resolved pubspec.yaml of the plugin.
+  final Pubspec pubspec;
 
   /// The resolved package_config.json metadata of this plugin.
   ///
@@ -562,9 +570,6 @@ class CustomLintPlugin {
     final packages = Map.fromEntries(
       ownerPackageConfig.packages.map((e) => MapEntry(e.name, e)),
     );
-
-    // TODO test error
-    final pubspec = parsePubspecSync(directory);
 
     final dependenciesToVisit =
         ListQueue<String>.from(pubspec.dependencies.keys);
@@ -640,6 +645,9 @@ abstract class PubspecDependency {
     }
   }
 
+  /// Builds a short description of this dependency.
+  String buildShortDescription();
+
   /// Checks whether this and [dependency] can both be resolved at the same time.
   ///
   /// For example, "^1.0.0" is not compatible with "^2.0.0", but "^1.0.0" is
@@ -665,6 +673,21 @@ class GitPubspecDependency extends PubspecDependency {
   final GitDependency dependency;
 
   @override
+  String buildShortDescription() {
+    final versionBuilder = StringBuffer();
+    versionBuilder.write('From git url ${dependency.url}');
+    final dependencyRef = dependency.ref;
+    if (dependencyRef != null) {
+      versionBuilder.write(' ref $dependencyRef');
+    }
+    final dependencyPath = dependency.path;
+    if (dependencyPath != null) {
+      versionBuilder.write(' path $dependencyPath');
+    }
+    return versionBuilder.toString();
+  }
+
+  @override
   bool isCompatibleWith(PubspecDependency dependency) {
     return dependency is GitPubspecDependency &&
         this.dependency.url == dependency.dependency.url &&
@@ -686,6 +709,9 @@ class PathPubspecDependency extends PubspecDependency {
     return dependency is PathPubspecDependency &&
         this.dependency.path == dependency.dependency.path;
   }
+
+  @override
+  String buildShortDescription() => 'From path ${dependency.path}';
 }
 
 /// A dependency using `hosted` (pub.dev)
@@ -695,6 +721,11 @@ class HostedPubspecDependency extends PubspecDependency {
 
   /// The original hosted dependency
   final HostedDependency dependency;
+
+  @override
+  String buildShortDescription() {
+    return 'Hosted with version constraint: ${dependency.version}';
+  }
 
   @override
   bool isCompatibleWith(PubspecDependency dependency) {
@@ -733,6 +764,11 @@ class SdkPubspecDependency extends PubspecDependency {
     return dependency is SdkPubspecDependency &&
         this.dependency.sdk == dependency.dependency.sdk;
   }
+
+  @override
+  String buildShortDescription() {
+    return 'From SDK: ${dependency.sdk}';
+  }
 }
 
 class _ConflictEntry {
@@ -742,69 +778,37 @@ class _ConflictEntry {
   final CustomLintProject project;
   final Package package;
 
+  /// Whether [package] is the plugin itself.
+  bool get _isPlugin => package.name == plugin.name;
+
   String get _name => package.name;
 
-  bool get _isGitDependency => package.root.path.contains('/.pub-cache/git/');
+  PubspecDependency _dependency() {
+    if (_isPlugin) return plugin.constraint;
 
-  bool get _isHostedDependency =>
-      package.root.path.contains('/.pub-cache/hosted/');
+    final dependency = plugin.pubspec.getDependency(package.name);
+    if (dependency == null) {
+      // TODO test error
+      throw ArgumentError(
+        'Plugin ${plugin.name} does not depend on package ${package.name}',
+      );
+    }
+
+    return PubspecDependency.fromDependency(dependency);
+  }
+
+  String buildConflictHeader() {
+    if (_isPlugin) {
+      return 'Plugin $_name:';
+    }
+    return 'Package $_name:';
+  }
 
   String buildConflictingMessage() {
-    final versionString = _buildVersionString();
-    if (package.name == plugin.name) {
-      return '''
-- Plugin $_name $versionString
-  Used by the project ${project.pubspec.name}.''';
-    }
-
     return '''
-- Package $_name $versionString
-  Used by plugin ${plugin.name} in the project ${project.pubspec.name}.''';
-  }
-
-  String _buildVersionString() {
-    if (_isGitDependency) {
-      return _buildGitPackageVersion();
-    } else if (_isHostedDependency) {
-      return _buildHostedPackageVersion();
-    } else {
-      return _buildPathDependency();
-    }
-  }
-
-  String _buildHostedPackageVersion() {
-    final segments = package.root.pathSegments;
-    final version = segments[segments.length - 2].split('-').last;
-    return 'v$version';
-  }
-
-  String _buildPathDependency() {
-    return 'from path ${package.root.path}';
-  }
-
-  String _buildGitPackageVersion() {
-    final dependency = project.pubspec.getDependency(_name);
-
-    // We might not be able to find a dependency if the package is a transitive dependency
-    if (dependency == null || dependency is! GitDependency) {
-      final version =
-          package.root.path.split('/git/').last.replaceFirst('$_name-', '');
-      // We're not able to find the dependency, so we'll just return
-      // the version from the path, which is not ideal, but better than nothing
-      return 'from git $version';
-    }
-    final versionBuilder = StringBuffer();
-    versionBuilder.write('from git url ${dependency.url}');
-    final dependencyRef = dependency.ref;
-    if (dependencyRef != null) {
-      versionBuilder.write(' ref $dependencyRef');
-    }
-    final dependencyPath = dependency.path;
-    if (dependencyPath != null) {
-      versionBuilder.write(' path $dependencyPath');
-    }
-
-    return versionBuilder.toString();
+- ${_dependency().buildShortDescription()}
+  Resolved with ${package.root.toFilePath()}
+  Used by project "${project.pubspec.name}" at ${project.directory.path}''';
   }
 }
 
@@ -836,8 +840,8 @@ class ConflictingPackagesChecker {
     // Group packages by name and collect all unique roots,
     // since we're using a set
     for (final entry in _entries) {
-      final rootSet = packageNameRootMap[entry.package.name] ?? {};
-      rootSet.add(entry.package.root);
+      final entriesForName = packageNameRootMap[entry.package.name] ??= {};
+      entriesForName.add(entry.package.root);
     }
 
     // Find packages with more than one root
@@ -884,6 +888,9 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
     // Build conflicting packages message
     for (final conflictingEntriesForPackage
         in conflictingEntriesByPackages.values) {
+      errorMessageBuilder.writeln(
+        conflictingEntriesForPackage.first.buildConflictHeader(),
+      );
       for (final conflictEntry in conflictingEntriesForPackage) {
         errorMessageBuilder.writeln(conflictEntry.buildConflictingMessage());
       }
