@@ -254,7 +254,7 @@ class CustomLintWorkspace {
   ///
   /// This also changes relative paths into absolute paths.
   String _computePackageConfigForTempProject() {
-    final conflictingPackagesChecker = ConflictingPackagesChecker();
+    final conflictingPackagesChecker = _ConflictingPackagesChecker();
 
     // A cache object to avoid parsing the same pubspec multiple times,
     // as two plugins might depend on the same package.
@@ -315,8 +315,6 @@ class CustomLintWorkspace {
     // We do so after computing the result to avoid allocating a temporary
     // list of packages, by visiting dependencies using an Iterable instead of List.
     conflictingPackagesChecker.throwErrorIfConflictingPackages();
-
-    throw result;
 
     return result;
   }
@@ -915,8 +913,7 @@ class _ConflictEntry {
 }
 
 /// A class that checks if there are conflicting packages in the context roots.
-@internal
-class ConflictingPackagesChecker {
+class _ConflictingPackagesChecker {
   final _entries = <_ConflictEntry>[];
 
   /// Registers a [Package] and its associated [CustomLintPlugin]/[CustomLintProject]
