@@ -1662,10 +1662,10 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 Package transitive_dep:
 - Hosted with version constraint: ^1.0.0
   Resolved with ${workspace.dir('transitive_dep').path}/
-  Used by plugin "plugin" at ${app.plugins.single.directory.path} in the project "app" at ${app.directory.path}
+  Used by plugin "plugin" at "plugin" in the project "app" at "app"
 - Hosted with version constraint: ^2.0.0
   Resolved with ${workspace.dir('transitive_dep2').path}/
-  Used by plugin "another_plugin" at ${app2.plugins.single.directory.path} in the project "app2" at ${app2.directory.path}
+  Used by plugin "another_plugin" at "another_plugin" in the project "app2" at "app2"
 
 $conflictExplanation
 You could run the following commands to try fixing this:
@@ -1751,10 +1751,10 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 Package transitive_dep:
 - Hosted with version constraint: ^1.0.0
   Resolved with ${workspace.dir('transitive_dep').path}/
-  Used by plugin "dep" at ${app.plugins.single.directory.path} in the project "app" at ${app.directory.path}
+  Used by plugin "dep" at "dep" in the project "app" at "app"
 - Hosted with version constraint: ^1.0.0
   Resolved with ${workspace.dir('transitive_dep2').path}/
-  Used by plugin "dep" at ${app2.plugins.single.directory.path} in the project "app2" at ${app2.directory.path}
+  Used by plugin "dep" at "dep" in the project "app2" at "app2"
 
 $conflictExplanation
 You could run the following commands to try fixing this:
@@ -1867,24 +1867,24 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 Plugin dep:
 - Hosted with version constraint: 1.0.0
   Resolved with ${app.plugins[0].package.root.path}
-  Used by project "app" at ${app.directory.path}
+  Used by project "app" at "app"
 - Hosted with version constraint: 2.0.0
   Resolved with ${app2.plugins[0].package.root.path}
-  Used by project "app2" at ${app2.directory.path}
+  Used by project "app2" at "app2"
 - Hosted with version constraint: 1.0.0
   Resolved with ${app3.plugins[0].package.root.path}
-  Used by project "app3" at ${app3.directory.path}
+  Used by project "app3" at "app3"
 
 Plugin second_dep:
 - Hosted with version constraint: 1.1.0
   Resolved with ${app.plugins[1].package.root.path}
-  Used by project "app" at ${app.directory.path}
+  Used by project "app" at "app"
 - Hosted with version constraint: 2.1.0
   Resolved with ${app2.plugins[1].package.root.path}
-  Used by project "app2" at ${app2.directory.path}
+  Used by project "app2" at "app2"
 - Hosted with version constraint: 3.1.0
   Resolved with ${app3.plugins[1].package.root.path}
-  Used by project "app3" at ${app3.directory.path}
+  Used by project "app3" at "app3"
 
 $conflictExplanation
 You could run the following commands to try fixing this:
@@ -1965,10 +1965,10 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 Plugin dep:
 - Hosted with version constraint: ^1.0.0
   Resolved with ${app.plugins.single.package.root.path}
-  Used by project "app" at ${app.directory.path}
+  Used by project "app" at "app"
 - From SDK: flutter
   Resolved with ${app2.plugins.single.package.root.path}
-  Used by project "app2" at ${app2.directory.path}
+  Used by project "app2" at "app2"
 
 $conflictExplanation
 You could run the following commands to try fixing this:
@@ -2051,10 +2051,10 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 Plugin dep:
 - Hosted with version constraint: ^1.0.0
   Resolved with ${app.plugins.single.package.root.path}
-  Used by project "app" at ${app.directory.path}
+  Used by project "app" at "app"
 - Hosted with version constraint: >=2.0.0 <3.0.0
   Resolved with ${app2.plugins.single.package.root.path}
-  Used by project "app2" at ${app2.directory.path}
+  Used by project "app2" at "app2"
 
 $conflictExplanation
 You could run the following commands to try fixing this:
@@ -2132,10 +2132,10 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 Plugin dep:
 - Hosted with version constraint: 1.0.0
   Resolved with ${app.plugins.single.package.root.path}
-  Used by project "app" at ${app.directory.path}
+  Used by project "app" at "app"
 - From path ../dep2
   Resolved with ${app2.plugins.single.package.root.path}
-  Used by project "app2" at ${app2.directory.path}
+  Used by project "app2" at "app2"
 
 $conflictExplanation
 You could run the following commands to try fixing this:
@@ -2218,10 +2218,10 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 Plugin dep:
 - Hosted with version constraint: 1.0.1
   Resolved with ${app.plugins.single.package.root.path}
-  Used by project "app" at ${app.directory.path}
+  Used by project "app" at "app"
 - Hosted with version constraint: 1.0.0
   Resolved with ${app2.plugins.single.package.root.path}
-  Used by project "app2" at ${app2.directory.path}
+  Used by project "app2" at "app2"
 
 $conflictExplanation
 You could run the following commands to try fixing this:
@@ -2303,10 +2303,10 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 Plugin dep:
 - From git url ssh://git@github.com/rrousselGit/freezed.git
   Resolved with ${app.plugins.single.package.root.path}
-  Used by project "app" at ${app.directory.path}
+  Used by project "app" at "app"
 - Hosted with version constraint: 1.0.0
   Resolved with ${app2.plugins.single.package.root.path}
-  Used by project "app2" at ${app2.directory.path}
+  Used by project "app2" at "app2"
 
 $conflictExplanation
 You could run the following commands to try fixing this:
@@ -2389,10 +2389,10 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 Plugin dep:
 - From git url ssh://git@github.com/rrousselGit/freezed.git path packages/freezed
   Resolved with ${app.plugins.single.package.root.path}
-  Used by project "app" at ${app.directory.path}
+  Used by project "app" at "app"
 - Hosted with version constraint: 1.0.0
   Resolved with ${app2.plugins.single.package.root.path}
-  Used by project "app2" at ${app2.directory.path}
+  Used by project "app2" at "app2"
 
 $conflictExplanation
 You could run the following commands to try fixing this:
@@ -2475,10 +2475,10 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 Plugin dep:
 - From git url ssh://git@github.com/rrousselGit/freezed.git ref 123
   Resolved with ${app.plugins.single.package.root.path}
-  Used by project "app" at ${app.directory.path}
+  Used by project "app" at "app"
 - Hosted with version constraint: 1.0.0
   Resolved with ${app2.plugins.single.package.root.path}
-  Used by project "app2" at ${app2.directory.path}
+  Used by project "app2" at "app2"
 
 $conflictExplanation
 You could run the following commands to try fixing this:

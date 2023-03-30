@@ -26,14 +26,9 @@ void main() {
     'custom_lint.dart',
   );
 
-  // These tests may take longer than the default timeout
-  // due to them being run in separate processes and VMs.
-  const timeout = Timeout(Duration(minutes: 1));
-
   group('Correctly exits with', () {
     test(
       'no issues found',
-      timeout: timeout,
       () async {
         final plugin = createPlugin(name: 'test_lint', main: emptyPluginSource);
 
@@ -63,7 +58,6 @@ void main() {
 
     test(
       'found lints',
-      timeout: timeout,
       () async {
         final plugin = createPlugin(name: 'test_lint', main: oyPluginSource);
 
@@ -94,7 +88,6 @@ void main() {
 
     test(
       'missing package_config.json',
-      timeout: timeout,
       () async {
         final plugin = createPlugin(name: 'test_lint', main: oyPluginSource);
 
@@ -148,7 +141,6 @@ No .dart_tool/package_config.json found at $missingPackageConfig. Make sure to r
 
     test(
       'dependency conflict',
-      timeout: timeout,
       () async {
         // Create two packages with the same name but different paths
         final workspace = await createSimpleWorkspace(['dep', 'dep']);
@@ -201,10 +193,10 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 Package dep:
 - Hosted with version constraint: any
   Resolved with ${workspace.dir('dep').path}/
-  Used by plugin "test_lint" at ../test_lint in the project "test_app" at .
+  Used by plugin "test_lint" at "../test_lint" in the project "test_app" at "."
 - Hosted with version constraint: any
   Resolved with ${workspace.dir('dep2').path}/
-  Used by plugin "test_lint" at ../test_lint in the project "test_app2" at test_app2
+  Used by plugin "test_lint" at "../test_lint" in the project "test_app2" at "test_app2"
 
 $conflictExplanation
 You could run the following commands to try fixing this:

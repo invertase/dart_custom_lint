@@ -902,9 +902,9 @@ class _ConflictEntry {
 
   String buildConflictingMessage() {
     final trailingMessage = _isPlugin
-        ? 'Used by project "${project.pubspec.name}" at ${project.directory.path}'
-        : 'Used by plugin "${plugin.name}" at ${plugin.directory.relativeTo(workingDirectory)} '
-            'in the project "${project.pubspec.name}" at ${project.directory.relativeTo(workingDirectory)}';
+        ? 'Used by project "${project.pubspec.name}" at "${project.directory.relativeTo(workingDirectory)}"'
+        : 'Used by plugin "${plugin.name}" at "${plugin.directory.relativeTo(workingDirectory)}" '
+            'in the project "${project.pubspec.name}" at "${project.directory.relativeTo(workingDirectory)}"';
     return '''
 - ${_dependency().buildShortDescription()}
   Resolved with ${packageMeta.package.root.toFilePath()}
