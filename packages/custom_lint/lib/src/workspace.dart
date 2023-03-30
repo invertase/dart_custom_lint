@@ -980,7 +980,7 @@ class PackageVersionConflictError extends Error {
           packageName,
           _entries
               .where((entry) => entry.packageMeta.package.name == packageName)
-              .toList(),
+              .sortedBy((value) => value.project.pubspec.name),
         ),
       ),
     );
