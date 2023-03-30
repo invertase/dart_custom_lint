@@ -262,7 +262,9 @@ Future<Directory> createWorkspace(
 }
 
 Directory createTemporaryDirectory() {
-  final dir = Directory.systemTemp.createTempSync('custom_lint_test');
+  final dir = Directory.current //
+      .dir('.dart_tool')
+      .createTempSync('custom_lint_test');
   addTearDown(() => dir.deleteSync(recursive: true));
   return dir;
 }

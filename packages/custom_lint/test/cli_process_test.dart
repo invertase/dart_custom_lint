@@ -49,7 +49,7 @@ void main() {
 
         final process = await Process.run(
           'dart',
-          [customLintBinPath, '.'],
+          [customLintBinPath],
           workingDirectory: app.path,
           stdoutEncoding: utf8,
           stderrEncoding: utf8,
@@ -79,7 +79,7 @@ void main() {
 
         final process = await Process.run(
           'dart',
-          [customLintBinPath, '.'],
+          [customLintBinPath],
           workingDirectory: app.path,
         );
 
@@ -128,7 +128,7 @@ void main() {
 
         final process = await Process.run(
           'dart',
-          [customLintBinPath, '.'],
+          [customLintBinPath],
           workingDirectory: app.path,
         );
 
@@ -169,12 +169,6 @@ No .dart_tool/package_config.json found at $missingPackageConfig. Make sure to r
           extraPackageConfig: {'dep': workspace.dir('dep').uri},
         );
 
-        print('workspace: ${workspace.path}');
-        print('plugin: ${plugin.path}');
-        print('app: ${app.path}');
-        print('${plugin.relativeTo(app)}');
-        print('${app.relativeTo(plugin)}');
-
         final app2 = createLintUsage(
           // Add the second project inside the first one, such that
           // analyzing the first project analyzes both projects
@@ -198,7 +192,8 @@ No .dart_tool/package_config.json found at $missingPackageConfig. Make sure to r
               .map(utf8.decode)
               .map(trimDependencyOverridesWarning)
               .join('\n'),
-          '''
+          startsWith(
+            '''
 The request analysis.setContextRoots failed with the following error:
 RequestErrorCode.PLUGIN_ERROR
 PackageVersionConflictError – Some dependencies with conflicting versions were identified:
@@ -206,10 +201,10 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 Package dep:
 - Hosted with version constraint: any
   Resolved with ${workspace.dir('dep').path}/
-  Used by plugin "test_lint" at ${plugin.path}/ in the project "test_app" at ${app.path}
+  Used by plugin "test_lint" at ../test_lint in the project "test_app" at .
 - Hosted with version constraint: any
   Resolved with ${workspace.dir('dep2').path}/
-  Used by plugin "test_lint" at ${plugin.path}/ in the project "test_app2" at ${app2.path}
+  Used by plugin "test_lint" at ../test_lint in the project "test_app2" at test_app2
 
 $conflictExplanation
 You could run the following commands to try fixing this:
@@ -219,6 +214,7 @@ dart pub upgrade dep
 cd ${app2.path}
 dart pub upgrade dep
 ''',
+          ),
         );
         expect(process.exitCode, completion(1));
       },

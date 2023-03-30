@@ -38,7 +38,9 @@ extension PackageIOUtils on Directory {
   File get packageConfig => file('.dart_tool', 'package_config.json');
 
   /// Returns a path relative to the given [other].
-  String relativeTo(FileSystemEntity other) => relative(path, from: other.path);
+  String relativeTo(FileSystemEntity other) {
+    return normalize(relative(path, from: other.path));
+  }
 }
 
 /// Try parsing the pubspec of the given directory.
