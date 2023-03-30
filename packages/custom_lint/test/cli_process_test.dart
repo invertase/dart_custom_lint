@@ -38,7 +38,7 @@ void main() {
           createDependencyOverrides: true,
         );
 
-        final process = Process.runSync(
+        final process = await Process.run(
           'dart',
           ['run', 'custom_lint', '.'],
           workingDirectory: app.path,
@@ -68,7 +68,7 @@ void main() {
           createDependencyOverrides: true,
         );
 
-        final process = Process.runSync(
+        final process = await Process.run(
           'dart',
           ['run', 'custom_lint', '.'],
           workingDirectory: app.path,
@@ -119,7 +119,7 @@ void main() {
             await innerContextRoot.resolveSymbolicLinks();
         packageConfig.deleteSync();
 
-        final process = Process.runSync(
+        final process = await Process.run(
           'dart',
           ['run', 'custom_lint', '.'],
           workingDirectory: app.path,
@@ -186,7 +186,7 @@ No .dart_tool/package_config.json found at $missingPackageConfig. Make sure to r
         );
         packageConfig.writeAsStringSync(contents);
 
-        final process = Process.runSync(
+        final process = await Process.run(
           'dart',
           ['run', 'custom_lint', '.'],
           workingDirectory: app.path,
