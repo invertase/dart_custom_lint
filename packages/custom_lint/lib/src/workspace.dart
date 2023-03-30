@@ -572,11 +572,6 @@ class CustomLintPlugin {
   /// dependency tree. The root project's dependencies are processed first,
   /// followed by their transitive dependencies, and so on.
   ///
-  /// The function will only visit a dependency if the [shouldVisit] function
-  /// returns `true`.
-  /// If it returns `false`, the dependency and all of its transitive
-  /// dependencies will be skipped.
-  ///
   /// If a transitive dependency cannot be resolved (i.e., it is not listed
   /// in the `package_config.json` file), the function throws an
   /// [UnresolvedTransitiveDependencyException].
@@ -847,9 +842,8 @@ class _ConflictEntry {
 class ConflictingPackagesChecker {
   final _entries = <_ConflictEntry>[];
 
-  /// Adds a [contextRoot] and its [packages] to the checker.
-  /// We need to pass the [pubspec] to check if the package is a git dependency
-  /// and to check if the context root is a flutter package.
+  /// Registers a [Package] and its associated [CustomLintPlugin]/[CustomLintProject]
+  /// to be checked against version conflicts.
   void addPluginPackage(
     CustomLintProject project,
     CustomLintPlugin plugin,
@@ -890,6 +884,8 @@ class ConflictingPackagesChecker {
   }
 }
 
+/// An error thrown if a custom_lint workspace contains two or more projects
+/// which depend on the same package (directly or transitively) with different versions.
 class PackageVersionConflictError extends Error {
   PackageVersionConflictError._(
     this._packagesWithConflictingVersions,
