@@ -244,14 +244,17 @@ class CustomLintWorkspace {
   String _computePackageConfigForTempProject() {
     final conflictingPackagesChecker = ConflictingPackagesChecker();
 
-    Iterable<Package> visitPluginsAndDependencies() sync* {
-      final visitedPackages = <String>{};
+    // A cache object to avoid parsing the same pubspec multiple times,
+    // as two plugins might depend on the same package.
+    // We still want to visit the dependencies of the package multiple times,
+    // as the resolved package in the project's package_config.json might be different.
+    final pubspecCache = PubspecCache();
 
+    Iterable<Package> visitPluginsAndDependencies() sync* {
       for (final project in projects) {
         for (final plugin in project.plugins) {
           final packages = plugin.visitSelfAndTransitiveDependencies(
-            // This ensures that we do not visit nor parse the same package twice.
-            shouldVisit: (package) => visitedPackages.add(package.root.path),
+            pubspecCache,
           );
 
           for (final package in packages) {
@@ -340,6 +343,32 @@ class CustomLintPluginCheckerCache {
       // TODO test that dependency_overrides & dev_dependencies aren't checked.
       return pubspec.dependencies.containsKey('custom_lint_builder');
     });
+  }
+}
+
+/// An util for parsing a pubspec once.
+@internal
+class PubspecCache {
+  final _cache = <Directory, Pubspec Function()>{};
+
+  /// Parses a pubspec and throws if the parsing fails.
+  ///
+  /// If the value is already cached, it will return the cached value or rethrow
+  /// the previously thrown error.
+  Pubspec call(Directory directory) {
+    final cached = _cache[directory];
+    if (cached != null) return cached();
+
+    try {
+      final pubspec = parsePubspecSync(directory);
+      _cache[directory] = () => pubspec;
+      return pubspec;
+    } catch (e) {
+      // ignore: only_throw_errors, use_rethrow_when_possible
+      _cache[directory] = () => throw e;
+
+      rethrow;
+    }
   }
 }
 
@@ -559,10 +588,9 @@ class CustomLintPlugin {
   /// ```dart
   /// final dependencies = _listTransitiveDependencies('/path/to/my/project').toList();
   /// ```
-  Iterable<Package> visitSelfAndTransitiveDependencies({
-    required bool Function(Package) shouldVisit,
-  }) sync* {
-    if (!shouldVisit(package)) return;
+  Iterable<Package> visitSelfAndTransitiveDependencies(
+    PubspecCache pubspecCache,
+  ) sync* {
     yield package;
 
     // A map of of the packages defined in package_config.json for fast lookup.
@@ -584,7 +612,7 @@ class CustomLintPlugin {
     while (dependenciesToVisit.isNotEmpty) {
       // Check if the dependency is already visited
       final dependency = dependenciesToVisit.removeFirst();
-      if (visited.add(dependency)) continue;
+      if (!visited.add(dependency)) continue;
 
       // Emit the dependency's package metadata.
       final package = packages[dependency];
@@ -592,13 +620,12 @@ class CustomLintPlugin {
         throw UnresolvedTransitiveDependencyException._(dependency);
       }
 
-      if (!shouldVisit(package)) continue;
       yield package;
 
       /// Now queue the dependencies of the dependency to be emitted too.
       final packageDir = Directory.fromUri(package.root);
       // TODO test error
-      final dependencyPubspec = parsePubspecSync(packageDir);
+      final dependencyPubspec = pubspecCache(packageDir);
       dependenciesToVisit.addAll(dependencyPubspec.dependencies.keys);
     }
   }
@@ -805,10 +832,13 @@ class _ConflictEntry {
   }
 
   String buildConflictingMessage() {
+    final trailingMessage = _isPlugin
+        ? 'Used by project "${project.pubspec.name}" at ${project.directory.path}'
+        : 'Used by plugin "${plugin.name}" at ${plugin.directory.path} in the project "${project.pubspec.name}" at ${project.directory.path}';
     return '''
 - ${_dependency().buildShortDescription()}
   Resolved with ${package.root.toFilePath()}
-  Used by project "${project.pubspec.name}" at ${project.directory.path}''';
+  $trailingMessage''';
   }
 }
 

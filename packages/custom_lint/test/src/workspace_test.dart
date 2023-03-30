@@ -43,7 +43,9 @@ extension on Dependency {
         }
       };
     } else if (that is PathDependency) {
-      return that.path;
+      return {
+        'path': that.path,
+      };
     } else if (that is SdkDependency) {
       return {
         'sdk': that.sdk,
@@ -164,17 +166,16 @@ Future<Directory> createSimpleWorkspace(
   /// The number of time we've created a package with a given name.
   final packageCount = <String, int>{};
 
-  String getFolderName(Pubspec pubspec) {
+  String getFolderName(String name) {
     // If a package with the same name was already created previously,
     // we suffix the folder name with an incrementing number.
-    final projectFolderSuffix = packageCount[pubspec.name] == null
-        ? ''
-        : packageCount[pubspec.name]!.toString();
-    final folderName = '${pubspec.name}$projectFolderSuffix';
+    final projectFolderSuffix =
+        packageCount[name] == null ? '' : packageCount[name]!.toString();
+    final folderName = '$name$projectFolderSuffix';
 
     // Increment the counter for changing the suffix for the next similarly
     // named package
-    packageCount[pubspec.name] = (packageCount[pubspec.name] ?? 1) + 1;
+    packageCount[name] = (packageCount[name] ?? 1) + 1;
 
     return folderName;
   }
@@ -182,9 +183,9 @@ Future<Directory> createSimpleWorkspace(
   return createWorkspace(withPackageConfig: withPackageConfig, {
     for (final projectEntry in projectEntry)
       if (projectEntry is Pubspec)
-        getFolderName(projectEntry): projectEntry
+        getFolderName(projectEntry.name): projectEntry
       else if (projectEntry is String)
-        projectEntry: Pubspec(
+        getFolderName(projectEntry): Pubspec(
           p.basename(projectEntry),
           version: Version(1, 0, 0),
         )
@@ -1191,6 +1192,7 @@ void main() {
           'dep',
           dependencies: {'custom_lint_builder': HostedDependency()},
         ),
+        'custom_lint_builder',
         Pubspec('app', devDependencies: {'dep': HostedDependency()}),
         Pubspec('app2', devDependencies: {'dep': HostedDependency()}),
       ]);
@@ -1198,8 +1200,14 @@ void main() {
       enableCustomLint(workspace.dir('app'));
       enableCustomLint(workspace.dir('app2'));
 
-      writeSimplePackageConfig(workspace.dir('app'), {'dep': '../dep'});
-      writeSimplePackageConfig(workspace.dir('app2'), {'dep': '../dep'});
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'dep': '../dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'dep': '../dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
 
       final customLintWorkspace = await CustomLintWorkspace.fromPaths(
         [workspace.path],
@@ -1212,133 +1220,622 @@ void main() {
       );
     });
 
-    /*
-
-    test('should throw error when there are conflicting packages', () {
-      final checker = ConflictingPackagesChecker();
-      final flutterDependency = HostedDependency();
-      final firstPubspec = Pubspec(
-        'app',
-        dependencies: {
-          'flutter': flutterDependency,
-        },
-      );
-      final secondPubspec = Pubspec(
-        'http',
-        dependencies: {
-          'flutter': flutterDependency,
-        },
-      );
-      final thirdPubspec = Pubspec(
-        'design_system',
-        dependencies: {
-          'flutter': flutterDependency,
-          'freezed': GitDependency(
-            Uri.parse('ssh://git@github.com/rrousselGit/freezed.git'),
-            ref: '4cdfbf9159f2e9746fce29d2862f148f901da66a',
-            path: 'packages/freezed',
-          ),
-        },
-      );
-      final firstContextRoot = _createContextRoot('app');
-      final secondContextRoot = _createContextRoot('app/packages/http');
-      final thirdContextRoot = _createContextRoot('app/packages/design_system');
-      final firstContextRootPackages = [
-        _createPackage('riverpod', '2.2.0'),
-        _createPackage('flutter_hooks', '0.18.6'),
-        _createPackage('freezed', '2.3.2'),
-      ];
-      final secondContextRootPackages = [
-        // Same package as in the first context root, but with different version
-        // this should cause an error
-        _createPackage('riverpod', '2.1.0'),
-        // This should also be shown in the error message
-        _createPackage('flutter_hooks', '0.18.5'),
-        _createPackage('http', '0.13.3'),
-        _createPackage('http_parser', '4.0.0'),
-        _createPathPackage('freezed', '/Users/user/freezed/packages/freezed/'),
-        // This is to simulate a transitive git dependency
-        _createGitPackage(
-          'http_parser',
-          '4cdfbf9159123746fce29d2862f148f901da66a',
+    test(
+        'should NOT throw if projects use different plugins with unrelated dependencies',
+        () async {
+      final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        'custom_lint_builder',
+        Pubspec(
+          'plugin',
+          dependencies: {
+            'custom_lint_builder': HostedDependency(),
+            'plugin_dep': HostedDependency(),
+          },
         ),
-      ];
-      // Here we want to test that the error message contains multiple locations
-      final thirdContextRootPackages = [
-        _createPackage('riverpod', '2.1.1'),
-        _createPackage('flutter_hooks', '0.18.5'),
-        // This is a git package, so we want to make sure it's handled correctly
-        _createGitPackage(
-          'freezed',
-          '4cdfbf9159f2e9746fce29d2862f148f901da66a/packages/freezed',
+        Pubspec(
+          'another_plugin',
+          dependencies: {
+            'custom_lint_builder': HostedDependency(),
+            'another_plugin_dep': HostedDependency()
+          },
         ),
-        _createPackage('http_parser', '4.0.0'),
-      ];
+        'plugin_dep',
+        'another_plugin_dep',
+        Pubspec('app', devDependencies: {'plugin': HostedDependency()}),
+        Pubspec(
+          'app2',
+          devDependencies: {'another_plugin': HostedDependency()},
+        ),
+      ]);
 
-      checker.addContextRoot(
-        firstContextRoot.root,
-        firstContextRootPackages,
-        firstPubspec,
-      );
-      checker.addContextRoot(
-        secondContextRoot.root,
-        secondContextRootPackages,
-        secondPubspec,
-      );
-      checker.addContextRoot(
-        thirdContextRoot.root,
-        thirdContextRootPackages,
-        thirdPubspec,
+      enableCustomLint(workspace.dir('app'));
+      enableCustomLint(workspace.dir('app2'));
+
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'plugin': '../plugin',
+        'plugin_dep': '../plugin_dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'another_plugin': '../another_plugin',
+        'another_plugin_dep': '../another_plugin_dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+
+      final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+        [workspace.path],
+        workingDirectory: workspace,
       );
 
       expect(
-        checker.throwErrorIfConflictingPackages,
+        await customLintWorkspace.createPluginHostDirectory(),
+        isA<Directory>().having((e) => e.existsSync(), 'exists()', true),
+      );
+    });
+
+    test(
+        'Does not check conflicts on transitive devDependencies & dependency_overrides of plugins',
+        () {
+      throw UnimplementedError();
+    });
+
+    test(
+        'Handles common transitive dependency conflict with two different plugin',
+        () async {
+      final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        Pubspec(
+          'plugin',
+          dependencies: {
+            'custom_lint_builder': HostedDependency(),
+            'transitive_dep': HostedDependency(
+              version: VersionConstraint.parse('^1.0.0'),
+            ),
+          },
+        ),
+        Pubspec(
+          'another_plugin',
+          dependencies: {
+            'custom_lint_builder': HostedDependency(),
+            'transitive_dep': HostedDependency(
+              version: VersionConstraint.parse('^2.0.0'),
+            ),
+          },
+        ),
+        'transitive_dep',
+        'transitive_dep',
+        'custom_lint_builder',
+        Pubspec(
+          'app',
+          devDependencies: {
+            'plugin': HostedDependency(version: Version(1, 0, 0))
+          },
+        ),
+        Pubspec(
+          'app2',
+          devDependencies: {
+            'another_plugin': HostedDependency(version: Version(2, 0, 0))
+          },
+        ),
+      ]);
+
+      enableCustomLint(workspace.dir('app'));
+      enableCustomLint(workspace.dir('app2'));
+
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'plugin': '../plugin',
+        'transitive_dep': '../transitive_dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'another_plugin': '../another_plugin',
+        'transitive_dep': '../transitive_dep2',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+
+      final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+        [workspace.path],
+        workingDirectory: workspace,
+      );
+      final app = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app',
+      );
+      final app2 = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app2',
+      );
+
+      await expectLater(
+        customLintWorkspace.createPluginHostDirectory(),
         throwsA(
-          isA<StateError>().having(
-            (error) => error.message,
-            'message',
+          isA<PackageVersionConflictError>().having(
+            (error) => error.toString(),
+            'toString()',
             equals(
               '''
-Some dependencies with conflicting versions were identified:
+PackageVersionConflictError – Some dependencies with conflicting versions were identified:
 
-app at /Users/user/project/app
-- riverpod v2.2.0
-- flutter_hooks v0.18.6
-- freezed v2.3.2
-
-http at /Users/user/project/app/packages/http
-- riverpod v2.1.0
-- flutter_hooks v0.18.5
-- http_parser v4.0.0
-- freezed from path /Users/user/freezed/packages/freezed/
-- http_parser from git 4cdfbf9159123746fce29d2862f148f901da66a/
-
-design_system at /Users/user/project/app/packages/design_system
-- riverpod v2.1.1
-- flutter_hooks v0.18.5
-- freezed from git url ssh://git@github.com/rrousselGit/freezed.git ref 4cdfbf9159f2e9746fce29d2862f148f901da66a path packages/freezed
-- http_parser v4.0.0
+Package transitive_dep:
+- Hosted with version constraint: ^1.0.0
+  Resolved with ${workspace.dir('transitive_dep').path}/
+  Used by plugin "plugin" at ${app.plugins.single.directory.path} in the project "app" at ${app.directory.path}
+- Hosted with version constraint: ^2.0.0
+  Resolved with ${workspace.dir('transitive_dep2').path}/
+  Used by plugin "another_plugin" at ${app2.plugins.single.directory.path} in the project "app2" at ${app2.directory.path}
 
 $conflictExplanation
 You could run the following commands to try fixing this:
 
-cd /Users/user/project/app
-flutter pub upgrade riverpod flutter_hooks freezed
-cd /Users/user/project/app/packages/http
-flutter pub upgrade riverpod flutter_hooks http_parser freezed http_parser
-cd /Users/user/project/app/packages/design_system
-flutter pub upgrade riverpod flutter_hooks freezed http_parser
+cd ${app.directory.path}
+dart pub upgrade transitive_dep
+cd ${app2.directory.path}
+dart pub upgrade transitive_dep
 ''',
             ),
           ),
         ),
       );
-    });*/
+    });
+
+    test('Handles transitive dependency conflict with identical plugin version',
+        () async {
+      final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        'custom_lint_builder',
+        Pubspec(
+          'dep',
+          dependencies: {
+            'custom_lint_builder': HostedDependency(),
+            'transitive_dep': HostedDependency(
+              version: VersionConstraint.parse('^1.0.0'),
+            ),
+          },
+        ),
+        // Another package for the sake of it
+        'transitive_dep',
+        'transitive_dep',
+        Pubspec(
+          'app',
+          devDependencies: {'dep': HostedDependency(version: Version(1, 0, 0))},
+        ),
+        Pubspec(
+          'app2',
+          devDependencies: {'dep': HostedDependency(version: Version(2, 0, 0))},
+        ),
+      ]);
+
+      enableCustomLint(workspace.dir('app'));
+      enableCustomLint(workspace.dir('app2'));
+
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'dep': '../dep',
+        'transitive_dep': '../transitive_dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'dep': '../dep',
+        'transitive_dep': '../transitive_dep2',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+
+      final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+        [workspace.path],
+        workingDirectory: workspace,
+      );
+      final app = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app',
+      );
+      final app2 = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app2',
+      );
+
+      await expectLater(
+        customLintWorkspace.createPluginHostDirectory(),
+        throwsA(
+          isA<PackageVersionConflictError>().having(
+            (error) => error.toString(),
+            'toString()',
+            equals(
+              '''
+PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+
+Package transitive_dep:
+- Hosted with version constraint: ^1.0.0
+  Resolved with ${workspace.dir('transitive_dep').path}/
+  Used by plugin "dep" at ${app.plugins.single.directory.path} in the project "app" at ${app.directory.path}
+- Hosted with version constraint: ^1.0.0
+  Resolved with ${workspace.dir('transitive_dep2').path}/
+  Used by plugin "dep" at ${app2.plugins.single.directory.path} in the project "app2" at ${app2.directory.path}
+
+$conflictExplanation
+You could run the following commands to try fixing this:
+
+cd ${app.directory.path}
+dart pub upgrade transitive_dep
+cd ${app2.directory.path}
+dart pub upgrade transitive_dep
+''',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('Handles multiple conflicts', () async {
+      final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        'custom_lint_builder',
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        // Make two packages with the same name, such that app & app2 depends
+        // on a different version of the same package
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        // Another package for the sake of it
+        Pubspec(
+          'second_dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        Pubspec(
+          'second_dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        Pubspec(
+          'second_dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        Pubspec(
+          'app',
+          devDependencies: {
+            'dep': HostedDependency(version: Version(1, 0, 0)),
+            'second_dep': HostedDependency(version: Version(1, 1, 0)),
+          },
+        ),
+        Pubspec(
+          'app2',
+          devDependencies: {
+            'dep': HostedDependency(version: Version(2, 0, 0)),
+            'second_dep': HostedDependency(version: Version(2, 1, 0)),
+          },
+        ),
+        Pubspec(
+          'app3',
+          devDependencies: {
+            'dep': HostedDependency(version: Version(1, 0, 0)),
+            'second_dep': HostedDependency(version: Version(3, 1, 0)),
+          },
+        ),
+      ]);
+
+      enableCustomLint(workspace.dir('app'));
+      enableCustomLint(workspace.dir('app2'));
+      enableCustomLint(workspace.dir('app3'));
+
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'dep': '../dep',
+        'second_dep': '../second_dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'dep': '../dep2',
+        'second_dep': '../second_dep2',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app3'), {
+        'dep': '../dep2',
+        'second_dep': '../second_dep3',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+
+      final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+        [workspace.path],
+        workingDirectory: workspace,
+      );
+      final app = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app',
+      );
+      final app2 = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app2',
+      );
+      final app3 = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app3',
+      );
+
+      await expectLater(
+        customLintWorkspace.createPluginHostDirectory(),
+        throwsA(
+          isA<PackageVersionConflictError>().having(
+            (error) => error.toString(),
+            'toString()',
+            equals(
+              '''
+PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+
+Plugin dep:
+- Hosted with version constraint: 1.0.0
+  Resolved with ${app.plugins[0].package.root.path}
+  Used by project "app" at ${app.directory.path}
+- Hosted with version constraint: 2.0.0
+  Resolved with ${app2.plugins[0].package.root.path}
+  Used by project "app2" at ${app2.directory.path}
+- Hosted with version constraint: 1.0.0
+  Resolved with ${app3.plugins[0].package.root.path}
+  Used by project "app3" at ${app3.directory.path}
+
+Plugin second_dep:
+- Hosted with version constraint: 1.1.0
+  Resolved with ${app.plugins[1].package.root.path}
+  Used by project "app" at ${app.directory.path}
+- Hosted with version constraint: 2.1.0
+  Resolved with ${app2.plugins[1].package.root.path}
+  Used by project "app2" at ${app2.directory.path}
+- Hosted with version constraint: 3.1.0
+  Resolved with ${app3.plugins[1].package.root.path}
+  Used by project "app3" at ${app3.directory.path}
+
+$conflictExplanation
+You could run the following commands to try fixing this:
+
+cd ${app.directory.path}
+dart pub upgrade dep second_dep
+cd ${app2.directory.path}
+dart pub upgrade dep second_dep
+cd ${app3.directory.path}
+dart pub upgrade dep second_dep
+''',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('Handles SDK dependencies', () async {
+      final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        'custom_lint_builder',
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        // Make two packages with the same name, such that app & app2 depends
+        // on a different version of the same package
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        Pubspec(
+          'app',
+          devDependencies: {
+            'dep': HostedDependency(version: VersionConstraint.parse('^1.0.0'))
+          },
+        ),
+        Pubspec(
+          'app2',
+          devDependencies: {'dep': SdkDependency('flutter')},
+        ),
+      ]);
+
+      enableCustomLint(workspace.dir('app'));
+      enableCustomLint(workspace.dir('app2'));
+
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'dep': '../dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'dep': '../dep2',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+
+      final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+        [workspace.path],
+        workingDirectory: workspace,
+      );
+      final app = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app',
+      );
+      final app2 = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app2',
+      );
+
+      await expectLater(
+        customLintWorkspace.createPluginHostDirectory(),
+        throwsA(
+          isA<PackageVersionConflictError>().having(
+            (error) => error.toString(),
+            'toString()',
+            equals(
+              '''
+PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+
+Plugin dep:
+- Hosted with version constraint: ^1.0.0
+  Resolved with ${app.plugins.single.package.root.path}
+  Used by project "app" at ${app.directory.path}
+- From SDK: flutter
+  Resolved with ${app2.plugins.single.package.root.path}
+  Used by project "app2" at ${app2.directory.path}
+
+$conflictExplanation
+You could run the following commands to try fixing this:
+
+cd ${app.directory.path}
+dart pub upgrade dep
+cd ${app2.directory.path}
+dart pub upgrade dep
+''',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('Handles hosted dependencies', () async {
+      final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        'custom_lint_builder',
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        // Make two packages with the same name, such that app & app2 depends
+        // on a different version of the same package
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        Pubspec(
+          'app',
+          devDependencies: {
+            'dep': HostedDependency(version: VersionConstraint.parse('^1.0.0'))
+          },
+        ),
+        Pubspec(
+          'app2',
+          devDependencies: {
+            'dep': HostedDependency(
+              version: VersionConstraint.parse('>=2.0.0 <3.0.0'),
+            )
+          },
+        ),
+      ]);
+
+      enableCustomLint(workspace.dir('app'));
+      enableCustomLint(workspace.dir('app2'));
+
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'dep': '../dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'dep': '../dep2',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+
+      final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+        [workspace.path],
+        workingDirectory: workspace,
+      );
+      final app = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app',
+      );
+      final app2 = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app2',
+      );
+
+      await expectLater(
+        customLintWorkspace.createPluginHostDirectory(),
+        throwsA(
+          isA<PackageVersionConflictError>().having(
+            (error) => error.toString(),
+            'toString()',
+            equals(
+              '''
+PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+
+Plugin dep:
+- Hosted with version constraint: ^1.0.0
+  Resolved with ${app.plugins.single.package.root.path}
+  Used by project "app" at ${app.directory.path}
+- Hosted with version constraint: >=2.0.0 <3.0.0
+  Resolved with ${app2.plugins.single.package.root.path}
+  Used by project "app2" at ${app2.directory.path}
+
+$conflictExplanation
+You could run the following commands to try fixing this:
+
+cd ${app.directory.path}
+dart pub upgrade dep
+cd ${app2.directory.path}
+dart pub upgrade dep
+''',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('Handles path dependencies', () async {
+      final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        'custom_lint_builder',
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        // Make two packages with the same name, such that app & app2 depends
+        // on a different version of the same package
+        Pubspec(
+          'dep',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+        ),
+        Pubspec(
+          'app',
+          devDependencies: {'dep': HostedDependency(version: Version(1, 0, 0))},
+        ),
+        Pubspec(
+          'app2',
+          devDependencies: {'dep': PathDependency('../dep2')},
+        ),
+      ]);
+
+      enableCustomLint(workspace.dir('app'));
+      enableCustomLint(workspace.dir('app2'));
+
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'dep': '../dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'dep': '../dep2',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+
+      final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+        [workspace.path],
+        workingDirectory: workspace,
+      );
+      final app = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app',
+      );
+      final app2 = customLintWorkspace.projects.firstWhere(
+        (project) => project.pubspec.name == 'app2',
+      );
+
+      await expectLater(
+        customLintWorkspace.createPluginHostDirectory(),
+        throwsA(
+          isA<PackageVersionConflictError>().having(
+            (error) => error.toString(),
+            'toString()',
+            equals(
+              '''
+PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+
+Plugin dep:
+- Hosted with version constraint: 1.0.0
+  Resolved with ${app.plugins.single.package.root.path}
+  Used by project "app" at ${app.directory.path}
+- From path ../dep2
+  Resolved with ${app2.plugins.single.package.root.path}
+  Used by project "app2" at ${app2.directory.path}
+
+$conflictExplanation
+You could run the following commands to try fixing this:
+
+cd ${app.directory.path}
+dart pub upgrade dep
+cd ${app2.directory.path}
+dart pub upgrade dep
+''',
+            ),
+          ),
+        ),
+      );
+    });
 
     test(
         'Picks between "flutter pub" and "dart pub" '
         'depending on if a provider uses flutter or not', () async {
       final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        'custom_lint_builder',
         Pubspec(
           'dep',
           dependencies: {'custom_lint_builder': HostedDependency()},
@@ -1363,8 +1860,14 @@ flutter pub upgrade riverpod flutter_hooks freezed http_parser
       enableCustomLint(workspace.dir('app'));
       enableCustomLint(workspace.dir('app2'));
 
-      writeSimplePackageConfig(workspace.dir('app'), {'dep': '../dep'});
-      writeSimplePackageConfig(workspace.dir('app2'), {'dep': '../dep2'});
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'dep': '../dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'dep': '../dep2',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
 
       final customLintWorkspace = await CustomLintWorkspace.fromPaths(
         [workspace.path],
@@ -1411,6 +1914,7 @@ flutter pub upgrade dep
 
     test('should show git dependency without path and ref', () async {
       final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        'custom_lint_builder',
         Pubspec(
           'dep',
           dependencies: {'custom_lint_builder': HostedDependency()},
@@ -1438,8 +1942,14 @@ flutter pub upgrade dep
       enableCustomLint(workspace.dir('app'));
       enableCustomLint(workspace.dir('app2'));
 
-      writeSimplePackageConfig(workspace.dir('app'), {'dep': '../dep'});
-      writeSimplePackageConfig(workspace.dir('app2'), {'dep': '../dep2'});
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'dep': '../dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'dep': '../dep2',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
 
       final customLintWorkspace = await CustomLintWorkspace.fromPaths(
         [workspace.path],
@@ -1486,6 +1996,7 @@ dart pub upgrade dep
 
     test('should show git dependency without path', () async {
       final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        'custom_lint_builder',
         Pubspec(
           'dep',
           dependencies: {'custom_lint_builder': HostedDependency()},
@@ -1514,8 +2025,14 @@ dart pub upgrade dep
       enableCustomLint(workspace.dir('app'));
       enableCustomLint(workspace.dir('app2'));
 
-      writeSimplePackageConfig(workspace.dir('app'), {'dep': '../dep'});
-      writeSimplePackageConfig(workspace.dir('app2'), {'dep': '../dep2'});
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'dep': '../dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'dep': '../dep2',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
 
       final customLintWorkspace = await CustomLintWorkspace.fromPaths(
         [workspace.path],
@@ -1562,6 +2079,7 @@ dart pub upgrade dep
 
     test('should show git dependency without ref', () async {
       final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        'custom_lint_builder',
         Pubspec(
           'dep',
           dependencies: {'custom_lint_builder': HostedDependency()},
@@ -1590,8 +2108,14 @@ dart pub upgrade dep
       enableCustomLint(workspace.dir('app'));
       enableCustomLint(workspace.dir('app2'));
 
-      writeSimplePackageConfig(workspace.dir('app'), {'dep': '../dep'});
-      writeSimplePackageConfig(workspace.dir('app2'), {'dep': '../dep2'});
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'dep': '../dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'dep': '../dep2',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
 
       final customLintWorkspace = await CustomLintWorkspace.fromPaths(
         [workspace.path],
