@@ -189,6 +189,9 @@ Future<Directory> createSimpleWorkspace(
         getFolderName(projectEntry): Pubspec(
           p.basename(projectEntry),
           version: Version(1, 0, 0),
+          environment: {
+            'sdk': VersionConstraint.parse('>=2.17.0 <4.0.0'),
+          },
         )
       else
         // https://github.com/dart-lang/language/issues/2943

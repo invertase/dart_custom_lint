@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:custom_lint/src/package_utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'cli_test.dart';
 import 'create_project.dart';
+import 'src/workspace_test.dart';
 
 String trimDependencyOverridesWarning(Object? input) {
   final string = input.toString();
@@ -111,9 +113,7 @@ void main() {
         );
 
         // create error during initialization because of missing package_config.json
-        final packageConfig = File(
-          p.join(innerContextRoot.path, '.dart_tool', 'package_config.json'),
-        );
+        final packageConfig = innerContextRoot.packageConfig;
         // Potentially resolve the file system link, temp folders are links on macOs into /private/var
         final missingPackageConfig =
             await innerContextRoot.resolveSymbolicLinks();
@@ -143,63 +143,74 @@ No .dart_tool/package_config.json found at $missingPackageConfig. Make sure to r
       'dependency conflict',
       timeout: timeout,
       () async {
-        final plugin = createPlugin(name: 'test_lint', main: oyPluginSource);
+        // Create two packages with the same name but different paths
+        final workspace = await createSimpleWorkspace(['dep', 'dep']);
 
-        final app = createLintUsage(
-          name: 'test_app',
-          source: {
-            'lib/main.dart': 'void fn() {}',
-            'lib/another.dart': 'void fail() {}',
+        final plugin = createPlugin(
+          parent: workspace,
+          name: 'test_lint',
+          main: oyPluginSource,
+          extraDependencies: {
+            'dep': '{"path": "${workspace.dir('dep').path}"}'
           },
+        );
+
+        // We define two projects with different dependencies
+        final app = createLintUsage(
+          parent: workspace,
+          name: 'test_app',
+          source: {'lib/main.dart': 'void fn() {}'},
           plugins: {'test_lint': plugin.uri},
           createDependencyOverrides: true,
+          // Adding "dep" to app's package_config is redundant because
+          // "dart run" unfortunately runs "pub get", which will override
+          // the manually written package_config.json file.
+          extraPackageConfig: {'dep': workspace.dir('dep').uri},
         );
 
-        // Create a child context root
-        final innerContextRoot = createLintUsage(
-          name: 'test_project_inner',
-          source: {
-            'lib/main.dart': 'void fn() {}',
-            'lib/another.dart': 'void fail() {}',
-          },
+        final app2 = createLintUsage(
+          // Add the second project inside the first one, such that
+          // analyzing the first project analyzes both projects
           parent: app,
+          name: 'test_app2',
+          source: {'lib/foo.dart': 'void fn() {}'},
           createDependencyOverrides: true,
+          plugins: {'test_lint': plugin.uri},
+          // Override the shared dependency to cause a conflict
+          extraDependencyOverrides: {
+            'dep': '{"path": "${workspace.dir('dep2').path}"}'
+          },
+          extraPackageConfig: {'dep': workspace.dir('dep2').uri},
         );
-
-        // Create a dependency conflict by manually fetching
-        // analyzer and overriding it in pubspec and package config.
-        // Fetching is required, otherwise there is no pubspec.yaml available.
-        const version = '1.8.0';
-        await Process.run(
-          'dart',
-          // TODO remove pub call as this involes a network request
-          ['pub', 'add', 'meta:$version'],
-          workingDirectory: innerContextRoot.path,
-        );
-        final packageConfig = File(
-          p.join(innerContextRoot.path, '.dart_tool', 'package_config.json'),
-        );
-        var contents = packageConfig.readAsStringSync();
-        contents = contents.replaceAll(
-          RegExp('meta-.*",'),
-          'meta-$version",',
-        );
-        packageConfig.writeAsStringSync(contents);
 
         final process = await Process.run(
+          workingDirectory: app.path,
           'dart',
           ['run', 'custom_lint', '.'],
-          workingDirectory: app.path,
         );
 
         expect(process.stdout, isEmpty);
         expect(
           trimDependencyOverridesWarning(process.stderr),
-          startsWith(
-            '''
-Bad state: Some dependencies with conflicting versions were identified:
+          '''
+PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+
+Package dep:
+- Hosted with version constraint: any
+  Resolved with ${workspace.dir('transitive_dep').path}/
+  Used by plugin "test_lint" at ${plugin.path} in the project "test_app" at ${app.path}
+- Hosted with version constraint: any
+  Resolved with ${workspace.dir('transitive_dep2').path}/
+  Used by plugin "test_lint" at ${plugin.path} in the project "test_app2" at ${app2.path}
+
+$conflictExplanation
+You could run the following commands to try fixing this:
+
+cd ${app.path}
+dart pub upgrade dep
+cd ${app2.path}
+dart pub upgrade dep
 ''',
-          ),
         );
         expect(process.exitCode, 1);
       },
