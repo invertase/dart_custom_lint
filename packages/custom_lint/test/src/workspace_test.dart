@@ -1274,9 +1274,128 @@ void main() {
     });
 
     test(
+        'Does not check conflicts on devDependencies & dependency_overrides of plugins',
+        () async {
+      final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        Pubspec(
+          'plugin',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+          devDependencies: {'transitive_dep': HostedDependency()},
+          dependencyOverrides: {'transitive_dep': HostedDependency()},
+        ),
+        Pubspec(
+          'another_plugin',
+          dependencies: {'custom_lint_builder': HostedDependency()},
+          devDependencies: {'transitive_dep': HostedDependency()},
+          dependencyOverrides: {'transitive_dep': HostedDependency()},
+        ),
+        'transitive_dep',
+        'transitive_dep',
+        'custom_lint_builder',
+        Pubspec(
+          'app',
+          devDependencies: {
+            'plugin': HostedDependency(version: Version(1, 0, 0))
+          },
+        ),
+        Pubspec(
+          'app2',
+          devDependencies: {
+            'another_plugin': HostedDependency(version: Version(2, 0, 0))
+          },
+        ),
+      ]);
+
+      enableCustomLint(workspace.dir('app'));
+      enableCustomLint(workspace.dir('app2'));
+
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'plugin': '../plugin',
+        'transitive_dep': '../transitive_dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'another_plugin': '../another_plugin',
+        'transitive_dep': '../transitive_dep2',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+
+      final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+        [workspace.path],
+        workingDirectory: workspace,
+      );
+
+      await expectLater(
+        customLintWorkspace.createPluginHostDirectory(),
+        completes,
+      );
+    });
+
+    test(
         'Does not check conflicts on transitive devDependencies & dependency_overrides of plugins',
-        () {
-      throw UnimplementedError();
+        () async {
+      final workspace = await createSimpleWorkspace(withPackageConfig: false, [
+        Pubspec(
+          'plugin',
+          dependencies: {
+            'custom_lint_builder': HostedDependency(),
+            'transitive_dep': HostedDependency(),
+          },
+        ),
+        Pubspec(
+          'another_plugin',
+          dependencies: {
+            'custom_lint_builder': HostedDependency(),
+            'transitive_dep': HostedDependency(),
+          },
+        ),
+        Pubspec(
+          'transitive_dep',
+          devDependencies: {'plugin_transitive_dep': HostedDependency()},
+          dependencyOverrides: {'plugin_transitive_dep': HostedDependency()},
+        ),
+        'plugin_transitive_dep',
+        'plugin_transitive_dep',
+        'custom_lint_builder',
+        Pubspec(
+          'app',
+          devDependencies: {
+            'plugin': HostedDependency(version: Version(1, 0, 0))
+          },
+        ),
+        Pubspec(
+          'app2',
+          devDependencies: {
+            'another_plugin': HostedDependency(version: Version(2, 0, 0))
+          },
+        ),
+      ]);
+
+      enableCustomLint(workspace.dir('app'));
+      enableCustomLint(workspace.dir('app2'));
+
+      writeSimplePackageConfig(workspace.dir('app'), {
+        'plugin': '../plugin',
+        'transitive_dep': '../transitive_dep',
+        'plugin_transitive_dep': '../plugin_transitive_dep',
+        'custom_lint_builder': '../custom_lint_builder',
+      });
+      writeSimplePackageConfig(workspace.dir('app2'), {
+        'another_plugin': '../another_plugin',
+        'transitive_dep': '../transitive_dep',
+        'custom_lint_builder': '../custom_lint_builder',
+        'plugin_transitive_dep': '../plugin_transitive_dep2',
+      });
+
+      final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+        [workspace.path],
+        workingDirectory: workspace,
+      );
+
+      await expectLater(
+        customLintWorkspace.createPluginHostDirectory(),
+        completes,
+      );
     });
 
     test(

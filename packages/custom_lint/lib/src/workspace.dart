@@ -594,12 +594,11 @@ class CustomLintPlugin {
       ownerPackageConfig.packages.map((e) => MapEntry(e.name, e)),
     );
 
+    // Only queue "dependencies" but no "dev_dependencies" or "dependency_overrides".
+    // This is plugins are considered in to be in "release mode", in which case
+    // dev only dependencies are not included.
     final dependenciesToVisit =
         ListQueue<String>.from(pubspec.dependencies.keys);
-    // TODO test that dev_dependencies and dependency_overrides are visited on the
-    // root projects but not on the transitive dependencies
-    dependenciesToVisit.addAll(pubspec.devDependencies.keys);
-    dependenciesToVisit.addAll(pubspec.dependencyOverrides.keys);
 
     /// The set of already visited pubspecs
     final visited = <String>{};
@@ -621,6 +620,9 @@ class CustomLintPlugin {
       final packageDir = Directory.fromUri(package.root);
       // TODO test error
       final dependencyPubspec = pubspecCache(packageDir);
+      // Only queue "dependencies" but no "dev_dependencies" or "dependency_overrides".
+      // This is plugins are considered in to be in "release mode", in which case
+      // dev only dependencies are not included.
       dependenciesToVisit.addAll(dependencyPubspec.dependencies.keys);
     }
   }
