@@ -703,10 +703,12 @@ void main() {
       /// Shorthand for calling [CustomLintWorkspace.fromContextRoots] from
       /// a list of path.
       Future<CustomLintWorkspace> fromContextRootsFromPaths(
-        List<String> paths,
-      ) {
+        List<String> paths, {
+        required Directory workingDirectory,
+      }) {
         return CustomLintWorkspace.fromContextRoots(
           paths.map((path) => ContextRoot(path, [])).toList(),
+          workingDirectory: workingDirectory,
         );
       }
 
@@ -716,7 +718,10 @@ void main() {
         workspace.dir('package').createSync(recursive: true);
 
         expect(
-          () => fromContextRootsFromPaths([p.join(workspace.path, 'package')]),
+          () => fromContextRootsFromPaths(
+            [p.join(workspace.path, 'package')],
+            workingDirectory: workspace,
+          ),
           throwsA(isA<PubspecParseError>()),
         );
       });
@@ -728,15 +733,20 @@ void main() {
         workspace.dir('package', '.dart_tool').deleteSync(recursive: true);
 
         expect(
-          () => fromContextRootsFromPaths([
-            p.join(workspace.path, 'package'),
-          ]),
+          () => fromContextRootsFromPaths(
+            [p.join(workspace.path, 'package')],
+            workingDirectory: workspace,
+          ),
           throwsA(isA<PackageConfigParseError>()),
         );
       });
 
       test('Supports empty workspace', () async {
-        final customLintWorkspace = await fromContextRootsFromPaths([]);
+        final customLintWorkspace = await fromContextRootsFromPaths(
+          [],
+          // The working directory is not used, but it is required by the API.
+          workingDirectory: Directory.current,
+        );
 
         expect(customLintWorkspace.contextRoots, isEmpty);
         expect(customLintWorkspace.uniquePluginNames, isEmpty);
@@ -746,9 +756,10 @@ void main() {
       test('Supports projects with no plugins', () async {
         final workspace = await createSimpleWorkspace(['package']);
 
-        final customLintWorkspace = await fromContextRootsFromPaths([
-          p.join(workspace.path, 'package'),
-        ]);
+        final customLintWorkspace = await fromContextRootsFromPaths(
+          [p.join(workspace.path, 'package')],
+          workingDirectory: workspace,
+        );
 
         expect(
           customLintWorkspace.contextRoots.map((e) => e.root),
@@ -809,10 +820,13 @@ void main() {
           ),
         ]);
 
-        final customLintWorkspace = await fromContextRootsFromPaths([
-          p.join(workspace.path, 'a'),
-          p.join(workspace.path, 'b'),
-        ]);
+        final customLintWorkspace = await fromContextRootsFromPaths(
+          [
+            p.join(workspace.path, 'a'),
+            p.join(workspace.path, 'b'),
+          ],
+          workingDirectory: workspace,
+        );
 
         expect(
           customLintWorkspace.contextRoots.map((e) => e.root),

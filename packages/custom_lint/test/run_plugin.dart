@@ -31,6 +31,7 @@ Future<CustomLintRunner> startRunnerForApp(
   // TODO use IO override to mock & test stdout/stderr
   return CustomLintServer.run(
     sendPort: channel.receivePort.sendPort,
+    workingDirectory: directory,
     delegate: CommandCustomLintDelegate(),
     includeBuiltInLints: includeBuiltInLints,
     watchMode: watchMode,

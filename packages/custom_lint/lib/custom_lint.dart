@@ -44,6 +44,7 @@ Future<void> customLint({
   await CustomLintServer.run(
     sendPort: channel.receivePort.sendPort,
     watchMode: watchMode,
+    workingDirectory: workingDirectory,
     // In the CLI, only show user defined lints. Errors & logs will be
     // rendered separately
     includeBuiltInLints: false,

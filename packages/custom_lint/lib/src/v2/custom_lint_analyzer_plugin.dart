@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
@@ -25,6 +26,7 @@ class CustomLintServer {
     required this.watchMode,
     required this.includeBuiltInLints,
     required this.delegate,
+    required this.workingDirectory,
   });
 
   /// Start the server while also capturing prints and errors.
@@ -34,6 +36,7 @@ class CustomLintServer {
     required bool watchMode,
     required bool includeBuiltInLints,
     required CustomLintDelegate delegate,
+    required Directory workingDirectory,
   }) {
     late CustomLintServer server;
     final result = runZonedGuarded(
@@ -42,6 +45,7 @@ class CustomLintServer {
           watchMode: watchMode,
           includeBuiltInLints: includeBuiltInLints,
           delegate: delegate,
+          workingDirectory: workingDirectory,
         );
         server._start(sendPort);
 
@@ -58,6 +62,9 @@ class CustomLintServer {
 
     return result;
   }
+
+  /// The directory in which the server is running.
+  final Directory workingDirectory;
 
   /// The object in charge of logging events and possibly rendering events
   /// in the console (if ran from a terminal).
@@ -281,6 +288,7 @@ class CustomLintServer {
       this,
       versionCheck,
       parameters,
+      workingDirectory: workingDirectory,
     );
     _clientChannel.add(clientChannel);
 

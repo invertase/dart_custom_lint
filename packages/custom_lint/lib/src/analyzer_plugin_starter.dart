@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:ci/ci.dart' as ci;
@@ -18,6 +19,7 @@ void start(Iterable<String> _, SendPort sendPort) {
     // TODO enable hot-restart only if running plugin from source (excluding pub cache)
     watchMode: !isInCI,
     delegate: AnalyzerPluginCustomLintDelegate(),
+    workingDirectory: Directory.current,
     (_) {},
   );
 }

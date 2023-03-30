@@ -42,8 +42,9 @@ class _SocketCustomLintServerToClientChannel
   _SocketCustomLintServerToClientChannel(
     this._server,
     this._version,
-    this._contextRoots,
-  ) : _serverSocket = _createServerSocket() {
+    this._contextRoots, {
+    required this.workingDirectory,
+  }) : _serverSocket = _createServerSocket() {
     _socket = _serverSocket.then(
       (server) async {
         // ignore: close_sinks
@@ -54,9 +55,11 @@ class _SocketCustomLintServerToClientChannel
     );
   }
 
+  Directory? _tempDirectory;
+
+  final Directory workingDirectory;
   final CustomLintServer _server;
   final PluginVersionCheckParams _version;
-  Directory? _tempDirectory;
   final Future<ServerSocket> _serverSocket;
   late final Future<JsonSocketChannel?> _socket;
   late final Future<Process> _processFuture;
@@ -103,8 +106,10 @@ class _SocketCustomLintServerToClientChannel
   ///
   /// Will throw if the process fails to start.
   Future<Process> _startProcess() async {
-    final workspace =
-        await CustomLintWorkspace.fromContextRoots(_contextRoots.roots);
+    final workspace = await CustomLintWorkspace.fromContextRoots(
+      _contextRoots.roots,
+      workingDirectory: workingDirectory,
+    );
 
     final tempDirectory =
         _tempDirectory = await workspace.createPluginHostDirectory();
@@ -321,8 +326,9 @@ abstract class CustomLintServerToClientChannel {
   factory CustomLintServerToClientChannel.spawn(
     CustomLintServer server,
     PluginVersionCheckParams version,
-    AnalysisSetContextRootsParams contextRoots,
-  ) = _SocketCustomLintServerToClientChannel;
+    AnalysisSetContextRootsParams contextRoots, {
+    required Directory workingDirectory,
+  }) = _SocketCustomLintServerToClientChannel;
 
   /// The events sent by the client.
   Stream<CustomLintEvent> get events;

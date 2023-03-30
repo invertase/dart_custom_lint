@@ -128,7 +128,7 @@ Stream<YamlMap> visitAnalysisOptionAndIncludes(
   }
 }
 
-/// An error thrown when [CustomLintPlugin.visitSelfAndTransitiveDependencies] tries to iterate over
+/// An error thrown when [CustomLintPlugin._visitSelfAndTransitiveDependencies] tries to iterate over
 /// the dependencies of a package, but the package cannot be found in
 /// the `package_config.json`.
 class UnresolvedTransitiveDependencyException implements Exception {
@@ -150,8 +150,9 @@ class CustomLintWorkspace {
   CustomLintWorkspace._(
     this.projects,
     this.contextRoots,
-    this.uniquePluginNames,
-  );
+    this.uniquePluginNames, {
+    required this.workingDirectory,
+  });
 
   /// Initializes the custom_lint workspace from a directory.
   static Future<CustomLintWorkspace> fromPaths(
@@ -194,6 +195,7 @@ class CustomLintWorkspace {
 
     return fromContextRoots(
       contextRootsWithCustomLint.whereNotNull().toList(),
+      workingDirectory: workingDirectory,
     );
   }
 
@@ -214,8 +216,9 @@ class CustomLintWorkspace {
 
   /// Initializes the custom_lint workspace from a compilation of context roots.
   static Future<CustomLintWorkspace> fromContextRoots(
-    List<analyzer_plugin.ContextRoot> contextRoots,
-  ) async {
+    List<analyzer_plugin.ContextRoot> contextRoots, {
+    required Directory workingDirectory,
+  }) async {
     final cache = CustomLintPluginCheckerCache();
     final projects = await Future.wait([
       for (final contextRoot in contextRoots)
@@ -225,8 +228,17 @@ class CustomLintWorkspace {
     final uniquePluginNames =
         projects.expand((e) => e.plugins).map((e) => e.name).toSet();
 
-    return CustomLintWorkspace._(projects, contextRoots, uniquePluginNames);
+    return CustomLintWorkspace._(
+      projects,
+      contextRoots,
+      uniquePluginNames,
+      workingDirectory: workingDirectory,
+    );
   }
+
+  /// The working directory of the workspace.
+  /// This is the directory from which the workspace was initialized.
+  final Directory workingDirectory;
 
   /// The list of analyzed projects.
   final List<analyzer_plugin.ContextRoot> contextRoots;
@@ -254,7 +266,7 @@ class CustomLintWorkspace {
     Iterable<Package> visitPluginsAndDependencies() sync* {
       for (final project in projects) {
         for (final plugin in project.plugins) {
-          final packages = plugin.visitSelfAndTransitiveDependencies(
+          final packages = plugin._visitSelfAndTransitiveDependencies(
             pubspecCache,
           );
 
@@ -263,6 +275,7 @@ class CustomLintWorkspace {
               project,
               plugin,
               package,
+              workingDirectory: workingDirectory,
             );
 
             /// Only add a package in the package_config.json if it was not already added.
@@ -270,7 +283,9 @@ class CustomLintWorkspace {
             /// previously added package is the correct one.
             /// Version conflicts will be checked later with
             /// [ConflictingPackagesChecker.throwErrorIfConflictingPackages].
-            if (visitedPackages.add(package.name)) yield package;
+            if (visitedPackages.add(package.package.name)) {
+              yield package.package;
+            }
           }
         }
       }
@@ -300,6 +315,8 @@ class CustomLintWorkspace {
     // We do so after computing the result to avoid allocating a temporary
     // list of packages, by visiting dependencies using an Iterable instead of List.
     conflictingPackagesChecker.throwErrorIfConflictingPackages();
+
+    throw result;
 
     return result;
   }
@@ -468,7 +485,7 @@ class CustomLintProject {
     final pubspecFuture = parsePubspec(directory)..ignore();
     final packageConfigFuture = parsePackageConfig(directory)..ignore();
 
-    final pubspec =
+    final projectPubspec =
         // ignore: avoid_types_on_closure_parameters
         await pubspecFuture.catchError((Object err, StackTrace stack) {
       throw PubspecParseError._(
@@ -477,7 +494,7 @@ class CustomLintProject {
         errorStackTrace: stack,
       );
     });
-    final packageConfig =
+    final projectPackageConfig =
         // ignore: avoid_types_on_closure_parameters
         await packageConfigFuture.catchError((Object err, StackTrace stack) {
       throw PackageConfigParseError._(
@@ -489,27 +506,28 @@ class CustomLintProject {
 
     // TODO check that only dev_dependencies are checked
     final plugins = await Future.wait(
-      pubspec.devDependencies.entries.map((e) async {
-        final packageWithName =
-            packageConfig.packages.firstWhereOrNull((p) => p.name == e.key);
+      projectPubspec.devDependencies.entries.map((e) async {
+        final packageWithName = projectPackageConfig.packages
+            .firstWhereOrNull((p) => p.name == e.key);
         if (packageWithName == null) {
           throw PluginNotFoundInPackageConfigError._(e.key, directory.path);
         }
 
-        final packageDirectory = Directory(packageWithName.root.path);
-        final isPlugin = await cache.isPlugin(packageDirectory);
+        final pluginDirectory = Directory(packageWithName.root.path);
+        final isPlugin = await cache.isPlugin(pluginDirectory);
         if (!isPlugin) return null;
 
         // TODO test error
-        final pubspec = await parsePubspec(packageDirectory);
+        final pluginPubspec = await parsePubspec(pluginDirectory);
 
         return CustomLintPlugin._(
           name: e.key,
-          directory: packageDirectory,
-          pubspec: pubspec,
+          directory: pluginDirectory,
+          pubspec: pluginPubspec,
           package: packageWithName,
           constraint: PubspecDependency.fromDependency(e.value),
-          ownerPackageConfig: packageConfig,
+          ownerPubspec: projectPubspec,
+          ownerPackageConfig: projectPackageConfig,
         );
       }),
     );
@@ -517,8 +535,8 @@ class CustomLintProject {
     return CustomLintProject._(
       plugins: plugins.whereNotNull().toList(),
       directory: directory,
-      packageConfig: packageConfig,
-      pubspec: pubspec,
+      packageConfig: projectPackageConfig,
+      pubspec: projectPubspec,
     );
   }
 
@@ -535,6 +553,34 @@ class CustomLintProject {
   final List<CustomLintPlugin> plugins;
 }
 
+class _PackageAndPubspec {
+  _PackageAndPubspec({required this.package, required this.parentPubspec});
+
+  final Package package;
+  final Pubspec parentPubspec;
+}
+
+class _PackageNameAndPubspec {
+  _PackageNameAndPubspec({
+    required this.packageName,
+    required this.parentPubspec,
+  });
+
+  static Iterable<_PackageNameAndPubspec> fromPubspecDependencies(
+    Pubspec pubspec,
+  ) {
+    return pubspec.dependencies.keys.map(
+      (packageName) => _PackageNameAndPubspec(
+        packageName: packageName,
+        parentPubspec: pubspec,
+      ),
+    );
+  }
+
+  final String packageName;
+  final Pubspec parentPubspec;
+}
+
 /// A custom_lint plugin and its version constraints.
 @internal
 class CustomLintPlugin {
@@ -543,6 +589,7 @@ class CustomLintPlugin {
     required this.directory,
     required this.constraint,
     required this.ownerPackageConfig,
+    required this.ownerPubspec,
     required this.package,
     required this.pubspec,
   });
@@ -558,6 +605,9 @@ class CustomLintPlugin {
 
   /// The resolved pubspec.yaml of the plugin.
   final Pubspec pubspec;
+
+  /// The pubspec of the project which depends on this plugin.
+  final Pubspec ownerPubspec;
 
   /// The resolved package_config.json metadata of this plugin.
   ///
@@ -590,10 +640,13 @@ class CustomLintPlugin {
   /// ```dart
   /// final dependencies = _listTransitiveDependencies('/path/to/my/project').toList();
   /// ```
-  Iterable<Package> visitSelfAndTransitiveDependencies(
+  Iterable<_PackageAndPubspec> _visitSelfAndTransitiveDependencies(
     PubspecCache pubspecCache,
   ) sync* {
-    yield package;
+    yield _PackageAndPubspec(
+      package: package,
+      parentPubspec: ownerPubspec,
+    );
 
     // A map of of the packages defined in package_config.json for fast lookup.
     // This avoids an O(n^2) lookup in the loop below.
@@ -604,8 +657,9 @@ class CustomLintPlugin {
     // Only queue "dependencies" but no "dev_dependencies" or "dependency_overrides".
     // This is plugins are considered in to be in "release mode", in which case
     // dev only dependencies are not included.
-    final dependenciesToVisit =
-        ListQueue<String>.from(pubspec.dependencies.keys);
+    final dependenciesToVisit = ListQueue<_PackageNameAndPubspec>.of(
+      _PackageNameAndPubspec.fromPubspecDependencies(pubspec),
+    );
 
     /// The set of already visited pubspecs
     final visited = <String>{};
@@ -613,24 +667,30 @@ class CustomLintPlugin {
     while (dependenciesToVisit.isNotEmpty) {
       // Check if the dependency is already visited
       final dependency = dependenciesToVisit.removeFirst();
-      if (!visited.add(dependency)) continue;
+      if (!visited.add(dependency.packageName)) continue;
 
       // Emit the dependency's package metadata.
-      final package = packages[dependency];
+      final package = packages[dependency.packageName];
       if (package == null) {
-        throw UnresolvedTransitiveDependencyException._(dependency);
+        throw UnresolvedTransitiveDependencyException._(dependency.packageName);
       }
 
-      yield package;
-
-      /// Now queue the dependencies of the dependency to be emitted too.
       final packageDir = Directory.fromUri(package.root);
       // TODO test error
       final dependencyPubspec = pubspecCache(packageDir);
+
+      yield _PackageAndPubspec(
+        package: package,
+        parentPubspec: dependency.parentPubspec,
+      );
+
+      // Now queue the dependencies of the dependency to be emitted too.
       // Only queue "dependencies" but no "dev_dependencies" or "dependency_overrides".
       // This is plugins are considered in to be in "release mode", in which case
       // dev only dependencies are not included.
-      dependenciesToVisit.addAll(dependencyPubspec.dependencies.keys);
+      dependenciesToVisit.addAll(
+        _PackageNameAndPubspec.fromPubspecDependencies(dependencyPubspec),
+      );
     }
   }
 }
@@ -803,25 +863,32 @@ class SdkPubspecDependency extends PubspecDependency {
 }
 
 class _ConflictEntry {
-  _ConflictEntry(this.plugin, this.project, this.package);
+  _ConflictEntry(
+    this.plugin,
+    this.project,
+    this.packageMeta, {
+    required this.workingDirectory,
+  });
 
   final CustomLintPlugin plugin;
   final CustomLintProject project;
-  final Package package;
+  final _PackageAndPubspec packageMeta;
+  final Directory workingDirectory;
 
-  /// Whether [package] is the plugin itself.
-  bool get _isPlugin => package.name == plugin.name;
+  /// Whether [packageMeta] is the plugin itself.
+  late final bool _isPlugin = packageMeta.package.name == plugin.name;
 
-  String get _name => package.name;
+  String get _name => packageMeta.package.name;
 
   PubspecDependency _dependency() {
+    // Short path for when the constraint is readily available.
     if (_isPlugin) return plugin.constraint;
 
-    final dependency = plugin.pubspec.getDependency(package.name);
+    final dependency = packageMeta.parentPubspec.getDependency(_name);
     if (dependency == null) {
       // TODO test error
       throw ArgumentError(
-        'Plugin ${plugin.name} does not depend on package ${package.name}',
+        'Package ${packageMeta.parentPubspec.name} does not depend on package $_name\n${packageMeta.parentPubspec.dependencies}',
       );
     }
 
@@ -838,10 +905,11 @@ class _ConflictEntry {
   String buildConflictingMessage() {
     final trailingMessage = _isPlugin
         ? 'Used by project "${project.pubspec.name}" at ${project.directory.path}'
-        : 'Used by plugin "${plugin.name}" at ${plugin.directory.path} in the project "${project.pubspec.name}" at ${project.directory.path}';
+        : 'Used by plugin "${plugin.name}" at ${plugin.directory.relativeTo(workingDirectory)} '
+            'in the project "${project.pubspec.name}" at ${project.directory.relativeTo(workingDirectory)}';
     return '''
 - ${_dependency().buildShortDescription()}
-  Resolved with ${package.root.toFilePath()}
+  Resolved with ${packageMeta.package.root.toFilePath()}
   $trailingMessage''';
   }
 }
@@ -856,13 +924,15 @@ class ConflictingPackagesChecker {
   void addPluginPackage(
     CustomLintProject project,
     CustomLintPlugin plugin,
-    Package package,
-  ) {
+    _PackageAndPubspec package, {
+    required Directory workingDirectory,
+  }) {
     _entries.add(
       _ConflictEntry(
         plugin,
         project,
         package,
+        workingDirectory: workingDirectory,
       ),
     );
   }
@@ -873,8 +943,9 @@ class ConflictingPackagesChecker {
     // Group packages by name and collect all unique roots,
     // since we're using a set
     for (final entry in _entries) {
-      final entriesForName = packageNameRootMap[entry.package.name] ??= {};
-      entriesForName.add(entry.package.root);
+      final entriesForName =
+          packageNameRootMap[entry.packageMeta.package.name] ??= {};
+      entriesForName.add(entry.packageMeta.package.root);
     }
 
     // Find packages with more than one root
@@ -910,7 +981,9 @@ class PackageVersionConflictError extends Error {
       _packagesWithConflictingVersions.map(
         (packageName) => MapEntry(
           packageName,
-          _entries.where((entry) => entry.package.name == packageName).toList(),
+          _entries
+              .where((entry) => entry.packageMeta.package.name == packageName)
+              .toList(),
         ),
       ),
     );
@@ -968,7 +1041,7 @@ PackageVersionConflictError – Some dependencies with conflicting versions were
 
       final conflictingPackageEntries = conflictingEntriesForProject.value;
       final conflictingPackagesNames = conflictingPackageEntries
-          .map((entry) => entry.package.name)
+          .map((entry) => entry.packageMeta.package.name)
           .join(' ');
 
       errorMessageBuilder

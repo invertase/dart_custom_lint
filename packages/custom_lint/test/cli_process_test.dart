@@ -7,6 +7,7 @@ import 'package:test/test.dart';
 
 import 'cli_test.dart';
 import 'create_project.dart';
+import 'peer_project_meta.dart';
 import 'src/workspace_test.dart';
 
 String trimDependencyOverridesWarning(Object? input) {
@@ -19,6 +20,12 @@ String trimDependencyOverridesWarning(Object? input) {
 }
 
 void main() {
+  final customLintBinPath = p.join(
+    PeerProjectMeta.current.customLintPath,
+    'bin',
+    'custom_lint.dart',
+  );
+
   // These tests may take longer than the default timeout
   // due to them being run in separate processes and VMs.
   const timeout = Timeout(Duration(minutes: 1));
@@ -42,7 +49,7 @@ void main() {
 
         final process = await Process.run(
           'dart',
-          ['run', 'custom_lint', '.'],
+          [customLintBinPath, '.'],
           workingDirectory: app.path,
           stdoutEncoding: utf8,
           stderrEncoding: utf8,
@@ -72,7 +79,7 @@ void main() {
 
         final process = await Process.run(
           'dart',
-          ['run', 'custom_lint', '.'],
+          [customLintBinPath, '.'],
           workingDirectory: app.path,
         );
 
@@ -121,7 +128,7 @@ void main() {
 
         final process = await Process.run(
           'dart',
-          ['run', 'custom_lint', '.'],
+          [customLintBinPath, '.'],
           workingDirectory: app.path,
         );
 
@@ -150,9 +157,7 @@ No .dart_tool/package_config.json found at $missingPackageConfig. Make sure to r
           parent: workspace,
           name: 'test_lint',
           main: oyPluginSource,
-          extraDependencies: {
-            'dep': '{"path": "${workspace.dir('dep').path}"}'
-          },
+          extraDependencies: {'dep': 'any'},
         );
 
         // We define two projects with different dependencies
@@ -161,12 +166,14 @@ No .dart_tool/package_config.json found at $missingPackageConfig. Make sure to r
           name: 'test_app',
           source: {'lib/main.dart': 'void fn() {}'},
           plugins: {'test_lint': plugin.uri},
-          createDependencyOverrides: true,
-          // Adding "dep" to app's package_config is redundant because
-          // "dart run" unfortunately runs "pub get", which will override
-          // the manually written package_config.json file.
           extraPackageConfig: {'dep': workspace.dir('dep').uri},
         );
+
+        print('workspace: ${workspace.path}');
+        print('plugin: ${plugin.path}');
+        print('app: ${app.path}');
+        print('${plugin.relativeTo(app)}');
+        print('${app.relativeTo(plugin)}');
 
         final app2 = createLintUsage(
           // Add the second project inside the first one, such that
@@ -176,32 +183,33 @@ No .dart_tool/package_config.json found at $missingPackageConfig. Make sure to r
           source: {'lib/foo.dart': 'void fn() {}'},
           createDependencyOverrides: true,
           plugins: {'test_lint': plugin.uri},
-          // Override the shared dependency to cause a conflict
-          extraDependencyOverrides: {
-            'dep': '{"path": "${workspace.dir('dep2').path}"}'
-          },
           extraPackageConfig: {'dep': workspace.dir('dep2').uri},
         );
 
-        final process = await Process.run(
+        final process = await Process.start(
           workingDirectory: app.path,
           'dart',
-          ['run', 'custom_lint', '.'],
+          [customLintBinPath],
         );
 
-        expect(process.stdout, isEmpty);
+        expect(process.stdout, emitsDone);
         expect(
-          trimDependencyOverridesWarning(process.stderr),
+          await process.stderr
+              .map(utf8.decode)
+              .map(trimDependencyOverridesWarning)
+              .join('\n'),
           '''
+The request analysis.setContextRoots failed with the following error:
+RequestErrorCode.PLUGIN_ERROR
 PackageVersionConflictError – Some dependencies with conflicting versions were identified:
 
 Package dep:
 - Hosted with version constraint: any
-  Resolved with ${workspace.dir('transitive_dep').path}/
-  Used by plugin "test_lint" at ${plugin.path} in the project "test_app" at ${app.path}
+  Resolved with ${workspace.dir('dep').path}/
+  Used by plugin "test_lint" at ${plugin.path}/ in the project "test_app" at ${app.path}
 - Hosted with version constraint: any
-  Resolved with ${workspace.dir('transitive_dep2').path}/
-  Used by plugin "test_lint" at ${plugin.path} in the project "test_app2" at ${app2.path}
+  Resolved with ${workspace.dir('dep2').path}/
+  Used by plugin "test_lint" at ${plugin.path}/ in the project "test_app2" at ${app2.path}
 
 $conflictExplanation
 You could run the following commands to try fixing this:
@@ -212,7 +220,7 @@ cd ${app2.path}
 dart pub upgrade dep
 ''',
         );
-        expect(process.exitCode, 1);
+        expect(process.exitCode, completion(1));
       },
     );
   });
