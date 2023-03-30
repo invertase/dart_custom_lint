@@ -264,12 +264,29 @@ Directory createTemporaryDirectory() {
 }
 
 extension on Directory {
-  File file(String name) => File(p.join(path, name));
-  Directory dir(String name) => Directory(p.join(path, name));
+  File file(
+    String name, [
+    String? name2,
+    String? name3,
+    String? name4,
+    String? name5,
+    String? name6,
+  ]) =>
+      File(p.join(path, name, name2, name3, name4, name5, name6));
+
+  Directory dir(
+    String name, [
+    String? name2,
+    String? name3,
+    String? name4,
+    String? name5,
+    String? name6,
+  ]) =>
+      Directory(p.join(path, name, name2, name3, name4, name5, name6));
 
   File get analysisOptions => file('analysis_options.yaml');
   File get pubspec => file('pubspec.yaml');
-  File get packageConfig => dir('.dart_tool').file('package_config.json');
+  File get packageConfig => file('.dart_tool', 'package_config.json');
 }
 
 void writeFile(File file, String content) {
@@ -353,14 +370,14 @@ void main() {
         const packageName = 'foo';
         final packageDir = dir.dir('packages/$packageName');
         writeFile(
-          packageDir.dir('lib').file('other.yaml'),
+          packageDir.file('lib', 'other.yaml'),
           'foo: bar',
         );
 
         const package2Name = 'bar';
         final package2Dir = dir.dir('packages/$package2Name');
         writeFile(
-          package2Dir.dir('lib').dir('src').file('file.yaml'),
+          package2Dir.file('lib', 'src', 'file.yaml'),
           'include: package:$packageName/other.yaml',
         );
 
@@ -487,12 +504,12 @@ void main() {
       final analysisOptions = dir.analysisOptions;
       writeFile(analysisOptions, 'include: dir/included.yaml');
 
-      final includedFile = dir.dir('dir').file('included.yaml');
+      final includedFile = dir.file('dir', 'included.yaml');
       // The relative path is based on the location of includedFile
       // rather than "analysisOptions".
       writeFile(includedFile, 'include: ../dir2/other.yaml');
 
-      final otherFile = dir.dir('dir2').file('other.yaml');
+      final otherFile = dir.file('dir2', 'other.yaml');
       writeFile(otherFile, 'baz: qux');
 
       final stream = visitAnalysisOptionAndIncludes(analysisOptions);
@@ -594,7 +611,7 @@ void main() {
         );
         expect(
           customLintWorkspace.contextRoots.first.exclude,
-          [workspace.dir('package').dir('subpackage').path],
+          [workspace.dir('package', 'subpackage').path],
         );
         expect(
           customLintWorkspace.contextRoots.first.optionsFile,
@@ -603,7 +620,7 @@ void main() {
 
         expect(
           customLintWorkspace.contextRoots[1].root,
-          workspace.dir('package').dir('subpackage').path,
+          workspace.dir('package', 'subpackage').path,
         );
         expect(customLintWorkspace.contextRoots[1].exclude, isEmpty);
         expect(
@@ -730,7 +747,7 @@ void main() {
           'throws MissingPackageConfigError if package has a pubspec but no .dart_tool/package_config.json',
           () async {
         final workspace = await createSimpleWorkspace(['package']);
-        workspace.dir('package').dir('.dart_tool').deleteSync(recursive: true);
+        workspace.dir('package', '.dart_tool').deleteSync(recursive: true);
 
         expect(
           () => fromContextRootsFromPaths([
@@ -1184,6 +1201,67 @@ void main() {
     });
 
     group('createPluginHostDirectory', () {
+      test(
+          'should create a package_config.json with no package duplicates if a dependency is used by multiple plugins',
+          () async {});
+
+      test(
+          'should create a package_config.json listing all the plugins and their transitive dependencies only',
+          () async {
+        final workspace =
+            await createSimpleWorkspace(withPackageConfig: false, [
+          Pubspec(
+            'dep',
+            dependencies: {
+              'custom_lint_builder': HostedDependency(),
+              'transitive': HostedDependency(),
+            },
+            devDependencies: {'dev_transitive': HostedDependency()},
+            dependencyOverrides: {'dev_transitive': HostedDependency()},
+          ),
+          'transitive',
+          'dev_transitive',
+          Pubspec(
+            'dep2',
+            dependencies: {
+              'custom_lint_builder': HostedDependency(),
+              'transitive2': HostedDependency(),
+            },
+            devDependencies: {'dev_transitive2': HostedDependency()},
+            dependencyOverrides: {'dev_transitive2': HostedDependency()},
+          ),
+          'transitive2',
+          'dev_transitive2',
+          'custom_lint_builder',
+          Pubspec('app', devDependencies: {'dep': HostedDependency()}),
+          Pubspec('app2', devDependencies: {'dep': HostedDependency()}),
+        ]);
+
+        enableCustomLint(workspace.dir('app'));
+        enableCustomLint(workspace.dir('app2'));
+
+        writeSimplePackageConfig(workspace.dir('app'), {
+          'dep': '../dep',
+          'custom_lint_builder': '../custom_lint_builder',
+          'transitive': '../transitive',
+          'dev_transitive': '../dev_transitive',
+        });
+        writeSimplePackageConfig(workspace.dir('app2'), {
+          'dep': '../dep',
+          'custom_lint_builder': '../custom_lint_builder',
+          'transitive2': '../transitive2',
+          'dev_transitive2': '../dev_transitive2',
+        });
+
+        final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+          [workspace.path],
+          workingDirectory: workspace,
+        );
+
+        final pluginHostDirectory =
+            await customLintWorkspace.createPluginHostDirectory();
+      });
+
       test('should NOT throw error when there are no conflicting packages',
           () async {
         final workspace =
