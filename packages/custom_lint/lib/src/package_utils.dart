@@ -6,12 +6,36 @@ import 'package:pubspec_parse/pubspec_parse.dart';
 
 /// Utilities to help dealing with paths to common package files.
 extension PackageIOUtils on Directory {
-  /// The pubspec file of this package.
-  File get pubspec => File(join(path, 'pubspec.yaml'));
+  /// Creates a child [File] from a list of path segments.
+  File file(
+    String name, [
+    String? name2,
+    String? name3,
+    String? name4,
+    String? name5,
+    String? name6,
+  ]) =>
+      File(join(path, name, name2, name3, name4, name5, name6));
 
-  /// The package config file of this package.
-  File get packageConfig =>
-      File(join(path, '.dart_tool', 'package_config.json'));
+  /// Creates a child [Directory] from a list of path segments.
+  Directory dir(
+    String name, [
+    String? name2,
+    String? name3,
+    String? name4,
+    String? name5,
+    String? name6,
+  ]) =>
+      Directory(join(path, name, name2, name3, name4, name5, name6));
+
+  /// The `analysis_options.yaml` file.
+  File get analysisOptions => file('analysis_options.yaml');
+
+  /// The `pubspec.yaml` file.
+  File get pubspec => file('pubspec.yaml');
+
+  /// The `.dart_tool/package_config.json` file.
+  File get packageConfig => file('.dart_tool', 'package_config.json');
 }
 
 /// Try parsing the pubspec of the given directory.

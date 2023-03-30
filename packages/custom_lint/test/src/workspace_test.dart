@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:custom_lint/src/package_utils.dart';
 import 'package:custom_lint/src/workspace.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
@@ -261,32 +262,6 @@ Directory createTemporaryDirectory() {
   final dir = Directory.systemTemp.createTempSync('custom_lint_test');
   addTearDown(() => dir.deleteSync(recursive: true));
   return dir;
-}
-
-extension on Directory {
-  File file(
-    String name, [
-    String? name2,
-    String? name3,
-    String? name4,
-    String? name5,
-    String? name6,
-  ]) =>
-      File(p.join(path, name, name2, name3, name4, name5, name6));
-
-  Directory dir(
-    String name, [
-    String? name2,
-    String? name3,
-    String? name4,
-    String? name5,
-    String? name6,
-  ]) =>
-      Directory(p.join(path, name, name2, name3, name4, name5, name6));
-
-  File get analysisOptions => file('analysis_options.yaml');
-  File get pubspec => file('pubspec.yaml');
-  File get packageConfig => file('.dart_tool', 'package_config.json');
 }
 
 void writeFile(File file, String content) {
@@ -1203,7 +1178,81 @@ void main() {
     group('createPluginHostDirectory', () {
       test(
           'should create a package_config.json with no package duplicates if a dependency is used by multiple plugins',
-          () async {});
+          () async {
+        final workspace =
+            await createSimpleWorkspace(withPackageConfig: false, [
+          Pubspec(
+            'dep',
+            dependencies: {
+              'custom_lint_builder': HostedDependency(),
+              'transitive': HostedDependency(),
+            },
+          ),
+          'transitive',
+          Pubspec(
+            'dep2',
+            dependencies: {
+              'custom_lint_builder': HostedDependency(),
+              'transitive': HostedDependency(),
+            },
+          ),
+          'custom_lint_builder',
+          Pubspec('app', devDependencies: {'dep': HostedDependency()}),
+          Pubspec('app2', devDependencies: {'dep2': HostedDependency()}),
+        ]);
+
+        enableCustomLint(workspace.dir('app'));
+        enableCustomLint(workspace.dir('app2'));
+
+        writeSimplePackageConfig(workspace.dir('app'), {
+          'dep': '../dep',
+          'custom_lint_builder': '../custom_lint_builder',
+          'transitive': '../transitive',
+        });
+        writeSimplePackageConfig(workspace.dir('app2'), {
+          'dep2': '../dep2',
+          'custom_lint_builder': '../custom_lint_builder',
+          'transitive': '../transitive',
+        });
+
+        final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+          [workspace.path],
+          workingDirectory: workspace,
+        );
+
+        final pluginHostDirectory =
+            await customLintWorkspace.createPluginHostDirectory();
+        final packageConfig = parsePackageConfigSync(pluginHostDirectory);
+
+        expect(packageConfig.packages, hasLength(4));
+        expect(
+          packageConfig.packages.map((p) => p.name),
+          unorderedEquals([
+            'custom_lint_builder',
+            'dep',
+            'dep2',
+            'transitive',
+          ]),
+        );
+        expect(
+          packageConfig.packages
+              .firstWhere((p) => p.name == 'custom_lint_builder')
+              .root,
+          workspace.dir('custom_lint_builder').uri,
+        );
+        expect(
+          packageConfig.packages.firstWhere((p) => p.name == 'dep').root,
+          workspace.dir('dep').uri,
+        );
+        expect(
+          packageConfig.packages.firstWhere((p) => p.name == 'dep2').root,
+          workspace.dir('dep2').uri,
+        );
+        expect(
+          packageConfig.packages.firstWhere((p) => p.name == 'transitive').root,
+          workspace.dir('transitive').uri,
+        );
+      });
 
       test(
           'should create a package_config.json listing all the plugins and their transitive dependencies only',
@@ -1234,7 +1283,7 @@ void main() {
           'dev_transitive2',
           'custom_lint_builder',
           Pubspec('app', devDependencies: {'dep': HostedDependency()}),
-          Pubspec('app2', devDependencies: {'dep': HostedDependency()}),
+          Pubspec('app2', devDependencies: {'dep2': HostedDependency()}),
         ]);
 
         enableCustomLint(workspace.dir('app'));
@@ -1247,7 +1296,7 @@ void main() {
           'dev_transitive': '../dev_transitive',
         });
         writeSimplePackageConfig(workspace.dir('app2'), {
-          'dep': '../dep',
+          'dep2': '../dep2',
           'custom_lint_builder': '../custom_lint_builder',
           'transitive2': '../transitive2',
           'dev_transitive2': '../dev_transitive2',
@@ -1260,6 +1309,43 @@ void main() {
 
         final pluginHostDirectory =
             await customLintWorkspace.createPluginHostDirectory();
+        final packageConfig = parsePackageConfigSync(pluginHostDirectory);
+
+        expect(packageConfig.packages, hasLength(5));
+        expect(
+          packageConfig.packages.map((p) => p.name),
+          unorderedEquals([
+            'custom_lint_builder',
+            'dep',
+            'dep2',
+            'transitive',
+            'transitive2'
+          ]),
+        );
+        expect(
+          packageConfig.packages
+              .firstWhere((p) => p.name == 'custom_lint_builder')
+              .root,
+          workspace.dir('custom_lint_builder').uri,
+        );
+        expect(
+          packageConfig.packages.firstWhere((p) => p.name == 'dep').root,
+          workspace.dir('dep').uri,
+        );
+        expect(
+          packageConfig.packages.firstWhere((p) => p.name == 'dep2').root,
+          workspace.dir('dep2').uri,
+        );
+        expect(
+          packageConfig.packages.firstWhere((p) => p.name == 'transitive').root,
+          workspace.dir('transitive').uri,
+        );
+        expect(
+          packageConfig.packages
+              .firstWhere((p) => p.name == 'transitive2')
+              .root,
+          workspace.dir('transitive2').uri,
+        );
       });
 
       test('should NOT throw error when there are no conflicting packages',

@@ -249,6 +249,7 @@ class CustomLintWorkspace {
     // We still want to visit the dependencies of the package multiple times,
     // as the resolved package in the project's package_config.json might be different.
     final pubspecCache = PubspecCache();
+    final visitedPackages = <String>{};
 
     Iterable<Package> visitPluginsAndDependencies() sync* {
       for (final project in projects) {
@@ -263,7 +264,13 @@ class CustomLintWorkspace {
               plugin,
               package,
             );
-            yield package;
+
+            /// Only add a package in the package_config.json if it was not already added.
+            /// We do not care about version conflicts here and assume that the
+            /// previously added package is the correct one.
+            /// Version conflicts will be checked later with
+            /// [ConflictingPackagesChecker.throwErrorIfConflictingPackages].
+            if (visitedPackages.add(package.name)) yield package;
           }
         }
       }
