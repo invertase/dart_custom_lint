@@ -32,5 +32,10 @@ Future<void> entrypoint([List<String> args = const []]) async {
 }
 
 void main([List<String> args = const []]) async {
-  await entrypoint(args);
+  try {
+    await entrypoint(args);
+  } finally {
+    // TODO figure out why this exit is necessary
+    exit(exitCode);
+  }
 }
