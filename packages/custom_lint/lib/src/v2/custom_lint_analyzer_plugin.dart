@@ -71,7 +71,7 @@ class CustomLintServer {
   final CustomLintDelegate delegate;
 
   /// The interface for discussing with analyzer_plugin
-  late final AnalyzerPluginClientChannel analyzerPluginClientChannel;
+  late final AnalyzerPluginClientChannel _analyzerPluginClientChannel;
 
   /// Whether plugins should be started in watch mode
   final bool watchMode;
@@ -87,8 +87,8 @@ class CustomLintServer {
   final _runner = PendingOperation();
 
   void _start(SendPort sendPort) {
-    analyzerPluginClientChannel = JsonSendPortChannel(sendPort);
-    _requestSubscription = analyzerPluginClientChannel.messages
+    _analyzerPluginClientChannel = JsonSendPortChannel(sendPort);
+    _requestSubscription = _analyzerPluginClientChannel.messages
         .map((e) => e! as Map<String, Object?>)
         .map(Request.fromJson)
         .listen(_handleRequest);
@@ -117,7 +117,7 @@ class CustomLintServer {
   Future<void> _handleRequest(Request request) async {
     final requestTime = DateTime.now().millisecondsSinceEpoch;
     void sendResponse({ResponseResult? data, RequestError? error}) {
-      analyzerPluginClientChannel.sendResponse(
+      _analyzerPluginClientChannel.sendResponse(
         requestID: request.id,
         requestTime: requestTime,
         data: data,
@@ -131,11 +131,10 @@ class CustomLintServer {
         handleAnalysisSetContextRoots: _handleAnalysisSetContextRoots,
         handlePluginShutdown: () async {
           try {
-            await _handlePluginShutdown();
             sendResponse(data: PluginShutdownResult());
             return null;
           } finally {
-            analyzerPluginClientChannel.close();
+            await close();
           }
         },
         orElse: () async {
@@ -143,7 +142,7 @@ class CustomLintServer {
             final clientChannel = await _clientChannel.first;
             final response =
                 await clientChannel.sendAnalyzerPluginRequest(request);
-            analyzerPluginClientChannel.sendJson(response.toJson());
+            _analyzerPluginClientChannel.sendJson(response.toJson());
             return null;
           });
         },
@@ -178,7 +177,7 @@ class CustomLintServer {
   /// Logging the error and notifying the analyzer server
   Future<void> handleUncaughtError(Object error, StackTrace stackTrace) =>
       _runner.run(() async {
-        analyzerPluginClientChannel.sendJson(
+        _analyzerPluginClientChannel.sendJson(
           PluginErrorParams(false, error.toString(), stackTrace.toString())
               .toNotification()
               .toJson(),
@@ -192,6 +191,23 @@ class CustomLintServer {
               await _contextRoots.first.then((value) => value.roots),
         );
       });
+
+  /// A life-cycle for when the server failed to start the plugins.
+  Future<void> handlePluginInitializationFail() async {
+    final contextRoots = await _contextRoots.first;
+
+    delegate.pluginInitializationFail(
+      this,
+      'Failed to start plugins',
+      allContextRoots: contextRoots.roots,
+    );
+
+    _analyzerPluginClientChannel.sendJson(
+      PluginErrorParams(true, 'Failed to start plugins', '')
+          .toNotification()
+          .toJson(),
+    );
+  }
 
   /// A print was detected. This will redirect it to a log file.
   Future<void> handlePrint(
@@ -217,26 +233,17 @@ class CustomLintServer {
         }
       });
 
-  Future<void> _handlePluginShutdown() async {
-    // TODO send shutdown to process
-
-    // Waiting for context root to complete, otherwise some async operation
-    // might still be pending after the shutdown
-    await _contextRoots.first;
-
-    await _runner.wait();
-
-    // The channel will be automatically closed on shutdown.
-    // Closing it manually would prevent the follow-up logic to send a
-    // response to the shutdown request.
-    await _clientChannel.first.then((clientChannel) => clientChannel.close());
-
-    await Future.wait([
-      _clientChannel.close(),
-      _requestSubscription.cancel(),
-    ]);
-
-    await _runner.wait();
+  /// Stops the server, closing all channels.
+  Future<void> close() async {
+    try {
+      await Future.wait([
+        _clientChannel.first.then((clientChannel) => clientChannel.close()),
+        _clientChannel.close(),
+        _requestSubscription.cancel(),
+      ]);
+    } finally {
+      _analyzerPluginClientChannel.close();
+    }
   }
 
   PluginVersionCheckResult _handlePluginVersionCheck(
@@ -298,12 +305,13 @@ class CustomLintServer {
   void _handleEvent(CustomLintEvent event) {
     event.map(
       analyzerPluginNotification: (event) async {
-        analyzerPluginClientChannel.sendJson(event.notification.toJson());
+        _analyzerPluginClientChannel.sendJson(event.notification.toJson());
 
         final notification = event.notification;
         if (notification.event == PLUGIN_NOTIFICATION_ERROR) {
           final error = PluginErrorParams.fromNotification(notification);
-          analyzerPluginClientChannel.sendJson(error.toNotification().toJson());
+          _analyzerPluginClientChannel
+              .sendJson(error.toNotification().toJson());
           delegate.pluginError(
             this,
             error.message,
@@ -315,7 +323,7 @@ class CustomLintServer {
         }
       },
       error: (event) async {
-        analyzerPluginClientChannel.sendJson(
+        _analyzerPluginClientChannel.sendJson(
           PluginErrorParams(false, event.message, event.stackTrace)
               .toNotification()
               .toJson(),

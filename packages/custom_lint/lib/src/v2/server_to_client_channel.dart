@@ -207,17 +207,7 @@ void main(List<String> args) async {
           // As such, the process correctly started
           if (!running) return;
 
-          _server.delegate.pluginInitializationFail(
-            _server,
-            'Failed to start plugins',
-            allContextRoots: _contextRoots.roots,
-          );
-
-          _server.analyzerPluginClientChannel.sendJson(
-            PluginErrorParams(true, 'Failed to start plugins', '')
-                .toNotification()
-                .toJson(),
-          );
+          await _server.handlePluginInitializationFail();
 
           throw StateError('Failed to start the plugins.');
         }),
@@ -229,6 +219,8 @@ void main(List<String> args) async {
 
   @override
   Future<void> close() async {
+    // TODO send shutdown to process
+
     await Future.wait([
       if (_tempDirectory != null) _tempDirectory!.delete(recursive: true),
       _serverSocket.then((value) => value.close()),
