@@ -117,13 +117,11 @@ class CustomLintServer {
   Future<void> _handleRequest(Request request) async {
     final requestTime = DateTime.now().millisecondsSinceEpoch;
     void sendResponse({ResponseResult? data, RequestError? error}) {
-      analyzerPluginClientChannel.sendJson(
-        Response(
-          request.id,
-          requestTime,
-          result: data?.toJson(),
-          error: error,
-        ).toJson(),
+      analyzerPluginClientChannel.sendResponse(
+        requestID: request.id,
+        requestTime: requestTime,
+        data: data,
+        error: error,
       );
     }
 

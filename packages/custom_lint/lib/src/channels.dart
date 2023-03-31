@@ -3,6 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:analyzer_plugin/protocol/protocol.dart';
+import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+// ignore: implementation_imports
+import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
+    show ResponseResult;
+
 /// An interface for interacting with analyzer_plugin
 abstract class AnalyzerPluginClientChannel {
   /// The list of messages sent by analyzer_plugin.
@@ -11,12 +17,29 @@ abstract class AnalyzerPluginClientChannel {
   /// Sends a JSON object to the analyzer_plugin server
   void sendJson(Map<String, Object?> json);
 
+  /// Sends a [Response] to the analyzer_plugin server.
+  void sendResponse({
+    ResponseResult? data,
+    RequestError? error,
+    required String requestID,
+    required int requestTime,
+  }) {
+    sendJson(
+      Response(
+        requestID,
+        requestTime,
+        result: data?.toJson(),
+        error: error,
+      ).toJson(),
+    );
+  }
+
   /// Releases the resources
   void close();
 }
 
 /// An interface for discussing with analyzer_plugin using a [SendPort]
-class JsonSendPortChannel implements AnalyzerPluginClientChannel {
+class JsonSendPortChannel extends AnalyzerPluginClientChannel {
   /// An interface for discussing with analyzer_plugin using a [SendPortƒ]
   JsonSendPortChannel(this._sendPort) : _receivePort = ReceivePort() {
     _sendPort.send(_receivePort.sendPort);
@@ -38,7 +61,7 @@ class JsonSendPortChannel implements AnalyzerPluginClientChannel {
 }
 
 /// An interface for discussing with analyzer_plugin using web sockets
-class JsonSocketChannel implements AnalyzerPluginClientChannel {
+class JsonSocketChannel extends AnalyzerPluginClientChannel {
   /// An interface for discussing with analyzer_plugin using web sockets
   JsonSocketChannel(this._socket);
 
