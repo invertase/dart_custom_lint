@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
@@ -63,12 +64,22 @@ class JsonSendPortChannel extends AnalyzerPluginClientChannel {
 /// An interface for discussing with analyzer_plugin using web sockets
 class JsonSocketChannel extends AnalyzerPluginClientChannel {
   /// An interface for discussing with analyzer_plugin using web sockets
-  JsonSocketChannel(this._socket);
+  JsonSocketChannel(this._socket) {
+    // Pipe the socket messages in a broadcast stream
+    _subscription = Stream.fromFuture(_socket).asyncExpand((e) => e).listen(
+          _controller.add,
+          onError: _controller.addError,
+          onDone: _controller.close,
+        );
+  }
 
-  final Socket _socket;
+  final Future<Socket> _socket;
+
+  final _controller = StreamController<Uint8List>.broadcast();
+  late StreamSubscription<Object?> _subscription;
 
   @override
-  late final Stream<Object?> messages = _socket
+  late final Stream<Object?> messages = _controller.stream
       .map(utf8.decode)
 
       /// Sometimes the socket receives multiple messages at once,
@@ -80,12 +91,13 @@ class JsonSocketChannel extends AnalyzerPluginClientChannel {
           // a split the last string will be "". Removing it
           ..removeLast(),
       )
-      .map<Object?>(jsonDecode)
-      .asBroadcastStream();
+      .map<Object?>(jsonDecode);
 
   @override
-  void sendJson(Map<String, Object?> json) {
-    _socket.add(
+  Future<void> sendJson(Map<String, Object?> json) async {
+    // ignore: close_sinks
+    final socket = await _socket;
+    socket.add(
       utf8.encode(
         // Adding a trailing \n to handle the scenario where a Socket
         // merges multiple messages in one.
@@ -96,5 +108,10 @@ class JsonSocketChannel extends AnalyzerPluginClientChannel {
   }
 
   @override
-  void close() {}
+  Future<void> close() async {
+    await Future.wait([
+      _subscription.cancel(),
+      _controller.close(),
+    ]);
+  }
 }

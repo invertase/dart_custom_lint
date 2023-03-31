@@ -55,42 +55,41 @@ Future<void> runSocket(
   required int port,
   required bool includeBuiltInLints,
 }) async {
-  final client = Completer<CustomLintPluginClient>();
+  late Future<CustomLintPluginClient> client;
 
   await runZonedGuarded(
-    () async {
+    () => client = Future(() async {
       // ignore: close_sinks, connection stays open until the plugin is killed
       final socket = await Socket.connect('localhost', port);
-      final socketChannel = JsonSocketChannel(socket);
+      final socketChannel = JsonSocketChannel(Future.value(socket));
       final registeredPlugins = <String, PluginBase>{};
-      client.complete(
-        CustomLintPluginClient(
-          includeBuiltInLints: includeBuiltInLints,
-          _SocketCustomLintClientChannel(
-            socketChannel,
-            registeredPlugins,
-            onDone: () {
-              // If the server somehow quit, forcibly stop the client.
-              // In theory it should stop naturally, but let's make sure of this to prevent leaks.
-              // Tried with `socket.done.then` but it somehow was never invoked
-              exit(0);
-            },
-          ),
-        ),
-      );
 
       for (final main in pluginMains.entries) {
         Zone.current.runGuarded(
           () => registeredPlugins[main.key] = main.value(),
         );
       }
-    },
+
+      return CustomLintPluginClient(
+        includeBuiltInLints: includeBuiltInLints,
+        _SocketCustomLintClientChannel(
+          socketChannel,
+          registeredPlugins,
+          onDone: () {
+            // If the server somehow quit, forcibly stop the client.
+            // In theory it should stop naturally, but let's make sure of this to prevent leaks.
+            // Tried with `socket.done.then` but it somehow was never invoked
+            exit(0);
+          },
+        ),
+      );
+    }),
     (error, stackTrace) {
-      client.future.then((value) => value.handleError(error, stackTrace));
+      client.then((value) => value.handleError(error, stackTrace));
     },
     zoneSpecification: ZoneSpecification(
       print: (self, parent, zone, line) {
-        client.future.then((value) => value.handlePrint(line));
+        client.then((value) => value.handlePrint(line));
       },
     ),
   );

@@ -4,9 +4,7 @@ import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-import 'package:async/async.dart';
 import 'package:path/path.dart';
-import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
 
 import '../channels.dart';
@@ -15,7 +13,7 @@ import 'custom_lint_analyzer_plugin.dart';
 import 'protocol.dart';
 
 Future<int> _findPossiblyUnusedPort() {
-  return _SocketCustomLintServerToClientChannel._createServerSocket()
+  return SocketCustomLintServerToClientChannel._createServerSocket()
       .then((value) => value.port);
 }
 
@@ -37,48 +35,59 @@ Future<T> _asyncRetry<T>(
   }
 }
 
-class _SocketCustomLintServerToClientChannel
-    implements CustomLintServerToClientChannel {
-  _SocketCustomLintServerToClientChannel(
+/// An interface for communicating with the plugins over a [Socket].
+class SocketCustomLintServerToClientChannel {
+  SocketCustomLintServerToClientChannel._(
     this._server,
+    this._serverSocket,
+    this._socket,
     this._version,
-    this._contextRoots, {
-    required this.workingDirectory,
-  }) : _serverSocket = _createServerSocket() {
-    _socket = _serverSocket.then(
-      (server) async {
-        // ignore: close_sinks
-        final socket = await server.firstOrNull;
-        if (socket == null) return null;
-        return JsonSocketChannel(socket);
-      },
+    this._contextRoots,
+    this._workingDirectory,
+  ) : _channel = JsonSocketChannel(_socket);
+
+  /// Starts a server socket and exposes a way to communicate with potential clients.
+  static Future<SocketCustomLintServerToClientChannel> create(
+    CustomLintServer server,
+    PluginVersionCheckParams version,
+    AnalysisSetContextRootsParams contextRoots, {
+    required Directory workingDirectory,
+  }) async {
+    final serverSocket = await _createServerSocket();
+
+    return SocketCustomLintServerToClientChannel._(
+      server,
+      serverSocket,
+      // Voluntarily thow if no client connected
+      serverSocket.first,
+      version,
+      contextRoots,
+      workingDirectory,
     );
   }
 
   Directory? _tempDirectory;
 
-  final Directory workingDirectory;
+  final Future<Socket> _socket;
+  final JsonSocketChannel _channel;
+  final Directory _workingDirectory;
   final CustomLintServer _server;
   final PluginVersionCheckParams _version;
-  final Future<ServerSocket> _serverSocket;
-  late final Future<JsonSocketChannel?> _socket;
+  final ServerSocket _serverSocket;
   late final Future<Process> _processFuture;
 
   AnalysisSetContextRootsParams _contextRoots;
 
-  late final Stream<CustomLintMessage> _messages = Stream.fromFuture(_socket)
-      .whereNotNull()
-      .asyncExpand((e) => e.messages)
+  late final Stream<CustomLintMessage> _messages = _channel.messages
       .map((e) => e! as Map<String, Object?>)
-      .map(CustomLintMessage.fromJson)
-      .asBroadcastStream();
+      .map(CustomLintMessage.fromJson);
 
   late final Stream<CustomLintResponse> _responses = _messages
       .where((msg) => msg is CustomLintMessageResponse)
       .cast<CustomLintMessageResponse>()
       .map((e) => e.response);
 
-  @override
+  /// The events sent by the client.
   late final Stream<CustomLintEvent> events = _messages
       .where((msg) => msg is CustomLintMessageEvent)
       .cast<CustomLintMessageEvent>()
@@ -92,7 +101,39 @@ class _SocketCustomLintServerToClientChannel
     }
   }
 
-  @override
+  /// Initializes and waits for the client to start
+  Future<void> init() async {
+    _processFuture = _startProcess();
+    final process = await _processFuture;
+
+    var out = process.stdout.map(utf8.decode);
+    // Let's not log the VM service prints unless in watch mode
+    if (!_server.watchMode) {
+      out = out.skipWhile(
+        (element) =>
+            element.startsWith('The Dart VM service is listening on') ||
+            element.startsWith(
+              'The Dart DevTools debugger and profiler is available at:',
+            ),
+      );
+    }
+
+    out.listen((event) => _server.handlePrint(event, isClientMessage: true));
+    process.stderr
+        .map(utf8.decode)
+        .listen((e) => _server.handleUncaughtError(e, StackTrace.empty));
+
+    // Checking process failure _after_ piping stdout/stderr to the log files.
+    // This is so that if client failed to boot, logs in it should still be available
+    await _checkInitializationFail(process);
+
+    await Future.wait([
+      sendAnalyzerPluginRequest(_version.toRequest(const Uuid().v4())),
+      sendAnalyzerPluginRequest(_contextRoots.toRequest(const Uuid().v4())),
+    ]);
+  }
+
+  /// Updates the context roots on the client
   Future<AnalysisSetContextRootsResult> setContextRoots(
     AnalysisSetContextRootsParams contextRoots,
   ) {
@@ -108,7 +149,7 @@ class _SocketCustomLintServerToClientChannel
   Future<Process> _startProcess() async {
     final workspace = await CustomLintWorkspace.fromContextRoots(
       _contextRoots.roots,
-      workingDirectory: workingDirectory,
+      workingDirectory: _workingDirectory,
     );
 
     final tempDirectory =
@@ -123,7 +164,7 @@ class _SocketCustomLintServerToClientChannel
         [
           if (_server.watchMode) '--enable-vm-service=${await port}',
           join('lib', 'custom_lint_client.dart'),
-          await _serverSocket.then((value) => value.port.toString())
+          _serverSocket.port.toString()
         ],
         workingDirectory: tempDirectory.path,
       );
@@ -165,38 +206,6 @@ void main(List<String> args) async {
 ''');
   }
 
-  @override
-  Future<void> init() async {
-    _processFuture = _startProcess();
-    final process = await _processFuture;
-
-    var out = process.stdout.map(utf8.decode);
-    // Let's not log the VM service prints unless in watch mode
-    if (!_server.watchMode) {
-      out = out.skipWhile(
-        (element) =>
-            element.startsWith('The Dart VM service is listening on') ||
-            element.startsWith(
-              'The Dart DevTools debugger and profiler is available at:',
-            ),
-      );
-    }
-
-    out.listen((event) => _server.handlePrint(event, isClientMessage: true));
-    process.stderr
-        .map(utf8.decode)
-        .listen((e) => _server.handleUncaughtError(e, StackTrace.empty));
-
-    // Checking process failure _after_ piping stdout/stderr to the log files.
-    // This is so that if client failed to boot, logs in it should still be available
-    await _checkInitializationFail(process);
-
-    await Future.wait([
-      sendAnalyzerPluginRequest(_version.toRequest(const Uuid().v4())),
-      sendAnalyzerPluginRequest(_contextRoots.toRequest(const Uuid().v4())),
-    ]);
-  }
-
   Future<void> _checkInitializationFail(Process process) async {
     var running = true;
     try {
@@ -217,22 +226,8 @@ void main(List<String> args) async {
     }
   }
 
-  @override
-  Future<void> close() async {
-    // TODO send shutdown to process
-
-    await Future.wait([
-      if (_tempDirectory != null) _tempDirectory!.delete(recursive: true),
-      _serverSocket.then((value) => value.close()),
-      _processFuture.then<void>(
-        (value) => value.kill(),
-        // The process wasn't started. No need to do anything.
-        onError: (_) {},
-      )
-    ]);
-  }
-
-  @override
+  /// Sends a request based on the analyzer_plugin protocol, expecting
+  /// an analyzer_plugin response.
   Future<Response> sendAnalyzerPluginRequest(Request request) async {
     final response = await sendCustomLintRequest(
       CustomLintRequest.analyzerPluginRequest(request, id: request.id),
@@ -247,18 +242,13 @@ void main(List<String> args) async {
     );
   }
 
-  @override
+  /// Sends a custom_lint request to the client, expecting a custom_lint response
   Future<CustomLintResponse> sendCustomLintRequest(
     CustomLintRequest request,
   ) async {
     final matchingResponse = _responses.firstWhere((e) => e.id == request.id);
 
-    await _socket.then((socket) {
-      if (socket == null) {
-        throw StateError('Client disconnected, cannot send requests');
-      }
-      socket.sendJson(request.toJson());
-    });
+    await _channel.sendJson(request.toJson());
 
     final response = await matchingResponse;
 
@@ -286,6 +276,23 @@ void main(List<String> args) async {
 
     return response;
   }
+
+  /// Stops the client, liberating the resources.
+  Future<void> close() async {
+    // TODO send shutdown to process
+
+    await Future.wait([
+      if (_tempDirectory != null) _tempDirectory!.delete(recursive: true),
+      _socket.then((value) => value.close()),
+      _serverSocket.close(),
+      _channel.close(),
+      _processFuture.then<void>(
+        (value) => value.kill(),
+        // The process wasn't started. No need to do anything.
+        onError: (_) {},
+      )
+    ]);
+  }
 }
 
 /// A custom_lint request failed
@@ -310,36 +317,4 @@ class CustomLintRequestFailure implements Exception {
   String toString() {
     return 'A request throw the exception:$message\n$stackTrace';
   }
-}
-
-/// custom_lint's analyzer_plugin -> custom_lint's plugin host
-abstract class CustomLintServerToClientChannel {
-  /// Starts a custom_lint client, in charge of running all plugins.
-  factory CustomLintServerToClientChannel.spawn(
-    CustomLintServer server,
-    PluginVersionCheckParams version,
-    AnalysisSetContextRootsParams contextRoots, {
-    required Directory workingDirectory,
-  }) = _SocketCustomLintServerToClientChannel;
-
-  /// The events sent by the client.
-  Stream<CustomLintEvent> get events;
-
-  /// Initializes and waits for the client to start
-  Future<void> init();
-
-  /// Updates the context roots on the client
-  Future<AnalysisSetContextRootsResult> setContextRoots(
-    AnalysisSetContextRootsParams contextRoots,
-  );
-
-  /// Sends a custom_lint request to the client, expecting a custom_lint response
-  Future<CustomLintResponse> sendCustomLintRequest(CustomLintRequest request);
-
-  /// Sends a request based on the analyzer_plugin protocol, expecting
-  /// an analyzer_plugin response.
-  Future<Response> sendAnalyzerPluginRequest(Request request);
-
-  /// Stops the client, liberating the resources.
-  Future<void> close();
 }

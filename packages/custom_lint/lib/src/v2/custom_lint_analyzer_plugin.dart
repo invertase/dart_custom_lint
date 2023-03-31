@@ -83,7 +83,8 @@ class CustomLintServer {
   StreamSubscription<void>? _clientChannelEventsSubscription;
   late PluginVersionCheckParams _pluginVersionCheckParams;
 
-  final _clientChannel = BehaviorSubject<CustomLintServerToClientChannel>();
+  final _clientChannel =
+      BehaviorSubject<SocketCustomLintServerToClientChannel>();
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
   final _runner = PendingOperation();
 
@@ -291,20 +292,23 @@ class CustomLintServer {
       return;
     }
 
-    clientChannel = CustomLintServerToClientChannel.spawn(
-      this,
-      _pluginVersionCheckParams,
-      parameters,
-      workingDirectory: workingDirectory,
-    );
-    _clientChannel.add(clientChannel);
+    try {
+      clientChannel = await SocketCustomLintServerToClientChannel.create(
+        this,
+        _pluginVersionCheckParams,
+        parameters,
+        workingDirectory: workingDirectory,
+      );
+      _clientChannel.add(clientChannel);
+    } catch (err, stack) {
+      _clientChannel.addError(err, stack);
+      rethrow;
+    }
 
     // Listening to event before init, to make sure messages during the init are handled.
     _clientChannelEventsSubscription = clientChannel.events.listen(
       _handleEvent,
     );
-
-    await clientChannel.init();
   }
 
   void _handleEvent(CustomLintEvent event) {
