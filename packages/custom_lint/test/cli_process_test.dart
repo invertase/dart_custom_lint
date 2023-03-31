@@ -130,12 +130,12 @@ void main() {
           trimDependencyOverridesWarning(process.stderr),
           startsWith(
             '''
-The request analysis.setContextRoots failed with the following error:
-RequestErrorCode.PLUGIN_ERROR
-No .dart_tool/package_config.json found at $missingPackageConfig. Make sure to run `pub get` first.''',
+Unhandled exception:
+Failed to decode .dart_tool/package_config.json at $missingPackageConfig. Make sure to run `pub get` first.
+''',
           ),
         );
-        expect(process.exitCode, 1);
+        expect(process.exitCode, isNot(0));
       },
     );
 

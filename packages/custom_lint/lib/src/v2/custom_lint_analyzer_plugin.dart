@@ -30,17 +30,18 @@ class CustomLintServer {
   });
 
   /// Start the server while also capturing prints and errors.
-  static R? run<R>(
-    R Function(CustomLintServer server) cb, {
+  static Future<R> run<R>(
+    FutureOr<R> Function(CustomLintServer server) cb, {
     required SendPort sendPort,
     required bool watchMode,
     required bool includeBuiltInLints,
     required CustomLintDelegate delegate,
     required Directory workingDirectory,
-  }) {
+  }) async {
     late CustomLintServer server;
-    final result = runZonedGuarded(
-      () {
+
+    return asyncRunZonedGuarded(
+      () async {
         server = CustomLintServer._(
           watchMode: watchMode,
           includeBuiltInLints: includeBuiltInLints,
@@ -59,8 +60,6 @@ class CustomLintServer {
         ),
       ),
     );
-
-    return result;
   }
 
   /// The directory in which the server is running.

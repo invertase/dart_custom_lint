@@ -65,7 +65,7 @@ Future<CustomLintRunner> startRunnerForApp(
 
       return runner;
     },
-  )!;
+  );
 }
 
 extension LogFile on Directory {
