@@ -308,6 +308,7 @@ class CustomLintServer {
     _clientChannelEventsSubscription = clientChannel.events.listen(
       _handleEvent,
     );
+    await clientChannel.init();
   }
 
   void _handleEvent(CustomLintEvent event) {
