@@ -41,6 +41,22 @@ Future<void> customLint({
   exitCode = 0;
 
   final channel = ServerIsolateChannel();
+  try {
+    await _runServer(
+      channel,
+      watchMode: watchMode,
+      workingDirectory: workingDirectory,
+    );
+  } finally {
+    channel.close();
+  }
+}
+
+Future<void> _runServer(
+  ServerIsolateChannel channel, {
+  required bool watchMode,
+  required Directory workingDirectory,
+}) async {
   await CustomLintServer.run(
     sendPort: channel.receivePort.sendPort,
     watchMode: watchMode,
