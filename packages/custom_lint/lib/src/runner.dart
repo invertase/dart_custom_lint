@@ -82,7 +82,6 @@ class CustomLintRunner {
     try {
       await channel.sendRequest(PluginShutdownParams());
     } finally {
-      channel.close();
       await _lintSubscription?.cancel();
     }
   }
