@@ -80,7 +80,8 @@ class CustomLintServer {
   final bool includeBuiltInLints;
 
   late final StreamSubscription<void> _requestSubscription;
-  final _versionCheck = Completer<PluginVersionCheckParams>();
+  StreamSubscription<void>? _clientChannelEventsSubscription;
+  late PluginVersionCheckParams _pluginVersionCheckParams;
 
   final _clientChannel = BehaviorSubject<CustomLintServerToClientChannel>();
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
@@ -237,9 +238,12 @@ class CustomLintServer {
   Future<void> close() async {
     try {
       await Future.wait([
+        _contextRoots.close(),
         _clientChannel.first.then((clientChannel) => clientChannel.close()),
         _clientChannel.close(),
         _requestSubscription.cancel(),
+        if (_clientChannelEventsSubscription != null)
+          _clientChannelEventsSubscription!.cancel(),
       ]);
     } finally {
       _analyzerPluginClientChannel.close();
@@ -249,10 +253,7 @@ class CustomLintServer {
   PluginVersionCheckResult _handlePluginVersionCheck(
     PluginVersionCheckParams parameters,
   ) {
-    // The even should be sent only once. Plugins don't handle multiple
-    // version check.
-    // So we let "complete" throw by not checking "isCompleted".
-    _versionCheck.complete(parameters);
+    _pluginVersionCheckParams = parameters;
 
     final versionString = parameters.version;
     final serverVersion = Version.parse(versionString);
@@ -281,7 +282,8 @@ class CustomLintServer {
   Future<void> _maybeSpawnCustomLintPlugin(
     AnalysisSetContextRootsParams parameters,
   ) async {
-    final versionCheck = await _versionCheck.future;
+    // "setContextRoots" is always called after "pluginVersionCheck", so we can
+    // safely assume that the version check parameters are set.
 
     var clientChannel = _clientChannel.valueOrNull;
     if (clientChannel != null) {
@@ -291,14 +293,17 @@ class CustomLintServer {
 
     clientChannel = CustomLintServerToClientChannel.spawn(
       this,
-      versionCheck,
+      _pluginVersionCheckParams,
       parameters,
       workingDirectory: workingDirectory,
     );
     _clientChannel.add(clientChannel);
 
     // Listening to event before init, to make sure messages during the init are handled.
-    clientChannel.events.listen(_handleEvent);
+    _clientChannelEventsSubscription = clientChannel.events.listen(
+      _handleEvent,
+    );
+
     await clientChannel.init();
   }
 
