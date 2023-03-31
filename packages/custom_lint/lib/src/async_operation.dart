@@ -38,7 +38,7 @@ class PendingOperation {
 /// [runZonedGuarded] and completing it inside the zone. This way, the future
 /// is created outside of the zone and can safely be awaited.
 Future<R> asyncRunZonedGuarded<R>(
-  Future<R> Function() body,
+  FutureOr<R> Function() body,
   void Function(Object error, StackTrace stack) onError, {
   Map<Object?, Object?>? zoneValues,
   ZoneSpecification? zoneSpecification,
@@ -47,7 +47,8 @@ Future<R> asyncRunZonedGuarded<R>(
 
   unawaited(
     runZonedGuarded(
-      () => body().then(completer.complete, onError: completer.completeError),
+      () => Future(body)
+          .then(completer.complete, onError: completer.completeError),
       onError,
       zoneSpecification: zoneSpecification,
     ),

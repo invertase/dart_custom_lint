@@ -19,6 +19,8 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:analyzer_plugin/starter.dart';
 import 'package:collection/collection.dart';
 // ignore: implementation_imports
+import 'package:custom_lint/src/async_operation.dart';
+// ignore: implementation_imports
 import 'package:custom_lint/src/package_utils.dart';
 // ignore: implementation_imports
 import 'package:custom_lint/src/v2/protocol.dart';
@@ -424,19 +426,20 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
           target,
         ),
     ]);
-    for (final assist in configs.assists) {
-      _runAssistRun(
-        resolver,
-        assist,
-        CustomLintContext(
-          LintRuleNodeRegistry(registry, assist.runtimeType.toString()),
-          postRunCallbacks.add,
-          sharedState,
+    await Future.wait([
+      for (final assist in configs.assists)
+        _runAssistRun(
+          resolver,
+          assist,
+          CustomLintContext(
+            LintRuleNodeRegistry(registry, assist.runtimeType.toString()),
+            postRunCallbacks.add,
+            sharedState,
+          ),
+          changeReporter,
+          target,
         ),
-        changeReporter,
-        target,
-      );
-    }
+    ]);
 
     runPostRunCallbacks(postRunCallbacks);
 
@@ -456,13 +459,13 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     );
   }
 
-  void _runAssistRun(
+  Future<void> _runAssistRun(
     CustomLintResolver resolver,
     Assist assist,
     CustomLintContext context,
     ChangeReporter changeReporter,
     SourceRange target,
-  ) {
+  ) async {
     return _runLintZoned(
       resolver,
       () => assist.run(resolver, changeReporter, context, target),
@@ -557,20 +560,21 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
           ),
         ),
     ]);
-    for (final fix in fixesForError) {
-      _runFixRun(
-        resolver,
-        fix,
-        CustomLintContext(
-          LintRuleNodeRegistry(registry, fix.runtimeType.toString()),
-          postRunCallbacks.add,
-          sharedState,
-        ),
-        changeReporter,
-        analysisError,
-        otherErrors,
-      );
-    }
+    await Future.wait([
+      for (final fix in fixesForError)
+        _runFixRun(
+          resolver,
+          fix,
+          CustomLintContext(
+            LintRuleNodeRegistry(registry, fix.runtimeType.toString()),
+            postRunCallbacks.add,
+            sharedState,
+          ),
+          changeReporter,
+          analysisError,
+          otherErrors,
+        )
+    ]);
 
     runPostRunCallbacks(postRunCallbacks);
 
@@ -596,14 +600,14 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     );
   }
 
-  void _runFixRun(
+  Future<void> _runFixRun(
     CustomLintResolver resolver,
     Fix fix,
     CustomLintContext context,
     ChangeReporter changeReporter,
     AnalysisError analysisError,
     List<AnalysisError> others,
-  ) {
+  ) async {
     return _runLintZoned(
       resolver,
       () => fix.run(resolver, changeReporter, context, analysisError, others),
@@ -757,18 +761,20 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
             ),
           ),
       ]);
-      for (final lintRule in activeLintRules) {
-        _runLintRule(
-          lintRule,
-          resolver,
-          reporterBeforeExpectLint,
-          CustomLintContext(
-            LintRuleNodeRegistry(registry, lintRule.code.name),
-            postRunCallbacks.add,
-            sharedState,
+
+      await Future.wait([
+        for (final lintRule in activeLintRules)
+          _runLintRule(
+            lintRule,
+            resolver,
+            reporterBeforeExpectLint,
+            CustomLintContext(
+              LintRuleNodeRegistry(registry, lintRule.code.name),
+              postRunCallbacks.add,
+              sharedState,
+            ),
           ),
-        );
-      }
+      ]);
 
       runPostRunCallbacks(postRunCallbacks);
 
@@ -831,9 +837,9 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     }
   }
 
-  R? _runLintZoned<R>(
+  Future<R> _runLintZoned<R>(
     CustomLintResolver resolver,
-    R Function() cb, {
+    FutureOr<R> Function() cb, {
     ErrorReporter? reporter,
     required String name,
   }) {
@@ -853,7 +859,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       );
     }
 
-    return runZonedGuarded(
+    return asyncRunZonedGuarded(
       zoneSpecification: ZoneSpecification(
         print: (self, parent, zone, line) => onLog(line),
       ),
@@ -876,13 +882,13 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     );
   }
 
-  void _runLintRule(
+  Future<void> _runLintRule(
     LintRule lintRule,
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext lintContext,
-  ) {
-    _runLintZoned(
+  ) async {
+    await _runLintZoned(
       resolver,
       () => lintRule.run(resolver, reporter, lintContext),
       reporter: reporter,

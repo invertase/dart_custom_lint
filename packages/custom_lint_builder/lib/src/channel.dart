@@ -4,6 +4,8 @@ import 'dart:isolate';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
 // ignore: implementation_imports
+import 'package:custom_lint/src/async_operation.dart';
+// ignore: implementation_imports
 import 'package:custom_lint/src/channels.dart';
 // ignore: implementation_imports
 import 'package:custom_lint/src/v2/protocol.dart';
@@ -57,7 +59,7 @@ Future<void> runSocket(
 }) async {
   late Future<CustomLintPluginClient> client;
 
-  await runZonedGuarded(
+  await asyncRunZonedGuarded(
     () => client = Future(() async {
       // ignore: close_sinks, connection stays open until the plugin is killed
       final socket = await Socket.connect('localhost', port);
