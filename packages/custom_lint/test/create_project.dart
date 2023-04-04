@@ -174,20 +174,9 @@ Directory createLintUsage({
   Directory? parent,
   Map<String, Uri> plugins = const {},
   Map<String, String> source = const {},
-  Map<String, String> extraDependencyOverrides = const {},
   Map<String, Uri> extraPackageConfig = const {},
   required String name,
-  bool createDependencyOverrides = false,
 }) {
-  final dependencyOverrides = {
-    if (createDependencyOverrides) ...{
-      'custom_lint': '{"path": ${PeerProjectMeta.current.customLintPath}}',
-      'custom_lint_core':
-          '{"path": ${PeerProjectMeta.current.customLintCorePath}}',
-    },
-    ...extraDependencyOverrides,
-  };
-
   final pluginDevDependencies = plugins.entries
       .map(
         (e) => '''
@@ -221,11 +210,6 @@ dev_dependencies:
   custom_lint:
     path: ${PeerProjectMeta.current.customLintPath}
 $pluginDevDependencies
-
-${dependencyOverrides.isEmpty ? '' : '''
-dependency_overrides:
-${dependencyOverrides.entries.map((e) => '  ${e.key}: ${e.value}').join('\n')}
-'''}
 ''',
     packageConfig: createPackageConfig(
       plugins: {...plugins, ...extraPackageConfig},

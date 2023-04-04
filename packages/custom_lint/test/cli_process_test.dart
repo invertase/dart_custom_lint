@@ -39,7 +39,6 @@ void main() {
             'lib/another.dart': 'void fail() {}',
           },
           plugins: {'test_lint': plugin.uri},
-          createDependencyOverrides: true,
         );
 
         final process = await Process.run(
@@ -68,7 +67,6 @@ void main() {
             'lib/another.dart': 'void fail() {}',
           },
           plugins: {'test_lint': plugin.uri},
-          createDependencyOverrides: true,
         );
 
         final process = await Process.run(
@@ -98,7 +96,6 @@ void main() {
             'lib/another.dart': 'void fail() {}',
           },
           plugins: {'test_lint': plugin.uri},
-          createDependencyOverrides: true,
         );
 
         // Create a child context root
@@ -109,7 +106,6 @@ void main() {
             'lib/another.dart': 'void fail() {}',
           },
           parent: app,
-          createDependencyOverrides: true,
         );
 
         // create error during initialization because of missing package_config.json
@@ -126,6 +122,7 @@ void main() {
         );
 
         expect(process.stdout, isEmpty);
+        expect(process.exitCode, isNot(0));
         expect(
           trimDependencyOverridesWarning(process.stderr),
           startsWith(
@@ -135,7 +132,6 @@ Failed to decode .dart_tool/package_config.json at $missingPackageConfig. Make s
 ''',
           ),
         );
-        expect(process.exitCode, isNot(0));
       },
     );
 
@@ -167,7 +163,6 @@ Failed to decode .dart_tool/package_config.json at $missingPackageConfig. Make s
           parent: app,
           name: 'test_app2',
           source: {'lib/foo.dart': 'void fn() {}'},
-          createDependencyOverrides: true,
           plugins: {'test_lint': plugin.uri},
           extraPackageConfig: {'dep': workspace.dir('dep2').uri},
         );
