@@ -16,10 +16,35 @@ Future<List<AnalysisErrorsParams>> runServerInCliModeForApp(
   // to ignoreErrors as we cannot explicitly handle errors
 ) async {
   final runner = await startRunnerForApp(directory, includeBuiltInLints: false);
-  return runner.getLints(reload: false);
+  return runner.runner.getLints(reload: false);
 }
 
-Future<CustomLintRunner> startRunnerForApp(
+class ManualRunner {
+  ManualRunner(this.runner, this.channel);
+
+  final CustomLintRunner runner;
+  final ServerIsolateChannel channel;
+
+  Future<void> get initialize => runner.initialize;
+
+  Future<List<AnalysisErrorsParams>> getLints({required bool reload}) async {
+    return runner.getLints(reload: reload);
+  }
+
+  Future<EditGetFixesResult> getFixes(
+    String path,
+    int offset,
+  ) async {
+    return runner.getFixes(path, offset);
+  }
+
+  Future<void> close() async {
+    await runner.close();
+    await channel.close();
+  }
+}
+
+Future<ManualRunner> startRunnerForApp(
   Directory directory, {
   bool ignoreErrors = false,
   bool includeBuiltInLints = true,
@@ -63,7 +88,7 @@ Future<CustomLintRunner> startRunnerForApp(
 
       unawaited(runner.initialize);
 
-      return runner;
+      return ManualRunner(runner, channel);
     },
   );
 }

@@ -48,7 +48,7 @@ Future<void> customLint({
       workingDirectory: workingDirectory,
     );
   } finally {
-    channel.close();
+    await channel.close();
   }
 }
 

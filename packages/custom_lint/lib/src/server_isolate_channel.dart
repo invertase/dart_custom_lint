@@ -150,5 +150,5 @@ class ServerIsolateChannel extends IsolateChannelBase {
       .map(AnalysisErrorsParams.fromNotification);
 
   /// Releases the associated resources.
-  void close() => receivePort.close();
+  Future<void> close() async => receivePort.close();
 }

@@ -58,7 +58,7 @@ class JsonSendPortChannel extends AnalyzerPluginClientChannel {
   }
 
   @override
-  void close() => _receivePort.close();
+  Future<void> close() async => _receivePort.close();
 }
 
 /// An interface for discussing with analyzer_plugin using web sockets
