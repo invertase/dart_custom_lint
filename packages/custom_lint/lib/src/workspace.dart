@@ -18,10 +18,17 @@ import 'package:yaml/yaml.dart';
 
 import 'package_utils.dart';
 
-String _computePubspec(Iterable<String> plugins) {
+String _computePubspec(
+  Iterable<String> plugins,
+  Map<String, Package> allDependencies,
+) {
   // TODO should import dependency_overrides related to the plugin too
   // TODO handle environment constraints conflicts.
-  final dependencies = plugins.map((plugin) => '  $plugin: any').join();
+  final dependencies = plugins.map((plugin) => '  $plugin: any').join('\n');
+
+  final dependencyOverrides = allDependencies.entries
+      .map((dep) => '  ${dep.key}:\n    path: ${dep.value.root.toFilePath()}')
+      .join('\n');
 
   return '''
 name: custom_lint_client
@@ -33,6 +40,12 @@ environment:
 
 dependencies:
 $dependencies
+
+# Set dependency overrides to match the package_config.json.
+# This ensures that if "pub get" is run, the dependencies are resolved.
+# This may happen in different versions of the Dart SDK.
+dependency_overrides:
+$dependencyOverrides
 ''';
 }
 
@@ -253,7 +266,7 @@ class CustomLintWorkspace {
   /// the contextRoots.
   ///
   /// This also changes relative paths into absolute paths.
-  String _computePackageConfigForTempProject() {
+  Map<String, Package> _computeDependencies() {
     final conflictingPackagesChecker = _ConflictingPackagesChecker();
 
     // A cache object to avoid parsing the same pubspec multiple times,
@@ -291,13 +304,27 @@ class CustomLintWorkspace {
       }
     }
 
-    final result = jsonEncode(<String, Object?>{
+    final result = <String, Package>{
+      for (final package in visitPluginsAndDependencies())
+        package.name: package,
+    };
+
+    // Check if there are conflicting packages.
+    // We do so after computing the result to avoid allocating a temporary
+    // list of packages, by visiting dependencies using an Iterable instead of List.
+    conflictingPackagesChecker.throwErrorIfConflictingPackages();
+
+    return result;
+  }
+
+  String _computePackageConfig(Map<String, Package> dependencies) {
+    return jsonEncode(<String, Object?>{
       'configVersion': 2,
       'generated': DateTime.now().toIso8601String(),
       'generator': 'custom_lint',
       'generatorVersion': '0.0.1',
       'packages': <Object?>[
-        for (final dependency in visitPluginsAndDependencies())
+        for (final dependency in dependencies.values)
           {
             'name': dependency.name,
             // This is somehow enough to change relative paths into absolute ones.
@@ -310,21 +337,18 @@ class CustomLintWorkspace {
           }
       ],
     });
-
-    // Check if there are conflicting packages.
-    // We do so after computing the result to avoid allocating a temporary
-    // list of packages, by visiting dependencies using an Iterable instead of List.
-    conflictingPackagesChecker.throwErrorIfConflictingPackages();
-
-    return result;
   }
 
   /// Create the Dart project which will contain all the custom_lint plugins.
   Future<Directory> createPluginHostDirectory() async {
-    final packageConfigContent = _computePackageConfigForTempProject();
-    // The previous line will throw if there are conflicting packages.
+    final dependencies = _computeDependencies();
+    final packageConfigContent = _computePackageConfig(dependencies);
+    // The previous lines will throw if there are conflicting packages.
     // So it is safe to deduplicate the plugins by name here.
-    final pubspecContent = _computePubspec(uniquePluginNames);
+    final pubspecContent = _computePubspec(
+      uniquePluginNames,
+      dependencies,
+    );
 
     // We only create the temporary directories after computing all the files.
     // This avoids creating a temporary directory if we're going to throw anyway.
