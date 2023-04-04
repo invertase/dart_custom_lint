@@ -29,48 +29,43 @@ Future<CustomLintRunner> startRunnerForApp(
   final channel = ServerIsolateChannel();
 
   // TODO use IO override to mock & test stdout/stderr
-  try {
-    return await CustomLintServer.run(
-      sendPort: channel.receivePort.sendPort,
-      workingDirectory: directory,
-      delegate: CommandCustomLintDelegate(),
-      includeBuiltInLints: includeBuiltInLints,
-      watchMode: watchMode,
-      (customLintServer) async {
-        Zone.root.print('Run');
-        final workspace = await CustomLintWorkspace.fromPaths(
-          [directory.path],
-          workingDirectory: directory,
-        );
-        final runner = CustomLintRunner(customLintServer, workspace, channel);
-        addTearDown(runner.close);
+  return CustomLintServer.run(
+    sendPort: channel.receivePort.sendPort,
+    workingDirectory: directory,
+    delegate: CommandCustomLintDelegate(),
+    includeBuiltInLints: includeBuiltInLints,
+    watchMode: watchMode,
+    (customLintServer) async {
+      final workspace = await CustomLintWorkspace.fromPaths(
+        [directory.path],
+        workingDirectory: directory,
+      );
+      final runner = CustomLintRunner(customLintServer, workspace, channel);
+      addTearDown(runner.close);
 
-        if (!ignoreErrors) {
-          runner.channel
-            ..responseErrors.listen((event) {
-              zone.handleUncaughtError(
-                TestFailure(
-                  '${event.message} ${event.code}\n${event.stackTrace}',
-                ),
-                StackTrace.current,
-              );
-            })
-            ..pluginErrors.listen((event) {
-              zone.handleUncaughtError(
-                TestFailure('${event.message}\n${event.stackTrace}'),
-                StackTrace.current,
-              );
-            });
-        }
+      if (!ignoreErrors) {
+        runner.channel
+          ..responseErrors.listen((event) {
+            zone.handleUncaughtError(
+              TestFailure(
+                '${event.message} ${event.code}\n${event.stackTrace}',
+              ),
+              StackTrace.current,
+            );
+          })
+          ..pluginErrors.listen((event) {
+            zone.handleUncaughtError(
+              TestFailure('${event.message}\n${event.stackTrace}'),
+              StackTrace.current,
+            );
+          });
+      }
 
-        unawaited(runner.initialize);
+      unawaited(runner.initialize);
 
-        return runner;
-      },
-    );
-  } finally {
-    Zone.root.print('did run');
-  }
+      return runner;
+    },
+  );
 }
 
 extension LogFile on Directory {
