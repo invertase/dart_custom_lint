@@ -121,17 +121,12 @@ void main() {
           workingDirectory: app.path,
         );
 
-        print('Out: ${process.stdout}');
-        print('Err: ${process.stderr}');
-
         expect(process.exitCode, isNot(0));
         expect(
           trimDependencyOverridesWarning(process.stderr),
           startsWith(
-            '''
-Unhandled exception:
-Failed to decode .dart_tool/package_config.json at $missingPackageConfig. Make sure to run `pub get` first.
-''',
+            'Failed to decode .dart_tool/package_config.json at $missingPackageConfig. '
+            'Make sure to run `pub get` first.',
           ),
         );
         expect(process.stdout, isEmpty);
