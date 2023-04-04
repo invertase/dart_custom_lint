@@ -194,21 +194,21 @@ class CustomLintServer {
       });
 
   /// A life-cycle for when the server failed to start the plugins.
-  Future<void> handlePluginInitializationFail() async {
-    final contextRoots = await _contextRoots.first;
+  Future<void> handlePluginInitializationFail() => _runner.run(() async {
+        final contextRoots = await _contextRoots.first;
 
-    delegate.pluginInitializationFail(
-      this,
-      'Failed to start plugins',
-      allContextRoots: contextRoots.roots,
-    );
+        delegate.pluginInitializationFail(
+          this,
+          'Failed to start plugins',
+          allContextRoots: contextRoots.roots,
+        );
 
-    _analyzerPluginClientChannel.sendJson(
-      PluginErrorParams(true, 'Failed to start plugins', '')
-          .toNotification()
-          .toJson(),
-    );
-  }
+        _analyzerPluginClientChannel.sendJson(
+          PluginErrorParams(true, 'Failed to start plugins', '')
+              .toNotification()
+              .toJson(),
+        );
+      });
 
   /// A print was detected. This will redirect it to a log file.
   Future<void> handlePrint(
@@ -244,7 +244,8 @@ class CustomLintServer {
         _requestSubscription.cancel(),
         if (_clientChannelEventsSubscription != null)
           _clientChannelEventsSubscription!.cancel(),
-      ]);
+        _runner.wait(),
+      ]).catchError((_) => const <void>[]);
     } finally {
       _analyzerPluginClientChannel.close();
     }
@@ -311,50 +312,48 @@ class CustomLintServer {
     await clientChannel.init();
   }
 
-  void _handleEvent(CustomLintEvent event) {
-    event.map(
-      analyzerPluginNotification: (event) async {
-        _analyzerPluginClientChannel.sendJson(event.notification.toJson());
+  Future<void> _handleEvent(CustomLintEvent event) => _runner.run(() async {
+        final contextRoots = await _contextRoots.first;
+        await event.map(
+          analyzerPluginNotification: (event) async {
+            _analyzerPluginClientChannel.sendJson(event.notification.toJson());
 
-        final notification = event.notification;
-        if (notification.event == PLUGIN_NOTIFICATION_ERROR) {
-          final error = PluginErrorParams.fromNotification(notification);
-          _analyzerPluginClientChannel
-              .sendJson(error.toNotification().toJson());
-          delegate.pluginError(
-            this,
-            error.message,
-            stackTrace: error.stackTrace,
-            pluginName: '<unknown plugin>',
-            pluginContextRoots:
-                await _contextRoots.first.then((value) => value.roots),
-          );
-        }
-      },
-      error: (event) async {
-        _analyzerPluginClientChannel.sendJson(
-          PluginErrorParams(false, event.message, event.stackTrace)
-              .toNotification()
-              .toJson(),
+            final notification = event.notification;
+            if (notification.event == PLUGIN_NOTIFICATION_ERROR) {
+              final error = PluginErrorParams.fromNotification(notification);
+              _analyzerPluginClientChannel
+                  .sendJson(error.toNotification().toJson());
+              delegate.pluginError(
+                this,
+                error.message,
+                stackTrace: error.stackTrace,
+                pluginName: '<unknown plugin>',
+                pluginContextRoots: contextRoots.roots,
+              );
+            }
+          },
+          error: (event) async {
+            _analyzerPluginClientChannel.sendJson(
+              PluginErrorParams(false, event.message, event.stackTrace)
+                  .toNotification()
+                  .toJson(),
+            );
+            delegate.pluginError(
+              this,
+              event.message,
+              stackTrace: event.stackTrace,
+              pluginName: event.pluginName ?? 'custom_lint client',
+              pluginContextRoots: contextRoots.roots,
+            );
+          },
+          print: (event) async {
+            delegate.pluginMessage(
+              this,
+              event.message,
+              pluginName: event.pluginName ?? 'custom_lint client',
+              pluginContextRoots: contextRoots.roots,
+            );
+          },
         );
-        delegate.pluginError(
-          this,
-          event.message,
-          stackTrace: event.stackTrace,
-          pluginName: event.pluginName ?? 'custom_lint client',
-          pluginContextRoots:
-              await _contextRoots.first.then((value) => value.roots),
-        );
-      },
-      print: (event) async {
-        delegate.pluginMessage(
-          this,
-          event.message,
-          pluginName: event.pluginName ?? 'custom_lint client',
-          pluginContextRoots:
-              await _contextRoots.first.then((value) => value.roots),
-        );
-      },
-    );
-  }
+      });
 }

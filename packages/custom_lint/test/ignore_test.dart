@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:path/path.dart';
@@ -47,7 +45,6 @@ void fn3() {}
 
     final runner = await startRunnerForApp(app);
 
-    print('a');
     expect(
       await runner.channel.lints.first,
       predicate<AnalysisErrorsParams>((value) {
@@ -75,14 +72,11 @@ void fn3() {}
       }),
     );
 
-    print('Here');
-
     expect(runner.channel.lints, emitsDone);
 
     // Closing so that previous error matchers relying on stream
     // closing can complete
     await runner.close();
-    print('b');
 
     expect(plugin.log.existsSync(), false);
   });
