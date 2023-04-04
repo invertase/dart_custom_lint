@@ -47,8 +47,15 @@ Future<R> asyncRunZonedGuarded<R>(
 
   unawaited(
     runZonedGuarded(
-      () => Future(body)
-          .then(completer.complete, onError: completer.completeError),
+      () => Future(body).then(
+        completer.complete,
+        // ignore: avoid_types_on_closure_parameters
+        onError: (Object error, StackTrace stack) {
+          completer.completeError(error, stack);
+          // Make sure the initial error is also reported.
+          onError(error, stack);
+        },
+      ),
       onError,
       zoneSpecification: zoneSpecification,
     ),
