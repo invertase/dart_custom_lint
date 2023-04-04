@@ -47,6 +47,8 @@ Future<void> customLint({
       watchMode: watchMode,
       workingDirectory: workingDirectory,
     );
+  } catch (_) {
+    exitCode = 1;
   } finally {
     await channel.close();
   }
@@ -83,8 +85,6 @@ Future<void> _runServer(
         if (watchMode) {
           await _startWatchMode(runner, workingDirectory: workingDirectory);
         }
-      } catch (err) {
-        exitCode = 1;
       } finally {
         await runner.close();
       }
