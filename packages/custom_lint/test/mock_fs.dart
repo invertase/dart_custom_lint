@@ -95,6 +95,8 @@ class _StdoutOverride implements Stdout {
 
   @override
   void writeln([Object? object = '']) {
+    // TODO Remove. This is tech debt to avoid false positives in tests.
+    if (_controller.isClosed) return;
     _controller.add('$object\n');
   }
 }

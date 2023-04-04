@@ -8,6 +8,7 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
+import 'package:async/async.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
@@ -87,6 +88,10 @@ class CustomLintServer {
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
   final _runner = PendingOperation();
 
+  Future<List<ContextRoot>?> get _allContextRoots {
+    return _contextRoots.firstOrNull.then((value) => value?.roots);
+  }
+
   void _start(SendPort sendPort) {
     _analyzerPluginClientChannel = JsonSendPortChannel(sendPort);
     _requestSubscription = _analyzerPluginClientChannel.messages
@@ -117,8 +122,11 @@ class CustomLintServer {
 
   Future<void> _handleRequest(Request request) async {
     final requestTime = DateTime.now().millisecondsSinceEpoch;
-    void sendResponse({ResponseResult? data, RequestError? error}) {
-      _analyzerPluginClientChannel.sendResponse(
+    Future<void> sendResponse({
+      ResponseResult? data,
+      RequestError? error,
+    }) async {
+      await _analyzerPluginClientChannel.sendResponse(
         requestID: request.id,
         requestTime: requestTime,
         data: data,
@@ -132,7 +140,7 @@ class CustomLintServer {
         handleAnalysisSetContextRoots: _handleAnalysisSetContextRoots,
         handlePluginShutdown: () async {
           try {
-            sendResponse(data: PluginShutdownResult());
+            await sendResponse(data: PluginShutdownResult());
             return null;
           } finally {
             await close();
@@ -143,7 +151,7 @@ class CustomLintServer {
             final clientChannel = await _clientChannel.first;
             final response =
                 await clientChannel.sendAnalyzerPluginRequest(request);
-            _analyzerPluginClientChannel.sendJson(response.toJson());
+            await _analyzerPluginClientChannel.sendJson(response.toJson());
             return null;
           });
         },
@@ -152,9 +160,9 @@ class CustomLintServer {
       /// A response was already sent, so nothing to do.
       if (result == null) return;
 
-      sendResponse(data: result);
+      await sendResponse(data: result);
     } catch (err, stack) {
-      sendResponse(
+      await sendResponse(
         error: RequestError(
           RequestErrorCode.PLUGIN_ERROR,
           err.toString(),
@@ -178,7 +186,7 @@ class CustomLintServer {
   /// Logging the error and notifying the analyzer server
   Future<void> handleUncaughtError(Object error, StackTrace stackTrace) =>
       _runner.run(() async {
-        _analyzerPluginClientChannel.sendJson(
+        await _analyzerPluginClientChannel.sendJson(
           PluginErrorParams(false, error.toString(), stackTrace.toString())
               .toNotification()
               .toJson(),
@@ -188,22 +196,21 @@ class CustomLintServer {
           this,
           error,
           stackTrace,
-          allContextRoots:
-              await _contextRoots.first.then((value) => value.roots),
+          allContextRoots: await _allContextRoots,
         );
       });
 
   /// A life-cycle for when the server failed to start the plugins.
   Future<void> handlePluginInitializationFail() => _runner.run(() async {
-        final contextRoots = await _contextRoots.first;
+        final contextRoots = await _allContextRoots;
 
         delegate.pluginInitializationFail(
           this,
           'Failed to start plugins',
-          allContextRoots: contextRoots.roots,
+          allContextRoots: contextRoots,
         );
 
-        _analyzerPluginClientChannel.sendJson(
+        await _analyzerPluginClientChannel.sendJson(
           PluginErrorParams(true, 'Failed to start plugins', '')
               .toNotification()
               .toJson(),
@@ -244,10 +251,11 @@ class CustomLintServer {
         _requestSubscription.cancel(),
         if (_clientChannelEventsSubscription != null)
           _clientChannelEventsSubscription!.cancel(),
-        _runner.wait(),
       ]).catchError((_) => const <void>[]);
     } finally {
       _analyzerPluginClientChannel.close();
+      // Flushes logs before stopping server.
+      await _runner.wait();
     }
   }
 
@@ -313,27 +321,27 @@ class CustomLintServer {
   }
 
   Future<void> _handleEvent(CustomLintEvent event) => _runner.run(() async {
-        final contextRoots = await _contextRoots.first;
         await event.map(
           analyzerPluginNotification: (event) async {
-            _analyzerPluginClientChannel.sendJson(event.notification.toJson());
+            await _analyzerPluginClientChannel
+                .sendJson(event.notification.toJson());
 
             final notification = event.notification;
             if (notification.event == PLUGIN_NOTIFICATION_ERROR) {
               final error = PluginErrorParams.fromNotification(notification);
-              _analyzerPluginClientChannel
+              await _analyzerPluginClientChannel
                   .sendJson(error.toNotification().toJson());
               delegate.pluginError(
                 this,
                 error.message,
                 stackTrace: error.stackTrace,
                 pluginName: '<unknown plugin>',
-                pluginContextRoots: contextRoots.roots,
+                pluginContextRoots: await _allContextRoots,
               );
             }
           },
           error: (event) async {
-            _analyzerPluginClientChannel.sendJson(
+            await _analyzerPluginClientChannel.sendJson(
               PluginErrorParams(false, event.message, event.stackTrace)
                   .toNotification()
                   .toJson(),
@@ -343,7 +351,7 @@ class CustomLintServer {
               event.message,
               stackTrace: event.stackTrace,
               pluginName: event.pluginName ?? 'custom_lint client',
-              pluginContextRoots: contextRoots.roots,
+              pluginContextRoots: await _allContextRoots,
             );
           },
           print: (event) async {
@@ -351,7 +359,7 @@ class CustomLintServer {
               this,
               event.message,
               pluginName: event.pluginName ?? 'custom_lint client',
-              pluginContextRoots: contextRoots.roots,
+              pluginContextRoots: await _allContextRoots,
             );
           },
         );

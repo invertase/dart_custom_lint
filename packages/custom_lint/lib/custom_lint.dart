@@ -68,13 +68,15 @@ Future<void> _runServer(
     includeBuiltInLints: false,
     delegate: CommandCustomLintDelegate(),
     (customLintServer) async {
-      final workspace = await CustomLintWorkspace.fromPaths(
-        [workingDirectory.path],
-        workingDirectory: workingDirectory,
-      );
-      final runner = CustomLintRunner(customLintServer, workspace, channel);
+      CustomLintRunner? runner;
 
       try {
+        final workspace = await CustomLintWorkspace.fromPaths(
+          [workingDirectory.path],
+          workingDirectory: workingDirectory,
+        );
+        runner = CustomLintRunner(customLintServer, workspace, channel);
+
         await runner.initialize;
         await _runPlugins(
           runner,
@@ -86,7 +88,8 @@ Future<void> _runServer(
           await _startWatchMode(runner, workingDirectory: workingDirectory);
         }
       } finally {
-        await runner.close();
+        await runner?.close();
+        await customLintServer.close();
       }
     },
   );

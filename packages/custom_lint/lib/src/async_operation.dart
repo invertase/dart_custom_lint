@@ -8,7 +8,8 @@ class PendingOperation {
 
   /// Register an async operation to be awaited.
   Future<T> run<T>(Future<T> Function() cb) async {
-    final future = Future(cb);
+    final future = cb();
+
     _pendingOperations.add(future);
     try {
       return await future;
@@ -23,7 +24,11 @@ class PendingOperation {
   /// awaited too.
   Future<void> wait() async {
     while (_pendingOperations.isNotEmpty) {
-      await Future.wait(_pendingOperations.toList());
+      await Future.wait(_pendingOperations.toList())
+          // Catches errors to make sure that errors inside operations don't
+          // abort the "wait" early
+          .then<void>((value) => null, onError: (_) {});
+      ;
     }
   }
 }

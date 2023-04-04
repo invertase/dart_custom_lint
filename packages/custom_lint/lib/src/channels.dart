@@ -16,16 +16,16 @@ abstract class AnalyzerPluginClientChannel {
   Stream<Object?> get messages;
 
   /// Sends a JSON object to the analyzer_plugin server
-  void sendJson(Map<String, Object?> json);
+  Future<void> sendJson(Map<String, Object?> json);
 
   /// Sends a [Response] to the analyzer_plugin server.
-  void sendResponse({
+  Future<void> sendResponse({
     ResponseResult? data,
     RequestError? error,
     required String requestID,
     required int requestTime,
-  }) {
-    sendJson(
+  }) async {
+    await sendJson(
       Response(
         requestID,
         requestTime,
@@ -53,7 +53,7 @@ class JsonSendPortChannel extends AnalyzerPluginClientChannel {
   late final Stream<Object?> messages = _receivePort.asBroadcastStream();
 
   @override
-  void sendJson(Map<String, Object?> json) {
+  Future<void> sendJson(Map<String, Object?> json) async {
     _sendPort.send(json);
   }
 
