@@ -45,8 +45,8 @@ class StreamToSentPortAdapter {
   /// The [SendPort] associated with the input [Stream].
   SendPort get sendPort => _outputReceivePort.sendPort;
 
-    // TODO appears to sometime not be closed.
-    // Could be because of the `onDone` callback not being invoked.
+  // TODO appears to sometime not be closed.
+  // Could be because of the `onDone` callback not being invoked.
   final _outputReceivePort = ReceivePort();
 }
 
