@@ -121,7 +121,10 @@ void main() {
           workingDirectory: app.path,
         );
 
-        expect(process.stdout, isEmpty);
+        print('Out: ${process.stdout}');
+        print('Err: ${process.stderr}');
+
+        expect(process.exitCode, isNot(0));
         expect(
           trimDependencyOverridesWarning(process.stderr),
           startsWith(
@@ -131,7 +134,7 @@ Failed to decode .dart_tool/package_config.json at $missingPackageConfig. Make s
 ''',
           ),
         );
-        expect(process.exitCode, isNot(0));
+        expect(process.stdout, isEmpty);
       },
     );
 
