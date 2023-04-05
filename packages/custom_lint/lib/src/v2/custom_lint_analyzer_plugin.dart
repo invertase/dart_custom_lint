@@ -101,6 +101,7 @@ class CustomLintServer {
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
   final _runner = PendingOperation();
 
+  /// A shorthand for accessing the current list of context roots.
   Future<List<ContextRoot>?> get _allContextRoots {
     return _contextRoots.firstOrNull.then((value) => value?.roots);
   }
