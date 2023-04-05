@@ -503,28 +503,27 @@ class CustomLintProject {
   ) async {
     final directory = Directory(contextRoot.root);
 
-    // ignore() the errors as we want to throw a custom error.
-    final pubspecFuture = parsePubspec(directory)..ignore();
-    final packageConfigFuture = parsePackageConfig(directory)..ignore();
-
-    final projectPubspec =
+    final pubspecFuture = parsePubspec(directory)
         // ignore: avoid_types_on_closure_parameters
-        await pubspecFuture.catchError((Object err, StackTrace stack) {
+        .catchError((Object err, StackTrace stack) {
       throw PubspecParseError._(
         directory.path,
         error: err,
         errorStackTrace: stack,
       );
     });
-    final projectPackageConfig =
+    final packageConfigFuture = parsePackageConfig(directory)
         // ignore: avoid_types_on_closure_parameters
-        await packageConfigFuture.catchError((Object err, StackTrace stack) {
+        .catchError((Object err, StackTrace stack) {
       throw PackageConfigParseError._(
         directory.path,
         error: err,
         errorStackTrace: stack,
       );
     });
+
+    final projectPubspec = await pubspecFuture;
+    final projectPackageConfig = await packageConfigFuture;
 
     // TODO check that only dev_dependencies are checked
     final plugins = await Future.wait(

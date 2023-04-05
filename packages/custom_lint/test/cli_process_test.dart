@@ -117,7 +117,7 @@ void main() {
 
         final process = await Process.run(
           'dart',
-          [customLintBinPath],
+          ['run', '--no-pub', customLintBinPath],
           workingDirectory: app.path,
         );
 
@@ -126,7 +126,8 @@ void main() {
           trimDependencyOverridesWarning(process.stderr),
           startsWith(
             'Failed to decode .dart_tool/package_config.json at $missingPackageConfig. '
-            'Make sure to run `pub get` first.',
+            'Make sure to run `pub get` first.\n'
+            'PathNotFoundException: Cannot open file, path =',
           ),
         );
         expect(process.stdout, isEmpty);
