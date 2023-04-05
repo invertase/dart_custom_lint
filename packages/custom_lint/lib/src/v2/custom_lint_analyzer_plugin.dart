@@ -31,6 +31,9 @@ class CustomLintServer {
   });
 
   /// Start the server while also capturing prints and errors.
+  ///
+  /// Logic after the [start] should be wrapped in a [runZoned] to make sure
+  /// errors and prints continue to be captured.
   static Future<CustomLintServer> start({
     required SendPort sendPort,
     required bool watchMode,
