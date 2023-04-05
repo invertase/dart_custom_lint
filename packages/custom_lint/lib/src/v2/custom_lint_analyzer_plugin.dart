@@ -61,6 +61,10 @@ class CustomLintServer {
 
   /// Run the given [body] in a zone that captures errors and prints and
   /// sends them to the server for handling.
+  ///
+  /// Do not close the server within [runZoned], as this could cause a race condition
+  /// on errors/prints handling, where an error/print happens after the server is closed,
+  /// causing the event to be silenced.
   static Future<R> runZoned<R>(
     CustomLintServer Function() server,
     FutureOr<R> Function() body,
