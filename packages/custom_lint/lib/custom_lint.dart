@@ -93,7 +93,7 @@ Future<void> _runServer(
       await runner?.close();
       await customLintServer.close();
     }
-  });
+  }).whenComplete(() {});
 }
 
 Future<void> _runPlugins(

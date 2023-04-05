@@ -1,5 +1,12 @@
 import 'dart:async';
 
+/// An extension on [Stream] that adds a [safeFirst] method.
+extension StreamFirst<T> on Stream<T> {
+  /// A fork of [first] meant to be used instead of [first], to possibly override
+  /// it during debugging to provide more information.
+  Future<T> get safeFirst => first;
+}
+
 /// A class for awaiting multiple async operations at once.
 ///
 /// See [wait].
@@ -23,17 +30,9 @@ class PendingOperation {
   /// If during the wait new async operations are registered, they will be
   /// awaited too.
   Future<void> wait() async {
-    var successiveEmptyIterations = 0;
-
     /// Wait for all pending operations to complete and check that no new
     /// operations are queued for a few consecutive frames.
-    while (_pendingOperations.isNotEmpty && successiveEmptyIterations < 4) {
-      if (_pendingOperations.isEmpty) {
-        successiveEmptyIterations++;
-      } else {
-        successiveEmptyIterations = 0;
-      }
-
+    while (_pendingOperations.isNotEmpty) {
       await Future.wait(_pendingOperations.toList())
           // Catches errors to make sure that errors inside operations don't
           // abort the "wait" early

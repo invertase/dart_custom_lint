@@ -385,7 +385,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     EditGetAssistsParams parameters,
   ) async {
     // TODO test
-    final contextCollection = await _contextCollection.first;
+    final contextCollection = await _contextCollection.safeFirst;
     final analysisContext = contextCollection.contextFor(parameters.file);
     final assists =
         _customLintConfigsForAnalysisContexts[analysisContext]?.assists;
@@ -477,7 +477,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   Future<EditGetFixesResult> handleEditGetFixes(
     EditGetFixesParams parameters,
   ) async {
-    final contextCollection = await _contextCollection.first;
+    final contextCollection = await _contextCollection.safeFirst;
     final analysisContext = contextCollection.contextFor(parameters.file);
     final resolver = analysisContext.createResolverForFile(
       resourceProvider.getFile(parameters.file),
@@ -619,7 +619,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   Future<AnalysisHandleWatchEventsResult> handleAnalysisHandleWatchEvents(
     AnalysisHandleWatchEventsParams parameters,
   ) async {
-    final contextCollection = await _contextCollection.first;
+    final contextCollection = await _contextCollection.safeFirst;
 
     for (final event in parameters.events) {
       switch (event.type) {
@@ -828,7 +828,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   Future<void> _awaitAnalysisDone({required bool reload}) async {
     /// First, we wait for the plugin to be initialized. Otherwise there's
     /// obviously no pending operation
-    final contextCollection = await _contextCollection.first;
+    final contextCollection = await _contextCollection.safeFirst;
     if (reload) {
       await afterNewContextCollection(contextCollection: contextCollection);
     }

@@ -23,7 +23,7 @@ class StreamToSentPortAdapter {
   }) {
     final Stream<Object?> outputStream = _outputReceivePort.asBroadcastStream();
     final inputSendport =
-        outputStream.where((e) => e is SendPort).cast<SendPort>().first;
+        outputStream.where((e) => e is SendPort).cast<SendPort>().safeFirst;
 
     final sub = outputStream
         .where((e) => e is! SendPort)

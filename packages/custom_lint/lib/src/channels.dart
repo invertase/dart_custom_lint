@@ -36,7 +36,7 @@ abstract class AnalyzerPluginClientChannel {
   }
 
   /// Releases the resources
-  void close();
+  Future<void> close();
 }
 
 /// An interface for discussing with analyzer_plugin using a [SendPort]
@@ -58,7 +58,9 @@ class JsonSendPortChannel extends AnalyzerPluginClientChannel {
   }
 
   @override
-  Future<void> close() async => _receivePort.close();
+  Future<void> close() async {
+    _receivePort.close();
+  }
 }
 
 /// An interface for discussing with analyzer_plugin using web sockets

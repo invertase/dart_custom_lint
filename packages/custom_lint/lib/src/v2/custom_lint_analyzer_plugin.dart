@@ -118,7 +118,7 @@ class CustomLintServer {
     required bool reload,
   }) =>
       _runner.run(() async {
-        final clientChannel = await _clientChannel.first;
+        final clientChannel = await _clientChannel.safeFirst;
 
         await clientChannel.sendCustomLintRequest(
           CustomLintRequest.awaitAnalysisDone(
@@ -161,7 +161,7 @@ class CustomLintServer {
         },
         orElse: () async {
           return _runner.run(() async {
-            final clientChannel = await _clientChannel.first;
+            final clientChannel = await _clientChannel.safeFirst;
             final response =
                 await clientChannel.sendAnalyzerPluginRequest(request);
             await _analyzerPluginClientChannel.sendJson(response.toJson());
@@ -190,7 +190,8 @@ class CustomLintServer {
           err.toString(),
           stackTrace: stack.toString(),
         ),
-        allContextRoots: await _contextRoots.first.then((value) => value.roots),
+        allContextRoots:
+            await _contextRoots.safeFirst.then((value) => value.roots),
       );
     }
   }
@@ -236,7 +237,7 @@ class CustomLintServer {
     required bool isClientMessage,
   }) =>
       _runner.run(() async {
-        final roots = await _contextRoots.first;
+        final roots = await _contextRoots.safeFirst;
 
         if (!isClientMessage) {
           delegate.serverMessage(
@@ -254,27 +255,39 @@ class CustomLintServer {
         }
       });
 
+  Future<void>? _closeFuture;
+
   /// Stops the server, closing all channels.
   Future<void> close() async {
-    // Cancel pending operations
-    await _contextRoots.close();
+    // Already stopped the server before. No need to run things again.
+    if (_closeFuture != null) return _closeFuture;
 
-    // Flushes logs before stopping server.
-    await _runner.wait();
+    return _closeFuture = Future(() async {
+      // Cancel pending operations
+      await _contextRoots.close();
 
-    try {
-      await Future.wait([
-        _clientChannel.first.then((clientChannel) => clientChannel.close()),
-        _clientChannel.close(),
-        _requestSubscription.cancel(),
-        if (_clientChannelEventsSubscription != null)
-          _clientChannelEventsSubscription!.cancel(),
-      ]).catchError((_) => const <void>[]);
-    } finally {
-      _analyzerPluginClientChannel.close();
-      // Wait for remaining operations to complete
+      // Flushes logs before stopping server.
       await _runner.wait();
-    }
+
+      try {
+        await Future.wait([
+          _clientChannel.safeFirst
+              .then((clientChannel) => clientChannel.close()),
+          _clientChannel.close(),
+          _requestSubscription.cancel(),
+          if (_clientChannelEventsSubscription != null)
+            _clientChannelEventsSubscription!.cancel(),
+        ])
+            // Close the connection after previous disposals are done, to make sure
+            // the shutdown request (if any) receives a response
+            .whenComplete(() => _analyzerPluginClientChannel.close());
+      } finally {
+        // Wait for remaining operations to complete
+        await _runner.wait();
+      }
+    })
+        // Make sure "close" never throws, so that follow-up dispose logic can continue.
+        .catchError((_) {});
   }
 
   PluginVersionCheckResult _handlePluginVersionCheck(

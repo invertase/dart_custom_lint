@@ -7,6 +7,7 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:path/path.dart';
 import 'package:uuid/uuid.dart';
 
+import '../async_operation.dart';
 import '../channels.dart';
 import '../workspace.dart';
 import 'custom_lint_analyzer_plugin.dart';
@@ -59,7 +60,7 @@ class SocketCustomLintServerToClientChannel {
       server,
       serverSocket,
       // Voluntarily thow if no client connected
-      serverSocket.first,
+      serverSocket.safeFirst,
       version,
       contextRoots,
       workingDirectory,
@@ -279,12 +280,7 @@ void main(List<String> args) async {
 
   /// Stops the client, liberating the resources.
   Future<void> close() async {
-    // Shutdown the plugin
-    await sendAnalyzerPluginRequest(
-      PluginShutdownParams().toRequest(const Uuid().v4()),
-    )
-        // No-matter if the client threw, we still finish the shutdown
-        .then<void>((_) {}, onError: (_) {});
+    // TODO send shutdown request
 
     await Future.wait([
       if (_tempDirectory != null) _tempDirectory!.delete(recursive: true),
