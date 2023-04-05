@@ -14,21 +14,21 @@ abstract class CustomLintDelegate {
     CustomLintServer serverPlugin,
     Object error,
     StackTrace stackTrace, {
-    required List<ContextRoot> allContextRoots,
+    required List<ContextRoot>? allContextRoots,
   });
 
   /// A plugin failed to start
   void pluginInitializationFail(
     CustomLintServer serverPlugin,
     String message, {
-    required List<ContextRoot> allContextRoots,
+    required List<ContextRoot>? allContextRoots,
   });
 
   /// The server emitted a message
   void serverMessage(
     CustomLintServer serverPlugin,
     String message, {
-    required List<ContextRoot> allContextRoots,
+    required List<ContextRoot>? allContextRoots,
   });
 
   /// A plugin emitted a message
@@ -36,7 +36,7 @@ abstract class CustomLintDelegate {
     CustomLintServer serverPlugin,
     String message, {
     required String? pluginName,
-    required List<ContextRoot> pluginContextRoots,
+    required List<ContextRoot>? pluginContextRoots,
   });
 
   /// A plugin threw outside of a request
@@ -45,7 +45,7 @@ abstract class CustomLintDelegate {
     String err, {
     required String? stackTrace,
     required String pluginName,
-    required List<ContextRoot> pluginContextRoots,
+    required List<ContextRoot>? pluginContextRoots,
   });
 
   /// A plugin threw during a request
@@ -53,17 +53,21 @@ abstract class CustomLintDelegate {
     CustomLintServer serverPlugin,
     Request request,
     RequestError requestError, {
-    required List<ContextRoot> allContextRoots,
+    required List<ContextRoot>? allContextRoots,
   });
 }
 
 /// Sends the output of some events into a log file
 mixin LogCustomLintDelegate implements CustomLintDelegate {
   void _log(
-    List<ContextRoot> contextRoots,
+    List<ContextRoot>? contextRoots,
     String message, {
     required String? pluginName,
   }) {
+    // We unfortunately can't log without a context root.
+    // Hopefully if ran in the CLI, other logging methods will be available.
+    if (contextRoots == null) return;
+
     final now = DateTime.now();
     final label =
         pluginName != null ? '[$pluginName] ${now.toIso8601String()}' : '';
@@ -89,7 +93,7 @@ mixin LogCustomLintDelegate implements CustomLintDelegate {
     CustomLintServer serverPlugin,
     Object error,
     StackTrace stackTrace, {
-    required List<ContextRoot> allContextRoots,
+    required List<ContextRoot>? allContextRoots,
   }) {
     _log(allContextRoots, '$error\n$stackTrace', pluginName: 'custom_lint');
   }
@@ -98,7 +102,7 @@ mixin LogCustomLintDelegate implements CustomLintDelegate {
   void pluginInitializationFail(
     CustomLintServer serverPlugin,
     String message, {
-    required List<ContextRoot> allContextRoots,
+    required List<ContextRoot>? allContextRoots,
   }) {
     _log(allContextRoots, message, pluginName: null);
   }
@@ -108,7 +112,7 @@ mixin LogCustomLintDelegate implements CustomLintDelegate {
   void serverMessage(
     CustomLintServer serverPlugin,
     String message, {
-    required List<ContextRoot> allContextRoots,
+    required List<ContextRoot>? allContextRoots,
   }) {
     _log(
       allContextRoots,
@@ -123,7 +127,7 @@ mixin LogCustomLintDelegate implements CustomLintDelegate {
     CustomLintServer serverPlugin,
     String message, {
     required String? pluginName,
-    required List<ContextRoot> pluginContextRoots,
+    required List<ContextRoot>? pluginContextRoots,
   }) {
     _log(
       pluginContextRoots,
@@ -137,7 +141,7 @@ mixin LogCustomLintDelegate implements CustomLintDelegate {
     CustomLintServer serverPlugin,
     Request request,
     RequestError requestError, {
-    required List<ContextRoot> allContextRoots,
+    required List<ContextRoot>? allContextRoots,
   }) {
     _log(
       allContextRoots,
@@ -158,7 +162,7 @@ ${requestError.stackTrace}
     String err, {
     required String? stackTrace,
     required String pluginName,
-    required List<ContextRoot> pluginContextRoots,
+    required List<ContextRoot>? pluginContextRoots,
   }) {
     if (stackTrace != null) {
       _log(
@@ -190,7 +194,7 @@ class CommandCustomLintDelegate
     CustomLintServer serverPlugin,
     String message, {
     required String? pluginName,
-    required List<ContextRoot> pluginContextRoots,
+    required List<ContextRoot>? pluginContextRoots,
   }) {
     super.pluginMessage(
       serverPlugin,
@@ -216,7 +220,7 @@ class CommandCustomLintDelegate
     CustomLintServer serverPlugin,
     Object error,
     StackTrace stackTrace, {
-    required List<ContextRoot> allContextRoots,
+    required List<ContextRoot>? allContextRoots,
   }) {
     exitCode = 1;
     super.serverError(
@@ -232,7 +236,7 @@ class CommandCustomLintDelegate
   void pluginInitializationFail(
     CustomLintServer serverPlugin,
     String message, {
-    required List<ContextRoot> allContextRoots,
+    required List<ContextRoot>? allContextRoots,
   }) {
     exitCode = 1;
     super.pluginInitializationFail(
@@ -249,7 +253,7 @@ class CommandCustomLintDelegate
     String err, {
     required String? stackTrace,
     required String pluginName,
-    required List<ContextRoot> pluginContextRoots,
+    required List<ContextRoot>? pluginContextRoots,
   }) {
     exitCode = 1;
     super.pluginError(
@@ -271,7 +275,7 @@ class CommandCustomLintDelegate
     CustomLintServer serverPlugin,
     Request request,
     RequestError requestError, {
-    required List<ContextRoot> allContextRoots,
+    required List<ContextRoot>? allContextRoots,
   }) {
     exitCode = 1;
     super.requestError(
