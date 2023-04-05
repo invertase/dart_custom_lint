@@ -503,7 +503,7 @@ class CustomLintProject {
   ) async {
     final directory = Directory(contextRoot.root);
 
-    final pubspecFuture = parsePubspec(directory)
+    final projectPubspec = await parsePubspec(directory)
         // ignore: avoid_types_on_closure_parameters
         .catchError((Object err, StackTrace stack) {
       throw PubspecParseError._(
@@ -512,7 +512,7 @@ class CustomLintProject {
         errorStackTrace: stack,
       );
     });
-    final packageConfigFuture = parsePackageConfig(directory)
+    final projectPackageConfig = await parsePackageConfig(directory)
         // ignore: avoid_types_on_closure_parameters
         .catchError((Object err, StackTrace stack) {
       throw PackageConfigParseError._(
@@ -521,9 +521,6 @@ class CustomLintProject {
         errorStackTrace: stack,
       );
     });
-
-    final projectPubspec = await pubspecFuture;
-    final projectPackageConfig = await packageConfigFuture;
 
     // TODO check that only dev_dependencies are checked
     final plugins = await Future.wait(

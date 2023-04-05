@@ -117,7 +117,7 @@ void main() {
 
         final process = await Process.run(
           'dart',
-          ['run', '--no-pub', customLintBinPath],
+          [customLintBinPath],
           workingDirectory: app.path,
         );
 
