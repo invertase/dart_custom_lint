@@ -59,7 +59,7 @@ Future<void> _runServer(
   required bool watchMode,
   required Directory workingDirectory,
 }) async {
-  await CustomLintServer.run(
+  final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
     watchMode: watchMode,
     workingDirectory: workingDirectory,
@@ -67,32 +67,33 @@ Future<void> _runServer(
     // rendered separately
     includeBuiltInLints: false,
     delegate: CommandCustomLintDelegate(),
-    (customLintServer) async {
-      CustomLintRunner? runner;
-
-      try {
-        final workspace = await CustomLintWorkspace.fromPaths(
-          [workingDirectory.path],
-          workingDirectory: workingDirectory,
-        );
-        runner = CustomLintRunner(customLintServer, workspace, channel);
-
-        await runner.initialize;
-        await _runPlugins(
-          runner,
-          reload: false,
-          workingDirectory: workingDirectory,
-        );
-
-        if (watchMode) {
-          await _startWatchMode(runner, workingDirectory: workingDirectory);
-        }
-      } finally {
-        await runner?.close();
-        await customLintServer.close();
-      }
-    },
   );
+
+  await CustomLintServer.runZoned(() => customLintServer, () async {
+    CustomLintRunner? runner;
+
+    try {
+      final workspace = await CustomLintWorkspace.fromPaths(
+        [workingDirectory.path],
+        workingDirectory: workingDirectory,
+      );
+      runner = CustomLintRunner(customLintServer, workspace, channel);
+
+      await runner.initialize;
+      await _runPlugins(
+        runner,
+        reload: false,
+        workingDirectory: workingDirectory,
+      );
+
+      if (watchMode) {
+        await _startWatchMode(runner, workingDirectory: workingDirectory);
+      }
+    } finally {
+      await runner?.close();
+      await customLintServer.close();
+    }
+  });
 }
 
 Future<void> _runPlugins(

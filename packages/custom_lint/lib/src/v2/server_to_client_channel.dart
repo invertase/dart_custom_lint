@@ -279,7 +279,12 @@ void main(List<String> args) async {
 
   /// Stops the client, liberating the resources.
   Future<void> close() async {
-    // TODO send shutdown to process
+    // Shutdown the plugin
+    await sendAnalyzerPluginRequest(
+      PluginShutdownParams().toRequest(const Uuid().v4()),
+    )
+        // No-matter if the client threw, we still finish the shutdown
+        .then<void>((_) {}, onError: (_) {});
 
     await Future.wait([
       if (_tempDirectory != null) _tempDirectory!.delete(recursive: true),

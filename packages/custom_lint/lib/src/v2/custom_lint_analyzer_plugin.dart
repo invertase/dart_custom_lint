@@ -31,18 +31,18 @@ class CustomLintServer {
   });
 
   /// Start the server while also capturing prints and errors.
-  static Future<R> run<R>(
-    FutureOr<R> Function(CustomLintServer server) cb, {
+  static Future<CustomLintServer> start({
     required SendPort sendPort,
     required bool watchMode,
     required bool includeBuiltInLints,
     required CustomLintDelegate delegate,
     required Directory workingDirectory,
-  }) async {
+  }) {
     late CustomLintServer server;
 
-    return asyncRunZonedGuarded(
-      () async {
+    return runZoned(
+      () => server,
+      () {
         server = CustomLintServer._(
           watchMode: watchMode,
           includeBuiltInLints: includeBuiltInLints,
@@ -51,11 +51,24 @@ class CustomLintServer {
         );
         server._start(sendPort);
 
-        return cb(server);
+        return server;
       },
-      (err, stack) => server.handleUncaughtError(err, stack),
+    );
+  }
+
+  /// Run the given [body] in a zone that captures errors and prints and
+  /// sends them to the server for handling.
+  static Future<R> runZoned<R>(
+    CustomLintServer Function() server,
+    FutureOr<R> Function() body,
+  ) {
+    return asyncRunZonedGuarded(
+      () => body(),
+      (err, stack) {
+        server().handleUncaughtError(err, stack);
+      },
       zoneSpecification: ZoneSpecification(
-        print: (self, parent, zone, line) => server.handlePrint(
+        print: (self, parent, zone, line) => server().handlePrint(
           line,
           isClientMessage: false,
         ),
@@ -243,9 +256,14 @@ class CustomLintServer {
 
   /// Stops the server, closing all channels.
   Future<void> close() async {
+    // Cancel pending operations
+    await _contextRoots.close();
+
+    // Flushes logs before stopping server.
+    await _runner.wait();
+
     try {
       await Future.wait([
-        _contextRoots.close(),
         _clientChannel.first.then((clientChannel) => clientChannel.close()),
         _clientChannel.close(),
         _requestSubscription.cancel(),
@@ -254,7 +272,7 @@ class CustomLintServer {
       ]).catchError((_) => const <void>[]);
     } finally {
       _analyzerPluginClientChannel.close();
-      // Flushes logs before stopping server.
+      // Wait for remaining operations to complete
       await _runner.wait();
     }
   }

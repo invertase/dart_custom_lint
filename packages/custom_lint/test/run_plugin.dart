@@ -54,43 +54,44 @@ Future<ManualRunner> startRunnerForApp(
   final channel = ServerIsolateChannel();
 
   // TODO use IO override to mock & test stdout/stderr
-  return CustomLintServer.run(
+  final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
     workingDirectory: directory,
     delegate: CommandCustomLintDelegate(),
     includeBuiltInLints: includeBuiltInLints,
     watchMode: watchMode,
-    (customLintServer) async {
-      final workspace = await CustomLintWorkspace.fromPaths(
-        [directory.path],
-        workingDirectory: directory,
-      );
-      final runner = CustomLintRunner(customLintServer, workspace, channel);
-      addTearDown(runner.close);
-
-      if (!ignoreErrors) {
-        runner.channel
-          ..responseErrors.listen((event) {
-            zone.handleUncaughtError(
-              TestFailure(
-                '${event.message} ${event.code}\n${event.stackTrace}',
-              ),
-              StackTrace.current,
-            );
-          })
-          ..pluginErrors.listen((event) {
-            zone.handleUncaughtError(
-              TestFailure('${event.message}\n${event.stackTrace}'),
-              StackTrace.current,
-            );
-          });
-      }
-
-      unawaited(runner.initialize);
-
-      return ManualRunner(runner, channel);
-    },
   );
+
+  return CustomLintServer.runZoned(() => customLintServer, () async {
+    final workspace = await CustomLintWorkspace.fromPaths(
+      [directory.path],
+      workingDirectory: directory,
+    );
+    final runner = CustomLintRunner(customLintServer, workspace, channel);
+    addTearDown(runner.close);
+
+    if (!ignoreErrors) {
+      runner.channel
+        ..responseErrors.listen((event) {
+          zone.handleUncaughtError(
+            TestFailure(
+              '${event.message} ${event.code}\n${event.stackTrace}',
+            ),
+            StackTrace.current,
+          );
+        })
+        ..pluginErrors.listen((event) {
+          zone.handleUncaughtError(
+            TestFailure('${event.message}\n${event.stackTrace}'),
+            StackTrace.current,
+          );
+        });
+    }
+
+    unawaited(runner.initialize);
+
+    return ManualRunner(runner, channel);
+  });
 }
 
 extension LogFile on Directory {

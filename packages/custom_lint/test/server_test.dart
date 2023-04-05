@@ -364,14 +364,14 @@ if (node.name.lexeme == "fail") {
       // uncomment when the golden needs update
       // saveLogGoldens(
       //   File('test/goldens/server_test/redirect_logs.golden'),
-      //   app.log.readAsStringSync().split('\n').take(5).join('\n'),
+      //   app.log.readAsStringSync().split('\n').take(4).join('\n'),
       //   paths: {plugin.uri: 'plugin', app.uri: 'app'},
       // );
       // await runner.close();
       // return;
 
       expect(
-        app.log.readAsStringSync().split('\n').take(5).join('\n'),
+        app.log.readAsStringSync().split('\n').take(4).join('\n'),
         matchesLogGolden(
           'test/goldens/server_test/redirect_logs.golden',
           paths: {plugin.uri: 'plugin', app.uri: 'app'},

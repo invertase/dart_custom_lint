@@ -23,7 +23,17 @@ class PendingOperation {
   /// If during the wait new async operations are registered, they will be
   /// awaited too.
   Future<void> wait() async {
-    while (_pendingOperations.isNotEmpty) {
+    var successiveEmptyIterations = 0;
+
+    /// Wait for all pending operations to complete and check that no new
+    /// operations are queued for a few consecutive frames.
+    while (_pendingOperations.isNotEmpty && successiveEmptyIterations < 4) {
+      if (_pendingOperations.isEmpty) {
+        successiveEmptyIterations++;
+      } else {
+        successiveEmptyIterations = 0;
+      }
+
       await Future.wait(_pendingOperations.toList())
           // Catches errors to make sure that errors inside operations don't
           // abort the "wait" early
@@ -55,9 +65,10 @@ Future<R> asyncRunZonedGuarded<R>(
         completer.complete,
         // ignore: avoid_types_on_closure_parameters
         onError: (Object error, StackTrace stack) {
-          completer.completeError(error, stack);
           // Make sure the initial error is also reported.
           onError(error, stack);
+
+          completer.completeError(error, stack);
         },
       ),
       onError,

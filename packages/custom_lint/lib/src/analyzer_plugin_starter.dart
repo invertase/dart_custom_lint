@@ -10,7 +10,7 @@ import 'v2/custom_lint_analyzer_plugin.dart';
 void start(Iterable<String> _, SendPort sendPort) {
   final isInCI = ci.isCI;
 
-  CustomLintServer.run<void>(
+  CustomLintServer.start(
     sendPort: sendPort,
     includeBuiltInLints: true,
     // "start" may be run by `dart analyze`, in which case we don't want to
@@ -20,6 +20,5 @@ void start(Iterable<String> _, SendPort sendPort) {
     watchMode: !isInCI,
     delegate: AnalyzerPluginCustomLintDelegate(),
     workingDirectory: Directory.current,
-    (_) {},
   );
 }
