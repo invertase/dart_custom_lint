@@ -127,12 +127,18 @@ ${rule.ruleMembers}
 Directory createPlugin({
   required String name,
   Directory? parent,
-  String? pubpsec = _pluginDefaultPubspec,
+  String pubpsec = _pluginDefaultPubspec,
   String? analysisOptions,
   String? main,
   Map<String, String>? sources,
   bool omitPackageConfig = false,
+  Map<String, String> extraDependencies = const {},
 }) {
+  assert(
+    pubpsec == _pluginDefaultPubspec || extraDependencies.isEmpty,
+    'Cannot specify both pubpsec and extraDependencies',
+  );
+
   return createDartProject(
     parent: parent,
     sources: {
@@ -146,13 +152,14 @@ version: 0.0.1
 publish_to: none
 
 environment:
-  sdk: ">=2.17.0 <3.0.0"
+  sdk: ">=2.17.0 <4.0.0"
 
 dependencies:
   analyzer: any
   analyzer_plugin: any
   custom_lint_builder:
     path: ${PeerProjectMeta.current.customLintBuilderPath}
+${extraDependencies.entries.map((e) => '  ${e.key}: ${e.value}').join('\n')}
 '''
         : pubpsec,
     analysisOptions: analysisOptions,
@@ -167,8 +174,8 @@ Directory createLintUsage({
   Directory? parent,
   Map<String, Uri> plugins = const {},
   Map<String, String> source = const {},
+  Map<String, Uri> extraPackageConfig = const {},
   required String name,
-  bool createDependencyOverrides = false,
 }) {
   final pluginDevDependencies = plugins.entries
       .map(
@@ -193,7 +200,7 @@ version: 0.0.1
 publish_to: none
 
 environment:
-  sdk: ">=2.17.0 <3.0.0"
+  sdk: ">=2.17.0 <4.0.0"
 
 dependencies:
   analyzer: any
@@ -203,17 +210,9 @@ dev_dependencies:
   custom_lint:
     path: ${PeerProjectMeta.current.customLintPath}
 $pluginDevDependencies
-
-${createDependencyOverrides ? '''
-dependency_overrides:
-  custom_lint:
-    path: ${PeerProjectMeta.current.customLintPath}
-  custom_lint_core:
-    path: ${PeerProjectMeta.current.customLintCorePath}
-''' : ''}
 ''',
     packageConfig: createPackageConfig(
-      plugins: plugins,
+      plugins: {...plugins, ...extraPackageConfig},
       name: name,
     ),
     name: name,

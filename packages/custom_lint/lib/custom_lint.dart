@@ -10,6 +10,7 @@ import 'src/plugin_delegate.dart';
 import 'src/runner.dart';
 import 'src/server_isolate_channel.dart';
 import 'src/v2/custom_lint_analyzer_plugin.dart';
+import 'src/workspace.dart';
 
 const _help = '''
 
@@ -40,36 +41,70 @@ Future<void> customLint({
   exitCode = 0;
 
   final channel = ServerIsolateChannel();
-  await CustomLintServer.run(
+  try {
+    await _runServer(
+      channel,
+      watchMode: watchMode,
+      workingDirectory: workingDirectory,
+    );
+  } catch (_) {
+    exitCode = 1;
+  } finally {
+    await channel.close();
+  }
+}
+
+Future<void> _runServer(
+  ServerIsolateChannel channel, {
+  required bool watchMode,
+  required Directory workingDirectory,
+}) async {
+  final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
     watchMode: watchMode,
+    workingDirectory: workingDirectory,
     // In the CLI, only show user defined lints. Errors & logs will be
     // rendered separately
     includeBuiltInLints: false,
     delegate: CommandCustomLintDelegate(),
-    (customLintServer) async {
-      final runner =
-          CustomLintRunner(customLintServer, workingDirectory, channel);
-
-      try {
-        await runner.initialize;
-        await _runPlugins(runner, reload: false);
-
-        if (watchMode) {
-          await _startWatchMode(runner);
-        }
-      } catch (err) {
-        exitCode = 1;
-      } finally {
-        await runner.close();
-      }
-    },
   );
+
+  await CustomLintServer.runZoned(() => customLintServer, () async {
+    CustomLintRunner? runner;
+
+    try {
+      final workspace = await CustomLintWorkspace.fromPaths(
+        [workingDirectory.path],
+        workingDirectory: workingDirectory,
+      );
+      runner = CustomLintRunner(customLintServer, workspace, channel);
+
+      await runner.initialize;
+      await _runPlugins(
+        runner,
+        reload: false,
+        workingDirectory: workingDirectory,
+      );
+
+      if (watchMode) {
+        await _startWatchMode(runner, workingDirectory: workingDirectory);
+      }
+    } finally {
+      await runner?.close();
+    }
+  }).whenComplete(() async {
+    // Closing the server output of "runZoned" to ensure that "runZoned" completes
+    // before the server is closed.
+    // Failing to do so could cause exceptions within "runZoned" to be handled
+    // after the server is closed, preventing the exception from being printed.
+    await customLintServer.close();
+  });
 }
 
 Future<void> _runPlugins(
   CustomLintRunner runner, {
   required bool reload,
+  required Directory workingDirectory,
 }) async {
   try {
     final lints = await runner.getLints(reload: reload);
@@ -78,7 +113,7 @@ Future<void> _runPlugins(
       exitCode = 1;
     }
 
-    _renderLints(lints, workingDirectory: runner.workingDirectory);
+    _renderLints(lints, workingDirectory: workingDirectory);
   } catch (err, stack) {
     exitCode = 1;
     stderr.writeln('$err\n$stack');
@@ -124,7 +159,10 @@ void _renderLints(
   }
 }
 
-Future<void> _startWatchMode(CustomLintRunner runner) async {
+Future<void> _startWatchMode(
+  CustomLintRunner runner, {
+  required Directory workingDirectory,
+}) async {
   if (stdin.hasTerminal) {
     stdin
       // Let's not pollute the output with whatever the user types
@@ -141,7 +179,11 @@ Future<void> _startWatchMode(CustomLintRunner runner) async {
       case 'r':
         // Rerunning lints
         stdout.writeln('Manual Reload...');
-        await _runPlugins(runner, reload: true);
+        await _runPlugins(
+          runner,
+          reload: true,
+          workingDirectory: workingDirectory,
+        );
         break;
       case 'q':
         // Let's quit the command line

@@ -1,5 +1,6 @@
 ## Unreleased fix
 
+- Reduce the likelyness of a dependency version conflict.
 - Fix `dart analyze` crashing on large projects in the CI due to custom_lint
   incorrectly trying to run plugins in debug mode.
 - Fix the `custom_lint` command line never terminating in some cases where plugins

@@ -10,6 +10,8 @@ import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
 import 'package:async/async.dart';
 import 'package:uuid/uuid.dart';
 
+import 'async_operation.dart';
+
 const _uuid = Uuid();
 
 /// A base class for the protocol responsible with interacting with using the
@@ -120,8 +122,10 @@ class _PrettyRequestFailure extends RequestFailure {
 abstract class IsolateChannelBase with ChannelBase {
   /// Mixin for Isolate-based channels
   IsolateChannelBase(this.receivePort) {
-    _sendPort =
-        inputStream.where((event) => event is SendPort).cast<SendPort>().first;
+    _sendPort = inputStream
+        .where((event) => event is SendPort)
+        .cast<SendPort>()
+        .safeFirst;
   }
 
   /// The [ReceivePort] responsible for listening to requests.
@@ -150,5 +154,7 @@ class ServerIsolateChannel extends IsolateChannelBase {
       .map(AnalysisErrorsParams.fromNotification);
 
   /// Releases the associated resources.
-  void close() => receivePort.close();
+  Future<void> close() async {
+    receivePort.close();
+  }
 }

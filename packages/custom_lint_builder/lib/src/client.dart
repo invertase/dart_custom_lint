@@ -19,6 +19,10 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:analyzer_plugin/starter.dart';
 import 'package:collection/collection.dart';
 // ignore: implementation_imports
+import 'package:custom_lint/src/async_operation.dart';
+// ignore: implementation_imports
+import 'package:custom_lint/src/package_utils.dart';
+// ignore: implementation_imports
 import 'package:custom_lint/src/v2/protocol.dart';
 // ignore: implementation_imports
 import 'package:custom_lint_core/src/change_reporter.dart';
@@ -32,7 +36,6 @@ import 'package:glob/glob.dart';
 import 'package:hotreloader/hotreloader.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
-import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:rxdart/subjects.dart';
 
 import '../custom_lint_builder.dart';
@@ -174,15 +177,8 @@ class CustomLintPluginClient {
     _contextRootsForPlugin = {};
 
     for (final contextRoot in params.roots) {
-      final pubspecFile = io.File(join(contextRoot.root, 'pubspec.yaml'));
-      if (!pubspecFile.existsSync()) {
-        continue;
-      }
-
-      final pubspec = Pubspec.parse(
-        pubspecFile.readAsStringSync(),
-        sourceUrl: pubspecFile.uri,
-      );
+      final pubspec = tryParsePubspecSync(io.Directory(contextRoot.root));
+      if (pubspec == null) continue;
 
       for (final pluginName in _channel.registeredPlugins.keys) {
         final isPluginEnabledInContext =
@@ -389,7 +385,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     EditGetAssistsParams parameters,
   ) async {
     // TODO test
-    final contextCollection = await _contextCollection.first;
+    final contextCollection = await _contextCollection.safeFirst;
     final analysisContext = contextCollection.contextFor(parameters.file);
     final assists =
         _customLintConfigsForAnalysisContexts[analysisContext]?.assists;
@@ -430,19 +426,20 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
           target,
         ),
     ]);
-    for (final assist in configs.assists) {
-      _runAssistRun(
-        resolver,
-        assist,
-        CustomLintContext(
-          LintRuleNodeRegistry(registry, assist.runtimeType.toString()),
-          postRunCallbacks.add,
-          sharedState,
+    await Future.wait([
+      for (final assist in configs.assists)
+        _runAssistRun(
+          resolver,
+          assist,
+          CustomLintContext(
+            LintRuleNodeRegistry(registry, assist.runtimeType.toString()),
+            postRunCallbacks.add,
+            sharedState,
+          ),
+          changeReporter,
+          target,
         ),
-        changeReporter,
-        target,
-      );
-    }
+    ]);
 
     runPostRunCallbacks(postRunCallbacks);
 
@@ -462,13 +459,13 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     );
   }
 
-  void _runAssistRun(
+  Future<void> _runAssistRun(
     CustomLintResolver resolver,
     Assist assist,
     CustomLintContext context,
     ChangeReporter changeReporter,
     SourceRange target,
-  ) {
+  ) async {
     return _runLintZoned(
       resolver,
       () => assist.run(resolver, changeReporter, context, target),
@@ -480,7 +477,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   Future<EditGetFixesResult> handleEditGetFixes(
     EditGetFixesParams parameters,
   ) async {
-    final contextCollection = await _contextCollection.first;
+    final contextCollection = await _contextCollection.safeFirst;
     final analysisContext = contextCollection.contextFor(parameters.file);
     final resolver = analysisContext.createResolverForFile(
       resourceProvider.getFile(parameters.file),
@@ -563,20 +560,21 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
           ),
         ),
     ]);
-    for (final fix in fixesForError) {
-      _runFixRun(
-        resolver,
-        fix,
-        CustomLintContext(
-          LintRuleNodeRegistry(registry, fix.runtimeType.toString()),
-          postRunCallbacks.add,
-          sharedState,
-        ),
-        changeReporter,
-        analysisError,
-        otherErrors,
-      );
-    }
+    await Future.wait([
+      for (final fix in fixesForError)
+        _runFixRun(
+          resolver,
+          fix,
+          CustomLintContext(
+            LintRuleNodeRegistry(registry, fix.runtimeType.toString()),
+            postRunCallbacks.add,
+            sharedState,
+          ),
+          changeReporter,
+          analysisError,
+          otherErrors,
+        )
+    ]);
 
     runPostRunCallbacks(postRunCallbacks);
 
@@ -602,14 +600,14 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     );
   }
 
-  void _runFixRun(
+  Future<void> _runFixRun(
     CustomLintResolver resolver,
     Fix fix,
     CustomLintContext context,
     ChangeReporter changeReporter,
     AnalysisError analysisError,
     List<AnalysisError> others,
-  ) {
+  ) async {
     return _runLintZoned(
       resolver,
       () => fix.run(resolver, changeReporter, context, analysisError, others),
@@ -621,7 +619,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   Future<AnalysisHandleWatchEventsResult> handleAnalysisHandleWatchEvents(
     AnalysisHandleWatchEventsParams parameters,
   ) async {
-    final contextCollection = await _contextCollection.first;
+    final contextCollection = await _contextCollection.safeFirst;
 
     for (final event in parameters.events) {
       switch (event.type) {
@@ -763,18 +761,20 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
             ),
           ),
       ]);
-      for (final lintRule in activeLintRules) {
-        _runLintRule(
-          lintRule,
-          resolver,
-          reporterBeforeExpectLint,
-          CustomLintContext(
-            LintRuleNodeRegistry(registry, lintRule.code.name),
-            postRunCallbacks.add,
-            sharedState,
+
+      await Future.wait([
+        for (final lintRule in activeLintRules)
+          _runLintRule(
+            lintRule,
+            resolver,
+            reporterBeforeExpectLint,
+            CustomLintContext(
+              LintRuleNodeRegistry(registry, lintRule.code.name),
+              postRunCallbacks.add,
+              sharedState,
+            ),
           ),
-        );
-      }
+      ]);
 
       runPostRunCallbacks(postRunCallbacks);
 
@@ -828,7 +828,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
   Future<void> _awaitAnalysisDone({required bool reload}) async {
     /// First, we wait for the plugin to be initialized. Otherwise there's
     /// obviously no pending operation
-    final contextCollection = await _contextCollection.first;
+    final contextCollection = await _contextCollection.safeFirst;
     if (reload) {
       await afterNewContextCollection(contextCollection: contextCollection);
     }
@@ -837,9 +837,9 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     }
   }
 
-  R? _runLintZoned<R>(
+  Future<R> _runLintZoned<R>(
     CustomLintResolver resolver,
-    R Function() cb, {
+    FutureOr<R> Function() cb, {
     ErrorReporter? reporter,
     required String name,
   }) {
@@ -859,7 +859,7 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
       );
     }
 
-    return runZonedGuarded(
+    return asyncRunZonedGuarded(
       zoneSpecification: ZoneSpecification(
         print: (self, parent, zone, line) => onLog(line),
       ),
@@ -882,13 +882,13 @@ class _ClientAnalyzerPlugin extends ServerPlugin {
     );
   }
 
-  void _runLintRule(
+  Future<void> _runLintRule(
     LintRule lintRule,
     CustomLintResolver resolver,
     ErrorReporter reporter,
     CustomLintContext lintContext,
-  ) {
-    _runLintZoned(
+  ) async {
+    await _runLintZoned(
       resolver,
       () => lintRule.run(resolver, reporter, lintContext),
       reporter: reporter,
