@@ -91,9 +91,14 @@ Future<void> _runServer(
       }
     } finally {
       await runner?.close();
-      await customLintServer.close();
     }
-  }).whenComplete(() {});
+  }).whenComplete(() async {
+    // Closing the server output of "runZoned" to ensure that "runZoned" completes
+    // before the server is closed.
+    // Failing to do so could cause exceptions within "runZoned" to be handled
+    // after the server is closed, preventing the exception from being printed.
+    await customLintServer.close();
+  });
 }
 
 Future<void> _runPlugins(
