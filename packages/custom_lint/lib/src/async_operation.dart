@@ -28,7 +28,6 @@ class PendingOperation {
           // Catches errors to make sure that errors inside operations don't
           // abort the "wait" early
           .then<void>((value) => null, onError: (_) {});
-      ;
     }
   }
 }
