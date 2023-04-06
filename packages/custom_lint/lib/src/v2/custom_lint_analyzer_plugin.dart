@@ -288,7 +288,7 @@ class CustomLintServer {
         ])
             // Close the connection after previous disposals are done, to make sure
             // the shutdown request (if any) receives a response
-            .whenComplete(() => _analyzerPluginClientChannel.close());
+            .whenComplete(_analyzerPluginClientChannel.close);
       } finally {
         // Wait for remaining operations to complete
         await _runner.wait();
