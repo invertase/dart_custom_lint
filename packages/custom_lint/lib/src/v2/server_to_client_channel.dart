@@ -44,7 +44,6 @@ class SocketCustomLintServerToClientChannel {
     this._socket,
     this._version,
     this._contextRoots,
-    this._workingDirectory,
     this._workspace,
   ) : _channel = JsonSocketChannel(_socket);
 
@@ -72,7 +71,7 @@ class SocketCustomLintServerToClientChannel {
       serverSocket.safeFirst,
       version,
       contextRoots,
-      workingDirectory, workspace,
+      workspace,
     );
   }
 
@@ -80,7 +79,6 @@ class SocketCustomLintServerToClientChannel {
 
   final Future<Socket> _socket;
   final JsonSocketChannel _channel;
-  final Directory _workingDirectory;
   final CustomLintServer _server;
   final PluginVersionCheckParams _version;
   final ServerSocket _serverSocket;
