@@ -7,6 +7,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:meta/meta.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import '../custom_lint_core.dart';
 import 'node_lint_visitor.dart';
 import 'plugin_base.dart';
@@ -16,7 +17,12 @@ import 'resolver.dart';
 class CustomLintContext {
   /// Create a [CustomLintContext].
   @internal
-  CustomLintContext(this.registry, this._addPostRunCallback, this.sharedState);
+  CustomLintContext(
+    this.registry,
+    this._addPostRunCallback,
+    this.sharedState,
+    Pubspec? pubspec,
+  ) : pubspec = pubspec ?? Pubspec('test_project');
 
   /// An object used to listen to the analysis of a Dart file.
   ///
@@ -26,6 +32,11 @@ class CustomLintContext {
 
   /// An object shared with all lint rules/fixes/assits running.
   final Map<Object, Object?> sharedState;
+
+  /// The pubspec of the analyzed project.
+  ///
+  /// This can be used to disable a lint rule based on the presence/absence of a dependency.
+  final Pubspec pubspec;
 
   final void Function(void Function() cb) _addPostRunCallback;
 
@@ -129,14 +140,26 @@ abstract class DartLintRule extends LintRule {
   /// Runs this assist in test mode.
   ///
   /// The result will contain all the changes that would have been applied by [run].
+  ///
+  /// The parameter [pubspec] can be used to simulate a pubspec file which will
+  /// be passed to [CustomLintContext.pubspec].
+  /// By default, an empty pubspec with the name `test_project` will be used.
   @visibleForTesting
-  Future<List<AnalysisError>> testRun(ResolvedUnitResult result) async {
+  Future<List<AnalysisError>> testRun(
+    ResolvedUnitResult result, {
+    Pubspec? pubspec,
+  }) async {
     final registry = LintRuleNodeRegistry(
       NodeLintRegistry(LintRegistry(), enableTiming: false),
       'unknown',
     );
     final postRunCallbacks = <void Function()>[];
-    final context = CustomLintContext(registry, postRunCallbacks.add, {});
+    final context = CustomLintContext(
+      registry,
+      postRunCallbacks.add,
+      {},
+      pubspec,
+    );
     final resolver = CustomLintResolverImpl(
       () => Future.value(result),
       lineInfo: result.lineInfo,
