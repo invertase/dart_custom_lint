@@ -1,3 +1,7 @@
+## Unreleased minor
+
+Upgraded `analyzer` to `>=5.7.0 <5.11.0`
+
 ## 0.3.2 - 2023-03-09
 
 - `custom_lint` upgraded to `0.3.2`
