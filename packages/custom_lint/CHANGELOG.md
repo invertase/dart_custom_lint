@@ -6,7 +6,7 @@
 - Fix the `custom_lint` command line never terminating in some cases where plugins
   fail to start (thanks to @kuhnroyal).
 - Upgraded `analyzer` to `>=5.7.0 <5.11.0`
-
+- `LintRuleNodeRegistry` and other AstVisitor-like now are based off `GeneralizingAstVisitor` instead of `GeneralizingAstVisitor`
 ## 0.3.2 - 2023-03-09
 
 - Revert "Fixed an issue that caused a "Port already in use" error when
