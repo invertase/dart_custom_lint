@@ -1,13 +1,13 @@
 name: custom_lint_analyzer_plugin_loader
 description: This pubspec determines the version of the analyzer plugin to load.
-version: 0.3.2
+version: 0.3.3
 publish_to: none
 
 environment:
   sdk: ">=2.14.0 <3.0.0"
 
 dependencies:
-  custom_lint: 0.3.2
+  custom_lint: 0.3.3
 
 # TODO: If you want to contribute to custom_lint, add a pubspec_overrides.yaml file
 # in this folder, containing the following:
