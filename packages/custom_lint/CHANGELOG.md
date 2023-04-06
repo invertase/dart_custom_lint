@@ -1,4 +1,4 @@
-## Unreleased fix
+## 0.3.3 - 2023-04-06
 
 - Reduce the likelyness of a dependency version conflict.
 - Fix `dart analyze` crashing on large projects in the CI due to custom_lint
