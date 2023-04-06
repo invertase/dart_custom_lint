@@ -44,16 +44,24 @@ class SocketCustomLintServerToClientChannel {
     this._socket,
     this._version,
     this._contextRoots,
-    this._workingDirectory,
+    this._workspace,
   ) : _channel = JsonSocketChannel(_socket);
 
   /// Starts a server socket and exposes a way to communicate with potential clients.
-  static Future<SocketCustomLintServerToClientChannel> create(
+  ///
+  /// Returns `null` if the workspace has no plugins enabled.
+  static Future<SocketCustomLintServerToClientChannel?> create(
     CustomLintServer server,
     PluginVersionCheckParams version,
     AnalysisSetContextRootsParams contextRoots, {
     required Directory workingDirectory,
   }) async {
+    final workspace = await CustomLintWorkspace.fromContextRoots(
+      contextRoots.roots,
+      workingDirectory: workingDirectory,
+    );
+    if (workspace.uniquePluginNames.isEmpty) return null;
+
     final serverSocket = await _createServerSocket();
 
     return SocketCustomLintServerToClientChannel._(
@@ -63,7 +71,7 @@ class SocketCustomLintServerToClientChannel {
       serverSocket.safeFirst,
       version,
       contextRoots,
-      workingDirectory,
+      workspace,
     );
   }
 
@@ -71,11 +79,11 @@ class SocketCustomLintServerToClientChannel {
 
   final Future<Socket> _socket;
   final JsonSocketChannel _channel;
-  final Directory _workingDirectory;
   final CustomLintServer _server;
   final PluginVersionCheckParams _version;
   final ServerSocket _serverSocket;
-  late final Future<Process> _processFuture;
+  late final Future<Process?> _processFuture;
+  final CustomLintWorkspace _workspace;
 
   AnalysisSetContextRootsParams _contextRoots;
 
@@ -106,6 +114,8 @@ class SocketCustomLintServerToClientChannel {
   Future<void> init() async {
     _processFuture = _startProcess();
     final process = await _processFuture;
+    // No process started, likely because no plugin were detected. We can stop here.
+    if (process == null) return;
 
     var out = process.stdout.map(utf8.decode);
     // Let's not log the VM service prints unless in watch mode
@@ -147,15 +157,10 @@ class SocketCustomLintServerToClientChannel {
   /// without setting up the connection.
   ///
   /// Will throw if the process fails to start.
-  Future<Process> _startProcess() async {
-    final workspace = await CustomLintWorkspace.fromContextRoots(
-      _contextRoots.roots,
-      workingDirectory: _workingDirectory,
-    );
-
+  Future<Process?> _startProcess() async {
     final tempDirectory =
-        _tempDirectory = await workspace.createPluginHostDirectory();
-    _writeEntrypoint(workspace.uniquePluginNames, tempDirectory);
+        _tempDirectory = await _workspace.createPluginHostDirectory();
+    _writeEntrypoint(_workspace.uniquePluginNames, tempDirectory);
 
     return _asyncRetry(retryCount: 5, () async {
       // Using "late" to fetch the port only if needed (in watch mode)
@@ -288,7 +293,7 @@ void main(List<String> args) async {
       _serverSocket.close(),
       _channel.close(),
       _processFuture.then<void>(
-        (value) => value.kill(),
+        (value) => value?.kill(),
         // The process wasn't started. No need to do anything.
         onError: (_) {},
       )

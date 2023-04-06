@@ -26,7 +26,39 @@ void main() {
     'custom_lint.dart',
   );
 
-  group('Correctly exits with', () {
+  group('Correctly exits when', () {
+    test('running on a workspace with no plugins', () {
+      final app = createLintUsage(name: 'test_app');
+
+      final process = Process.runSync(
+        'dart',
+        [customLintBinPath],
+        workingDirectory: app.path,
+        stdoutEncoding: utf8,
+        stderrEncoding: utf8,
+      );
+
+      expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
+      expect(process.stdout, 'No issues found!\n');
+      expect(process.exitCode, 0);
+    });
+
+    test('running on a workspace with no projects', () {
+      final dir = createTemporaryDirectory();
+
+      final process = Process.runSync(
+        'dart',
+        [customLintBinPath],
+        workingDirectory: dir.path,
+        stdoutEncoding: utf8,
+        stderrEncoding: utf8,
+      );
+
+      expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
+      expect(process.stdout, 'No issues found!\n');
+      expect(process.exitCode, 0);
+    });
+
     test(
       'no issues found',
       () async {
