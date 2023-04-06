@@ -8,6 +8,8 @@
 - Upgraded `analyzer` to `>=5.7.0 <5.11.0`
 - `LintRuleNodeRegistry` and other AstVisitor-like now are based off `GeneralizingAstVisitor` instead of `GeneralizingAstVisitor`
 - Upgraded `cli_util` to `^0.4.0`
+- The command line no-longer throws if ran on an empty project or a project with
+  no plugins enabled
 
 ## 0.3.2 - 2023-03-09
 
