@@ -10,7 +10,7 @@ part of 'node_lint_visitor.dart';
 
 /// The AST visitor that runs handlers for nodes from the [_registry].
 @internal
-class LinterVisitor implements GeneralizingAstVisitor<void> {
+class LinterVisitor extends GeneralizingAstVisitor<void> {
   /// The AST visitor that runs handlers for nodes from the [_registry].
   @internal
   LinterVisitor(this._registry);
@@ -37,1188 +37,1188 @@ class LinterVisitor implements GeneralizingAstVisitor<void> {
   @override
   void visitAdjacentStrings(AdjacentStrings node) {
     _runSubscriptions(node, _registry._forAdjacentStrings);
-    node.visitChildren(this);
+    super.visitAdjacentStrings(node);
   }
 
   @override
   void visitAnnotatedNode(AnnotatedNode node) {
     _runSubscriptions(node, _registry._forAnnotatedNode);
-    node.visitChildren(this);
+    super.visitAnnotatedNode(node);
   }
 
   @override
   void visitAnnotation(Annotation node) {
     _runSubscriptions(node, _registry._forAnnotation);
-    node.visitChildren(this);
+    super.visitAnnotation(node);
   }
 
   @override
   void visitArgumentList(ArgumentList node) {
     _runSubscriptions(node, _registry._forArgumentList);
-    node.visitChildren(this);
+    super.visitArgumentList(node);
   }
 
   @override
   void visitAsExpression(AsExpression node) {
     _runSubscriptions(node, _registry._forAsExpression);
-    node.visitChildren(this);
+    super.visitAsExpression(node);
   }
 
   @override
   void visitAssertInitializer(AssertInitializer node) {
     _runSubscriptions(node, _registry._forAssertInitializer);
-    node.visitChildren(this);
+    super.visitAssertInitializer(node);
   }
 
   @override
   void visitAssertStatement(AssertStatement node) {
     _runSubscriptions(node, _registry._forAssertStatement);
-    node.visitChildren(this);
+    super.visitAssertStatement(node);
   }
 
   @override
   void visitAssignedVariablePattern(AssignedVariablePattern node) {
     _runSubscriptions(node, _registry._forAssignedVariablePattern);
-    node.visitChildren(this);
+    super.visitAssignedVariablePattern(node);
   }
 
   @override
   void visitAssignmentExpression(AssignmentExpression node) {
     _runSubscriptions(node, _registry._forAssignmentExpression);
-    node.visitChildren(this);
+    super.visitAssignmentExpression(node);
   }
 
   @override
   void visitAugmentationImportDirective(AugmentationImportDirective node) {
     _runSubscriptions(node, _registry._forAugmentationImportDirective);
-    node.visitChildren(this);
+    super.visitAugmentationImportDirective(node);
   }
 
   @override
   void visitAwaitExpression(AwaitExpression node) {
     _runSubscriptions(node, _registry._forAwaitExpression);
-    node.visitChildren(this);
+    super.visitAwaitExpression(node);
   }
 
   @override
   void visitBinaryExpression(BinaryExpression node) {
     _runSubscriptions(node, _registry._forBinaryExpression);
-    node.visitChildren(this);
+    super.visitBinaryExpression(node);
   }
 
   @override
   void visitBlock(Block node) {
     _runSubscriptions(node, _registry._forBlock);
-    node.visitChildren(this);
+    super.visitBlock(node);
   }
 
   @override
   void visitBlockFunctionBody(BlockFunctionBody node) {
     _runSubscriptions(node, _registry._forBlockFunctionBody);
-    node.visitChildren(this);
+    super.visitBlockFunctionBody(node);
   }
 
   @override
   void visitBooleanLiteral(BooleanLiteral node) {
     _runSubscriptions(node, _registry._forBooleanLiteral);
-    node.visitChildren(this);
+    super.visitBooleanLiteral(node);
   }
 
   @override
   void visitBreakStatement(BreakStatement node) {
     _runSubscriptions(node, _registry._forBreakStatement);
-    node.visitChildren(this);
+    super.visitBreakStatement(node);
   }
 
   @override
   void visitCascadeExpression(CascadeExpression node) {
     _runSubscriptions(node, _registry._forCascadeExpression);
-    node.visitChildren(this);
+    super.visitCascadeExpression(node);
   }
 
   @override
   void visitCaseClause(CaseClause node) {
     _runSubscriptions(node, _registry._forCaseClause);
-    node.visitChildren(this);
+    super.visitCaseClause(node);
   }
 
   @override
   void visitCastPattern(CastPattern node) {
     _runSubscriptions(node, _registry._forCastPattern);
-    node.visitChildren(this);
+    super.visitCastPattern(node);
   }
 
   @override
   void visitCatchClause(CatchClause node) {
     _runSubscriptions(node, _registry._forCatchClause);
-    node.visitChildren(this);
+    super.visitCatchClause(node);
   }
 
   @override
   void visitCatchClauseParameter(CatchClauseParameter node) {
     _runSubscriptions(node, _registry._forCatchClauseParameter);
-    node.visitChildren(this);
+    super.visitCatchClauseParameter(node);
   }
 
   @override
   void visitClassDeclaration(ClassDeclaration node) {
     _runSubscriptions(node, _registry._forClassDeclaration);
-    node.visitChildren(this);
+    super.visitClassDeclaration(node);
   }
 
   @override
   void visitClassMember(ClassMember node) {
     _runSubscriptions(node, _registry._forClassMember);
-    node.visitChildren(this);
+    super.visitClassMember(node);
   }
 
   @override
   void visitClassTypeAlias(ClassTypeAlias node) {
     _runSubscriptions(node, _registry._forClassTypeAlias);
-    node.visitChildren(this);
+    super.visitClassTypeAlias(node);
   }
 
   @override
   void visitCollectionElement(CollectionElement node) {
     _runSubscriptions(node, _registry._forCollectionElement);
-    node.visitChildren(this);
+    super.visitCollectionElement(node);
   }
 
   @override
   void visitCombinator(Combinator node) {
     _runSubscriptions(node, _registry._forCombinator);
-    node.visitChildren(this);
+    super.visitCombinator(node);
   }
 
   @override
   void visitComment(Comment node) {
     _runSubscriptions(node, _registry._forComment);
-    node.visitChildren(this);
+    super.visitComment(node);
   }
 
   @override
   void visitCommentReference(CommentReference node) {
     _runSubscriptions(node, _registry._forCommentReference);
-    node.visitChildren(this);
+    super.visitCommentReference(node);
   }
 
   @override
   void visitCompilationUnit(CompilationUnit node) {
     _runSubscriptions(node, _registry._forCompilationUnit);
-    node.visitChildren(this);
+    super.visitCompilationUnit(node);
   }
 
   @override
   void visitCompilationUnitMember(CompilationUnitMember node) {
     _runSubscriptions(node, _registry._forCompilationUnitMember);
-    node.visitChildren(this);
+    super.visitCompilationUnitMember(node);
   }
 
   @override
   void visitConditionalExpression(ConditionalExpression node) {
     _runSubscriptions(node, _registry._forConditionalExpression);
-    node.visitChildren(this);
+    super.visitConditionalExpression(node);
   }
 
   @override
   void visitConfiguration(Configuration node) {
     _runSubscriptions(node, _registry._forConfiguration);
-    node.visitChildren(this);
+    super.visitConfiguration(node);
   }
 
   @override
   void visitConstantPattern(ConstantPattern node) {
     _runSubscriptions(node, _registry._forConstantPattern);
-    node.visitChildren(this);
+    super.visitConstantPattern(node);
   }
 
   @override
   void visitConstructorDeclaration(ConstructorDeclaration node) {
     _runSubscriptions(node, _registry._forConstructorDeclaration);
-    node.visitChildren(this);
+    super.visitConstructorDeclaration(node);
   }
 
   @override
   void visitConstructorFieldInitializer(ConstructorFieldInitializer node) {
     _runSubscriptions(node, _registry._forConstructorFieldInitializer);
-    node.visitChildren(this);
+    super.visitConstructorFieldInitializer(node);
   }
 
   @override
   void visitConstructorInitializer(ConstructorInitializer node) {
     _runSubscriptions(node, _registry._forConstructorInitializer);
-    node.visitChildren(this);
+    super.visitConstructorInitializer(node);
   }
 
   @override
   void visitConstructorName(ConstructorName node) {
     _runSubscriptions(node, _registry._forConstructorName);
-    node.visitChildren(this);
+    super.visitConstructorName(node);
   }
 
   @override
   void visitConstructorReference(ConstructorReference node) {
     _runSubscriptions(node, _registry._forConstructorReference);
-    node.visitChildren(this);
+    super.visitConstructorReference(node);
   }
 
   @override
   void visitConstructorSelector(ConstructorSelector node) {
     _runSubscriptions(node, _registry._forConstructorSelector);
-    node.visitChildren(this);
+    super.visitConstructorSelector(node);
   }
 
   @override
   void visitContinueStatement(ContinueStatement node) {
     _runSubscriptions(node, _registry._forContinueStatement);
-    node.visitChildren(this);
+    super.visitContinueStatement(node);
   }
 
   @override
   void visitDartPattern(DartPattern node) {
     _runSubscriptions(node, _registry._forDartPattern);
-    node.visitChildren(this);
+    super.visitDartPattern(node);
   }
 
   @override
   void visitDeclaration(Declaration node) {
     _runSubscriptions(node, _registry._forDeclaration);
-    node.visitChildren(this);
+    super.visitDeclaration(node);
   }
 
   @override
   void visitDeclaredIdentifier(DeclaredIdentifier node) {
     _runSubscriptions(node, _registry._forDeclaredIdentifier);
-    node.visitChildren(this);
+    super.visitDeclaredIdentifier(node);
   }
 
   @override
   void visitDeclaredVariablePattern(DeclaredVariablePattern node) {
     _runSubscriptions(node, _registry._forDeclaredVariablePattern);
-    node.visitChildren(this);
+    super.visitDeclaredVariablePattern(node);
   }
 
   @override
   void visitDefaultFormalParameter(DefaultFormalParameter node) {
     _runSubscriptions(node, _registry._forDefaultFormalParameter);
-    node.visitChildren(this);
+    super.visitDefaultFormalParameter(node);
   }
 
   @override
   void visitDirective(Directive node) {
     _runSubscriptions(node, _registry._forDirective);
-    node.visitChildren(this);
+    super.visitDirective(node);
   }
 
   @override
   void visitDoStatement(DoStatement node) {
     _runSubscriptions(node, _registry._forDoStatement);
-    node.visitChildren(this);
+    super.visitDoStatement(node);
   }
 
   @override
   void visitDottedName(DottedName node) {
     _runSubscriptions(node, _registry._forDottedName);
-    node.visitChildren(this);
+    super.visitDottedName(node);
   }
 
   @override
   void visitDoubleLiteral(DoubleLiteral node) {
     _runSubscriptions(node, _registry._forDoubleLiteral);
-    node.visitChildren(this);
+    super.visitDoubleLiteral(node);
   }
 
   @override
   void visitEmptyFunctionBody(EmptyFunctionBody node) {
     _runSubscriptions(node, _registry._forEmptyFunctionBody);
-    node.visitChildren(this);
+    super.visitEmptyFunctionBody(node);
   }
 
   @override
   void visitEmptyStatement(EmptyStatement node) {
     _runSubscriptions(node, _registry._forEmptyStatement);
-    node.visitChildren(this);
+    super.visitEmptyStatement(node);
   }
 
   @override
   void visitEnumConstantArguments(EnumConstantArguments node) {
     _runSubscriptions(node, _registry._forEnumConstantArguments);
-    node.visitChildren(this);
+    super.visitEnumConstantArguments(node);
   }
 
   @override
   void visitEnumConstantDeclaration(EnumConstantDeclaration node) {
     _runSubscriptions(node, _registry._forEnumConstantDeclaration);
-    node.visitChildren(this);
+    super.visitEnumConstantDeclaration(node);
   }
 
   @override
   void visitEnumDeclaration(EnumDeclaration node) {
     _runSubscriptions(node, _registry._forEnumDeclaration);
-    node.visitChildren(this);
+    super.visitEnumDeclaration(node);
   }
 
   @override
   void visitExportDirective(ExportDirective node) {
     _runSubscriptions(node, _registry._forExportDirective);
-    node.visitChildren(this);
+    super.visitExportDirective(node);
   }
 
   @override
   void visitExpression(Expression node) {
     _runSubscriptions(node, _registry._forExpression);
-    node.visitChildren(this);
+    super.visitExpression(node);
   }
 
   @override
   void visitExpressionFunctionBody(ExpressionFunctionBody node) {
     _runSubscriptions(node, _registry._forExpressionFunctionBody);
-    node.visitChildren(this);
+    super.visitExpressionFunctionBody(node);
   }
 
   @override
   void visitExpressionStatement(ExpressionStatement node) {
     _runSubscriptions(node, _registry._forExpressionStatement);
-    node.visitChildren(this);
+    super.visitExpressionStatement(node);
   }
 
   @override
   void visitExtendsClause(ExtendsClause node) {
     _runSubscriptions(node, _registry._forExtendsClause);
-    node.visitChildren(this);
+    super.visitExtendsClause(node);
   }
 
   @override
   void visitExtensionDeclaration(ExtensionDeclaration node) {
     _runSubscriptions(node, _registry._forExtensionDeclaration);
-    node.visitChildren(this);
+    super.visitExtensionDeclaration(node);
   }
 
   @override
   void visitExtensionOverride(ExtensionOverride node) {
     _runSubscriptions(node, _registry._forExtensionOverride);
-    node.visitChildren(this);
+    super.visitExtensionOverride(node);
   }
 
   @override
   void visitFieldDeclaration(FieldDeclaration node) {
     _runSubscriptions(node, _registry._forFieldDeclaration);
-    node.visitChildren(this);
+    super.visitFieldDeclaration(node);
   }
 
   @override
   void visitFieldFormalParameter(FieldFormalParameter node) {
     _runSubscriptions(node, _registry._forFieldFormalParameter);
-    node.visitChildren(this);
+    super.visitFieldFormalParameter(node);
   }
 
   @override
   void visitForEachParts(ForEachParts node) {
     _runSubscriptions(node, _registry._forForEachParts);
-    node.visitChildren(this);
+    super.visitForEachParts(node);
   }
 
   @override
   void visitForEachPartsWithDeclaration(ForEachPartsWithDeclaration node) {
     _runSubscriptions(node, _registry._forForEachPartsWithDeclaration);
-    node.visitChildren(this);
+    super.visitForEachPartsWithDeclaration(node);
   }
 
   @override
   void visitForEachPartsWithIdentifier(ForEachPartsWithIdentifier node) {
     _runSubscriptions(node, _registry._forForEachPartsWithIdentifier);
-    node.visitChildren(this);
+    super.visitForEachPartsWithIdentifier(node);
   }
 
   @override
   void visitForEachPartsWithPattern(ForEachPartsWithPattern node) {
     _runSubscriptions(node, _registry._forForEachPartsWithPattern);
-    node.visitChildren(this);
+    super.visitForEachPartsWithPattern(node);
   }
 
   @override
   void visitForElement(ForElement node) {
     _runSubscriptions(node, _registry._forForElement);
-    node.visitChildren(this);
+    super.visitForElement(node);
   }
 
   @override
   void visitFormalParameter(FormalParameter node) {
     _runSubscriptions(node, _registry._forFormalParameter);
-    node.visitChildren(this);
+    super.visitFormalParameter(node);
   }
 
   @override
   void visitFormalParameterList(FormalParameterList node) {
     _runSubscriptions(node, _registry._forFormalParameterList);
-    node.visitChildren(this);
+    super.visitFormalParameterList(node);
   }
 
   @override
   void visitForParts(ForParts node) {
     _runSubscriptions(node, _registry._forForParts);
-    node.visitChildren(this);
+    super.visitForParts(node);
   }
 
   @override
   void visitForPartsWithDeclarations(ForPartsWithDeclarations node) {
     _runSubscriptions(node, _registry._forForPartsWithDeclarations);
-    node.visitChildren(this);
+    super.visitForPartsWithDeclarations(node);
   }
 
   @override
   void visitForPartsWithExpression(ForPartsWithExpression node) {
     _runSubscriptions(node, _registry._forForPartsWithExpression);
-    node.visitChildren(this);
+    super.visitForPartsWithExpression(node);
   }
 
   @override
   void visitForPartsWithPattern(ForPartsWithPattern node) {
     _runSubscriptions(node, _registry._forForPartsWithPattern);
-    node.visitChildren(this);
+    super.visitForPartsWithPattern(node);
   }
 
   @override
   void visitForStatement(ForStatement node) {
     _runSubscriptions(node, _registry._forForStatement);
-    node.visitChildren(this);
+    super.visitForStatement(node);
   }
 
   @override
   void visitFunctionBody(FunctionBody node) {
     _runSubscriptions(node, _registry._forFunctionBody);
-    node.visitChildren(this);
+    super.visitFunctionBody(node);
   }
 
   @override
   void visitFunctionDeclaration(FunctionDeclaration node) {
     _runSubscriptions(node, _registry._forFunctionDeclaration);
-    node.visitChildren(this);
+    super.visitFunctionDeclaration(node);
   }
 
   @override
   void visitFunctionDeclarationStatement(FunctionDeclarationStatement node) {
     _runSubscriptions(node, _registry._forFunctionDeclarationStatement);
-    node.visitChildren(this);
+    super.visitFunctionDeclarationStatement(node);
   }
 
   @override
   void visitFunctionExpression(FunctionExpression node) {
     _runSubscriptions(node, _registry._forFunctionExpression);
-    node.visitChildren(this);
+    super.visitFunctionExpression(node);
   }
 
   @override
   void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
     _runSubscriptions(node, _registry._forFunctionExpressionInvocation);
-    node.visitChildren(this);
+    super.visitFunctionExpressionInvocation(node);
   }
 
   @override
   void visitFunctionReference(FunctionReference node) {
     _runSubscriptions(node, _registry._forFunctionReference);
-    node.visitChildren(this);
+    super.visitFunctionReference(node);
   }
 
   @override
   void visitFunctionTypeAlias(FunctionTypeAlias node) {
     _runSubscriptions(node, _registry._forFunctionTypeAlias);
-    node.visitChildren(this);
+    super.visitFunctionTypeAlias(node);
   }
 
   @override
   void visitFunctionTypedFormalParameter(FunctionTypedFormalParameter node) {
     _runSubscriptions(node, _registry._forFunctionTypedFormalParameter);
-    node.visitChildren(this);
+    super.visitFunctionTypedFormalParameter(node);
   }
 
   @override
   void visitGenericFunctionType(GenericFunctionType node) {
     _runSubscriptions(node, _registry._forGenericFunctionType);
-    node.visitChildren(this);
+    super.visitGenericFunctionType(node);
   }
 
   @override
   void visitGenericTypeAlias(GenericTypeAlias node) {
     _runSubscriptions(node, _registry._forGenericTypeAlias);
-    node.visitChildren(this);
+    super.visitGenericTypeAlias(node);
   }
 
   @override
   void visitGuardedPattern(GuardedPattern node) {
     _runSubscriptions(node, _registry._forGuardedPattern);
-    node.visitChildren(this);
+    super.visitGuardedPattern(node);
   }
 
   @override
   void visitHideCombinator(HideCombinator node) {
     _runSubscriptions(node, _registry._forHideCombinator);
-    node.visitChildren(this);
+    super.visitHideCombinator(node);
   }
 
   @override
   void visitIdentifier(Identifier node) {
     _runSubscriptions(node, _registry._forIdentifier);
-    node.visitChildren(this);
+    super.visitIdentifier(node);
   }
 
   @override
   void visitIfElement(IfElement node) {
     _runSubscriptions(node, _registry._forIfElement);
-    node.visitChildren(this);
+    super.visitIfElement(node);
   }
 
   @override
   void visitIfStatement(IfStatement node) {
     _runSubscriptions(node, _registry._forIfStatement);
-    node.visitChildren(this);
+    super.visitIfStatement(node);
   }
 
   @override
   void visitImplementsClause(ImplementsClause node) {
     _runSubscriptions(node, _registry._forImplementsClause);
-    node.visitChildren(this);
+    super.visitImplementsClause(node);
   }
 
   @override
   void visitImplicitCallReference(ImplicitCallReference node) {
     _runSubscriptions(node, _registry._forImplicitCallReference);
-    node.visitChildren(this);
+    super.visitImplicitCallReference(node);
   }
 
   @override
   void visitImportDirective(ImportDirective node) {
     _runSubscriptions(node, _registry._forImportDirective);
-    node.visitChildren(this);
+    super.visitImportDirective(node);
   }
 
   @override
   void visitIndexExpression(IndexExpression node) {
     _runSubscriptions(node, _registry._forIndexExpression);
-    node.visitChildren(this);
+    super.visitIndexExpression(node);
   }
 
   @override
   void visitInstanceCreationExpression(InstanceCreationExpression node) {
     _runSubscriptions(node, _registry._forInstanceCreationExpression);
-    node.visitChildren(this);
+    super.visitInstanceCreationExpression(node);
   }
 
   @override
   void visitIntegerLiteral(IntegerLiteral node) {
     _runSubscriptions(node, _registry._forIntegerLiteral);
-    node.visitChildren(this);
+    super.visitIntegerLiteral(node);
   }
 
   @override
   void visitInterpolationElement(InterpolationElement node) {
     _runSubscriptions(node, _registry._forInterpolationElement);
-    node.visitChildren(this);
+    super.visitInterpolationElement(node);
   }
 
   @override
   void visitInterpolationExpression(InterpolationExpression node) {
     _runSubscriptions(node, _registry._forInterpolationExpression);
-    node.visitChildren(this);
+    super.visitInterpolationExpression(node);
   }
 
   @override
   void visitInterpolationString(InterpolationString node) {
     _runSubscriptions(node, _registry._forInterpolationString);
-    node.visitChildren(this);
+    super.visitInterpolationString(node);
   }
 
   @override
   void visitInvocationExpression(InvocationExpression node) {
     _runSubscriptions(node, _registry._forInvocationExpression);
-    node.visitChildren(this);
+    super.visitInvocationExpression(node);
   }
 
   @override
   void visitIsExpression(IsExpression node) {
     _runSubscriptions(node, _registry._forIsExpression);
-    node.visitChildren(this);
+    super.visitIsExpression(node);
   }
 
   @override
   void visitLabel(Label node) {
     _runSubscriptions(node, _registry._forLabel);
-    node.visitChildren(this);
+    super.visitLabel(node);
   }
 
   @override
   void visitLabeledStatement(LabeledStatement node) {
     _runSubscriptions(node, _registry._forLabeledStatement);
-    node.visitChildren(this);
+    super.visitLabeledStatement(node);
   }
 
   @override
   void visitLibraryAugmentationDirective(LibraryAugmentationDirective node) {
     _runSubscriptions(node, _registry._forLibraryAugmentationDirective);
-    node.visitChildren(this);
+    super.visitLibraryAugmentationDirective(node);
   }
 
   @override
   void visitLibraryDirective(LibraryDirective node) {
     _runSubscriptions(node, _registry._forLibraryDirective);
-    node.visitChildren(this);
+    super.visitLibraryDirective(node);
   }
 
   @override
   void visitLibraryIdentifier(LibraryIdentifier node) {
     _runSubscriptions(node, _registry._forLibraryIdentifier);
-    node.visitChildren(this);
+    super.visitLibraryIdentifier(node);
   }
 
   @override
   void visitListLiteral(ListLiteral node) {
     _runSubscriptions(node, _registry._forListLiteral);
-    node.visitChildren(this);
+    super.visitListLiteral(node);
   }
 
   @override
   void visitListPattern(ListPattern node) {
     _runSubscriptions(node, _registry._forListPattern);
-    node.visitChildren(this);
+    super.visitListPattern(node);
   }
 
   @override
   void visitLiteral(Literal node) {
     _runSubscriptions(node, _registry._forLiteral);
-    node.visitChildren(this);
+    super.visitLiteral(node);
   }
 
   @override
   void visitLogicalAndPattern(LogicalAndPattern node) {
     _runSubscriptions(node, _registry._forLogicalAndPattern);
-    node.visitChildren(this);
+    super.visitLogicalAndPattern(node);
   }
 
   @override
   void visitLogicalOrPattern(LogicalOrPattern node) {
     _runSubscriptions(node, _registry._forLogicalOrPattern);
-    node.visitChildren(this);
+    super.visitLogicalOrPattern(node);
   }
 
   @override
   void visitMapLiteralEntry(MapLiteralEntry node) {
     _runSubscriptions(node, _registry._forMapLiteralEntry);
-    node.visitChildren(this);
+    super.visitMapLiteralEntry(node);
   }
 
   @override
   void visitMapPattern(MapPattern node) {
     _runSubscriptions(node, _registry._forMapPattern);
-    node.visitChildren(this);
+    super.visitMapPattern(node);
   }
 
   @override
   void visitMapPatternEntry(MapPatternEntry node) {
     _runSubscriptions(node, _registry._forMapPatternEntry);
-    node.visitChildren(this);
+    super.visitMapPatternEntry(node);
   }
 
   @override
   void visitMethodDeclaration(MethodDeclaration node) {
     _runSubscriptions(node, _registry._forMethodDeclaration);
-    node.visitChildren(this);
+    super.visitMethodDeclaration(node);
   }
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
     _runSubscriptions(node, _registry._forMethodInvocation);
-    node.visitChildren(this);
+    super.visitMethodInvocation(node);
   }
 
   @override
   void visitMixinDeclaration(MixinDeclaration node) {
     _runSubscriptions(node, _registry._forMixinDeclaration);
-    node.visitChildren(this);
+    super.visitMixinDeclaration(node);
   }
 
   @override
   void visitNamedCompilationUnitMember(NamedCompilationUnitMember node) {
     _runSubscriptions(node, _registry._forNamedCompilationUnitMember);
-    node.visitChildren(this);
+    super.visitNamedCompilationUnitMember(node);
   }
 
   @override
   void visitNamedExpression(NamedExpression node) {
     _runSubscriptions(node, _registry._forNamedExpression);
-    node.visitChildren(this);
+    super.visitNamedExpression(node);
   }
 
   @override
   void visitNamedType(NamedType node) {
     _runSubscriptions(node, _registry._forNamedType);
-    node.visitChildren(this);
+    super.visitNamedType(node);
   }
 
   @override
   void visitNamespaceDirective(NamespaceDirective node) {
     _runSubscriptions(node, _registry._forNamespaceDirective);
-    node.visitChildren(this);
+    super.visitNamespaceDirective(node);
   }
 
   @override
   void visitNativeClause(NativeClause node) {
     _runSubscriptions(node, _registry._forNativeClause);
-    node.visitChildren(this);
+    super.visitNativeClause(node);
   }
 
   @override
   void visitNativeFunctionBody(NativeFunctionBody node) {
     _runSubscriptions(node, _registry._forNativeFunctionBody);
-    node.visitChildren(this);
+    super.visitNativeFunctionBody(node);
   }
 
   @override
   void visitNode(AstNode node) {
     _runSubscriptions(node, _registry._forAstNode);
-    node.visitChildren(this);
+    super.visitNode(node);
   }
 
   @override
   void visitNormalFormalParameter(NormalFormalParameter node) {
     _runSubscriptions(node, _registry._forNormalFormalParameter);
-    node.visitChildren(this);
+    super.visitNormalFormalParameter(node);
   }
 
   @override
   void visitNullAssertPattern(NullAssertPattern node) {
     _runSubscriptions(node, _registry._forNullAssertPattern);
-    node.visitChildren(this);
+    super.visitNullAssertPattern(node);
   }
 
   @override
   void visitNullCheckPattern(NullCheckPattern node) {
     _runSubscriptions(node, _registry._forNullCheckPattern);
-    node.visitChildren(this);
+    super.visitNullCheckPattern(node);
   }
 
   @override
   void visitNullLiteral(NullLiteral node) {
     _runSubscriptions(node, _registry._forNullLiteral);
-    node.visitChildren(this);
+    super.visitNullLiteral(node);
   }
 
   @override
   void visitObjectPattern(ObjectPattern node) {
     _runSubscriptions(node, _registry._forObjectPattern);
-    node.visitChildren(this);
+    super.visitObjectPattern(node);
   }
 
   @override
   void visitOnClause(OnClause node) {
     _runSubscriptions(node, _registry._forOnClause);
-    node.visitChildren(this);
+    super.visitOnClause(node);
   }
 
   @override
   void visitParenthesizedExpression(ParenthesizedExpression node) {
     _runSubscriptions(node, _registry._forParenthesizedExpression);
-    node.visitChildren(this);
+    super.visitParenthesizedExpression(node);
   }
 
   @override
   void visitParenthesizedPattern(ParenthesizedPattern node) {
     _runSubscriptions(node, _registry._forParenthesizedPattern);
-    node.visitChildren(this);
+    super.visitParenthesizedPattern(node);
   }
 
   @override
   void visitPartDirective(PartDirective node) {
     _runSubscriptions(node, _registry._forPartDirective);
-    node.visitChildren(this);
+    super.visitPartDirective(node);
   }
 
   @override
   void visitPartOfDirective(PartOfDirective node) {
     _runSubscriptions(node, _registry._forPartOfDirective);
-    node.visitChildren(this);
+    super.visitPartOfDirective(node);
   }
 
   @override
   void visitPatternAssignment(PatternAssignment node) {
     _runSubscriptions(node, _registry._forPatternAssignment);
-    node.visitChildren(this);
+    super.visitPatternAssignment(node);
   }
 
   @override
   void visitPatternField(PatternField node) {
     _runSubscriptions(node, _registry._forPatternField);
-    node.visitChildren(this);
+    super.visitPatternField(node);
   }
 
   @override
   void visitPatternFieldName(PatternFieldName node) {
     _runSubscriptions(node, _registry._forPatternFieldName);
-    node.visitChildren(this);
+    super.visitPatternFieldName(node);
   }
 
   @override
   void visitPatternVariableDeclaration(PatternVariableDeclaration node) {
     _runSubscriptions(node, _registry._forPatternVariableDeclaration);
-    node.visitChildren(this);
+    super.visitPatternVariableDeclaration(node);
   }
 
   @override
   void visitPatternVariableDeclarationStatement(
       PatternVariableDeclarationStatement node) {
     _runSubscriptions(node, _registry._forPatternVariableDeclarationStatement);
-    node.visitChildren(this);
+    super.visitPatternVariableDeclarationStatement(node);
   }
 
   @override
   void visitPostfixExpression(PostfixExpression node) {
     _runSubscriptions(node, _registry._forPostfixExpression);
-    node.visitChildren(this);
+    super.visitPostfixExpression(node);
   }
 
   @override
   void visitPrefixedIdentifier(PrefixedIdentifier node) {
     _runSubscriptions(node, _registry._forPrefixedIdentifier);
-    node.visitChildren(this);
+    super.visitPrefixedIdentifier(node);
   }
 
   @override
   void visitPrefixExpression(PrefixExpression node) {
     _runSubscriptions(node, _registry._forPrefixExpression);
-    node.visitChildren(this);
+    super.visitPrefixExpression(node);
   }
 
   @override
   void visitPropertyAccess(PropertyAccess node) {
     _runSubscriptions(node, _registry._forPropertyAccess);
-    node.visitChildren(this);
+    super.visitPropertyAccess(node);
   }
 
   @override
   void visitRecordLiteral(RecordLiteral node) {
     _runSubscriptions(node, _registry._forRecordLiteral);
-    node.visitChildren(this);
+    super.visitRecordLiteral(node);
   }
 
   @override
   void visitRecordPattern(RecordPattern node) {
     _runSubscriptions(node, _registry._forRecordPattern);
-    node.visitChildren(this);
+    super.visitRecordPattern(node);
   }
 
   @override
   void visitRecordTypeAnnotation(RecordTypeAnnotation node) {
     _runSubscriptions(node, _registry._forRecordTypeAnnotation);
-    node.visitChildren(this);
+    super.visitRecordTypeAnnotation(node);
   }
 
   @override
   void visitRecordTypeAnnotationField(RecordTypeAnnotationField node) {
     _runSubscriptions(node, _registry._forRecordTypeAnnotationField);
-    node.visitChildren(this);
+    super.visitRecordTypeAnnotationField(node);
   }
 
   @override
   void visitRecordTypeAnnotationNamedField(
       RecordTypeAnnotationNamedField node) {
     _runSubscriptions(node, _registry._forRecordTypeAnnotationNamedField);
-    node.visitChildren(this);
+    super.visitRecordTypeAnnotationNamedField(node);
   }
 
   @override
   void visitRecordTypeAnnotationNamedFields(
       RecordTypeAnnotationNamedFields node) {
     _runSubscriptions(node, _registry._forRecordTypeAnnotationNamedFields);
-    node.visitChildren(this);
+    super.visitRecordTypeAnnotationNamedFields(node);
   }
 
   @override
   void visitRecordTypeAnnotationPositionalField(
       RecordTypeAnnotationPositionalField node) {
     _runSubscriptions(node, _registry._forRecordTypeAnnotationPositionalField);
-    node.visitChildren(this);
+    super.visitRecordTypeAnnotationPositionalField(node);
   }
 
   @override
   void visitRedirectingConstructorInvocation(
       RedirectingConstructorInvocation node) {
     _runSubscriptions(node, _registry._forRedirectingConstructorInvocation);
-    node.visitChildren(this);
+    super.visitRedirectingConstructorInvocation(node);
   }
 
   @override
   void visitRelationalPattern(RelationalPattern node) {
     _runSubscriptions(node, _registry._forRelationalPattern);
-    node.visitChildren(this);
+    super.visitRelationalPattern(node);
   }
 
   @override
   void visitRestPatternElement(RestPatternElement node) {
     _runSubscriptions(node, _registry._forRestPatternElement);
-    node.visitChildren(this);
+    super.visitRestPatternElement(node);
   }
 
   @override
   void visitRethrowExpression(RethrowExpression node) {
     _runSubscriptions(node, _registry._forRethrowExpression);
-    node.visitChildren(this);
+    super.visitRethrowExpression(node);
   }
 
   @override
   void visitReturnStatement(ReturnStatement node) {
     _runSubscriptions(node, _registry._forReturnStatement);
-    node.visitChildren(this);
+    super.visitReturnStatement(node);
   }
 
   @override
   void visitScriptTag(ScriptTag node) {
     _runSubscriptions(node, _registry._forScriptTag);
-    node.visitChildren(this);
+    super.visitScriptTag(node);
   }
 
   @override
   void visitSetOrMapLiteral(SetOrMapLiteral node) {
     _runSubscriptions(node, _registry._forSetOrMapLiteral);
-    node.visitChildren(this);
+    super.visitSetOrMapLiteral(node);
   }
 
   @override
   void visitShowCombinator(ShowCombinator node) {
     _runSubscriptions(node, _registry._forShowCombinator);
-    node.visitChildren(this);
+    super.visitShowCombinator(node);
   }
 
   @override
   void visitSimpleFormalParameter(SimpleFormalParameter node) {
     _runSubscriptions(node, _registry._forSimpleFormalParameter);
-    node.visitChildren(this);
+    super.visitSimpleFormalParameter(node);
   }
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
     _runSubscriptions(node, _registry._forSimpleIdentifier);
-    node.visitChildren(this);
+    super.visitSimpleIdentifier(node);
   }
 
   @override
   void visitSimpleStringLiteral(SimpleStringLiteral node) {
     _runSubscriptions(node, _registry._forSimpleStringLiteral);
-    node.visitChildren(this);
+    super.visitSimpleStringLiteral(node);
   }
 
   @override
   void visitSingleStringLiteral(SingleStringLiteral node) {
     _runSubscriptions(node, _registry._forSingleStringLiteral);
-    node.visitChildren(this);
+    super.visitSingleStringLiteral(node);
   }
 
   @override
   void visitSpreadElement(SpreadElement node) {
     _runSubscriptions(node, _registry._forSpreadElement);
-    node.visitChildren(this);
+    super.visitSpreadElement(node);
   }
 
   @override
   void visitStatement(Statement node) {
     _runSubscriptions(node, _registry._forStatement);
-    node.visitChildren(this);
+    super.visitStatement(node);
   }
 
   @override
   void visitStringInterpolation(StringInterpolation node) {
     _runSubscriptions(node, _registry._forStringInterpolation);
-    node.visitChildren(this);
+    super.visitStringInterpolation(node);
   }
 
   @override
   void visitStringLiteral(StringLiteral node) {
     _runSubscriptions(node, _registry._forStringLiteral);
-    node.visitChildren(this);
+    super.visitStringLiteral(node);
   }
 
   @override
   void visitSuperConstructorInvocation(SuperConstructorInvocation node) {
     _runSubscriptions(node, _registry._forSuperConstructorInvocation);
-    node.visitChildren(this);
+    super.visitSuperConstructorInvocation(node);
   }
 
   @override
   void visitSuperExpression(SuperExpression node) {
     _runSubscriptions(node, _registry._forSuperExpression);
-    node.visitChildren(this);
+    super.visitSuperExpression(node);
   }
 
   @override
   void visitSuperFormalParameter(SuperFormalParameter node) {
     _runSubscriptions(node, _registry._forSuperFormalParameter);
-    node.visitChildren(this);
+    super.visitSuperFormalParameter(node);
   }
 
   @override
   void visitSwitchCase(SwitchCase node) {
     _runSubscriptions(node, _registry._forSwitchCase);
-    node.visitChildren(this);
+    super.visitSwitchCase(node);
   }
 
   @override
   void visitSwitchDefault(SwitchDefault node) {
     _runSubscriptions(node, _registry._forSwitchDefault);
-    node.visitChildren(this);
+    super.visitSwitchDefault(node);
   }
 
   @override
   void visitSwitchExpression(SwitchExpression node) {
     _runSubscriptions(node, _registry._forSwitchExpression);
-    node.visitChildren(this);
+    super.visitSwitchExpression(node);
   }
 
   @override
   void visitSwitchExpressionCase(SwitchExpressionCase node) {
     _runSubscriptions(node, _registry._forSwitchExpressionCase);
-    node.visitChildren(this);
+    super.visitSwitchExpressionCase(node);
   }
 
   @override
   void visitSwitchMember(SwitchMember node) {
     _runSubscriptions(node, _registry._forSwitchMember);
-    node.visitChildren(this);
+    super.visitSwitchMember(node);
   }
 
   @override
   void visitSwitchPatternCase(SwitchPatternCase node) {
     _runSubscriptions(node, _registry._forSwitchPatternCase);
-    node.visitChildren(this);
+    super.visitSwitchPatternCase(node);
   }
 
   @override
   void visitSwitchStatement(SwitchStatement node) {
     _runSubscriptions(node, _registry._forSwitchStatement);
-    node.visitChildren(this);
+    super.visitSwitchStatement(node);
   }
 
   @override
   void visitSymbolLiteral(SymbolLiteral node) {
     _runSubscriptions(node, _registry._forSymbolLiteral);
-    node.visitChildren(this);
+    super.visitSymbolLiteral(node);
   }
 
   @override
   void visitThisExpression(ThisExpression node) {
     _runSubscriptions(node, _registry._forThisExpression);
-    node.visitChildren(this);
+    super.visitThisExpression(node);
   }
 
   @override
   void visitThrowExpression(ThrowExpression node) {
     _runSubscriptions(node, _registry._forThrowExpression);
-    node.visitChildren(this);
+    super.visitThrowExpression(node);
   }
 
   @override
   void visitTopLevelVariableDeclaration(TopLevelVariableDeclaration node) {
     _runSubscriptions(node, _registry._forTopLevelVariableDeclaration);
-    node.visitChildren(this);
+    super.visitTopLevelVariableDeclaration(node);
   }
 
   @override
   void visitTryStatement(TryStatement node) {
     _runSubscriptions(node, _registry._forTryStatement);
-    node.visitChildren(this);
+    super.visitTryStatement(node);
   }
 
   @override
   void visitTypeAlias(TypeAlias node) {
     _runSubscriptions(node, _registry._forTypeAlias);
-    node.visitChildren(this);
+    super.visitTypeAlias(node);
   }
 
   @override
   void visitTypeAnnotation(TypeAnnotation node) {
     _runSubscriptions(node, _registry._forTypeAnnotation);
-    node.visitChildren(this);
+    super.visitTypeAnnotation(node);
   }
 
   @override
   void visitTypeArgumentList(TypeArgumentList node) {
     _runSubscriptions(node, _registry._forTypeArgumentList);
-    node.visitChildren(this);
+    super.visitTypeArgumentList(node);
   }
 
   @override
   void visitTypedLiteral(TypedLiteral node) {
     _runSubscriptions(node, _registry._forTypedLiteral);
-    node.visitChildren(this);
+    super.visitTypedLiteral(node);
   }
 
   @override
   void visitTypeLiteral(TypeLiteral node) {
     _runSubscriptions(node, _registry._forTypeLiteral);
-    node.visitChildren(this);
+    super.visitTypeLiteral(node);
   }
 
   @override
   void visitTypeParameter(TypeParameter node) {
     _runSubscriptions(node, _registry._forTypeParameter);
-    node.visitChildren(this);
+    super.visitTypeParameter(node);
   }
 
   @override
   void visitTypeParameterList(TypeParameterList node) {
     _runSubscriptions(node, _registry._forTypeParameterList);
-    node.visitChildren(this);
+    super.visitTypeParameterList(node);
   }
 
   @override
   void visitUriBasedDirective(UriBasedDirective node) {
     _runSubscriptions(node, _registry._forUriBasedDirective);
-    node.visitChildren(this);
+    super.visitUriBasedDirective(node);
   }
 
   @override
   void visitVariableDeclaration(VariableDeclaration node) {
     _runSubscriptions(node, _registry._forVariableDeclaration);
-    node.visitChildren(this);
+    super.visitVariableDeclaration(node);
   }
 
   @override
   void visitVariableDeclarationList(VariableDeclarationList node) {
     _runSubscriptions(node, _registry._forVariableDeclarationList);
-    node.visitChildren(this);
+    super.visitVariableDeclarationList(node);
   }
 
   @override
   void visitVariableDeclarationStatement(VariableDeclarationStatement node) {
     _runSubscriptions(node, _registry._forVariableDeclarationStatement);
-    node.visitChildren(this);
+    super.visitVariableDeclarationStatement(node);
   }
 
   @override
   void visitWhenClause(WhenClause node) {
     _runSubscriptions(node, _registry._forWhenClause);
-    node.visitChildren(this);
+    super.visitWhenClause(node);
   }
 
   @override
   void visitWhileStatement(WhileStatement node) {
     _runSubscriptions(node, _registry._forWhileStatement);
-    node.visitChildren(this);
+    super.visitWhileStatement(node);
   }
 
   @override
   void visitWildcardPattern(WildcardPattern node) {
     _runSubscriptions(node, _registry._forWildcardPattern);
-    node.visitChildren(this);
+    super.visitWildcardPattern(node);
   }
 
   @override
   void visitWithClause(WithClause node) {
     _runSubscriptions(node, _registry._forWithClause);
-    node.visitChildren(this);
+    super.visitWithClause(node);
   }
 
   @override
   void visitYieldStatement(YieldStatement node) {
     _runSubscriptions(node, _registry._forYieldStatement);
-    node.visitChildren(this);
+    super.visitYieldStatement(node);
   }
 }
 
@@ -2074,7 +2074,7 @@ class NodeLintRegistry {
   }
 
   final List<_Subscription<AstNode>> _forAstNode = [];
-  void addAstNode(String key, void Function(AstNode node) listener) {
+  void addNode(String key, void Function(AstNode node) listener) {
     _forAstNode.add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
@@ -3242,8 +3242,8 @@ class LintRuleNodeRegistry {
   }
 
   @preferInline
-  void addAstNode(void Function(AstNode node) listener) {
-    nodeLintRegistry.addAstNode(name, listener);
+  void addNode(void Function(AstNode node) listener) {
+    nodeLintRegistry.addNode(name, listener);
   }
 
   @preferInline

@@ -75,7 +75,10 @@ class NodeLintRegistry {
   }
 ''');
 
-    for (final visitorMethod in visitor.methods) {
+    for (final visitorMethod
+        in visitor.methods.where((e) => e.name.startsWith('visit'))) {
+      const start = 'visit'.length;
+
       buffer
         ..write('final List<_Subscription<')
         ..write(visitorMethod.parameters.single.type)
@@ -85,7 +88,7 @@ class NodeLintRegistry {
 
       buffer
         ..write('void add')
-        ..write(visitorMethod.parameters.single.type)
+        ..write(visitorMethod.name.substring(start))
         ..write('(String key, void Function(')
         ..write(visitorMethod.parameters.single.type)
         ..write(' node) listener) {_for')
@@ -105,7 +108,7 @@ class NodeLintRegistry {
     buffer.writeln('''
 /// The AST visitor that runs handlers for nodes from the [_registry].
 @internal
-class LinterVisitor implements GeneralizingAstVisitor<void> {
+class LinterVisitor extends GeneralizingAstVisitor<void> {
   /// The AST visitor that runs handlers for nodes from the [_registry].
   @internal
   LinterVisitor(this._registry);
@@ -140,7 +143,9 @@ class LinterVisitor implements GeneralizingAstVisitor<void> {
         ..write(visitorMethod.parameters.single.type)
         ..write(' node) {_runSubscriptions(node, _registry._for')
         ..write(visitorMethod.parameters.single.type)
-        ..write('); node.visitChildren(this);}');
+        ..write('); super.')
+        ..write(visitorMethod.name)
+        ..write('(node);}');
     }
 
     buffer.writeln('}');
@@ -158,14 +163,17 @@ class LintRuleNodeRegistry {
   final String name;
 ''');
 
-    for (final visitorMethod in visitor.methods) {
+    for (final visitorMethod
+        in visitor.methods.where((e) => e.name.startsWith('visit'))) {
+      const start = 'visit'.length;
+
       buffer
         ..write('@preferInline void add')
-        ..write(visitorMethod.parameters.single.type)
+        ..write(visitorMethod.name.substring(start))
         ..write('(void Function(')
         ..write(visitorMethod.parameters.single.type)
         ..write(' node) listener) {nodeLintRegistry.add')
-        ..write(visitorMethod.parameters.single.type)
+        ..write(visitorMethod.name.substring(start))
         ..write('(name, listener);}');
     }
 
