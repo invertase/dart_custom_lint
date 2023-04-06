@@ -10,6 +10,7 @@
 - Upgraded `cli_util` to `^0.4.0`
 - The command line no-longer throws if ran on an empty project or a project with
   no plugins enabled
+- Exposes the Pubspec in CustomLintContext
 
 ## 0.3.2 - 2023-03-09
 
