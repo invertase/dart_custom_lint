@@ -104,7 +104,7 @@ class CustomLintServer {
   late PluginVersionCheckParams _pluginVersionCheckParams;
 
   final _clientChannel =
-      BehaviorSubject<SocketCustomLintServerToClientChannel>();
+      BehaviorSubject<SocketCustomLintServerToClientChannel?>();
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
   final _runner = PendingOperation();
 
@@ -127,6 +127,7 @@ class CustomLintServer {
   }) =>
       _runner.run(() async {
         final clientChannel = await _clientChannel.safeFirst;
+        if (clientChannel == null) return;
 
         await clientChannel.sendCustomLintRequest(
           CustomLintRequest.awaitAnalysisDone(
@@ -170,6 +171,8 @@ class CustomLintServer {
         orElse: () async {
           return _runner.run(() async {
             final clientChannel = await _clientChannel.safeFirst;
+            if (clientChannel == null) return null;
+
             final response =
                 await clientChannel.sendAnalyzerPluginRequest(request);
             await _analyzerPluginClientChannel.sendJson(response.toJson());
@@ -280,7 +283,7 @@ class CustomLintServer {
       try {
         await Future.wait([
           _clientChannel.safeFirst
-              .then((clientChannel) => clientChannel.close()),
+              .then((clientChannel) => clientChannel?.close()),
           _clientChannel.close(),
           _requestSubscription.cancel(),
           if (_clientChannelEventsSubscription != null)
@@ -333,11 +336,12 @@ class CustomLintServer {
     // "setContextRoots" is always called after "pluginVersionCheck", so we can
     // safely assume that the version check parameters are set.
 
-    var clientChannel = _clientChannel.valueOrNull;
-    if (clientChannel != null) {
-      await clientChannel.setContextRoots(parameters);
+    if (_clientChannel.hasValue) {
+      await _clientChannel.value?.setContextRoots(parameters);
       return;
     }
+
+    SocketCustomLintServerToClientChannel? clientChannel;
 
     try {
       clientChannel = await SocketCustomLintServerToClientChannel.create(
@@ -347,6 +351,7 @@ class CustomLintServer {
         workingDirectory: workingDirectory,
       );
       _clientChannel.add(clientChannel);
+      if (clientChannel == null) return;
     } catch (err, stack) {
       _clientChannel.addError(err, stack);
       rethrow;
