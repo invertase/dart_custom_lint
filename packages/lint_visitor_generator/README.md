@@ -1,0 +1,1 @@
+Internal tooling to generate `custom_lint_core/lib/src/node_lint_visitor.dart`
