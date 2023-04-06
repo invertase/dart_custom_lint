@@ -26,6 +26,55 @@ void main() {
     'custom_lint.dart',
   );
 
+  test('Exposes the Pubspec in CustomLintContext', () async {
+    final workspace = createTemporaryDirectory();
+
+    final plugin = createPlugin(
+      name: 'test_lint',
+      main: createPluginSource([
+        TestLintRule(
+          code: 'hello_world',
+          message: 'Hello world',
+          onRun:
+              r"print('${context.pubspec.name} ${context.pubspec.dependencies.keys}');",
+        ),
+      ]),
+    );
+
+    createLintUsage(
+      parent: workspace,
+      source: {'lib/main.dart': 'void fn() {}'},
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+    createLintUsage(
+      parent: workspace,
+      source: {'lib/main2.dart': 'void fn() {}'},
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app2',
+    );
+
+    final process = Process.runSync(
+      'dart',
+      [customLintBinPath],
+      workingDirectory: workspace.path,
+      stdoutEncoding: utf8,
+      stderrEncoding: utf8,
+    );
+
+    expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
+    expect(
+      process.stdout,
+      '''
+[hello_world] test_app (analyzer, analyzer_plugin)
+[hello_world] test_app2 (analyzer, analyzer_plugin)
+  test_app/lib/main.dart:1:6 • Hello world • hello_world
+  test_app2/lib/main2.dart:1:6 • Hello world • hello_world
+''',
+    );
+    expect(process.exitCode, 1);
+  });
+
   group('Correctly exits when', () {
     test('running on a workspace with no plugins', () {
       final app = createLintUsage(name: 'test_app');

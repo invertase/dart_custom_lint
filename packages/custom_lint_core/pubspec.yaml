@@ -16,6 +16,7 @@ dependencies:
   matcher: ^0.12.0
   meta: ^1.7.0
   path: ^1.8.0
+  pubspec_parse: ^1.2.2
   source_span: ^1.8.0
   yaml: ^3.1.1
 
