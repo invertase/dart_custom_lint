@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:ci/ci.dart' as ci;
@@ -9,7 +10,7 @@ import 'v2/custom_lint_analyzer_plugin.dart';
 void start(Iterable<String> _, SendPort sendPort) {
   final isInCI = ci.isCI;
 
-  CustomLintServer.run<void>(
+  CustomLintServer.start(
     sendPort: sendPort,
     includeBuiltInLints: true,
     // "start" may be run by `dart analyze`, in which case we don't want to
@@ -18,6 +19,6 @@ void start(Iterable<String> _, SendPort sendPort) {
     // TODO enable hot-restart only if running plugin from source (excluding pub cache)
     watchMode: !isInCI,
     delegate: AnalyzerPluginCustomLintDelegate(),
-    (_) {},
+    workingDirectory: Directory.current,
   );
 }

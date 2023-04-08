@@ -1,3 +1,9 @@
+## 0.3.3 - 2023-04-06
+
+- Upgraded `analyzer` to `>=5.7.0 <5.11.0`
+- `LintRuleNodeRegistry` and other AstVisitor-like now are based off `GeneralizingAstVisitor` instead of `GeneralizingAstVisitor`
+- Exposes the Pubspec in CustomLintContext
+
 ## 0.3.2 - 2023-03-09
 
 - `custom_lint` upgraded to `0.3.2`

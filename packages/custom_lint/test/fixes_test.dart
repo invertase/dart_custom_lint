@@ -28,7 +28,7 @@ void fn() {}
     );
     final mainPath = join(app.path, 'lib', 'main.dart');
 
-    final runner = startRunnerForApp(app);
+    final runner = await startRunnerForApp(app);
 
     expect(
       await runner.channel.lints.first,

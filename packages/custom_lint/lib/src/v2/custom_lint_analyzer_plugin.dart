@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
@@ -7,6 +8,7 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 // ignore: implementation_imports
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
+import 'package:async/async.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
@@ -25,46 +27,71 @@ class CustomLintServer {
     required this.watchMode,
     required this.includeBuiltInLints,
     required this.delegate,
+    required this.workingDirectory,
   });
 
   /// Start the server while also capturing prints and errors.
-  static R? run<R>(
-    R Function(CustomLintServer server) cb, {
+  ///
+  /// Logic after the [start] should be wrapped in a [runZoned] to make sure
+  /// errors and prints continue to be captured.
+  static Future<CustomLintServer> start({
     required SendPort sendPort,
     required bool watchMode,
     required bool includeBuiltInLints,
     required CustomLintDelegate delegate,
+    required Directory workingDirectory,
   }) {
     late CustomLintServer server;
-    final result = runZonedGuarded(
+
+    return runZoned(
+      () => server,
       () {
         server = CustomLintServer._(
           watchMode: watchMode,
           includeBuiltInLints: includeBuiltInLints,
           delegate: delegate,
+          workingDirectory: workingDirectory,
         );
         server._start(sendPort);
 
-        return cb(server);
+        return server;
       },
-      (err, stack) => server.handleUncaughtError(err, stack),
+    );
+  }
+
+  /// Run the given [body] in a zone that captures errors and prints and
+  /// sends them to the server for handling.
+  ///
+  /// Do not close the server within [runZoned], as this could cause a race condition
+  /// on errors/prints handling, where an error/print happens after the server is closed,
+  /// causing the event to be silenced.
+  static Future<R> runZoned<R>(
+    CustomLintServer Function() server,
+    FutureOr<R> Function() body,
+  ) {
+    return asyncRunZonedGuarded(
+      () => body(),
+      (err, stack) {
+        server().handleUncaughtError(err, stack);
+      },
       zoneSpecification: ZoneSpecification(
-        print: (self, parent, zone, line) => server.handlePrint(
+        print: (self, parent, zone, line) => server().handlePrint(
           line,
           isClientMessage: false,
         ),
       ),
     );
-
-    return result;
   }
+
+  /// The directory in which the server is running.
+  final Directory workingDirectory;
 
   /// The object in charge of logging events and possibly rendering events
   /// in the console (if ran from a terminal).
   final CustomLintDelegate delegate;
 
   /// The interface for discussing with analyzer_plugin
-  late final AnalyzerPluginClientChannel analyzerPluginClientChannel;
+  late final AnalyzerPluginClientChannel _analyzerPluginClientChannel;
 
   /// Whether plugins should be started in watch mode
   final bool watchMode;
@@ -73,15 +100,22 @@ class CustomLintServer {
   final bool includeBuiltInLints;
 
   late final StreamSubscription<void> _requestSubscription;
-  final _versionCheck = Completer<PluginVersionCheckParams>();
+  StreamSubscription<void>? _clientChannelEventsSubscription;
+  late PluginVersionCheckParams _pluginVersionCheckParams;
 
-  final _clientChannel = BehaviorSubject<CustomLintServerToClientChannel>();
+  final _clientChannel =
+      BehaviorSubject<SocketCustomLintServerToClientChannel?>();
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
   final _runner = PendingOperation();
 
+  /// A shorthand for accessing the current list of context roots.
+  Future<List<ContextRoot>?> get _allContextRoots {
+    return _contextRoots.firstOrNull.then((value) => value?.roots);
+  }
+
   void _start(SendPort sendPort) {
-    analyzerPluginClientChannel = JsonSendPortChannel(sendPort);
-    _requestSubscription = analyzerPluginClientChannel.messages
+    _analyzerPluginClientChannel = JsonSendPortChannel(sendPort);
+    _requestSubscription = _analyzerPluginClientChannel.messages
         .map((e) => e! as Map<String, Object?>)
         .map(Request.fromJson)
         .listen(_handleRequest);
@@ -92,7 +126,8 @@ class CustomLintServer {
     required bool reload,
   }) =>
       _runner.run(() async {
-        final clientChannel = await _clientChannel.first;
+        final clientChannel = await _clientChannel.safeFirst;
+        if (clientChannel == null) return;
 
         await clientChannel.sendCustomLintRequest(
           CustomLintRequest.awaitAnalysisDone(
@@ -109,14 +144,15 @@ class CustomLintServer {
 
   Future<void> _handleRequest(Request request) async {
     final requestTime = DateTime.now().millisecondsSinceEpoch;
-    void sendResponse({ResponseResult? data, RequestError? error}) {
-      analyzerPluginClientChannel.sendJson(
-        Response(
-          request.id,
-          requestTime,
-          result: data?.toJson(),
-          error: error,
-        ).toJson(),
+    Future<void> sendResponse({
+      ResponseResult? data,
+      RequestError? error,
+    }) async {
+      await _analyzerPluginClientChannel.sendResponse(
+        requestID: request.id,
+        requestTime: requestTime,
+        data: data,
+        error: error,
       );
     }
 
@@ -126,19 +162,20 @@ class CustomLintServer {
         handleAnalysisSetContextRoots: _handleAnalysisSetContextRoots,
         handlePluginShutdown: () async {
           try {
-            await _handlePluginShutdown();
-            sendResponse(data: PluginShutdownResult());
+            await sendResponse(data: PluginShutdownResult());
             return null;
           } finally {
-            analyzerPluginClientChannel.close();
+            await close();
           }
         },
         orElse: () async {
           return _runner.run(() async {
-            final clientChannel = await _clientChannel.first;
+            final clientChannel = await _clientChannel.safeFirst;
+            if (clientChannel == null) return null;
+
             final response =
                 await clientChannel.sendAnalyzerPluginRequest(request);
-            analyzerPluginClientChannel.sendJson(response.toJson());
+            await _analyzerPluginClientChannel.sendJson(response.toJson());
             return null;
           });
         },
@@ -147,9 +184,9 @@ class CustomLintServer {
       /// A response was already sent, so nothing to do.
       if (result == null) return;
 
-      sendResponse(data: result);
+      await sendResponse(data: result);
     } catch (err, stack) {
-      sendResponse(
+      await sendResponse(
         error: RequestError(
           RequestErrorCode.PLUGIN_ERROR,
           err.toString(),
@@ -164,7 +201,8 @@ class CustomLintServer {
           err.toString(),
           stackTrace: stack.toString(),
         ),
-        allContextRoots: await _contextRoots.first.then((value) => value.roots),
+        allContextRoots:
+            await _contextRoots.safeFirst.then((value) => value.roots),
       );
     }
   }
@@ -173,7 +211,7 @@ class CustomLintServer {
   /// Logging the error and notifying the analyzer server
   Future<void> handleUncaughtError(Object error, StackTrace stackTrace) =>
       _runner.run(() async {
-        analyzerPluginClientChannel.sendJson(
+        await _analyzerPluginClientChannel.sendJson(
           PluginErrorParams(false, error.toString(), stackTrace.toString())
               .toNotification()
               .toJson(),
@@ -183,8 +221,24 @@ class CustomLintServer {
           this,
           error,
           stackTrace,
-          allContextRoots:
-              await _contextRoots.first.then((value) => value.roots),
+          allContextRoots: await _allContextRoots,
+        );
+      });
+
+  /// A life-cycle for when the server failed to start the plugins.
+  Future<void> handlePluginInitializationFail() => _runner.run(() async {
+        final contextRoots = await _allContextRoots;
+
+        delegate.pluginInitializationFail(
+          this,
+          'Failed to start plugins',
+          allContextRoots: contextRoots,
+        );
+
+        await _analyzerPluginClientChannel.sendJson(
+          PluginErrorParams(true, 'Failed to start plugins', '')
+              .toNotification()
+              .toJson(),
         );
       });
 
@@ -194,7 +248,7 @@ class CustomLintServer {
     required bool isClientMessage,
   }) =>
       _runner.run(() async {
-        final roots = await _contextRoots.first;
+        final roots = await _contextRoots.safeFirst;
 
         if (!isClientMessage) {
           delegate.serverMessage(
@@ -212,35 +266,45 @@ class CustomLintServer {
         }
       });
 
-  Future<void> _handlePluginShutdown() async {
-    // TODO send shutdown to process
+  Future<void>? _closeFuture;
 
-    // Waiting for context root to complete, otherwise some async operation
-    // might still be pending after the shutdown
-    await _contextRoots.first;
+  /// Stops the server, closing all channels.
+  Future<void> close() async {
+    // Already stopped the server before. No need to run things again.
+    if (_closeFuture != null) return _closeFuture;
 
-    await _runner.wait();
+    return _closeFuture = Future(() async {
+      // Cancel pending operations
+      await _contextRoots.close();
 
-    // The channel will be automatically closed on shutdown.
-    // Closing it manually would prevent the follow-up logic to send a
-    // response to the shutdown request.
-    await _clientChannel.first.then((clientChannel) => clientChannel.close());
+      // Flushes logs before stopping server.
+      await _runner.wait();
 
-    await Future.wait([
-      _clientChannel.close(),
-      _requestSubscription.cancel(),
-    ]);
-
-    await _runner.wait();
+      try {
+        await Future.wait([
+          _clientChannel.safeFirst
+              .then((clientChannel) => clientChannel?.close()),
+          _clientChannel.close(),
+          _requestSubscription.cancel(),
+          if (_clientChannelEventsSubscription != null)
+            _clientChannelEventsSubscription!.cancel(),
+        ])
+            // Close the connection after previous disposals are done, to make sure
+            // the shutdown request (if any) receives a response
+            .whenComplete(_analyzerPluginClientChannel.close);
+      } finally {
+        // Wait for remaining operations to complete
+        await _runner.wait();
+      }
+    })
+        // Make sure "close" never throws, so that follow-up dispose logic can continue.
+        .catchError((_) {});
   }
 
   PluginVersionCheckResult _handlePluginVersionCheck(
     PluginVersionCheckParams parameters,
   ) {
-    // The even should be sent only once. Plugins don't handle multiple
-    // version check.
-    // So we let "complete" throw by not checking "isCompleted".
-    _versionCheck.complete(parameters);
+    _pluginVersionCheckParams = parameters;
 
     final versionString = parameters.version;
     final serverVersion = Version.parse(versionString);
@@ -269,69 +333,79 @@ class CustomLintServer {
   Future<void> _maybeSpawnCustomLintPlugin(
     AnalysisSetContextRootsParams parameters,
   ) async {
-    final versionCheck = await _versionCheck.future;
+    // "setContextRoots" is always called after "pluginVersionCheck", so we can
+    // safely assume that the version check parameters are set.
 
-    var clientChannel = _clientChannel.valueOrNull;
-    if (clientChannel != null) {
-      await clientChannel.setContextRoots(parameters);
+    if (_clientChannel.hasValue) {
+      await _clientChannel.value?.setContextRoots(parameters);
       return;
     }
 
-    clientChannel = CustomLintServerToClientChannel.spawn(
-      this,
-      versionCheck,
-      parameters,
-    );
-    _clientChannel.add(clientChannel);
+    SocketCustomLintServerToClientChannel? clientChannel;
+
+    try {
+      clientChannel = await SocketCustomLintServerToClientChannel.create(
+        this,
+        _pluginVersionCheckParams,
+        parameters,
+        workingDirectory: workingDirectory,
+      );
+      _clientChannel.add(clientChannel);
+      if (clientChannel == null) return;
+    } catch (err, stack) {
+      _clientChannel.addError(err, stack);
+      rethrow;
+    }
 
     // Listening to event before init, to make sure messages during the init are handled.
-    clientChannel.events.listen(_handleEvent);
+    _clientChannelEventsSubscription = clientChannel.events.listen(
+      _handleEvent,
+    );
     await clientChannel.init();
   }
 
-  void _handleEvent(CustomLintEvent event) {
-    event.map(
-      analyzerPluginNotification: (event) async {
-        analyzerPluginClientChannel.sendJson(event.notification.toJson());
+  Future<void> _handleEvent(CustomLintEvent event) => _runner.run(() async {
+        await event.map(
+          analyzerPluginNotification: (event) async {
+            await _analyzerPluginClientChannel
+                .sendJson(event.notification.toJson());
 
-        final notification = event.notification;
-        if (notification.event == PLUGIN_NOTIFICATION_ERROR) {
-          final error = PluginErrorParams.fromNotification(notification);
-          analyzerPluginClientChannel.sendJson(error.toNotification().toJson());
-          delegate.pluginError(
-            this,
-            error.message,
-            stackTrace: error.stackTrace,
-            pluginName: '<unknown plugin>',
-            pluginContextRoots:
-                await _contextRoots.first.then((value) => value.roots),
-          );
-        }
-      },
-      error: (event) async {
-        analyzerPluginClientChannel.sendJson(
-          PluginErrorParams(false, event.message, event.stackTrace)
-              .toNotification()
-              .toJson(),
+            final notification = event.notification;
+            if (notification.event == PLUGIN_NOTIFICATION_ERROR) {
+              final error = PluginErrorParams.fromNotification(notification);
+              await _analyzerPluginClientChannel
+                  .sendJson(error.toNotification().toJson());
+              delegate.pluginError(
+                this,
+                error.message,
+                stackTrace: error.stackTrace,
+                pluginName: '<unknown plugin>',
+                pluginContextRoots: await _allContextRoots,
+              );
+            }
+          },
+          error: (event) async {
+            await _analyzerPluginClientChannel.sendJson(
+              PluginErrorParams(false, event.message, event.stackTrace)
+                  .toNotification()
+                  .toJson(),
+            );
+            delegate.pluginError(
+              this,
+              event.message,
+              stackTrace: event.stackTrace,
+              pluginName: event.pluginName ?? 'custom_lint client',
+              pluginContextRoots: await _allContextRoots,
+            );
+          },
+          print: (event) async {
+            delegate.pluginMessage(
+              this,
+              event.message,
+              pluginName: event.pluginName ?? 'custom_lint client',
+              pluginContextRoots: await _allContextRoots,
+            );
+          },
         );
-        delegate.pluginError(
-          this,
-          event.message,
-          stackTrace: event.stackTrace,
-          pluginName: event.pluginName ?? 'custom_lint client',
-          pluginContextRoots:
-              await _contextRoots.first.then((value) => value.roots),
-        );
-      },
-      print: (event) async {
-        delegate.pluginMessage(
-          this,
-          event.message,
-          pluginName: event.pluginName ?? 'custom_lint client',
-          pluginContextRoots:
-              await _contextRoots.first.then((value) => value.roots),
-        );
-      },
-    );
-  }
+      });
 }
