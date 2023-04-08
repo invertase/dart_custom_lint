@@ -36,9 +36,9 @@ q: Quit
 /// Watch mode cannot be enabled if in release mode.
 Future<void> customLint({
   bool watchMode = true,
+  required Directory workingDirectory,
   bool fatalInfos = false,
   bool fatalWarnings = true,
-  required Directory workingDirectory,
 }) async {
   // Reset the code
   exitCode = 0;
@@ -63,8 +63,8 @@ Future<void> _runServer(
   ServerIsolateChannel channel, {
   required bool watchMode,
   required Directory workingDirectory,
-  bool fatalInfos = false,
-  bool fatalWarnings = true,
+  required bool fatalInfos,
+  required bool fatalWarnings,
 }) async {
   final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
