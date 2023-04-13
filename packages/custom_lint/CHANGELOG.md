@@ -1,3 +1,8 @@
+## Unreleased fix
+
+- Update the socket communication logic to avoid possible problem is the message
+  contains a \n.
+
 ## 0.3.3 - 2023-04-06
 
 - Reduce the likelyness of a dependency version conflict.
