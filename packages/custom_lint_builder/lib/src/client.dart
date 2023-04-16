@@ -45,6 +45,7 @@ import '../custom_lint_builder.dart';
 import 'channel.dart';
 import 'custom_analyzer_converter.dart';
 import 'expect_lint.dart';
+import 'ignore.dart';
 
 /// Analysis utilities for custom_lint
 extension AnalysisSessionUtils on AnalysisContext {
@@ -276,7 +277,11 @@ class _CustomLintAnalysisConfigs {
 
   static Map<LintCode, List<Fix>> _fixesForRules(List<LintRule> rules) {
     return {
-      for (final rule in rules) rule.code: rule.getFixes(),
+      for (final rule in rules)
+        rule.code: [
+          ...rule.getFixes(),
+          IgnoreCode(),
+        ]
     };
   }
 
@@ -709,13 +714,13 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     final configs = _customLintConfigsForAnalysisContexts[analysisContext];
     if (configs == null) return;
 
-    var fileIgnoredCodes = <String>{};
+    var ignoreForFiles = <IgnoreMetadata>[];
     if (path.endsWith('.dart')) {
       final source = resourceProvider.getFile(path).createSource();
       if (!source.exists()) return;
-      fileIgnoredCodes = _getAllIgnoredForFileCodes(source.contents.data);
+      ignoreForFiles = parseIgnoreForFile(source.contents.data);
       // Lints are disabled for the entire file, so no point in executing lints
-      if (fileIgnoredCodes.contains('type=lint')) return;
+      if (ignoreForFiles.any((e) => e.disablesAllLints)) return;
     }
 
     final activeLintRules = configs.rules
@@ -733,7 +738,11 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         )
         // Removing lints disabled for the file. No need to call LintRule.run
         // if they are going to immediately get ignored
-        .where((e) => !fileIgnoredCodes.contains(e.code.name))
+        .where(
+          (rule) => !ignoreForFiles.any(
+            (ignore) => ignore.isIgnored(rule.code.name),
+          ),
+        )
         .toList();
 
     // Even if the list of lints is empty, we keep going for dart files. Because
@@ -753,7 +762,9 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
       // TODO assert that a LintRule only emits lints with a code matching LintRule.code
       // TODO asserts lintRules can only emit lints in the analyzed file
       _AnalysisErrorListenerDelegate((lint) {
-        if (!_isIgnored(lint, resolver)) {
+        final ignoreForLine = parseIgnoreForLine(lint.offset, resolver);
+
+        if (!ignoreForLine.isIgnored(lint.errorCode.name)) {
           lints.add(lint);
         }
       }),
@@ -974,36 +985,4 @@ class _AnalysisErrorListenerDelegate implements AnalysisErrorListener {
 
   @override
   void onError(AnalysisError error) => _onError(error);
-}
-
-final _ignoreRegex = RegExp(r'//\s*ignore\s*:(.+)$', multiLine: true);
-
-bool _isIgnored(AnalysisError lint, CustomLintResolver resolver) {
-  final line = resolver.lineInfo.getLocation(lint.offset).lineNumber - 1;
-
-  if (line <= 0) return false;
-
-  final previousLine = resolver.source.contents.data.substring(
-    resolver.lineInfo.getOffsetOfLine(line - 1),
-    lint.offset - 1,
-  );
-
-  final codeContent = _ignoreRegex.firstMatch(previousLine)?.group(1);
-  if (codeContent == null) return false;
-
-  final codes = codeContent.split(',').map((e) => e.trim()).toSet();
-
-  return codes.contains(lint.errorCode.name) || codes.contains('type=lint');
-}
-
-final _ignoreForFileRegex =
-    RegExp(r'//\s*ignore_for_file\s*:(.+)$', multiLine: true);
-
-Set<String> _getAllIgnoredForFileCodes(String source) {
-  return _ignoreForFileRegex
-      .allMatches(source)
-      .map((e) => e.group(1)!)
-      .expand((e) => e.split(','))
-      .map((e) => e.trim())
-      .toSet();
 }
