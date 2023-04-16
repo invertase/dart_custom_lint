@@ -28,6 +28,10 @@ Object? _encodeAnalysisErrorFixes(AnalysisErrorFixes fixes) {
   final editedPrioritizedSourceChanges =
       fixes.fixes.map(_encodePrioritizedSourceChange).toList();
 
+  final jsonError = json['error']! as Map;
+  final jsonLocation = jsonError['location']! as Map;
+  jsonLocation.remove('file');
+
   json['fixes'] = editedPrioritizedSourceChanges;
 
   return json;
