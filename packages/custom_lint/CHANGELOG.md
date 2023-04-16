@@ -1,5 +1,6 @@
 ## Unreleased fix
 
+- custom_lint now automatically generate quick-fixes for "ignore for line/file".  
 - Update the socket communication logic to avoid possible problem is the message
   contains a \n.
 
