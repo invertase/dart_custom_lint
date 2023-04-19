@@ -253,7 +253,7 @@ class CustomLintServer {
         if (!isClientMessage) {
           delegate.serverMessage(
             this,
-            message,
+            '$message\n',
             allContextRoots: roots.roots,
           );
         } else {
