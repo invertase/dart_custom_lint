@@ -68,9 +68,9 @@ mixin LogCustomLintDelegate implements CustomLintDelegate {
     // Hopefully if ran in the CLI, other logging methods will be available.
     if (contextRoots == null) return;
 
-    final now = DateTime.now();
-    final label =
-        pluginName != null ? '[$pluginName] ${now.toIso8601String()}' : '';
+    final label = pluginName != null
+        ? '[$pluginName] ${DateTime.now().toIso8601String()}'
+        : '';
 
     final msg = label.isEmpty
         ? message

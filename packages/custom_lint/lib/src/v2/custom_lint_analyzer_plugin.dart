@@ -259,7 +259,7 @@ class CustomLintServer {
         } else {
           delegate.pluginMessage(
             this,
-            '$message\n',
+            message,
             pluginName: null,
             pluginContextRoots: roots.roots,
           );
