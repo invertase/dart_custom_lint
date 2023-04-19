@@ -531,7 +531,7 @@ class CustomLintProject {
           throw PluginNotFoundInPackageConfigError._(e.key, directory.path);
         }
 
-        final pluginDirectory = Directory(packageWithName.root.path);
+        final pluginDirectory = Directory.fromUri(packageWithName.root);
         final isPlugin = await cache.isPlugin(pluginDirectory);
         if (!isPlugin) return null;
 
