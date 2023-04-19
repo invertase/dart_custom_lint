@@ -253,13 +253,13 @@ class CustomLintServer {
         if (!isClientMessage) {
           delegate.serverMessage(
             this,
-            message,
+            '$message\n',
             allContextRoots: roots.roots,
           );
         } else {
           delegate.pluginMessage(
             this,
-            message,
+            '$message\n',
             pluginName: null,
             pluginContextRoots: roots.roots,
           );

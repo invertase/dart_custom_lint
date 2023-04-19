@@ -73,7 +73,7 @@ mixin LogCustomLintDelegate implements CustomLintDelegate {
         pluginName != null ? '[$pluginName] ${now.toIso8601String()}' : '';
 
     final msg = label.isEmpty
-        ? '$message\n'
+        ? message
         : message
             .split('\n')
             .map((e) => e.isEmpty ? '$label\n' : '$label $e\n')
