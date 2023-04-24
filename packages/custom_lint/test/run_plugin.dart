@@ -53,7 +53,6 @@ Future<ManualRunner> startRunnerForApp(
   final zone = Zone.current;
   final channel = ServerIsolateChannel();
 
-  // TODO use IO override to mock & test stdout/stderr
   final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
     workingDirectory: directory,
