@@ -25,6 +25,7 @@ class TestLintRule {
   TestLintRule({
     required this.code,
     required this.message,
+    this.startUp = '',
     this.onRun = '',
     this.onVariable = '',
     this.ruleMembers = '',
@@ -33,6 +34,7 @@ class TestLintRule {
 
   final String code;
   final String message;
+  final String startUp;
   final String onRun;
   final String onVariable;
   final String ruleMembers;
@@ -97,8 +99,7 @@ class ${fix.name} extends DartFix {
 ''');
     }
 
-    buffer.write(
-      '''
+    buffer.write('''
 class ${rule.code} extends DartLintRule {
   ${rule.code}()
     : super(
@@ -107,7 +108,22 @@ class ${rule.code} extends DartLintRule {
 
 $fixes
 ${rule.ruleMembers}
+''');
 
+    if (rule.startUp.isNotEmpty) {
+      buffer.write('''
+  @override
+  Future<void> startUp(
+    CustomLintResolver resolver,
+    CustomLintContext context,
+  ) async {
+    ${rule.startUp}
+  }
+''');
+    }
+
+    buffer.write(
+      '''
   @override
   void run(CustomLintResolver resolver, ErrorReporter reporter, CustomLintContext context) {
     ${rule.onRun}

@@ -173,7 +173,7 @@ class _ConvertToStreamProvider extends DartAssist {
         message: 'Convert to StreamProvider',
       );
       changeBuilder.addDartFileEdit((builder) {
-        // TODO implement change to refactor the provider
+        // <implement change to refactor the provider>
       });
     });
   }
