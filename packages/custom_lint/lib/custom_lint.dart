@@ -186,9 +186,7 @@ Future<void> _startWatchMode(
         );
         break;
       case 'q':
-        // Let's quit the command line
-        // TODO(rrousselGit) Investigate why an "exit" is required and we can't simply "return"
-        exit(exitCode);
+      // Let's quit the command line
       default:
       // Unknown command. Nothing to do
     }

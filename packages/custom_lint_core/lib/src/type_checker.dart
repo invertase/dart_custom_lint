@@ -460,7 +460,6 @@ Uri _fileToAssetUrl(Uri url) {
 
   return Uri(
     scheme: 'asset',
-    // TODO is it safe to use empty url?
     path: p.join('', p.relative(url.path)),
   );
 }

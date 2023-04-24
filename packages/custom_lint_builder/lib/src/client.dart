@@ -772,8 +772,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
       isNonNullableByDefault: false,
     );
 
-    // TODO: cancel getLints if analyzeFile is reinvoked for path while
-    // the previous Stream is still pending.
+    // TODO: cancel pending analysis if a new analysis is requested on the same file
     await _runOperation(() async {
       final postRunCallbacks = <void Function()>[];
       // TODO implement verbose mode to log lint duration
