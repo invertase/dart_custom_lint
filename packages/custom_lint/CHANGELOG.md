@@ -1,3 +1,7 @@
+## Unreleased fix
+
+- Report uncaught exceptions inside `context.addPostRunCallback`
+
 ## 0.3.4 - 2023-04-19
 
 - custom_lint now automatically generate quick-fixes for "ignore for line/file".  

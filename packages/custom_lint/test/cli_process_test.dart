@@ -20,12 +20,6 @@ String trimDependencyOverridesWarning(Object? input) {
 }
 
 void main() {
-  final customLintBinPath = p.join(
-    PeerProjectMeta.current.customLintPath,
-    'bin',
-    'custom_lint.dart',
-  );
-
   test('Exposes the Pubspec in CustomLintContext', () async {
     final workspace = createTemporaryDirectory();
 

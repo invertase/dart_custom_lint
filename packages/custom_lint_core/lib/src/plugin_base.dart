@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:meta/meta.dart';
 
 import 'assist.dart';
@@ -12,8 +14,8 @@ void runPostRunCallbacks(List<void Function()> postRunCallbacks) {
   for (final postCallback in postRunCallbacks) {
     try {
       postCallback();
-    } catch (err) {
-      // TODO should errors be reported?
+    } catch (err, stack) {
+      Zone.current.handleUncaughtError(err, stack);
       // All postCallbacks should execute even if one throw
     }
   }
