@@ -593,6 +593,12 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
+  void visitImportPrefixReference(ImportPrefixReference node) {
+    _runSubscriptions(node, _registry._forImportPrefixReference);
+    super.visitImportPrefixReference(node);
+  }
+
+  @override
   void visitIndexExpression(IndexExpression node) {
     _runSubscriptions(node, _registry._forIndexExpression);
     super.visitIndexExpression(node);
@@ -1875,6 +1881,14 @@ class NodeLintRegistry {
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
+  final List<_Subscription<ImportPrefixReference>> _forImportPrefixReference =
+      [];
+  void addImportPrefixReference(
+      String key, void Function(ImportPrefixReference node) listener) {
+    _forImportPrefixReference
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
   final List<_Subscription<IndexExpression>> _forIndexExpression = [];
   void addIndexExpression(
       String key, void Function(IndexExpression node) listener) {
@@ -3082,6 +3096,12 @@ class LintRuleNodeRegistry {
   @preferInline
   void addImportDirective(void Function(ImportDirective node) listener) {
     nodeLintRegistry.addImportDirective(name, listener);
+  }
+
+  @preferInline
+  void addImportPrefixReference(
+      void Function(ImportPrefixReference node) listener) {
+    nodeLintRegistry.addImportPrefixReference(name, listener);
   }
 
   @preferInline

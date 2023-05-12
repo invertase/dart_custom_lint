@@ -1,3 +1,7 @@
+## Unreleased minor
+
+- Added support for analyzer 5.12.0
+
 ## 0.3.4 - 2023-04-19
 
 - `custom_lint` upgraded to `0.3.4`
