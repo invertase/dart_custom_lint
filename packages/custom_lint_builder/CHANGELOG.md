@@ -1,4 +1,4 @@
-## Unreleased minor
+## 0.4.0 - 2023-05-12
 
 - Report uncaught exceptions inside `context.addPostRunCallback`
 - Added support for analyzer 5.12.0
