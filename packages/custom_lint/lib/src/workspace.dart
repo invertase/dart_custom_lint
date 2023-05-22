@@ -235,7 +235,8 @@ class CustomLintWorkspace {
     final cache = CustomLintPluginCheckerCache();
     final projects = await Future.wait([
       for (final contextRoot in contextRoots)
-        CustomLintProject.parse(contextRoot, cache),
+        if (CustomLintProject.isProjectDirectory(contextRoot))
+          CustomLintProject.parse(contextRoot, cache),
     ]);
 
     final uniquePluginNames =
@@ -495,6 +496,11 @@ class CustomLintProject {
     required this.packageConfig,
     required this.pubspec,
   });
+
+  /// Is project directory
+  static bool isProjectDirectory(analyzer_plugin.ContextRoot contextRoot) {
+    return Directory(contextRoot.root).pubspec.existsSync();
+  }
 
   /// Decode a [CustomLintProject] from a directory.
   static Future<CustomLintProject> parse(

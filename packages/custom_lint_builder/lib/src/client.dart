@@ -178,6 +178,10 @@ class CustomLintPluginClient {
     _contextRootsForPlugin = {};
 
     for (final analysisContext in analysisContextCollection.contexts) {
+      if (!io.Directory(analysisContext.contextRoot.root.path).pubspec.existsSync()){
+        continue;
+      }
+
       final pubspec = await pubspecs[analysisContext]!;
 
       for (final pluginName in _channel.registeredPlugins.keys) {
@@ -373,9 +377,10 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
       final pubspecs = {
         for (final analysisContext in contextCollection.contexts)
-          analysisContext: parsePubspec(
-            io.Directory(analysisContext.contextRoot.root.path),
-          ),
+          if (io.Directory(analysisContext.contextRoot.root.path).pubspec.existsSync())
+            analysisContext: parsePubspec(
+              io.Directory(analysisContext.contextRoot.root.path),
+            )
       };
 
       // Running before updating the configs as the config parsing depends
