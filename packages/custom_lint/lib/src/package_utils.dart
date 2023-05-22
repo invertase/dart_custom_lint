@@ -77,7 +77,13 @@ Future<Pubspec?> tryParsePubspec(Directory directory) async {
 ///
 /// Throws if the parsing fails, such as if the file is badly formatted or
 /// does not exists.
-Future<Pubspec> parsePubspec(Directory directory) async {
+Future<Pubspec> parsePubspec(Directory directory, [Directory? original]) async {
+  if (!directory.pubspec.existsSync()) {
+    if (directory.parent.path == directory.path) {
+      throw Exception('Could not find pubspec.yaml outside ${original?.path}');
+    }
+    return parsePubspec(directory.parent, directory);
+  }
   return Pubspec.parse(await directory.pubspec.readAsString());
 }
 

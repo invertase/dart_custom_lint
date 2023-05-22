@@ -235,8 +235,7 @@ class CustomLintWorkspace {
     final cache = CustomLintPluginCheckerCache();
     final projects = await Future.wait([
       for (final contextRoot in contextRoots)
-        if (CustomLintProject.isProjectDirectory(contextRoot))
-          CustomLintProject.parse(contextRoot, cache),
+        CustomLintProject.parse(contextRoot, cache),
     ]);
 
     final uniquePluginNames =
