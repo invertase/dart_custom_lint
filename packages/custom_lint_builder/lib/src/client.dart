@@ -178,7 +178,9 @@ class CustomLintPluginClient {
     _contextRootsForPlugin = {};
 
     for (final analysisContext in analysisContextCollection.contexts) {
-      if (!io.Directory(analysisContext.contextRoot.root.path).pubspec.existsSync()){
+      if (!io.Directory(analysisContext.contextRoot.root.path)
+          .pubspec
+          .existsSync()) {
         continue;
       }
 
@@ -377,7 +379,9 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
       final pubspecs = {
         for (final analysisContext in contextCollection.contexts)
-          if (io.Directory(analysisContext.contextRoot.root.path).pubspec.existsSync())
+          if (io.Directory(analysisContext.contextRoot.root.path)
+              .pubspec
+              .existsSync())
             analysisContext: parsePubspec(
               io.Directory(analysisContext.contextRoot.root.path),
             )
