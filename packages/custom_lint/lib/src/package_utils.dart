@@ -84,6 +84,7 @@ Future<Pubspec> parsePubspec(Directory directory, [Directory? original]) async {
     }
     return parsePubspec(directory.parent, directory);
   }
+
   return Pubspec.parse(await directory.pubspec.readAsString());
 }
 
