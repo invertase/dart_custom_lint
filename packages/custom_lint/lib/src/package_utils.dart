@@ -59,7 +59,8 @@ Pubspec? tryParsePubspecSync(Directory directory) {
 /// Throws if the parsing fails, such as if the file is badly formatted or
 /// does not exists.
 Pubspec parsePubspecSync(Directory directory) {
-  return Pubspec.parse(directory.pubspec.readAsStringSync());
+  return Pubspec.parse(
+      findProjectDirectory(directory).pubspec.readAsStringSync());
 }
 
 /// Try parsing the pubspec of the given directory.
@@ -77,15 +78,10 @@ Future<Pubspec?> tryParsePubspec(Directory directory) async {
 ///
 /// Throws if the parsing fails, such as if the file is badly formatted or
 /// does not exists.
-Future<Pubspec> parsePubspec(Directory directory, [Directory? original]) async {
-  if (!directory.pubspec.existsSync()) {
-    if (directory.parent.path == directory.path) {
-      throw Exception('Could not find pubspec.yaml outside ${original?.path}');
-    }
-    return parsePubspec(directory.parent, directory);
-  }
+Future<Pubspec> parsePubspec(Directory directory) async {
+  final pubspec = findProjectDirectory(directory).pubspec;
 
-  return Pubspec.parse(await directory.pubspec.readAsString());
+  return Pubspec.parse(await pubspec.readAsString());
 }
 
 /// Try parsing the package config of the given directory.
@@ -104,7 +100,7 @@ PackageConfig? tryParsePackageConfigSync(Directory directory) {
 /// Throws if the parsing fails, such as if the file is badly formatted or
 /// does not exists.
 PackageConfig parsePackageConfigSync(Directory directory) {
-  final packageConfigFile = directory.packageConfig;
+  final packageConfigFile = findProjectDirectory(directory).packageConfig;
   return PackageConfig.parseBytes(
     packageConfigFile.readAsBytesSync(),
     packageConfigFile.uri,
@@ -122,12 +118,29 @@ Future<PackageConfig?> tryParsePackageConfig(Directory directory) async {
   }
 }
 
+/// Finds the project directory associated with an analysis context root
+///
+/// This is a folder that contains both a `pubspec.yaml` and a `.dart_tool/package_config.json` file.
+/// It is either alongside the analysis_options.yaml file, or in a parent directory.
+Directory findProjectDirectory(Directory directory, {Directory? original}) {
+  final packageConfigFile = directory.packageConfig;
+  if (!packageConfigFile.existsSync() && !directory.pubspec.existsSync()) {
+    if (directory.parent.uri == directory.uri) {
+      throw Exception(
+          'Could not find project directory outside ${original?.path}');
+    }
+    return findProjectDirectory(directory.parent, original: directory);
+  }
+  return directory;
+}
+
 /// Parse the package config of the given directory.
 ///
 /// Throws if the parsing fails, such as if the file is badly formatted or
 /// does not exists.
 Future<PackageConfig> parsePackageConfig(Directory directory) async {
-  final packageConfigFile = directory.packageConfig;
+  final packageConfigFile = findProjectDirectory(directory).packageConfig;
+
   return PackageConfig.parseBytes(
     await packageConfigFile.readAsBytes(),
     packageConfigFile.uri,

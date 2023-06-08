@@ -91,11 +91,20 @@ Future<Directory> createProject(
   Directory dir,
   Pubspec pubspec, {
   required List<Map<String, Object?>> packageConfigs,
+  bool createNestedAnalysis = false,
 }) async {
   // Write the pubpsec.yaml
   final pubspecFile = dir.pubspec;
   pubspecFile.createSync(recursive: true);
   pubspecFile.writeAsStringSync(json.encode(pubspec.toJson()));
+  if (createNestedAnalysis) {
+    final analysisFile =
+        File(p.join(dir.path, 'test', 'analysis_options.yaml'));
+    final dartFile = File(p.join(dir.path, 'test', 'test.dart'));
+    analysisFile.createSync(recursive: true);
+    analysisFile.writeAsStringSync(analysisOptionsWithCustomLintEnabled);
+    dartFile.createSync(recursive: true);
+  }
 
   // Write a package_config.json matching the dependencies
   final packageConfigFile = dir.packageConfig;
@@ -164,6 +173,7 @@ void writeSimplePackageConfig(
 Future<Directory> createSimpleWorkspace(
   List<Object> projectEntry, {
   bool withPackageConfig = true,
+  bool withNestedAnalysisOptions = false,
 }) async {
   /// The number of time we've created a package with a given name.
   final packageCount = <String, int>{};
@@ -182,32 +192,36 @@ Future<Directory> createSimpleWorkspace(
     return folderName;
   }
 
-  return createWorkspace(withPackageConfig: withPackageConfig, {
-    for (final projectEntry in projectEntry)
-      if (projectEntry is Pubspec)
-        getFolderName(projectEntry.name): projectEntry
-      else if (projectEntry is String)
-        getFolderName(projectEntry): Pubspec(
-          p.basename(projectEntry),
-          version: Version(1, 0, 0),
-          environment: {
-            'sdk': VersionConstraint.parse('>=2.17.0 <4.0.0'),
-          },
-        )
-      else
-        // https://github.com/dart-lang/language/issues/2943
-        'foo': throw ArgumentError.value(
-          projectEntry,
-          'projectEntry',
-          'Expected either a String or a Pubspec',
-        ),
-  });
+  return createWorkspace(
+      withPackageConfig: withPackageConfig,
+      withNestedAnalysisOptions: withNestedAnalysisOptions,
+      {
+        for (final projectEntry in projectEntry)
+          if (projectEntry is Pubspec)
+            getFolderName(projectEntry.name): projectEntry
+          else if (projectEntry is String)
+            getFolderName(projectEntry): Pubspec(
+              p.basename(projectEntry),
+              version: Version(1, 0, 0),
+              environment: {
+                'sdk': VersionConstraint.parse('>=2.17.0 <4.0.0'),
+              },
+            )
+          else
+            // https://github.com/dart-lang/language/issues/2943
+            'foo': throw ArgumentError.value(
+              projectEntry,
+              'projectEntry',
+              'Expected either a String or a Pubspec',
+            ),
+      });
 }
 
 /// Create a temporary mono-repository setup with package_configs and pubspecs.
 Future<Directory> createWorkspace(
   Map<String, Pubspec> pubspecs, {
   bool withPackageConfig = true,
+  bool withNestedAnalysisOptions = false,
 }) async {
   final dir = createTemporaryDirectory();
 
@@ -233,6 +247,7 @@ Future<Directory> createWorkspace(
         await createProject(
           projectDirectory,
           pubspecEntry.value,
+          createNestedAnalysis: withNestedAnalysisOptions,
           packageConfigs: !withPackageConfig
               ? const []
               : [
@@ -725,19 +740,32 @@ void main() {
       }
 
       test(
-        'throws MissingPubspecError if package does not contain a pubspec',
-        skip: true, //#148
+        'finds pubspecs above analysis options file if there exists one',
         () async {
-          final workspace = await createSimpleWorkspace([]);
-          workspace.dir('package').createSync(recursive: true);
-
-          expect(
-            () => fromContextRootsFromPaths(
-              [p.join(workspace.path, 'package')],
-              workingDirectory: workspace,
-            ),
-            throwsA(isA<PackageConfigParseError>()),
+          final workspace = await createSimpleWorkspace(
+            [
+              Pubspec(
+                'plugin1',
+                version: Version(1, 0, 0),
+                dependencies: {'custom_lint_builder': HostedDependency()},
+              ),
+              Pubspec(
+                'a',
+                version: Version(1, 0, 0),
+                devDependencies: {
+                  'plugin1': HostedDependency(),
+                },
+              ),
+            ],
+            withNestedAnalysisOptions: true,
           );
+          workspace.dir('package').createSync(recursive: true);
+          final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+            [''],
+            workingDirectory: workspace,
+          );
+          // Expect one context root for the workspace and one for the test folder
+          expect(customLintWorkspace.contextRoots.length, equals(2));
         },
       );
 

@@ -181,8 +181,9 @@ class CustomLintWorkspace {
 
     final contextRootsWithCustomLint = await Future.wait(
       allContextRoots.map((contextRoot) async {
-        final pubspecFile = Directory(contextRoot.root.path).pubspec;
-        if (!pubspecFile.existsSync()) {
+        try {
+          await parsePubspec(Directory(contextRoot.root.path));
+        } catch (_) {
           return null;
         }
 
@@ -495,11 +496,6 @@ class CustomLintProject {
     required this.packageConfig,
     required this.pubspec,
   });
-
-  /// Is project directory
-  static bool isProjectDirectory(analyzer_plugin.ContextRoot contextRoot) {
-    return Directory(contextRoot.root).pubspec.existsSync();
-  }
 
   /// Decode a [CustomLintProject] from a directory.
   static Future<CustomLintProject> parse(
