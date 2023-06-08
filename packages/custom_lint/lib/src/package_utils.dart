@@ -124,7 +124,7 @@ Future<PackageConfig?> tryParsePackageConfig(Directory directory) async {
 /// It is either alongside the analysis_options.yaml file, or in a parent directory.
 Directory findProjectDirectory(Directory directory, {Directory? original}) {
   final packageConfigFile = directory.packageConfig;
-  if (!packageConfigFile.existsSync() && !directory.pubspec.existsSync()) {
+  if (!packageConfigFile.existsSync() || !directory.pubspec.existsSync()) {
     if (directory.parent.uri == directory.uri) {
       throw Exception(
           'Could not find project directory outside ${original?.path}');
