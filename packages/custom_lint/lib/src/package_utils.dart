@@ -61,7 +61,11 @@ Pubspec? tryParsePubspecSync(Directory directory) {
 /// does not exists.
 Pubspec parsePubspecSync(Directory directory) {
   return Pubspec.parse(
-      findProjectDirectory(directory).pubspec.readAsStringSync());
+    findProjectDirectory(
+      directory,
+      missingPackageConfigOkay: true,
+    ).pubspec.readAsStringSync(),
+  );
 }
 
 /// Try parsing the pubspec of the given directory.
@@ -80,8 +84,8 @@ Future<Pubspec?> tryParsePubspec(Directory directory) async {
 /// Throws if the parsing fails, such as if the file is badly formatted or
 /// does not exists.
 Future<Pubspec> parsePubspec(Directory directory) async {
-  final pubspec = findProjectDirectory(directory).pubspec;
-
+  final pubspec =
+      findProjectDirectory(directory, missingPackageConfigOkay: true).pubspec;
   return Pubspec.parse(await pubspec.readAsString());
 }
 
@@ -123,13 +127,20 @@ Future<PackageConfig?> tryParsePackageConfig(Directory directory) async {
 ///
 /// This is a folder that contains both a `pubspec.yaml` and a `.dart_tool/package_config.json` file.
 /// It is either alongside the analysis_options.yaml file, or in a parent directory.
-Directory findProjectDirectory(Directory directory, {Directory? original}) {
+Directory findProjectDirectory(
+  Directory directory, {
+  Directory? original,
+  bool missingPackageConfigOkay = false,
+}) {
   final packageConfigFile = directory.packageConfig;
   final pubspecFile = directory.pubspec;
   if (packageConfigFile.existsSync() && pubspecFile.existsSync()) {
     return directory;
   }
   if (pubspecFile.existsSync()) {
+    if (missingPackageConfigOkay) {
+      return directory;
+    }
     throw PackageConfigNotFoundError._(directory.path);
   }
   if (directory.parent.uri == directory.uri) {
@@ -181,5 +192,6 @@ class PackageConfigNotFoundError extends MissingFileError {
   @override
   String toString() =>
       'Failed to find .dart_tool/package_config.json at $path.\n'
-      'Make sure to run `pub get` first.\n';
+      'Make sure to run `pub get` first.\n'
+      'If "$path" is in your PUB_CACHE dir, run `dart pub cache repair`';
 }

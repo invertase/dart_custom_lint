@@ -174,6 +174,7 @@ Future<Directory> createSimpleWorkspace(
   List<Object> projectEntry, {
   bool withPackageConfig = true,
   bool withNestedAnalysisOptions = false,
+  bool local = false,
 }) async {
   /// The number of time we've created a package with a given name.
   final packageCount = <String, int>{};
@@ -193,6 +194,7 @@ Future<Directory> createSimpleWorkspace(
   }
 
   return createWorkspace(
+      local: local,
       withPackageConfig: withPackageConfig,
       withNestedAnalysisOptions: withNestedAnalysisOptions,
       {
@@ -222,8 +224,9 @@ Future<Directory> createWorkspace(
   Map<String, Pubspec> pubspecs, {
   bool withPackageConfig = true,
   bool withNestedAnalysisOptions = false,
+  bool local = false,
 }) async {
-  final dir = createTemporaryDirectory();
+  final dir = createTemporaryDirectory(local: local);
 
   String packagePathOf(Dependency dependency, String name) {
     if (dependency is HostedDependency) {
@@ -277,9 +280,16 @@ Future<Directory> createWorkspace(
   return dir;
 }
 
-Directory createTemporaryDirectory() {
-  final dir = Directory.systemTemp //
-      .createTempSync('custom_lint_test');
+Directory createTemporaryDirectory({bool local = false}) {
+  final Directory dir;
+  if (local) {
+    // The cli_process_test needs it to be local in order for the relative paths to match
+    dir =
+        Directory.current.dir('.dart_tool').createTempSync('custom_lint_test');
+  } else {
+    // Others need global directory in order to not pick up this project's package_config.json
+    dir = Directory.systemTemp.createTempSync('custom_lint_test');
+  }
   addTearDown(() => dir.deleteSync(recursive: true));
 
   // Watches process kill to delete the temporary directory.

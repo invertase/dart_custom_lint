@@ -199,9 +199,9 @@ void main() {
         expect(
           trimDependencyOverridesWarning(process.stderr),
           startsWith(
-            'Failed to decode .dart_tool/package_config.json at $missingPackageConfig. '
+            'Failed to find .dart_tool/package_config.json at $missingPackageConfig.\n'
             'Make sure to run `pub get` first.\n'
-            'PathNotFoundException: Cannot open file, path =',
+            'If "$missingPackageConfig" is in your PUB_CACHE dir, run `dart pub cache repair`\n',
           ),
         );
         expect(process.stdout, isEmpty);
@@ -212,7 +212,8 @@ void main() {
       'dependency conflict',
       () async {
         // Create two packages with the same name but different paths
-        final workspace = await createSimpleWorkspace(['dep', 'dep']);
+        final workspace =
+            await createSimpleWorkspace(['dep', 'dep'], local: true);
 
         final plugin = createPlugin(
           parent: workspace,
