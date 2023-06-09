@@ -385,7 +385,8 @@ class CustomLintPluginCheckerCache {
     if (cached != null) return cached;
 
     return _cache[directory] = Future(() async {
-      final pubspec = await parsePubspec(directory);
+      final pubspec = await tryParsePubspec(directory);
+      if (pubspec == null) return false;
 
       // TODO test that dependency_overrides & dev_dependencies aren't checked.
       return pubspec.dependencies.containsKey('custom_lint_builder');
@@ -504,24 +505,28 @@ class CustomLintProject {
   ) async {
     final directory = Directory(contextRoot.root);
 
-    final projectPubspec = await parsePubspec(directory)
-        // ignore: avoid_types_on_closure_parameters
-        .catchError((Object err, StackTrace stack) {
-      throw PubspecParseError._(
-        directory.path,
-        error: err,
-        errorStackTrace: stack,
-      );
-    });
-    final projectPackageConfig = await parsePackageConfig(directory)
-        // ignore: avoid_types_on_closure_parameters
-        .catchError((Object err, StackTrace stack) {
-      throw PackageConfigParseError._(
-        directory.path,
-        error: err,
-        errorStackTrace: stack,
-      );
-    });
+    final projectPubspec = await parsePubspec(directory).catchError(
+      // ignore: avoid_types_on_closure_parameters
+      (Object err, StackTrace stack) {
+        throw PubspecParseError._(
+          directory.path,
+          error: err,
+          errorStackTrace: stack,
+        );
+      },
+      test: (e) => e is! MissingFileError,
+    );
+    final projectPackageConfig = await parsePackageConfig(directory).catchError(
+      // ignore: avoid_types_on_closure_parameters
+      (Object err, StackTrace stack) {
+        throw PackageConfigParseError._(
+          directory.path,
+          error: err,
+          errorStackTrace: stack,
+        );
+      },
+      test: (e) => e is! MissingFileError,
+    );
 
     // TODO check that only dev_dependencies are checked
     final plugins = await Future.wait(

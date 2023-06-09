@@ -278,8 +278,7 @@ Future<Directory> createWorkspace(
 }
 
 Directory createTemporaryDirectory() {
-  final dir = Directory.current //
-      .dir('.dart_tool')
+  final dir = Directory.systemTemp //
       .createTempSync('custom_lint_test');
   addTearDown(() => dir.deleteSync(recursive: true));
 
@@ -770,7 +769,7 @@ void main() {
       );
 
       test(
-          'throws MissingPackageConfigError if package has a pubspec but no .dart_tool/package_config.json',
+          'throws PackageConfigNotFoundError if package has a pubspec but no .dart_tool/package_config.json',
           () async {
         final workspace = await createSimpleWorkspace(['package']);
         workspace.dir('package', '.dart_tool').deleteSync(recursive: true);
@@ -780,7 +779,7 @@ void main() {
             [p.join(workspace.path, 'package')],
             workingDirectory: workspace,
           ),
-          throwsA(isA<PackageConfigParseError>()),
+          throwsA(isA<PackageConfigNotFoundError>()),
         );
       });
 

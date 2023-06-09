@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -124,14 +125,17 @@ Future<PackageConfig?> tryParsePackageConfig(Directory directory) async {
 /// It is either alongside the analysis_options.yaml file, or in a parent directory.
 Directory findProjectDirectory(Directory directory, {Directory? original}) {
   final packageConfigFile = directory.packageConfig;
-  if (!packageConfigFile.existsSync() || !directory.pubspec.existsSync()) {
-    if (directory.parent.uri == directory.uri) {
-      throw Exception(
-          'Could not find project directory outside ${original?.path}');
-    }
-    return findProjectDirectory(directory.parent, original: directory);
+  final pubspecFile = directory.pubspec;
+  if (packageConfigFile.existsSync() && pubspecFile.existsSync()) {
+    return directory;
   }
-  return directory;
+  if (pubspecFile.existsSync()) {
+    throw PackageConfigNotFoundError._(directory.path);
+  }
+  if (directory.parent.uri == directory.uri) {
+    throw FindProjectError._(original?.path ?? directory.path);
+  }
+  return findProjectDirectory(directory.parent, original: directory);
 }
 
 /// Parse the package config of the given directory.
@@ -145,4 +149,37 @@ Future<PackageConfig> parsePackageConfig(Directory directory) async {
     await packageConfigFile.readAsBytes(),
     packageConfigFile.uri,
   );
+}
+
+@internal
+
+/// A unified interface for both kinds of file missing errors
+abstract class MissingFileError extends Error {}
+
+/// No pubspec.yaml file was found for a plugin.
+@internal
+class FindProjectError extends MissingFileError {
+  FindProjectError._(this.path);
+
+  /// The folder where the search started.
+  final String path;
+
+  @override
+  String toString() {
+    return 'Failed to find dart project at $path:\n';
+  }
+}
+
+/// No .dart_tool/package_config.json file was found for a plugin.
+@internal
+class PackageConfigNotFoundError extends MissingFileError {
+  PackageConfigNotFoundError._(this.path);
+
+  /// The path where the pubspec.yaml file was found, without a package_config.json
+  final String path;
+
+  @override
+  String toString() =>
+      'Failed to find .dart_tool/package_config.json at $path.\n'
+      'Make sure to run `pub get` first.\n';
 }
