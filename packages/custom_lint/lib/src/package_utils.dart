@@ -162,9 +162,8 @@ Future<PackageConfig> parsePackageConfig(Directory directory) async {
   );
 }
 
-@internal
-
 /// A unified interface for both kinds of file missing errors
+@internal
 abstract class MissingFileError extends Error {}
 
 /// No pubspec.yaml file was found for a plugin.
