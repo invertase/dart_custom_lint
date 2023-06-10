@@ -181,9 +181,15 @@ class CustomLintWorkspace {
 
     final contextRootsWithCustomLint = await Future.wait(
       allContextRoots.map((contextRoot) async {
-        try {
-          await parsePubspec(Directory(contextRoot.root.path));
-        } catch (_) {
+        final projectDir = tryFindProjectDirectory(
+          Directory(contextRoot.root.path),
+        );
+        if (projectDir == null) {
+          return null;
+        }
+
+        final pubspec = await tryParsePubspec(projectDir);
+        if (pubspec == null) {
           return null;
         }
 
@@ -504,29 +510,26 @@ class CustomLintProject {
     CustomLintPluginCheckerCache cache,
   ) async {
     final directory = Directory(contextRoot.root);
-
-    final projectPubspec = await parsePubspec(directory).catchError(
-      // ignore: avoid_types_on_closure_parameters
-      (Object err, StackTrace stack) {
-        throw PubspecParseError._(
-          directory.path,
-          error: err,
-          errorStackTrace: stack,
-        );
-      },
-      test: (e) => e is! MissingFileError,
-    );
-    final projectPackageConfig = await parsePackageConfig(directory).catchError(
-      // ignore: avoid_types_on_closure_parameters
-      (Object err, StackTrace stack) {
-        throw PackageConfigParseError._(
-          directory.path,
-          error: err,
-          errorStackTrace: stack,
-        );
-      },
-      test: (e) => e is! MissingFileError,
-    );
+    final projectDirectory = findProjectDirectory(directory);
+    final projectPubspec = await parsePubspec(projectDirectory).catchError(
+        // ignore: avoid_types_on_closure_parameters
+        (Object err, StackTrace stack) {
+      throw PubspecParseError._(
+        directory.path,
+        error: err,
+        errorStackTrace: stack,
+      );
+    });
+    final projectPackageConfig =
+        await parsePackageConfig(projectDirectory).catchError(
+            // ignore: avoid_types_on_closure_parameters
+            (Object err, StackTrace stack) {
+      throw PackageConfigParseError._(
+        directory.path,
+        error: err,
+        errorStackTrace: stack,
+      );
+    });
 
     // TODO check that only dev_dependencies are checked
     final plugins = await Future.wait(

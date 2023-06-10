@@ -199,7 +199,9 @@ void main() {
         expect(
           trimDependencyOverridesWarning(process.stderr),
           startsWith(
-            'Failed to find .dart_tool/package_config.json at $missingPackageConfig.\n'
+            'The request analysis.setContextRoots failed with the following error:\n'
+            'RequestErrorCode.PLUGIN_ERROR\n'
+            'A request threw the exception:Failed to find .dart_tool/package_config.json at $missingPackageConfig.\n'
             'Make sure to run `pub get` first.\n'
             'If "$missingPackageConfig" is in your PUB_CACHE dir, run `dart pub cache repair`\n',
           ),

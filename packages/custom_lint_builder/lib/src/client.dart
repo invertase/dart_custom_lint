@@ -374,7 +374,9 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
       final pubspecs = {
         for (final analysisContext in contextCollection.contexts)
           analysisContext: parsePubspec(
-            io.Directory(analysisContext.contextRoot.root.path),
+            findProjectDirectory(
+              io.Directory(analysisContext.contextRoot.root.path),
+            ),
           )
       };
 

@@ -57,15 +57,9 @@ Pubspec? tryParsePubspecSync(Directory directory) {
 
 /// Parse the pubspec of the given directory.
 ///
-/// Throws if the parsing fails, such as if the file is badly formatted or
-/// does not exists.
+/// Throws if the parsing fails, such as if the file is badly formatted
 Pubspec parsePubspecSync(Directory directory) {
-  return Pubspec.parse(
-    findProjectDirectory(
-      directory,
-      missingPackageConfigOkay: true,
-    ).pubspec.readAsStringSync(),
-  );
+  return Pubspec.parse(directory.pubspec.readAsStringSync());
 }
 
 /// Try parsing the pubspec of the given directory.
@@ -81,12 +75,9 @@ Future<Pubspec?> tryParsePubspec(Directory directory) async {
 
 /// Parse the pubspec of the given directory.
 ///
-/// Throws if the parsing fails, such as if the file is badly formatted or
-/// does not exists.
+/// Throws if the parsing fails, such as if the file is badly formatted
 Future<Pubspec> parsePubspec(Directory directory) async {
-  final pubspec =
-      findProjectDirectory(directory, missingPackageConfigOkay: true).pubspec;
-  return Pubspec.parse(await pubspec.readAsString());
+  return Pubspec.parse(await directory.pubspec.readAsString());
 }
 
 /// Try parsing the package config of the given directory.
@@ -105,7 +96,7 @@ PackageConfig? tryParsePackageConfigSync(Directory directory) {
 /// Throws if the parsing fails, such as if the file is badly formatted or
 /// does not exists.
 PackageConfig parsePackageConfigSync(Directory directory) {
-  final packageConfigFile = findProjectDirectory(directory).packageConfig;
+  final packageConfigFile = directory.packageConfig;
   return PackageConfig.parseBytes(
     packageConfigFile.readAsBytesSync(),
     packageConfigFile.uri,
@@ -123,6 +114,39 @@ Future<PackageConfig?> tryParsePackageConfig(Directory directory) async {
   }
 }
 
+/// Parse the package config of the given directory.
+///
+/// Throws if the parsing fails, such as if the file is badly formatted or
+/// does not exists.
+Future<PackageConfig> parsePackageConfig(Directory directory) async {
+  final packageConfigFile = directory.packageConfig;
+
+  return PackageConfig.parseBytes(
+    await packageConfigFile.readAsBytes(),
+    packageConfigFile.uri,
+  );
+}
+
+/// Finds the project directory associated with an analysis context root, or null if it is not found
+///
+/// This is a folder that contains both a `pubspec.yaml` and a `.dart_tool/package_config.json` file.
+/// It is either alongside the analysis_options.yaml file, or in a parent directory.
+Directory? tryFindProjectDirectory(
+  Directory directory, {
+  Directory? original,
+  bool missingPackageConfigOkay = false,
+}) {
+  try {
+    return findProjectDirectory(
+      directory,
+      original: original,
+      missingPackageConfigOkay: missingPackageConfigOkay,
+    );
+  } on FileSystemException {
+    return null;
+  }
+}
+
 /// Finds the project directory associated with an analysis context root
 ///
 /// This is a folder that contains both a `pubspec.yaml` and a `.dart_tool/package_config.json` file.
@@ -132,12 +156,12 @@ Directory findProjectDirectory(
   Directory? original,
   bool missingPackageConfigOkay = false,
 }) {
-  final packageConfigFile = directory.packageConfig;
-  final pubspecFile = directory.pubspec;
-  if (packageConfigFile.existsSync() && pubspecFile.existsSync()) {
+  final packageConfigFile = directory.packageConfig.existsSync();
+  final pubspecFile = directory.pubspec.existsSync();
+  if (packageConfigFile && pubspecFile) {
     return directory;
   }
-  if (pubspecFile.existsSync()) {
+  if (pubspecFile) {
     if (missingPackageConfigOkay) {
       return directory;
     }
@@ -149,48 +173,29 @@ Directory findProjectDirectory(
   return findProjectDirectory(directory.parent, original: directory);
 }
 
-/// Parse the package config of the given directory.
-///
-/// Throws if the parsing fails, such as if the file is badly formatted or
-/// does not exists.
-Future<PackageConfig> parsePackageConfig(Directory directory) async {
-  final packageConfigFile = findProjectDirectory(directory).packageConfig;
-
-  return PackageConfig.parseBytes(
-    await packageConfigFile.readAsBytes(),
-    packageConfigFile.uri,
-  );
-}
-
-/// A unified interface for both kinds of file missing errors
-@internal
-abstract class MissingFileError extends Error {}
-
 /// No pubspec.yaml file was found for a plugin.
 @internal
-class FindProjectError extends MissingFileError {
-  FindProjectError._(this.path);
-
-  /// The folder where the search started.
-  final String path;
+class FindProjectError extends FileSystemException {
+  /// An error that represents the folder [path] where the search for the pubspec started.
+  FindProjectError._(String path)
+      : super('Failed to find dart project at $path:\n', path);
 
   @override
-  String toString() {
-    return 'Failed to find dart project at $path:\n';
-  }
+  String toString() => message;
 }
 
 /// No .dart_tool/package_config.json file was found for a plugin.
 @internal
-class PackageConfigNotFoundError extends MissingFileError {
-  PackageConfigNotFoundError._(this.path);
-
-  /// The path where the pubspec.yaml file was found, without a package_config.json
-  final String path;
+class PackageConfigNotFoundError extends FileSystemException {
+  /// The [path] where the pubspec.yaml file was found, but missing a package_config.json
+  PackageConfigNotFoundError._(String path)
+      : super(
+          'Failed to find .dart_tool/package_config.json at $path.\n'
+          'Make sure to run `pub get` first.\n'
+          'If "$path" is in your PUB_CACHE dir, run `dart pub cache repair`',
+          path,
+        );
 
   @override
-  String toString() =>
-      'Failed to find .dart_tool/package_config.json at $path.\n'
-      'Make sure to run `pub get` first.\n'
-      'If "$path" is in your PUB_CACHE dir, run `dart pub cache repair`';
+  String toString() => message;
 }
