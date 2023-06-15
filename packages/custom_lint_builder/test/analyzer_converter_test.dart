@@ -14,11 +14,11 @@ void main() {
         .newFile('/home/user/project/lib/main2.dart', 'void main2() {}')
         .createSource();
 
-    final another = AnalysisError(
-      source,
-      11,
-      12,
-      const LintCode(
+    final another = AnalysisError.tmp(
+      source: source,
+      offset: 11,
+      length: 12,
+      errorCode: const LintCode(
         name: 'another',
         problemMessage: 'another message',
         url: 'https://dart.dev/diagnostics/another',
@@ -28,17 +28,16 @@ void main() {
     expect(
       CustomAnalyzerConverter()
           .convertAnalysisError(
-            AnalysisError(
-              source2,
-              13,
-              14,
-              const LintCode(
+            AnalysisError.tmp(
+              source: source2,
+              offset: 12,
+              length: 14,
+              errorCode: const LintCode(
                 name: 'foo',
                 problemMessage: 'bar',
                 url: 'https://google.com/diagnostics/foo',
               ),
-              [],
-              [another.problemMessage],
+              contextMessages: [another.problemMessage],
             ),
           )
           .toJson(),
