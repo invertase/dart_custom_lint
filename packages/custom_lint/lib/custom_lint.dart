@@ -154,7 +154,7 @@ void _renderLints(
   for (final error in errors) {
     stdout.writeln(
       '  ${_relativeFilePath(error.location.file, workingDirectory)}:${error.location.startLine}:${error.location.startColumn}'
-      ' • ${error.message} • ${error.code} • ${lint.severity.name}',
+      ' • ${error.message} • ${error.code} • ${error.name}',
     );
   }
 }
