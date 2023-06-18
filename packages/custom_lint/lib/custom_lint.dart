@@ -37,7 +37,7 @@ q: Quit
 Future<void> customLint({
   bool watchMode = true,
   required Directory workingDirectory,
-  bool fatalInfos = false,
+  bool fatalInfos = true,
   bool fatalWarnings = true,
 }) async {
   // Reset the code
