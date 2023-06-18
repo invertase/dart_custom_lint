@@ -1,3 +1,15 @@
+## 0.4.0 - 2023-05-12
+
+- Report uncaught exceptions inside `context.addPostRunCallback`
+- Added support for analyzer 5.12.0
+
+## 0.3.4 - 2023-04-19
+
+- custom_lint now automatically generate quick-fixes for "ignore for line/file".  
+- Update the socket communication logic to avoid possible problem is the message
+  contains a \n.
+- fixes custom_lint on windows
+
 ## 0.3.3 - 2023-04-06
 
 - Reduce the likelyness of a dependency version conflict.

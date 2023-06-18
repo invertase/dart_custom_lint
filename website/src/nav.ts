@@ -1,6 +1,6 @@
 export default [
   {
-    href: 'https://docs.custom-lint.dev',
+    href: 'https://github.com/invertase/dart_custom_lint',
     title: 'Docs',
   },
   {

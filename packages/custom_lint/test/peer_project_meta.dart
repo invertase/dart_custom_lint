@@ -3,6 +3,12 @@ import 'dart:io';
 
 import 'package:path/path.dart';
 
+final customLintBinPath = join(
+  PeerProjectMeta.current.customLintPath,
+  'bin',
+  'custom_lint.dart',
+);
+
 class PeerProjectMeta {
   PeerProjectMeta({
     required this.customLintPath,
