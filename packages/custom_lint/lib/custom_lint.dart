@@ -166,22 +166,20 @@ void _renderLints(
   if (errors.isEmpty) {
     stdout.writeln('No issues found!');
     return;
-  } else {
-    for (final error in errors) {
-      stdout.writeln(
-        '  ${_relativeFilePath(error.location.file, workingDirectory)}:${error.location.startLine}:${error.location.startColumn}'
-        ' • ${error.message} • ${error.code}',
-      );
-    }
   }
 
   var hasErrors = false;
   var hasWarnings = false;
   var hasInfos = false;
   for (final error in errors) {
-    hasErrors |= error.severity == AnalysisErrorSeverity.ERROR;
-    hasWarnings |= error.severity == AnalysisErrorSeverity.WARNING;
-    hasInfos |= error.severity == AnalysisErrorSeverity.INFO;
+    stdout.writeln(
+      '  ${_relativeFilePath(error.location.file, workingDirectory)}:${error.location.startLine}:${error.location.startColumn}'
+      ' • ${error.message} • ${error.code}',
+    );
+    hasErrors = hasErrors || error.severity == AnalysisErrorSeverity.ERROR;
+    hasWarnings =
+        hasWarnings || error.severity == AnalysisErrorSeverity.WARNING;
+    hasInfos = hasInfos || error.severity == AnalysisErrorSeverity.INFO;
   }
 
   if (hasErrors) {
