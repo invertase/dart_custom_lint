@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:analyzer/error/error.dart';
 import 'package:test/test.dart';
 
 import '../bin/custom_lint.dart' as cli;
@@ -11,7 +12,7 @@ final oyPluginSource = createPluginSource([
   TestLintRule(
     code: 'oy',
     message: 'Oy',
-    errorSeverity: 'ErrorSeverity.WARNING',
+    errorSeverity: ErrorSeverity.WARNING,
   )
 ]);
 
@@ -19,7 +20,7 @@ final helloWordPluginSource = createPluginSource([
   TestLintRule(
     code: 'hello_world',
     message: 'Hello world',
-    errorSeverity: 'ErrorSeverity.WARNING',
+    errorSeverity: ErrorSeverity.WARNING,
   )
 ]);
 
