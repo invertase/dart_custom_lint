@@ -61,8 +61,8 @@ void main() {
       '''
 [hello_world] test_app (analyzer, analyzer_plugin)
 [hello_world] test_app2 (analyzer, analyzer_plugin)
-  test_app/lib/main.dart:1:6 • Hello world • hello_world
-  test_app2/lib/main2.dart:1:6 • Hello world • hello_world
+  test_app/lib/main.dart:1:6 • Hello world • hello_world • INFO
+  test_app2/lib/main2.dart:1:6 • Hello world • hello_world • INFO
 ''',
     );
     expect(process.exitCode, 1);
@@ -151,8 +151,8 @@ void main() {
 
         expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
         expect(process.stdout, '''
-  lib/another.dart:1:6 • Oy • oy
-  lib/main.dart:1:6 • Oy • oy
+  lib/another.dart:1:6 • Oy • oy • INFO
+  lib/main.dart:1:6 • Oy • oy • INFO
 ''');
         expect(process.exitCode, 1);
       },

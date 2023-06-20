@@ -107,10 +107,10 @@ lib/custom_lint_client.dart:13:29: Error: Undefined name 'createPlugin'.
         expect(
           out.join(),
           completion('''
-  lib/another.dart:1:6 • Hello world • hello_world
-  lib/another.dart:1:6 • Oy • oy
-  lib/main.dart:1:6 • Hello world • hello_world
-  lib/main.dart:1:6 • Oy • oy
+  lib/another.dart:1:6 • Hello world • hello_world • INFO
+  lib/another.dart:1:6 • Oy • oy • INFO
+  lib/main.dart:1:6 • Hello world • hello_world • INFO
+  lib/main.dart:1:6 • Oy • oy • INFO
 '''),
         );
         expect(exitCode, 1);
@@ -210,9 +210,9 @@ lib/custom_lint_client.dart:15:26: Error: Undefined name 'createPlugin'.
 '''),
               endsWith(
                 '''
-  lib/another.dart:1:6 • Oy • oy
-  lib/main.dart:1:6 • Hello world • hello_world
-  lib/main.dart:1:6 • Oy • oy
+  lib/another.dart:1:6 • Oy • oy • INFO
+  lib/main.dart:1:6 • Hello world • hello_world • INFO
+  lib/main.dart:1:6 • Oy • oy • INFO
 ''',
               ),
             ),
@@ -312,11 +312,11 @@ void main() {
           completion(
             predicate((value) {
               expect(value, '''
-  lib/main.dart:1:1 • z • z
-  lib/main.dart:2:1 • y • y
-  lib/main.dart:2:2 • a • a
-  lib/main.dart:2:2 • x • x
-  lib/main.dart:2:2 • x2 • x2
+  lib/main.dart:1:1 • z • z • INFO
+  lib/main.dart:2:1 • y • y • INFO
+  lib/main.dart:2:2 • a • a • INFO
+  lib/main.dart:2:2 • x • x • INFO
+  lib/main.dart:2:2 • x2 • x2 • INFO
 ''');
               return true;
             }),
