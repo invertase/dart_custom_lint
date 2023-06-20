@@ -4,7 +4,7 @@ description: A package to help writing custom linters
 repository: https://github.com/invertase/dart_custom_lint
 
 environment:
-  sdk: ">=2.19.0 <3.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   analyzer: ">=5.12.0 <5.13.0"

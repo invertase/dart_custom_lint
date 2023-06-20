@@ -373,11 +373,11 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
       final pubspecs = {
         for (final analysisContext in contextCollection.contexts)
-          analysisContext: parsePubspec(
-            findProjectDirectory(
-              io.Directory(analysisContext.contextRoot.root.path),
-            ),
+          if (tryFindProjectDirectory(
+            io.Directory(analysisContext.contextRoot.root.path),
           )
+              case final projectDir?)
+            analysisContext: parsePubspec(projectDir)
       };
 
       // Running before updating the configs as the config parsing depends

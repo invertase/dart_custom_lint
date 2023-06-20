@@ -184,14 +184,10 @@ class CustomLintWorkspace {
         final projectDir = tryFindProjectDirectory(
           Directory(contextRoot.root.path),
         );
-        if (projectDir == null) {
-          return null;
-        }
+        if (projectDir == null) return null;
 
         final pubspec = await tryParsePubspec(projectDir);
-        if (pubspec == null) {
-          return null;
-        }
+        if (pubspec == null) return null;
 
         final optionFile = contextRoot.optionsFile;
         if (optionFile == null) {

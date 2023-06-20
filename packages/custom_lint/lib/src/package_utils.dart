@@ -57,7 +57,8 @@ Pubspec? tryParsePubspecSync(Directory directory) {
 
 /// Parse the pubspec of the given directory.
 ///
-/// Throws if the parsing fails, such as if the file is badly formatted
+/// Throws if the parsing fails, such as if the file is badly formatted or
+/// does not exists.
 Pubspec parsePubspecSync(Directory directory) {
   return Pubspec.parse(directory.pubspec.readAsStringSync());
 }
@@ -75,7 +76,8 @@ Future<Pubspec?> tryParsePubspec(Directory directory) async {
 
 /// Parse the pubspec of the given directory.
 ///
-/// Throws if the parsing fails, such as if the file is badly formatted
+/// Throws if the parsing fails, such as if the file is badly formatted or
+/// does not exists.
 Future<Pubspec> parsePubspec(Directory directory) async {
   return Pubspec.parse(await directory.pubspec.readAsString());
 }

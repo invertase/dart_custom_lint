@@ -79,7 +79,7 @@ To create a custom lint, you will need two things:
   # pubspec.yaml
   name: my_custom_lint_package
   environment:
-    sdk: ">=2.16.0 <3.0.0"
+    sdk: ">=3.0.0 <4.0.0"
 
   dependencies:
     # we will use analyzer for inspecting Dart files
@@ -163,7 +163,7 @@ For users to run custom_lint packages, there are a few steps:
   # The pubspec.yaml of an application using our lints
   name: example_app
   environment:
-    sdk: ">=2.16.0 <3.0.0"
+    sdk: ">=3.0.0 <4.0.0"
 
   dev_dependencies:
     custom_lint:
