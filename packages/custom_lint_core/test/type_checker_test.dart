@@ -53,7 +53,7 @@ version: 0.2.8
 description: A package to help writing custom linters
 repository: https://github.com/invertase/dart_custom_lint
 environment:
-  sdk: ">=2.17.1 <3.0.0"
+  sdk: ">3.0.0 <4.0.0"
 ''');
 
       await Process.run(

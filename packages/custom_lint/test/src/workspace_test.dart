@@ -2075,8 +2075,8 @@ dart pub upgrade dep
             'app2',
             devDependencies: {
               'dep': HostedDependency(
-                version: VersionConstraint.parse('>=2.0.0 <3.0.0'),
-              ),
+                version: VersionConstraint.parse('>=3.0.0 <4.0.0'),
+              )
             },
           ),
         ]);
