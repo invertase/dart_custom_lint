@@ -30,7 +30,7 @@ void main() {
           .convertAnalysisError(
             AnalysisError.tmp(
               source: source2,
-              offset: 12,
+              offset: 13,
               length: 14,
               errorCode: const LintCode(
                 name: 'foo',
