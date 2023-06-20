@@ -41,7 +41,7 @@ extension on Dependency {
           'url': that.url.toString(),
           if (that.path != null) 'path': that.path,
           if (that.ref != null) 'ref': that.ref,
-        }
+        },
       };
     } else if (that is PathDependency) {
       return {
@@ -81,7 +81,7 @@ extension on Pubspec {
         'dependency_overrides': {
           for (final dependency in dependencyOverrides.entries)
             dependency.key: dependency.value.toJson(),
-        }
+        },
     };
   }
 }
@@ -1338,7 +1338,7 @@ void main() {
             'dep',
             'dep2',
             'transitive',
-            'transitive2'
+            'transitive2',
           ]),
         );
         expect(
@@ -1420,7 +1420,7 @@ void main() {
             'another_plugin',
             dependencies: {
               'custom_lint_builder': HostedDependency(),
-              'another_plugin_dep': HostedDependency()
+              'another_plugin_dep': HostedDependency(),
             },
           ),
           'plugin_dep',
@@ -1480,13 +1480,13 @@ void main() {
           Pubspec(
             'app',
             devDependencies: {
-              'plugin': HostedDependency(version: Version(1, 0, 0))
+              'plugin': HostedDependency(version: Version(1, 0, 0)),
             },
           ),
           Pubspec(
             'app2',
             devDependencies: {
-              'another_plugin': HostedDependency(version: Version(2, 0, 0))
+              'another_plugin': HostedDependency(version: Version(2, 0, 0)),
             },
           ),
         ]);
@@ -1546,13 +1546,13 @@ void main() {
           Pubspec(
             'app',
             devDependencies: {
-              'plugin': HostedDependency(version: Version(1, 0, 0))
+              'plugin': HostedDependency(version: Version(1, 0, 0)),
             },
           ),
           Pubspec(
             'app2',
             devDependencies: {
-              'another_plugin': HostedDependency(version: Version(2, 0, 0))
+              'another_plugin': HostedDependency(version: Version(2, 0, 0)),
             },
           ),
         ]);
@@ -1613,13 +1613,13 @@ void main() {
           Pubspec(
             'app',
             devDependencies: {
-              'plugin': HostedDependency(version: Version(1, 0, 0))
+              'plugin': HostedDependency(version: Version(1, 0, 0)),
             },
           ),
           Pubspec(
             'app2',
             devDependencies: {
-              'another_plugin': HostedDependency(version: Version(2, 0, 0))
+              'another_plugin': HostedDependency(version: Version(2, 0, 0)),
             },
           ),
         ]);
@@ -1702,13 +1702,13 @@ dart pub upgrade transitive_dep
           Pubspec(
             'app',
             devDependencies: {
-              'dep': HostedDependency(version: Version(1, 0, 0))
+              'dep': HostedDependency(version: Version(1, 0, 0)),
             },
           ),
           Pubspec(
             'app2',
             devDependencies: {
-              'dep': HostedDependency(version: Version(2, 0, 0))
+              'dep': HostedDependency(version: Version(2, 0, 0)),
             },
           ),
         ]);
@@ -1920,7 +1920,7 @@ dart pub upgrade dep second_dep
             'app',
             devDependencies: {
               'dep':
-                  HostedDependency(version: VersionConstraint.parse('^1.0.0'))
+                  HostedDependency(version: VersionConstraint.parse('^1.0.0')),
             },
           ),
           Pubspec(
@@ -2002,7 +2002,7 @@ dart pub upgrade dep
             'app',
             devDependencies: {
               'dep':
-                  HostedDependency(version: VersionConstraint.parse('^1.0.0'))
+                  HostedDependency(version: VersionConstraint.parse('^1.0.0')),
             },
           ),
           Pubspec(
@@ -2010,7 +2010,7 @@ dart pub upgrade dep
             devDependencies: {
               'dep': HostedDependency(
                 version: VersionConstraint.parse('>=2.0.0 <3.0.0'),
-              )
+              ),
             },
           ),
         ]);
@@ -2087,7 +2087,7 @@ dart pub upgrade dep
           Pubspec(
             'app',
             devDependencies: {
-              'dep': HostedDependency(version: Version(1, 0, 0))
+              'dep': HostedDependency(version: Version(1, 0, 0)),
             },
           ),
           Pubspec(
@@ -2170,14 +2170,14 @@ dart pub upgrade dep
           Pubspec(
             'app',
             devDependencies: {
-              'dep': HostedDependency(version: Version(1, 0, 1))
+              'dep': HostedDependency(version: Version(1, 0, 1)),
             },
           ),
           Pubspec(
             'app2',
             dependencies: {'flutter': SdkDependency('flutter')},
             devDependencies: {
-              'dep': HostedDependency(version: Version(1, 0, 0))
+              'dep': HostedDependency(version: Version(1, 0, 0)),
             },
           ),
         ]);
@@ -2262,7 +2262,7 @@ flutter pub upgrade dep
           Pubspec(
             'app2',
             devDependencies: {
-              'dep': HostedDependency(version: Version(1, 0, 0))
+              'dep': HostedDependency(version: Version(1, 0, 0)),
             },
           ),
         ]);
@@ -2348,7 +2348,7 @@ dart pub upgrade dep
           Pubspec(
             'app2',
             devDependencies: {
-              'dep': HostedDependency(version: Version(1, 0, 0))
+              'dep': HostedDependency(version: Version(1, 0, 0)),
             },
           ),
         ]);
@@ -2434,7 +2434,7 @@ dart pub upgrade dep
           Pubspec(
             'app2',
             devDependencies: {
-              'dep': HostedDependency(version: Version(1, 0, 0))
+              'dep': HostedDependency(version: Version(1, 0, 0)),
             },
           ),
         ]);
