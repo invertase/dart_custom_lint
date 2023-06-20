@@ -334,7 +334,7 @@ class CustomLintWorkspace {
             'packageUri': dependency.packageUriRoot.toString(),
             'languageVersion': dependency.languageVersion.toString(),
             'extraData': dependency.extraData.toString(),
-          }
+          },
       ],
     });
   }

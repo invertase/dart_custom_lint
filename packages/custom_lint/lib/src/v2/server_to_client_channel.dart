@@ -170,7 +170,7 @@ class SocketCustomLintServerToClientChannel {
         [
           if (_server.watchMode) '--enable-vm-service=${await port}',
           join('lib', 'custom_lint_client.dart'),
-          _serverSocket.port.toString()
+          _serverSocket.port.toString(),
         ],
         workingDirectory: tempDirectory.path,
       );
@@ -296,7 +296,7 @@ void main(List<String> args) async {
         (value) => value?.kill(),
         // The process wasn't started. No need to do anything.
         onError: (_) {},
-      )
+      ),
     ]);
   }
 }
