@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -266,6 +267,15 @@ Directory createTemporaryDirectory() {
       .dir('.dart_tool')
       .createTempSync('custom_lint_test');
   addTearDown(() => dir.deleteSync(recursive: true));
+
+  // Watches process kill to delete the temporary directory.
+  late final StreamSubscription<void> subscription;
+  subscription = ProcessSignal.sigint.watch().listen((_) {
+    dir.deleteSync(recursive: true);
+    // Let the process exit normally.
+    subscription.cancel();
+  });
+
   return dir;
 }
 
