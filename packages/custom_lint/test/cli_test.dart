@@ -11,14 +11,14 @@ final oyPluginSource = createPluginSource([
   TestLintRule(
     code: 'oy',
     message: 'Oy',
-  )
+  ),
 ]);
 
 final helloWordPluginSource = createPluginSource([
   TestLintRule(
     code: 'hello_world',
     message: 'Hello world',
-  )
+  ),
 ]);
 
 void main() {

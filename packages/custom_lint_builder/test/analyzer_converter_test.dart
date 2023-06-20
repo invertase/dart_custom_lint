@@ -51,7 +51,7 @@ void main() {
           'startLine': -1,
           'startColumn': -1,
           'endLine': -1,
-          'endColumn': -1
+          'endColumn': -1,
         },
         'message': 'bar',
         'code': 'foo',
@@ -66,10 +66,10 @@ void main() {
               'startLine': -1,
               'startColumn': -1,
               'endLine': -1,
-              'endColumn': -1
-            }
+              'endColumn': -1,
+            },
           }
-        ]
+        ],
       },
     );
   });

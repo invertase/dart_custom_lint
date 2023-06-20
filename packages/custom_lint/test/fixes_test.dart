@@ -10,7 +10,7 @@ final pluginWithFixSource = createPluginSource([
     code: 'hello_world',
     message: 'Hello world',
     fixes: [TestLintFix(name: 'HelloWorldFix')],
-  )
+  ),
 ]);
 
 void main() {
@@ -21,7 +21,7 @@ void main() {
       source: {
         'lib/main.dart': '''
 void fn() {}
-'''
+''',
       },
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',

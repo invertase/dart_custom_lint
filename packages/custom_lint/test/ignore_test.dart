@@ -33,7 +33,7 @@ void main() {
         'lib/main.dart': '''
 void fn() {}
 void fn2() {}
-'''
+''',
       },
     );
 
@@ -85,7 +85,7 @@ void fn3() {}
 
 // ignore: type=lint, some comment
 void fn3() {}
-'''
+''',
       },
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
@@ -147,7 +147,7 @@ void fn2() {}
 
 // ignore: foo
 void fn3() {}
-'''
+''',
       },
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
@@ -203,7 +203,7 @@ void fn2() {}
 
 // ignore: foo
 void fn3() {}
-'''
+''',
       },
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
