@@ -1,3 +1,7 @@
+## Unreleased minor
+
+- The command line now shows the lints' severity (thanks to @praxder)
+
 ## 0.4.0 - 2023-05-12
 
 - Report uncaught exceptions inside `context.addPostRunCallback`
@@ -5,7 +9,7 @@
 
 ## 0.3.4 - 2023-04-19
 
-- custom_lint now automatically generate quick-fixes for "ignore for line/file".  
+- custom_lint now automatically generate quick-fixes for "ignore for line/file".
 - Update the socket communication logic to avoid possible problem is the message
   contains a \n.
 - fixes custom_lint on windows
