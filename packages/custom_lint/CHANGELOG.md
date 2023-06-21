@@ -1,4 +1,4 @@
-## Unreleased minor
+## 0.5.0 - 2023-06-21
 
 - The command line now shows the lints' severity (thanks to @praxder)
 

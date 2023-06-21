@@ -1,5 +1,5 @@
 name: custom_lint_builder_example_lint
-version: 0.0.3
+version: 0.0.4
 publish_to: none
 
 environment:
