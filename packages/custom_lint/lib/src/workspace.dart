@@ -18,6 +18,18 @@ import 'package:yaml/yaml.dart';
 
 import 'package_utils.dart';
 
+String _buildDependencyConstraint(
+  List<Dependency> dependencies, {
+  List<Dependency> dependencyOverrides = const [],
+}) {
+  if (dependencyOverrides.isNotEmpty) {
+    return 'any';
+  }
+
+  // TODO pick version comaptible with all dependencies
+  return '# TODO';
+}
+
 String _computePubspec(
   Iterable<String> plugins,
   Map<String, Package> allDependencies,
@@ -261,6 +273,96 @@ class CustomLintWorkspace {
 
   /// The names of all enabled plugins.
   final Set<String> uniquePluginNames;
+
+  /// A method to generate a `pubspec.yaml` in the client project
+  ///
+  /// This is the combination of all `pubspec.yaml` in the workspace.
+  @internal
+  String generatePubspec() {
+    final uniqueDependencyNames = projects.expand((e) sync* {
+      yield* e.pubspec.devDependencies.keys;
+      yield* e.pubspec.dependencyOverrides.keys;
+    }).toSet();
+
+    final dependencyOverrides =
+        projects.map((e) => e.pubspec.dependencyOverrides);
+    final devDependencies = projects.map((e) => e.pubspec.devDependencies);
+
+    final buffer = StringBuffer('''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+''');
+
+    final dependenciesByName = {
+      for (final name in uniqueDependencyNames)
+        name: (
+          devDependencies:
+              devDependencies.map((e) => e[name]).whereNotNull().toList(),
+          dependencyOverrides:
+              dependencyOverrides.map((e) => e[name]).whereNotNull().toList(),
+        ),
+    };
+
+    // A flag for whether the "dependencies:" header has been written.
+    var didWriteDevDependenciesHeader = false;
+    // Write dev_dependencies
+    for (final name in uniquePluginNames) {
+      final allDependencies = dependenciesByName[name];
+      if (allDependencies == null) continue;
+
+      // // We don't write dev_dependencies which are sometimes prod dependencies,
+      // // as dev_dependencies, because then we'd be specifying the dependency twice.
+      if (
+          // allDependencies.dependencies.isNotEmpty ||
+          allDependencies.devDependencies.isEmpty) {
+        continue;
+      }
+
+      if (!didWriteDevDependenciesHeader) {
+        didWriteDevDependenciesHeader = true;
+        buffer.writeln('\ndev_dependencies:');
+      }
+
+      final constraint = _buildDependencyConstraint(
+        allDependencies.devDependencies,
+        dependencyOverrides: allDependencies.dependencyOverrides,
+      );
+      buffer.writeln('  $name: $constraint');
+    }
+
+    // A flag for whether the "dependency_overrides:" header has been written.
+    var didWriteDependencyOverridesHeader = false;
+    // Write dependency_overrides
+    for (final entry in dependenciesByName.entries) {
+      final name = entry.key;
+      final allDependencies = entry.value;
+
+      if (allDependencies.dependencyOverrides.isEmpty) continue;
+
+      if (!didWriteDependencyOverridesHeader) {
+        didWriteDependencyOverridesHeader = true;
+        buffer.writeln('\ndependency_overrides:');
+      }
+
+      final constraint = _buildDependencyConstraint(
+        allDependencies.dependencyOverrides,
+      );
+      buffer.writeln('  $name: $constraint');
+    }
+
+    return buffer.toString();
+  }
+
+  /// A method to generate a `pubspec_overrides.yaml` in the client project.
+  ///
+  /// This is the combination of all `pubspec_overrides.yaml` in the workspace.
+  @internal
+  String generatePubspecOverride() {
+    // TODO
+    return '';
+  }
 
   /// Generate a package_config.json combining all the dependencies from all
   /// the contextRoots.

@@ -19,6 +19,23 @@ const conflictExplanation =
     'different versions for a dependency, the process cannot be reasonably started. '
     'Please make sure all packages have the same version.';
 
+/// Shorthand for calling [CustomLintWorkspace.fromContextRoots] from
+/// a list of path.
+Future<CustomLintWorkspace> fromContextRootsFromPaths(
+  List<String> paths, {
+  required Directory workingDirectory,
+}) {
+  return CustomLintWorkspace.fromContextRoots(
+    paths.map((path) {
+      return ContextRoot(
+        p.isAbsolute(path) ? path : p.join(workingDirectory.path, path),
+        [],
+      );
+    }).toList(),
+    workingDirectory: workingDirectory,
+  );
+}
+
 extension on Dependency {
   Map<String, Object?> toPackageJson({
     required String name,
@@ -551,6 +568,166 @@ void main() {
   });
 
   group(CustomLintWorkspace, () {
+    group('generatePubspec', () {
+      test(
+        'Specifies environment such that it is compatible with all packages',
+        () {},
+      );
+      test('Throws if there is no compatible environment', () {});
+
+      test(
+          'if a package has for SDK >2<3 and another has >3<4, '
+          'they should be considered compatible', () {
+        // This is due to the SDK overriding <3 to <4
+      });
+
+      test(
+        'If a dependency is used with version numbers, '
+        'use a version range compatible with all packages',
+        () {},
+      );
+
+      test('Throws if no valid version range is found', () {});
+
+      test(
+        'dependencies with a dependency_override are still listed as dependencies/dev_dependencies, '
+        'but with an any version',
+        () {},
+      );
+
+      test(
+        'If a workspace has no dev_dependencies, it should not be present in the pubspec.yaml',
+        () {},
+      );
+      test(
+        'If a workspace has no dependencies, it should not be present in the pubspec.yaml',
+        () {},
+      );
+      test(
+        'If a workspace has no dependency_overrides, it should not be present in the pubspec.yaml',
+        () {},
+      );
+
+      test(
+        'Throws if a dependency sometimes uses versions and sometimes paths',
+        () {},
+      );
+      test(
+        'Throws if a dependency sometimes uses versions and sometimes git refs',
+        () {},
+      );
+      test(
+        'Throws if a dependency sometimes uses path and sometimes git refs',
+        () {},
+      );
+
+      test('Throws if a dependency uses two different paths', () {});
+      test('Supports two different paths if both resolve to the same directory',
+          () {
+        // /user/local/foo
+        // ../foo
+        // ../../local/foo
+      });
+
+      test('Supports two indentical git projects', () {});
+      test('Throws if git dependencies are not identical', () {});
+
+      test(
+          'The generated pubspec must contains only plugins and dependency_overrides',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          'dep',
+          'override',
+          'dev_dep',
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            dependencies: {'dep': HostedDependency()},
+            devDependencies: {
+              'plugin1': HostedDependency(),
+              'dev_dep': HostedDependency(),
+            },
+            dependencyOverrides: {'override': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.generatePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1: # TODO
+
+dependency_overrides:
+  override: # TODO
+''');
+      });
+
+      test(
+          'if a dependency is used as "dev_dependencies" in all packages using it, '
+          'it stays a "dev_dependencies"', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'plugin2',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {
+              'plugin1': HostedDependency(),
+              'plugin2': HostedDependency(),
+            },
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.generatePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1: # TODO
+  plugin2: # TODO
+''');
+      });
+
+      test(
+        'promote "dev_dependencies" to "dependencies" '
+        'if any package uses the dependency as "dependencies"',
+        () async {},
+      );
+
+      test(
+        'promote "dev_dependencies" and "dependencies" to "dependency_overrides" '
+        'if any package uses the dependency as "dependency_overrides"',
+        () async {},
+      );
+    });
+
     group(CustomLintWorkspace.fromPaths, () {
       test('Handles relative paths', () async {
         final workspace = await createSimpleWorkspace(['package']);
@@ -712,18 +889,6 @@ void main() {
     });
 
     group('fromContextRoots', () {
-      /// Shorthand for calling [CustomLintWorkspace.fromContextRoots] from
-      /// a list of path.
-      Future<CustomLintWorkspace> fromContextRootsFromPaths(
-        List<String> paths, {
-        required Directory workingDirectory,
-      }) {
-        return CustomLintWorkspace.fromContextRoots(
-          paths.map((path) => ContextRoot(path, [])).toList(),
-          workingDirectory: workingDirectory,
-        );
-      }
-
       test('throws MissingPubspecError if package does not contain a pubspec',
           () async {
         final workspace = await createSimpleWorkspace([]);

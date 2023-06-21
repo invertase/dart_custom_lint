@@ -1,6 +1,7 @@
 ## Unreleased minor
 
 - The command line now shows the lints' severity (thanks to @praxder)
+- Now requires Dart 3.0.0
 
 ## 0.4.0 - 2023-05-12
 
