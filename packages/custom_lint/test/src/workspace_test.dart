@@ -582,10 +582,46 @@ void main() {
       });
 
       test(
-        'If a dependency is used with version numbers, '
-        'use a version range compatible with all packages',
-        () {},
-      );
+          'If a dependency is used with version numbers, '
+          'use a version range compatible with all packages', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('>=1.0.0 <1.5.0'),
+              ),
+            },
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.3.0'),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.generatePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1: ">=1.3.0 <1.5.0"
+''');
+      });
 
       test('Throws if no valid version range is found', () {});
 
@@ -645,12 +681,24 @@ void main() {
           ),
           Pubspec(
             'a',
-            dependencies: {'dep': HostedDependency()},
-            devDependencies: {
-              'plugin1': HostedDependency(),
-              'dev_dep': HostedDependency(),
+            dependencies: {
+              'dep': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
             },
-            dependencyOverrides: {'override': HostedDependency()},
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+              'dev_dep': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+            dependencyOverrides: {
+              'override': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
           ),
         ]);
 
@@ -666,10 +714,10 @@ version: 0.0.1
 publish_to: 'none'
 
 dev_dependencies:
-  plugin1: # TODO
+  plugin1: "^1.0.0"
 
 dependency_overrides:
-  override: # TODO
+  override: "^1.0.0"
 ''');
       });
 
@@ -688,13 +736,21 @@ dependency_overrides:
           Pubspec(
             'a',
             devDependencies: {
-              'plugin1': HostedDependency(),
-              'plugin2': HostedDependency(),
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+              'plugin2': HostedDependency(
+                version: VersionConstraint.parse('^1.2.0'),
+              ),
             },
           ),
           Pubspec(
             'b',
-            devDependencies: {'plugin1': HostedDependency()},
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
           ),
         ]);
 
@@ -710,8 +766,8 @@ version: 0.0.1
 publish_to: 'none'
 
 dev_dependencies:
-  plugin1: # TODO
-  plugin2: # TODO
+  plugin1: ">=1.0.0 <2.0.0"
+  plugin2: "^1.2.0"
 ''');
       });
 

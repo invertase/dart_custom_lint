@@ -26,8 +26,58 @@ String _buildDependencyConstraint(
     return 'any';
   }
 
-  // TODO pick version comaptible with all dependencies
-  return '# TODO';
+  var constraint = dependencies.first;
+  for (final dependency in dependencies.skip(1)) {
+    switch (dependency) {
+      case HostedDependency():
+        switch (constraint) {
+          case HostedDependency()
+              when constraint.hosted?.declaredName ==
+                      dependency.hosted?.declaredName &&
+                  constraint.hosted?.url == dependency.hosted?.url:
+            final newConstraint = constraint.version.intersect(
+              dependency.version,
+            );
+            if (newConstraint.isEmpty) {
+              // TODO can we include the package name in the error message?
+              throw ArgumentError(
+                'Incompatible version ranges: ${constraint.version} and ${dependency.version}',
+              );
+            }
+
+            constraint = HostedDependency(
+              version: newConstraint,
+              hosted: constraint.hosted,
+            );
+
+          case _:
+            // TODO can we include the package name in the error message?
+            throw ArgumentError(
+              'Incompatible constraints: $constraint and $dependency',
+            );
+        }
+
+      case SdkDependency():
+      case GitDependency():
+      case PathDependency():
+      default:
+        // TODO can we include the package name in the error message?
+        throw ArgumentError(
+          'Unsupported dependency type: ${dependency.runtimeType}',
+        );
+    }
+  }
+
+  switch (constraint) {
+    case HostedDependency():
+      return '"${constraint.version}"';
+    case SdkDependency():
+    case GitDependency():
+    case PathDependency():
+    default:
+      // TODO
+      throw UnimplementedError();
+  }
 }
 
 String _computePubspec(
