@@ -570,9 +570,88 @@ void main() {
   group(CustomLintWorkspace, () {
     group('generatePubspec', () {
       test(
-        'Specifies environment such that it is compatible with all packages',
-        () {},
-      );
+          'If an environment constraint is not specified in a given project, it is considered as "any"',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {
+              'sdk': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+            },
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            environment: {},
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.generatePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+
+dev_dependencies:
+  plugin1: any
+''');
+      });
+
+      test('Specifies environment such that it is compatible with all packages',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {
+              'sdk': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+            },
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            environment: {
+              'sdk': VersionConstraint.parse('>=2.0.0 <2.19.0'),
+            },
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.generatePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ">=2.12.0 <2.19.0"
+
+dev_dependencies:
+  plugin1: any
+''');
+      });
+
       test('Throws if there is no compatible environment', () {});
 
       test(
@@ -622,6 +701,8 @@ dev_dependencies:
   plugin1: ">=1.3.0 <1.5.0"
 ''');
       });
+
+      test('Throws if no valid envirionment version range is found', () {});
 
       test('Throws if no valid version range is found', () {});
 

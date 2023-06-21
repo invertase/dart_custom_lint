@@ -12,12 +12,15 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:yaml/yaml.dart';
 
 import 'package_utils.dart';
 
+/// Compute the constraint for a dependency which matches with all the constraints
+/// used in the workspace.
 String _buildDependencyConstraint(
   List<Dependency> dependencies, {
   List<Dependency> dependencyOverrides = const [],
@@ -69,6 +72,8 @@ String _buildDependencyConstraint(
   }
 
   switch (constraint) {
+    case HostedDependency() when constraint.version == VersionConstraint.any:
+      return 'any';
     case HostedDependency():
       return '"${constraint.version}"';
     case SdkDependency():
@@ -329,6 +334,43 @@ class CustomLintWorkspace {
   /// This is the combination of all `pubspec.yaml` in the workspace.
   @internal
   String generatePubspec() {
+    final buffer = StringBuffer('''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+''');
+
+    _writeEnvironment(buffer);
+    _writeDependencies(buffer);
+
+    return buffer.toString();
+  }
+
+  void _writeEnvironment(StringBuffer buffer) {
+    final environmentKeys = projects
+        .expand((e) => e.pubspec.environment?.keys ?? <String>[])
+        .toSet();
+
+    if (environmentKeys.isEmpty) return;
+
+    buffer.writeln('\nenvironment:');
+
+    for (final key in environmentKeys) {
+      final constraintCompatibleWithAllProjects = projects
+          .map((e) => e.pubspec.environment?[key])
+          // TODO what if some projects specify SDK/Flutter but some don't?
+          .whereNotNull()
+          .fold(
+            VersionConstraint.any,
+            (acc, constraint) => acc.intersect(constraint),
+          );
+
+      buffer.writeln('  $key: "$constraintCompatibleWithAllProjects"');
+    }
+  }
+
+  void _writeDependencies(StringBuffer buffer) {
     final uniqueDependencyNames = projects.expand((e) sync* {
       yield* e.pubspec.devDependencies.keys;
       yield* e.pubspec.dependencyOverrides.keys;
@@ -337,13 +379,6 @@ class CustomLintWorkspace {
     final dependencyOverrides =
         projects.map((e) => e.pubspec.dependencyOverrides);
     final devDependencies = projects.map((e) => e.pubspec.devDependencies);
-
-    final buffer = StringBuffer('''
-name: custom_lint_client
-description: A client for custom_lint
-version: 0.0.1
-publish_to: 'none'
-''');
 
     final dependenciesByName = {
       for (final name in uniqueDependencyNames)
@@ -401,8 +436,6 @@ publish_to: 'none'
       );
       buffer.writeln('  $name: $constraint');
     }
-
-    return buffer.toString();
   }
 
   /// A method to generate a `pubspec_overrides.yaml` in the client project.
