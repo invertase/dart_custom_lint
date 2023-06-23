@@ -85,6 +85,70 @@ String _buildDependencyConstraint(
   }
 }
 
+sealed class ConflictKind {
+  String get kindDisplayString;
+  String get value;
+}
+
+class EnvironmentConflict implements ConflictKind {
+  EnvironmentConflict(this.key);
+
+  @override
+  String get kindDisplayString => 'environment';
+
+  @override
+  String get value => key;
+
+  final String key;
+}
+
+class DependencyConflict implements ConflictKind {
+  DependencyConflict(this.packageName);
+
+  @override
+  String get kindDisplayString => 'package';
+
+  @override
+  String get value => packageName;
+
+  final String packageName;
+}
+
+/// {@template IncompatibleDependencyConstraintsException}
+/// An exception thrown when a dependency is used with different constraints
+/// {@endtemplate}
+class IncompatibleDependencyConstraintsException implements Exception {
+  /// {@macro IncompatibleDependencyConstraintsException}
+  IncompatibleDependencyConstraintsException(
+    this.kind,
+    this.conflictingDependencies,
+  ) : assert(
+          conflictingDependencies.length > 1,
+          'Must have at least 2 items',
+        );
+
+  final ConflictKind kind;
+  final List<(Object, {String projectName, String projectPath})>
+      conflictingDependencies;
+
+  @override
+  String toString() {
+    final buffer = StringBuffer(
+      'The ${kind.kindDisplayString} "${kind.value}" has incompatible version constraints in the project:\n',
+    );
+
+    for (final (dependency, :projectName, :projectPath)
+        in conflictingDependencies) {
+      buffer.write('''
+- "$dependency"
+  from "$projectName" at "$projectPath".
+''');
+    }
+
+    return buffer.toString();
+  }
+}
+
 String _computePubspec(
   Iterable<String> plugins,
   Map<String, Package> allDependencies,
@@ -357,14 +421,36 @@ publish_to: 'none'
     buffer.writeln('\nenvironment:');
 
     for (final key in environmentKeys) {
-      final constraintCompatibleWithAllProjects = projects
-          .map((e) => e.pubspec.environment?[key])
+      final projectMeta = projects
+          .map((e) {
+            final constraint = e.pubspec.environment?[key];
+            if (constraint == null) return null;
+            return (
+              constraint,
+              projectName: e.pubspec.name,
+              projectPath: join(
+                '.',
+                normalize(
+                  relative(e.directory.path, from: workingDirectory.path),
+                ),
+              ),
+            );
+          })
           // TODO what if some projects specify SDK/Flutter but some don't?
           .whereNotNull()
-          .fold(
-            VersionConstraint.any,
-            (acc, constraint) => acc.intersect(constraint),
-          );
+          .toList();
+
+      final constraintCompatibleWithAllProjects = projectMeta.fold(
+        VersionConstraint.any,
+        (acc, constraint) => acc.intersect(constraint.$1),
+      );
+
+      if (constraintCompatibleWithAllProjects.isEmpty) {
+        throw IncompatibleDependencyConstraintsException(
+          EnvironmentConflict(key),
+          projectMeta,
+        );
+      }
 
       buffer.writeln('  $key: "$constraintCompatibleWithAllProjects"');
     }

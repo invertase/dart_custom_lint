@@ -652,7 +652,47 @@ dev_dependencies:
 ''');
       });
 
-      test('Throws if there is no compatible environment', () {});
+      test('Throws if there is no compatible environment', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {
+              'sdk': VersionConstraint.parse('>=2.12.0 <2.15.0'),
+            },
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            environment: {
+              'sdk': VersionConstraint.parse('>=2.16.0 <2.19.0'),
+            },
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.generatePubspec,
+          throwsA(
+            isA<IncompatibleDependencyConstraintsException>()
+                .having((e) => e.toString(), 'toString', '''
+The environment "sdk" has incompatible version constraints in the project:
+- ">=2.12.0 <2.15.0"
+  from "a" at "./a".
+- ">=2.16.0 <2.19.0"
+  from "b" at "./b".
+'''),
+          ),
+        );
+      });
 
       test(
           'if a package has for SDK >2<3 and another has >3<4, '
