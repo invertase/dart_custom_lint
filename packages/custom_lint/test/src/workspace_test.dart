@@ -232,7 +232,9 @@ Future<Directory> createWorkspace(
     if (dependency is HostedDependency) {
       return p.join(dir.path, name);
     } else if (dependency is PathDependency) {
-      return dependency.path;
+      return p.isAbsolute(dependency.path)
+          ? dependency.path
+          : p.normalize(p.join('..', dependency.path));
     } else {
       throw UnsupportedError('Unknown dependency ${dependency.runtimeType}.');
     }
@@ -964,12 +966,78 @@ dev_dependencies:
         () {},
       );
 
-      test('Throws if a dependency uses two different paths', () {});
+      test('Throws if a dependency uses two different paths', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': PathDependency('../plugin12')},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.generatePubspec,
+          throwsA(
+            isA<IncompatibleDependencyConstraintsException>()
+                .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- "../plugin1"
+  from "a" at "./a".
+- "../plugin12"
+  from "b" at "./b".
+'''),
+          ),
+        );
+      });
+
       test('Supports two different paths if both resolve to the same directory',
-          () {
-        // /user/local/foo
-        // ../foo
-        // ../../local/foo
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': PathDependency('./../plugin1')},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.generatePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1:
+    path: "${workingDir.dir('plugin1').path}"
+''');
       });
 
       test('Supports two indentical git projects', () {});

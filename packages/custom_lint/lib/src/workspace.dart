@@ -26,49 +26,72 @@ String _buildDependencyConstraint(
   List<({CustomLintProject project, Dependency dependency})> dependencies, {
   required Directory workingDirectory,
 }) {
-  var constraint = dependencies.first.dependency;
-  for (final dependency in dependencies.map((e) => e.dependency).skip(1)) {
-    switch (dependency) {
-      case HostedDependency():
-        switch (constraint) {
-          case HostedDependency()
-              when constraint.hosted?.declaredName ==
-                      dependency.hosted?.declaredName &&
-                  constraint.hosted?.url == dependency.hosted?.url:
-            final newConstraint = constraint.version.intersect(
-              dependency.version,
-            );
-            if (newConstraint.isEmpty) {
-              // TODO can we include the package name in the error message?
-              throw IncompatibleDependencyConstraintsException(
-                ConflictKind.dependency(name),
-                dependencies
-                    .map(
-                      (d) => DependencyConstraintMeta.fromDependency(
-                        d.dependency,
-                        d.project,
-                        workingDirectory: workingDirectory,
-                      ),
-                    )
-                    .toList(),
-              );
-            }
+  // We can't pick the "first" then use .skip(1) because the pattern match
+  // may transform the shared constraint. Such as modifying path dependencies
+  // to all use absolute paths.
+  Dependency? sharedConstraint;
+  for (final (:project, :dependency) in dependencies) {
+    final dependencyMeta = dependencies.map(
+      (d) => DependencyConstraintMeta.fromDependency(
+        d.dependency,
+        d.project,
+        workingDirectory: workingDirectory,
+      ),
+    );
 
-            constraint = HostedDependency(
-              version: newConstraint,
-              hosted: constraint.hosted,
-            );
+    switch ((dependency: dependency, constraint: sharedConstraint)) {
+      case (
+          :final HostedDependency dependency,
+          :final HostedDependency? constraint,
+        ):
+        if (constraint == null) {
+          sharedConstraint = dependency;
+          continue;
+        }
 
-          case _:
-            // TODO can we include the package name in the error message?
-            throw ArgumentError(
-              'Incompatible constraints: $constraint and $dependency',
-            );
+        if (constraint.hosted?.declaredName !=
+                dependency.hosted?.declaredName ||
+            constraint.hosted?.url != dependency.hosted?.url) {
+          // TODO throw
+        }
+
+        final newConstraint = constraint.version.intersect(dependency.version);
+        if (newConstraint.isEmpty) {
+          // TODO can we include the package name in the error message?
+          throw IncompatibleDependencyConstraintsException(
+            ConflictKind.dependency(name),
+            dependencyMeta.toList(),
+          );
+        }
+
+        sharedConstraint = HostedDependency(
+          version: newConstraint,
+          hosted: constraint.hosted,
+        );
+
+      case (
+          :final PathDependency dependency,
+          :final PathDependency? constraint,
+        ):
+        final absoluteDependencyPath = normalize(
+          absolute(
+            project.directory.path,
+            dependency.path,
+          ),
+        );
+
+        sharedConstraint = PathDependency(absoluteDependencyPath);
+        if (constraint == null) continue;
+
+        if (constraint.path != absoluteDependencyPath) {
+          throw IncompatibleDependencyConstraintsException(
+            ConflictKind.dependency(name),
+            dependencyMeta.toList(),
+          );
         }
 
       case SdkDependency():
       case GitDependency():
-      case PathDependency():
       default:
         // TODO can we include the package name in the error message?
         throw ArgumentError(
@@ -77,14 +100,16 @@ String _buildDependencyConstraint(
     }
   }
 
-  switch (constraint) {
-    case HostedDependency() when constraint.version == VersionConstraint.any:
-      return 'any';
+  switch (sharedConstraint) {
+    case HostedDependency()
+        when sharedConstraint.version == VersionConstraint.any:
+      return ' any';
     case HostedDependency():
-      return '"${constraint.version}"';
+      return ' "${sharedConstraint.version}"';
+    case PathDependency():
+      return '\n    path: "${sharedConstraint.path}"';
     case SdkDependency():
     case GitDependency():
-    case PathDependency():
     default:
       // TODO
       throw UnimplementedError();
@@ -153,6 +178,7 @@ class DependencyConstraintMeta {
   }) : this._(
           switch (dependency) {
             HostedDependency() => dependency.version,
+            PathDependency() => dependency.path,
             _ => dependency,
           },
           project,
@@ -554,13 +580,13 @@ publish_to: 'none'
       }
 
       final constraint = allDependencies.dependencyOverrides.isNotEmpty
-          ? 'any'
+          ? ' any'
           : _buildDependencyConstraint(
               name,
               allDependencies.devDependencies,
               workingDirectory: workingDirectory,
             );
-      buffer.writeln('  $name: $constraint');
+      buffer.writeln('  $name:$constraint');
     }
 
     // A flag for whether the "dependency_overrides:" header has been written.
@@ -582,7 +608,7 @@ publish_to: 'none'
         allDependencies.dependencyOverrides,
         workingDirectory: workingDirectory,
       );
-      buffer.writeln('  $name: $constraint');
+      buffer.writeln('  $name:$constraint');
     }
   }
 
