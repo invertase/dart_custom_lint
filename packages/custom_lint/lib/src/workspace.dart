@@ -39,15 +39,19 @@ String _buildDependencyConstraint(
       ),
     );
 
+    Never throws() => throw IncompatibleDependencyConstraintsException(
+          ConflictKind.dependency(name),
+          dependencyMeta.toList(),
+        );
+
     switch ((dependency: dependency, constraint: sharedConstraint)) {
       case (
           :final HostedDependency dependency,
           :final HostedDependency? constraint,
         ):
-        if (constraint == null) {
-          sharedConstraint = dependency;
-          continue;
-        }
+        sharedConstraint = dependency;
+
+        if (constraint == null) continue;
 
         if (constraint.hosted?.declaredName !=
                 dependency.hosted?.declaredName ||
@@ -56,13 +60,7 @@ String _buildDependencyConstraint(
         }
 
         final newConstraint = constraint.version.intersect(dependency.version);
-        if (newConstraint.isEmpty) {
-          // TODO can we include the package name in the error message?
-          throw IncompatibleDependencyConstraintsException(
-            ConflictKind.dependency(name),
-            dependencyMeta.toList(),
-          );
-        }
+        if (newConstraint.isEmpty) throws();
 
         sharedConstraint = HostedDependency(
           version: newConstraint,
@@ -79,24 +77,16 @@ String _buildDependencyConstraint(
             dependency.path,
           ),
         );
-
         sharedConstraint = PathDependency(absoluteDependencyPath);
+
         if (constraint == null) continue;
 
-        if (constraint.path != absoluteDependencyPath) {
-          throw IncompatibleDependencyConstraintsException(
-            ConflictKind.dependency(name),
-            dependencyMeta.toList(),
-          );
-        }
+        if (constraint.path != absoluteDependencyPath) throws();
 
       case SdkDependency():
       case GitDependency():
       default:
-        // TODO can we include the package name in the error message?
-        throw ArgumentError(
-          'Unsupported dependency type: ${dependency.runtimeType}',
-        );
+        throws();
     }
   }
 

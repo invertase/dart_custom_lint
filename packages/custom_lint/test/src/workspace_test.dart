@@ -954,17 +954,42 @@ dev_dependencies:
       });
 
       test(
-        'Throws if a dependency sometimes uses versions and sometimes paths',
-        () {},
-      );
-      test(
-        'Throws if a dependency sometimes uses versions and sometimes git refs',
-        () {},
-      );
-      test(
-        'Throws if a dependency sometimes uses path and sometimes git refs',
-        () {},
-      );
+          'Throws if a package uses different dependency type (path vs version vs ...)',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.generatePubspec,
+          throwsA(
+            isA<IncompatibleDependencyConstraintsException>()
+                .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- "../plugin1"
+  from "a" at "./a".
+- "any"
+  from "b" at "./b".
+'''),
+          ),
+        );
+      });
 
       test('Throws if a dependency uses two different paths', () async {
         final workingDir = await createSimpleWorkspace([
