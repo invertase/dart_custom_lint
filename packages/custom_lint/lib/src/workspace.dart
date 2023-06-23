@@ -22,15 +22,12 @@ import 'package_utils.dart';
 /// Compute the constraint for a dependency which matches with all the constraints
 /// used in the workspace.
 String _buildDependencyConstraint(
-  List<Dependency> dependencies, {
-  List<Dependency> dependencyOverrides = const [],
+  String name,
+  List<({CustomLintProject project, Dependency dependency})> dependencies, {
+  required Directory workingDirectory,
 }) {
-  if (dependencyOverrides.isNotEmpty) {
-    return 'any';
-  }
-
-  var constraint = dependencies.first;
-  for (final dependency in dependencies.skip(1)) {
+  var constraint = dependencies.first.dependency;
+  for (final dependency in dependencies.map((e) => e.dependency).skip(1)) {
     switch (dependency) {
       case HostedDependency():
         switch (constraint) {
@@ -43,8 +40,17 @@ String _buildDependencyConstraint(
             );
             if (newConstraint.isEmpty) {
               // TODO can we include the package name in the error message?
-              throw ArgumentError(
-                'Incompatible version ranges: ${constraint.version} and ${dependency.version}',
+              throw IncompatibleDependencyConstraintsException(
+                ConflictKind.dependency(name),
+                dependencies
+                    .map(
+                      (d) => DependencyConstraintMeta.fromDependency(
+                        d.dependency,
+                        d.project,
+                        workingDirectory: workingDirectory,
+                      ),
+                    )
+                    .toList(),
               );
             }
 
@@ -86,12 +92,15 @@ String _buildDependencyConstraint(
 }
 
 sealed class ConflictKind {
+  factory ConflictKind.dependency(String packageName) = _DependencyConflict;
+  factory ConflictKind.environment(String packageName) = _EnvironmentConflict;
+
   String get kindDisplayString;
   String get value;
 }
 
-class EnvironmentConflict implements ConflictKind {
-  EnvironmentConflict(this.key);
+class _EnvironmentConflict implements ConflictKind {
+  _EnvironmentConflict(this.key);
 
   @override
   String get kindDisplayString => 'environment';
@@ -102,8 +111,8 @@ class EnvironmentConflict implements ConflictKind {
   final String key;
 }
 
-class DependencyConflict implements ConflictKind {
-  DependencyConflict(this.packageName);
+class _DependencyConflict implements ConflictKind {
+  _DependencyConflict(this.packageName);
 
   @override
   String get kindDisplayString => 'package';
@@ -112,6 +121,48 @@ class DependencyConflict implements ConflictKind {
   String get value => packageName;
 
   final String packageName;
+}
+
+class DependencyConstraintMeta {
+  DependencyConstraintMeta._(
+    this.dependency,
+    CustomLintProject project, {
+    required Directory workingDirectory,
+  })  : projectName = project.pubspec.name,
+        projectPath = join(
+          '.',
+          normalize(
+            relative(project.directory.path, from: workingDirectory.path),
+          ),
+        );
+
+  DependencyConstraintMeta.fromVersionConstraint(
+    VersionConstraint constraint,
+    CustomLintProject project, {
+    required Directory workingDirectory,
+  }) : this._(
+          constraint,
+          project,
+          workingDirectory: workingDirectory,
+        );
+
+  DependencyConstraintMeta.fromDependency(
+    Dependency dependency,
+    CustomLintProject project, {
+    required Directory workingDirectory,
+  }) : this._(
+          switch (dependency) {
+            HostedDependency() => dependency.version,
+            _ => dependency,
+          },
+          project,
+          workingDirectory: workingDirectory,
+        );
+
+  /// Either a [VersionConstraint] or a [Dependency].
+  final Object dependency;
+  final String projectName;
+  final String projectPath;
 }
 
 /// {@template IncompatibleDependencyConstraintsException}
@@ -128,8 +179,7 @@ class IncompatibleDependencyConstraintsException implements Exception {
         );
 
   final ConflictKind kind;
-  final List<(Object, {String projectName, String projectPath})>
-      conflictingDependencies;
+  final List<DependencyConstraintMeta> conflictingDependencies;
 
   @override
   String toString() {
@@ -137,7 +187,7 @@ class IncompatibleDependencyConstraintsException implements Exception {
       'The ${kind.kindDisplayString} "${kind.value}" has incompatible version constraints in the project:\n',
     );
 
-    for (final (dependency, :projectName, :projectPath)
+    for (final DependencyConstraintMeta(:dependency, :projectName, :projectPath)
         in conflictingDependencies) {
       buffer.write('''
 - "$dependency"
@@ -422,19 +472,10 @@ publish_to: 'none'
 
     for (final key in environmentKeys) {
       final projectMeta = projects
-          .map((e) {
-            final constraint = e.pubspec.environment?[key];
+          .map((project) {
+            final constraint = project.pubspec.environment?[key];
             if (constraint == null) return null;
-            return (
-              constraint,
-              projectName: e.pubspec.name,
-              projectPath: join(
-                '.',
-                normalize(
-                  relative(e.directory.path, from: workingDirectory.path),
-                ),
-              ),
-            );
+            return (project: project, constraint: constraint);
           })
           // TODO what if some projects specify SDK/Flutter but some don't?
           .whereNotNull()
@@ -442,13 +483,21 @@ publish_to: 'none'
 
       final constraintCompatibleWithAllProjects = projectMeta.fold(
         VersionConstraint.any,
-        (acc, constraint) => acc.intersect(constraint.$1),
+        (acc, constraint) => acc.intersect(constraint.constraint),
       );
 
       if (constraintCompatibleWithAllProjects.isEmpty) {
         throw IncompatibleDependencyConstraintsException(
-          EnvironmentConflict(key),
-          projectMeta,
+          ConflictKind.environment(key),
+          projectMeta
+              .map(
+                (e) => DependencyConstraintMeta.fromVersionConstraint(
+                  e.constraint,
+                  e.project,
+                  workingDirectory: workingDirectory,
+                ),
+              )
+              .toList(),
         );
       }
 
@@ -462,17 +511,25 @@ publish_to: 'none'
       yield* e.pubspec.dependencyOverrides.keys;
     }).toSet();
 
-    final dependencyOverrides =
-        projects.map((e) => e.pubspec.dependencyOverrides);
-    final devDependencies = projects.map((e) => e.pubspec.devDependencies);
-
     final dependenciesByName = {
       for (final name in uniqueDependencyNames)
         name: (
-          devDependencies:
-              devDependencies.map((e) => e[name]).whereNotNull().toList(),
-          dependencyOverrides:
-              dependencyOverrides.map((e) => e[name]).whereNotNull().toList(),
+          devDependencies: projects
+              .map((project) {
+                final dependency = project.pubspec.devDependencies[name];
+                if (dependency == null) return null;
+                return (project: project, dependency: dependency);
+              })
+              .whereNotNull()
+              .toList(),
+          dependencyOverrides: projects
+              .map((project) {
+                final dependency = project.pubspec.dependencyOverrides[name];
+                if (dependency == null) return null;
+                return (project: project, dependency: dependency);
+              })
+              .whereNotNull()
+              .toList(),
         ),
     };
 
@@ -496,10 +553,13 @@ publish_to: 'none'
         buffer.writeln('\ndev_dependencies:');
       }
 
-      final constraint = _buildDependencyConstraint(
-        allDependencies.devDependencies,
-        dependencyOverrides: allDependencies.dependencyOverrides,
-      );
+      final constraint = allDependencies.dependencyOverrides.isNotEmpty
+          ? 'any'
+          : _buildDependencyConstraint(
+              name,
+              allDependencies.devDependencies,
+              workingDirectory: workingDirectory,
+            );
       buffer.writeln('  $name: $constraint');
     }
 
@@ -518,7 +578,9 @@ publish_to: 'none'
       }
 
       final constraint = _buildDependencyConstraint(
+        name,
         allDependencies.dependencyOverrides,
+        workingDirectory: workingDirectory,
       );
       buffer.writeln('  $name: $constraint');
     }
