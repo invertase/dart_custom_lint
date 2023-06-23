@@ -52,6 +52,15 @@ extension on Dependency {
   Object? toJson() {
     final that = this;
     if (that is HostedDependency) {
+      if (that.hosted != null) {
+        return {
+          'hosted': {
+            'name': that.hosted!.name,
+            'url': that.hosted!.url.toString(),
+          },
+          'version': that.version.toString(),
+        };
+      }
       return that.version.toString();
     } else if (that is GitDependency) {
       return {
@@ -229,14 +238,13 @@ Future<Directory> createWorkspace(
   final dir = createTemporaryDirectory();
 
   String packagePathOf(Dependency dependency, String name) {
-    if (dependency is HostedDependency) {
-      return p.join(dir.path, name);
-    } else if (dependency is PathDependency) {
-      return p.isAbsolute(dependency.path)
-          ? dependency.path
-          : p.normalize(p.join('..', dependency.path));
-    } else {
-      throw UnsupportedError('Unknown dependency ${dependency.runtimeType}.');
+    switch (dependency) {
+      case PathDependency():
+        return p.isAbsolute(dependency.path)
+            ? dependency.path
+            : p.normalize(p.join('..', dependency.path));
+      case _:
+        return p.join(dir.path, name);
     }
   }
 
@@ -984,7 +992,7 @@ dev_dependencies:
 The package "plugin1" has incompatible version constraints in the project:
 - "../plugin1"
   from "a" at "./a".
-- "any"
+- any
   from "b" at "./b".
 '''),
           ),
@@ -1031,6 +1039,78 @@ The package "plugin1" has incompatible version constraints in the project:
         );
       });
 
+      test('supports sdk dependencies', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': SdkDependency('flutter')},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': SdkDependency('flutter')},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.generatePubspec(),
+          '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1:
+    sdk: flutter
+''',
+        );
+      });
+
+      test('throws on incompatible sdk dependencies', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': SdkDependency('dart')},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': SdkDependency('flutter')},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.generatePubspec,
+          throwsA(
+            isA<IncompatibleDependencyConstraintsException>()
+                .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- sdk: dart
+  from "a" at "./a".
+- sdk: flutter
+  from "b" at "./b".
+'''),
+          ),
+        );
+      });
+
       test('Supports two different paths if both resolve to the same directory',
           () async {
         final workingDir = await createSimpleWorkspace([
@@ -1065,8 +1145,390 @@ dev_dependencies:
 ''');
       });
 
-      test('Supports two indentical git projects', () {});
-      test('Throws if git dependencies are not identical', () {});
+      group('Supports git projects', () {
+        test('with no ref', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(workspace.generatePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1:
+    git:
+      url: https://google.com
+''');
+        });
+
+        test('with no path', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(workspace.generatePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1:
+    git:
+      url: https://google.com
+      ref: master
+''');
+        });
+
+        test('and all its parameters', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(workspace.generatePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1:
+    git:
+      url: https://google.com
+      ref: master
+      path: "/packages/plugin1"
+''');
+        });
+      });
+
+      group('Throws if hosted version dependencies', () {
+        test('have different declaredName', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': HostedDependency(
+                  hosted: HostedDetails(
+                    'google',
+                    Uri.parse('https://google.com'),
+                  ),
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': HostedDependency(
+                  hosted: HostedDetails(
+                    'google2',
+                    Uri.parse('https://google.com'),
+                  ),
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(
+            workspace.generatePubspec,
+            throwsA(
+              isA<IncompatibleDependencyConstraintsException>()
+                  .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- any
+  from "a" at "./a".
+- any
+  from "b" at "./b".
+'''),
+            ),
+          );
+        });
+
+        test('have different host urls', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': HostedDependency(
+                  hosted: HostedDetails(
+                    'https://google.com',
+                    Uri.parse('https://google.com'),
+                  ),
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': HostedDependency(
+                  hosted: HostedDetails(
+                    'https://google.com',
+                    Uri.parse('https://google2.com'),
+                  ),
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(
+            workspace.generatePubspec,
+            throwsA(
+              isA<IncompatibleDependencyConstraintsException>()
+                  .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- any
+  from "a" at "./a".
+- any
+  from "b" at "./b".
+'''),
+            ),
+          );
+        });
+      });
+
+      group('Throws if git dependencies', () {
+        test('have different url', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google2.com'),
+                  ref: 'master',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(
+            workspace.generatePubspec,
+            throwsA(
+              isA<IncompatibleDependencyConstraintsException>()
+                  .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- git: https://google.com
+  from "a" at "./a".
+- git: https://google2.com
+  from "b" at "./b".
+'''),
+            ),
+          );
+        });
+
+        test('have different path', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                  path: '/packages/plugin2',
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(
+            workspace.generatePubspec,
+            throwsA(
+              isA<IncompatibleDependencyConstraintsException>()
+                  .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- git: https://google.com
+  from "a" at "./a".
+- git: https://google.com
+  from "b" at "./b".
+'''),
+            ),
+          );
+        });
+
+        test('have different ref', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'dev',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(
+            workspace.generatePubspec,
+            throwsA(
+              isA<IncompatibleDependencyConstraintsException>()
+                  .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- git: https://google.com
+  from "a" at "./a".
+- git: https://google.com
+  from "b" at "./b".
+'''),
+            ),
+          );
+        });
+      });
 
       test(
           'The generated pubspec must contains only plugins and dependency_overrides',

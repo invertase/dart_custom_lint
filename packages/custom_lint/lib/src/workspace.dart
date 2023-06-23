@@ -56,7 +56,7 @@ String _buildDependencyConstraint(
         if (constraint.hosted?.declaredName !=
                 dependency.hosted?.declaredName ||
             constraint.hosted?.url != dependency.hosted?.url) {
-          // TODO throw
+          throws();
         }
 
         final newConstraint = constraint.version.intersect(dependency.version);
@@ -80,29 +80,58 @@ String _buildDependencyConstraint(
         sharedConstraint = PathDependency(absoluteDependencyPath);
 
         if (constraint == null) continue;
-
         if (constraint.path != absoluteDependencyPath) throws();
 
-      case SdkDependency():
-      case GitDependency():
+      case (
+          :final SdkDependency dependency,
+          :final SdkDependency? constraint,
+        ):
+        sharedConstraint = dependency;
+
+        if (constraint == null) continue;
+        if (constraint.sdk != dependency.sdk) throws();
+
+      case (
+          :final GitDependency dependency,
+          :final GitDependency? constraint,
+        ):
+        sharedConstraint = dependency;
+
+        if (constraint == null) continue;
+        if (constraint.url != dependency.url ||
+            constraint.path != dependency.path ||
+            constraint.ref != dependency.ref) {
+          throws();
+        }
+
       default:
         throws();
     }
   }
 
   switch (sharedConstraint) {
-    case HostedDependency()
-        when sharedConstraint.version == VersionConstraint.any:
-      return ' any';
     case HostedDependency():
-      return ' "${sharedConstraint.version}"';
+      return ' ${sharedConstraint.getDisplayString()}';
     case PathDependency():
       return '\n    path: "${sharedConstraint.path}"';
     case SdkDependency():
+      return '\n    sdk: ${sharedConstraint.sdk}';
     case GitDependency():
-    default:
-      // TODO
-      throw UnimplementedError();
+      final result = StringBuffer('\n    git:');
+      result.write('\n      url: ${sharedConstraint.url}');
+
+      if (sharedConstraint.ref != null) {
+        result.write('\n      ref: ${sharedConstraint.ref}');
+      }
+      if (sharedConstraint.path != null) {
+        result.write('\n      path: "${sharedConstraint.path}"');
+      }
+
+      return result.toString();
+    case _:
+      throw StateError(
+        'Unknown constraint type: ${sharedConstraint.runtimeType}',
+      );
   }
 }
 
@@ -140,7 +169,7 @@ class _DependencyConflict implements ConflictKind {
 
 class DependencyConstraintMeta {
   DependencyConstraintMeta._(
-    this.dependency,
+    this.dependencyDisplayString,
     CustomLintProject project, {
     required Directory workingDirectory,
   })  : projectName = project.pubspec.name,
@@ -156,7 +185,7 @@ class DependencyConstraintMeta {
     CustomLintProject project, {
     required Directory workingDirectory,
   }) : this._(
-          constraint,
+          HostedDependency(version: constraint).getDisplayString(),
           project,
           workingDirectory: workingDirectory,
         );
@@ -166,19 +195,35 @@ class DependencyConstraintMeta {
     CustomLintProject project, {
     required Directory workingDirectory,
   }) : this._(
-          switch (dependency) {
-            HostedDependency() => dependency.version,
-            PathDependency() => dependency.path,
-            _ => dependency,
-          },
+          dependency.getDisplayString(),
           project,
           workingDirectory: workingDirectory,
         );
 
   /// Either a [VersionConstraint] or a [Dependency].
-  final Object dependency;
+  final String dependencyDisplayString;
   final String projectName;
   final String projectPath;
+}
+
+extension on Dependency {
+  String getDisplayString() {
+    final that = this;
+    return switch (that) {
+      // TODO show hosted
+      HostedDependency() when that.version == VersionConstraint.any => 'any',
+      HostedDependency() => '"${that.version}"',
+      PathDependency() => '"${that.path}"',
+      SdkDependency() => 'sdk: ${that.sdk}',
+      // TODO show ref/path
+      GitDependency() => 'git: ${that.url}',
+      _ => throw ArgumentError.value(
+          runtimeType,
+          'this',
+          'Unknown dependency type',
+        ),
+    };
+  }
 }
 
 /// {@template IncompatibleDependencyConstraintsException}
@@ -203,10 +248,13 @@ class IncompatibleDependencyConstraintsException implements Exception {
       'The ${kind.kindDisplayString} "${kind.value}" has incompatible version constraints in the project:\n',
     );
 
-    for (final DependencyConstraintMeta(:dependency, :projectName, :projectPath)
-        in conflictingDependencies) {
+    for (final DependencyConstraintMeta(
+          dependencyDisplayString: dependency,
+          :projectName,
+          :projectPath
+        ) in conflictingDependencies) {
       buffer.write('''
-- "$dependency"
+- $dependency
   from "$projectName" at "$projectPath".
 ''');
     }
