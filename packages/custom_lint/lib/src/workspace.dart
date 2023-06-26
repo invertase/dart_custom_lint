@@ -650,27 +650,38 @@ publish_to: 'none'
       buffer.writeln('  $name:$constraint');
     }
 
-    // A flag for whether the "dependency_overrides:" header has been written.
+    _generateDependencyOverrides(
+      buffer,
+      dependencyOverrides: {
+        for (final entry in dependenciesByName.entries)
+          if (entry.value.dependencyOverrides.isNotEmpty)
+            entry.key: entry.value.dependencyOverrides,
+      },
+    );
+  }
+
+  void _generateDependencyOverrides(
+    StringBuffer buffer, {
+    required Map<String,
+            List<({Dependency dependency, CustomLintProject project})>>
+        dependencyOverrides,
+  }) {
     var didWriteDependencyOverridesHeader = false;
-    // Write dependency_overrides
-    for (final entry in dependenciesByName.entries) {
-      final name = entry.key;
-      final allDependencies = entry.value;
-
-      if (allDependencies.dependencyOverrides.isEmpty) continue;
-
+    for (final entry in dependencyOverrides.entries) {
       if (!didWriteDependencyOverridesHeader) {
         didWriteDependencyOverridesHeader = true;
-        buffer.writeln('\ndependency_overrides:');
+        // Add empty line to separate dependency_overrides from other dependencies.
+        if (buffer.isNotEmpty) buffer.writeln();
+        buffer.writeln('dependency_overrides:');
       }
 
       final constraint = _buildDependencyConstraint(
-        name,
-        allDependencies.dependencyOverrides,
+        entry.key,
+        entry.value,
         workingDirectory: workingDirectory,
-        fileName: 'pubspec.yaml',
+        fileName: 'pubspec_overrides.yaml',
       );
-      buffer.writeln('  $name:$constraint');
+      buffer.writeln('  ${entry.key}:$constraint');
     }
   }
 
@@ -687,35 +698,22 @@ publish_to: 'none'
 
     final dependenciesByName = {
       for (final name in uniqueDependencyNames)
-        name: (
-          dependencyOverrides: projects
-              .map((project) {
-                final dependency = project.pubspecOverrides?[name];
-                if (dependency == null) return null;
-                return (project: project, dependency: dependency);
-              })
-              .whereNotNull()
-              .toList(),
-        ),
+        name: projects
+            .map((project) {
+              final dependency = project.pubspecOverrides?[name];
+              if (dependency == null) return null;
+              return (project: project, dependency: dependency);
+            })
+            .whereNotNull()
+            .toList(),
     };
 
-    final buffer = StringBuffer('dependency_overrides:\n');
+    final buffer = StringBuffer();
 
-    // TODO refactor this to share with pubspec_overrides logic in pubspec.yaml
-    for (final entry in dependenciesByName.entries) {
-      final name = entry.key;
-      final allDependencies = entry.value;
-
-      if (allDependencies.dependencyOverrides.isEmpty) continue;
-
-      final constraint = _buildDependencyConstraint(
-        name,
-        allDependencies.dependencyOverrides,
-        workingDirectory: workingDirectory,
-        fileName: 'pubspec_overrides.yaml',
-      );
-      buffer.writeln('  $name:$constraint');
-    }
+    _generateDependencyOverrides(
+      buffer,
+      dependencyOverrides: dependenciesByName,
+    );
 
     return buffer.toString();
   }
