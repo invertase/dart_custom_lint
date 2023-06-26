@@ -25,6 +25,7 @@ String _buildDependencyConstraint(
   String name,
   List<({CustomLintProject project, Dependency dependency})> dependencies, {
   required Directory workingDirectory,
+  required String fileName,
 }) {
   // We can't pick the "first" then use .skip(1) because the pattern match
   // may transform the shared constraint. Such as modifying path dependencies
@@ -42,6 +43,7 @@ String _buildDependencyConstraint(
     Never throws() => throw IncompatibleDependencyConstraintsException(
           ConflictKind.dependency(name),
           dependencyMeta.toList(),
+          fileName: fileName,
         );
 
     switch ((dependency: dependency, constraint: sharedConstraint)) {
@@ -245,11 +247,15 @@ class IncompatibleDependencyConstraintsException implements Exception {
   /// {@macro IncompatibleDependencyConstraintsException}
   IncompatibleDependencyConstraintsException(
     this.kind,
-    this.conflictingDependencies,
-  ) : assert(
+    this.conflictingDependencies, {
+    required this.fileName,
+  }) : assert(
           conflictingDependencies.length > 1,
           'Must have at least 2 items',
         );
+
+  /// The name of the file where the conflict was found.
+  final String fileName;
 
   /// The type of conflict.
   final ConflictKind kind;
@@ -270,7 +276,7 @@ class IncompatibleDependencyConstraintsException implements Exception {
         ) in conflictingDependencies) {
       buffer.write('''
 - $dependency
-  from "$projectName" at "$projectPath".
+  from "$projectName" at "${join(projectPath, fileName)}".
 ''');
     }
 
@@ -577,6 +583,7 @@ publish_to: 'none'
                 ),
               )
               .toList(),
+          fileName: 'pubspec.yaml',
         );
       }
 
@@ -638,6 +645,7 @@ publish_to: 'none'
               name,
               allDependencies.devDependencies,
               workingDirectory: workingDirectory,
+              fileName: 'pubspec.yaml',
             );
       buffer.writeln('  $name:$constraint');
     }
@@ -660,6 +668,7 @@ publish_to: 'none'
         name,
         allDependencies.dependencyOverrides,
         workingDirectory: workingDirectory,
+        fileName: 'pubspec.yaml',
       );
       buffer.writeln('  $name:$constraint');
     }
@@ -669,9 +678,46 @@ publish_to: 'none'
   ///
   /// This is the combination of all `pubspec_overrides.yaml` in the workspace.
   @internal
-  String generatePubspecOverride() {
-    // TODO
-    return '';
+  String? generatePubspecOverride() {
+    final uniqueDependencyNames = projects //
+        .expand((e) => e.pubspecOverrides?.keys ?? <String>[])
+        .toSet();
+
+    if (uniqueDependencyNames.isEmpty) return null;
+
+    final dependenciesByName = {
+      for (final name in uniqueDependencyNames)
+        name: (
+          dependencyOverrides: projects
+              .map((project) {
+                final dependency = project.pubspecOverrides?[name];
+                if (dependency == null) return null;
+                return (project: project, dependency: dependency);
+              })
+              .whereNotNull()
+              .toList(),
+        ),
+    };
+
+    final buffer = StringBuffer('dependency_overrides:\n');
+
+    // TODO refactor this to share with pubspec_overrides logic in pubspec.yaml
+    for (final entry in dependenciesByName.entries) {
+      final name = entry.key;
+      final allDependencies = entry.value;
+
+      if (allDependencies.dependencyOverrides.isEmpty) continue;
+
+      final constraint = _buildDependencyConstraint(
+        name,
+        allDependencies.dependencyOverrides,
+        workingDirectory: workingDirectory,
+        fileName: 'pubspec_overrides.yaml',
+      );
+      buffer.writeln('  $name:$constraint');
+    }
+
+    return buffer.toString();
   }
 
   /// Generate a package_config.json combining all the dependencies from all

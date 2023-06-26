@@ -587,6 +587,94 @@ void main() {
   });
 
   group(CustomLintWorkspace, () {
+    group('generatePuspecOverrides', () {
+      test(
+          'Do not generate a pubspec_overrides if none specified', () async {});
+
+      test('Merges dependendency_overrides', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        workingDir.dir('a').pubspecOverrides.writeAsStringSync('''
+dependency_overrides:
+  package: ">=1.1.0 <1.9.0"
+''');
+
+        workingDir.dir('b').pubspecOverrides.writeAsStringSync('''
+dependency_overrides:
+  package: ">=1.0.0 <1.6.0"
+''');
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.generatePubspecOverride(), '''
+dependency_overrides:
+  package: ">=1.1.0 <1.6.0"
+''');
+      });
+
+      test('Throws on incompatible constraints', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        workingDir.dir('a').pubspecOverrides.writeAsStringSync('''
+dependency_overrides:
+  package: ">=1.1.0 <1.2.0"
+''');
+
+        workingDir.dir('b').pubspecOverrides.writeAsStringSync('''
+dependency_overrides:
+  package: ">=1.3.0"
+''');
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.generatePubspecOverride,
+          throwsA(
+            isA<IncompatibleDependencyConstraintsException>()
+                .having((e) => e.toString(), 'toString', '''
+The package "package" has incompatible version constraints in the project:
+- ">=1.1.0 <1.2.0"
+  from "a" at "./a/pubspec_overrides.yaml".
+- ">=1.3.0"
+  from "b" at "./b/pubspec_overrides.yaml".
+'''),
+          ),
+        );
+      });
+    });
+
     group('generatePubspec', () {
       test(
           'If an environment constraint is not specified in a given project, it is considered as "any"',
@@ -705,9 +793,9 @@ dev_dependencies:
                 .having((e) => e.toString(), 'toString', '''
 The environment "sdk" has incompatible version constraints in the project:
 - ">=2.12.0 <2.15.0"
-  from "a" at "./a".
+  from "a" at "./a/pubspec.yaml".
 - ">=2.16.0 <2.19.0"
-  from "b" at "./b".
+  from "b" at "./b/pubspec.yaml".
 '''),
           ),
         );
@@ -797,9 +885,9 @@ dev_dependencies:
                 .having((e) => e.toString(), 'toString', '''
 The package "plugin1" has incompatible version constraints in the project:
 - ">=2.12.0 <2.15.0"
-  from "a" at "./a".
+  from "a" at "./a/pubspec.yaml".
 - ">=2.16.0 <2.19.0"
-  from "b" at "./b".
+  from "b" at "./b/pubspec.yaml".
 '''),
           ),
         );
@@ -991,9 +1079,9 @@ dev_dependencies:
                 .having((e) => e.toString(), 'toString', '''
 The package "plugin1" has incompatible version constraints in the project:
 - "../plugin1"
-  from "a" at "./a".
+  from "a" at "./a/pubspec.yaml".
 - any
-  from "b" at "./b".
+  from "b" at "./b/pubspec.yaml".
 '''),
           ),
         );
@@ -1031,9 +1119,9 @@ The package "plugin1" has incompatible version constraints in the project:
                 .having((e) => e.toString(), 'toString', '''
 The package "plugin1" has incompatible version constraints in the project:
 - "../plugin1"
-  from "a" at "./a".
+  from "a" at "./a/pubspec.yaml".
 - "../plugin12"
-  from "b" at "./b".
+  from "b" at "./b/pubspec.yaml".
 '''),
           ),
         );
@@ -1103,9 +1191,9 @@ dev_dependencies:
                 .having((e) => e.toString(), 'toString', '''
 The package "plugin1" has incompatible version constraints in the project:
 - sdk: dart
-  from "a" at "./a".
+  from "a" at "./a/pubspec.yaml".
 - sdk: flutter
-  from "b" at "./b".
+  from "b" at "./b/pubspec.yaml".
 '''),
           ),
         );
@@ -1325,9 +1413,9 @@ dev_dependencies:
                   .having((e) => e.toString(), 'toString', '''
 The package "plugin1" has incompatible version constraints in the project:
 - any
-  from "a" at "./a".
+  from "a" at "./a/pubspec.yaml".
 - any
-  from "b" at "./b".
+  from "b" at "./b/pubspec.yaml".
 '''),
             ),
           );
@@ -1375,9 +1463,9 @@ The package "plugin1" has incompatible version constraints in the project:
                   .having((e) => e.toString(), 'toString', '''
 The package "plugin1" has incompatible version constraints in the project:
 - any
-  from "a" at "./a".
+  from "a" at "./a/pubspec.yaml".
 - any
-  from "b" at "./b".
+  from "b" at "./b/pubspec.yaml".
 '''),
             ),
           );
@@ -1425,9 +1513,9 @@ The package "plugin1" has incompatible version constraints in the project:
                   .having((e) => e.toString(), 'toString', '''
 The package "plugin1" has incompatible version constraints in the project:
 - git: https://google.com
-  from "a" at "./a".
+  from "a" at "./a/pubspec.yaml".
 - git: https://google2.com
-  from "b" at "./b".
+  from "b" at "./b/pubspec.yaml".
 '''),
             ),
           );
@@ -1473,9 +1561,9 @@ The package "plugin1" has incompatible version constraints in the project:
                   .having((e) => e.toString(), 'toString', '''
 The package "plugin1" has incompatible version constraints in the project:
 - git: https://google.com
-  from "a" at "./a".
+  from "a" at "./a/pubspec.yaml".
 - git: https://google.com
-  from "b" at "./b".
+  from "b" at "./b/pubspec.yaml".
 '''),
             ),
           );
@@ -1521,9 +1609,9 @@ The package "plugin1" has incompatible version constraints in the project:
                   .having((e) => e.toString(), 'toString', '''
 The package "plugin1" has incompatible version constraints in the project:
 - git: https://google.com
-  from "a" at "./a".
+  from "a" at "./a/pubspec.yaml".
 - git: https://google.com
-  from "b" at "./b".
+  from "b" at "./b/pubspec.yaml".
 '''),
             ),
           );
