@@ -284,37 +284,6 @@ class IncompatibleDependencyConstraintsException implements Exception {
   }
 }
 
-String _computePubspec(
-  Iterable<String> plugins,
-  Map<String, Package> allDependencies,
-) {
-  // TODO should import dependency_overrides related to the plugin too
-  // TODO handle environment constraints conflicts.
-  final dependencies = plugins.map((plugin) => '  $plugin: any').join('\n');
-
-  final dependencyOverrides = allDependencies.entries
-      .map((dep) => '  ${dep.key}:\n    path: ${dep.value.root.toFilePath()}')
-      .join('\n');
-
-  return '''
-name: custom_lint_client
-version: 0.0.1
-publish_to: 'none'
-
-environment:
-  sdk: '>=2.17.1 <3.0.0'
-
-dependencies:
-$dependencies
-
-# Set dependency overrides to match the package_config.json.
-# This ensures that if "pub get" is run, the dependencies are resolved.
-# This may happen in different versions of the Dart SDK.
-dependency_overrides:
-$dependencyOverrides
-''';
-}
-
 /// An exception thrown by [visitAnalysisOptionAndIncludes] when an "include"
 /// directive creates a cycle.
 class CyclicIncludeException implements Exception {
@@ -532,7 +501,7 @@ class CustomLintWorkspace {
   ///
   /// This is the combination of all `pubspec.yaml` in the workspace.
   @internal
-  String generatePubspec() {
+  String computePubspec() {
     final buffer = StringBuffer('''
 name: custom_lint_client
 description: A client for custom_lint
@@ -541,7 +510,7 @@ publish_to: 'none'
 ''');
 
     _writeEnvironment(buffer);
-    _writeDependencies(buffer);
+    _writePubspecDependencies(buffer);
 
     return buffer.toString();
   }
@@ -591,7 +560,7 @@ publish_to: 'none'
     }
   }
 
-  void _writeDependencies(StringBuffer buffer) {
+  void _writePubspecDependencies(StringBuffer buffer) {
     final uniqueDependencyNames = projects.expand((e) sync* {
       yield* e.pubspec.devDependencies.keys;
       yield* e.pubspec.dependencyOverrides.keys;
@@ -650,7 +619,7 @@ publish_to: 'none'
       buffer.writeln('  $name:$constraint');
     }
 
-    _generateDependencyOverrides(
+    _writeDependencyOverrides(
       buffer,
       dependencyOverrides: {
         for (final entry in dependenciesByName.entries)
@@ -660,7 +629,7 @@ publish_to: 'none'
     );
   }
 
-  void _generateDependencyOverrides(
+  void _writeDependencyOverrides(
     StringBuffer buffer, {
     required Map<String,
             List<({Dependency dependency, CustomLintProject project})>>
@@ -689,7 +658,7 @@ publish_to: 'none'
   ///
   /// This is the combination of all `pubspec_overrides.yaml` in the workspace.
   @internal
-  String? generatePubspecOverride() {
+  String? computePubspecOverride() {
     final uniqueDependencyNames = projects //
         .expand((e) => e.pubspecOverrides?.keys ?? <String>[])
         .toSet();
@@ -710,7 +679,7 @@ publish_to: 'none'
 
     final buffer = StringBuffer();
 
-    _generateDependencyOverrides(
+    _writeDependencyOverrides(
       buffer,
       dependencyOverrides: dependenciesByName,
     );
@@ -795,34 +764,67 @@ publish_to: 'none'
     });
   }
 
-  /// Create the Dart project which will contain all the custom_lint plugins.
-  Future<Directory> createPluginHostDirectory() async {
+  /// First attempts at creating the plugin host locally. And if it fails,
+  /// it will fallback to resolving packages using "pub get".
+  Future<Directory> resolvePluginHost() async {
+    final tempDir = Directory.systemTemp.createTempSync('custom_lint_client');
+
+    final pubspecContent = computePubspec();
+    final pubspecOverride = computePubspecOverride();
+
+    tempDir.pubspec.writeAsStringSync(pubspecContent);
+    if (pubspecOverride != null) {
+      tempDir.pubspecOverrides.writeAsStringSync(pubspecOverride);
+    }
+
+    try {
+      try {
+        await resolvePackageConfigOffline(tempDir);
+      } on PackageVersionConflictException {
+        await runPubGet(tempDir);
+      }
+
+      return tempDir;
+    } catch (_) {
+      // If failed, delete the temporary directory.
+      tempDir.deleteSync(recursive: true);
+      rethrow;
+    }
+  }
+
+  /// Attempts at creating the plugin host without having to run "pub get".
+  ///
+  /// This works by combining all the `package_config.json` of the various
+  /// plugins.
+  ///
+  /// May throw if failed to create the plugin host.
+  /// Will throw a [PackageVersionConflictException] if there are conflicting
+  /// versions of the same package.
+  Future<void> resolvePackageConfigOffline(Directory tempDir) async {
     final dependencies = _computeDependencies();
     final packageConfigContent = _computePackageConfig(dependencies);
-    // The previous lines will throw if there are conflicting packages.
-    // So it is safe to deduplicate the plugins by name here.
-    final pubspecContent = _computePubspec(
-      uniquePluginNames,
-      dependencies,
-    );
-
-    // We only create the temporary directories after computing all the files.
-    // This avoids creating a temporary directory if we're going to throw anyway.
-    final tempDir = Directory.systemTemp.createTempSync('custom_lint_client');
-    final pubspecFile = tempDir.pubspec;
     final packageConfigFile = tempDir.packageConfig;
 
-    await Future.wait([
-      pubspecFile
-          .create(recursive: true)
-          .then((_) => pubspecFile.writeAsString(pubspecContent)),
-      Future(() async {
-        await packageConfigFile.create(recursive: true);
-        await packageConfigFile.writeAsString(packageConfigContent);
-      }),
-    ]);
+    await packageConfigFile.create(recursive: true);
+    await packageConfigFile.writeAsString(packageConfigContent);
+  }
 
-    return tempDir;
+  /// Run "pub get" in the client project.
+  Future<void> runPubGet(Directory tempDir) async {
+    // TODO can plugins depend on Flutter?
+    final result = await Process.run(
+      'dart',
+      ['pub', 'get'],
+      stdoutEncoding: utf8,
+      stderrEncoding: utf8,
+    );
+    if (result.exitCode != 0) {
+      throw Exception(
+        'Failed to run "pub get" in the client project:\n'
+        '${result.stdout}\n'
+        '${result.stderr}',
+      );
+    }
   }
 }
 
@@ -1436,7 +1438,7 @@ class _ConflictingPackagesChecker {
     // If there are no conflicting versions, return
     if (packagesWithConflictingVersions.isEmpty) return;
 
-    throw PackageVersionConflictError._(
+    throw PackageVersionConflictException._(
       packagesWithConflictingVersions,
       _entries,
     );
@@ -1445,8 +1447,8 @@ class _ConflictingPackagesChecker {
 
 /// An error thrown if a custom_lint workspace contains two or more projects
 /// which depend on the same package (directly or transitively) with different versions.
-class PackageVersionConflictError extends Error {
-  PackageVersionConflictError._(
+class PackageVersionConflictException implements Exception {
+  PackageVersionConflictException._(
     this._packagesWithConflictingVersions,
     this._entries,
   );
@@ -1468,7 +1470,7 @@ class PackageVersionConflictError extends Error {
     );
 
     final errorMessageBuilder = StringBuffer('''
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+PackageVersionConflictException – Some dependencies with conflicting versions were identified:
 
 ''');
 

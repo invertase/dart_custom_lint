@@ -30,6 +30,7 @@ dev_dependencies:
   ansi_styles: ^0.3.2+1
   benchmark_harness: ^2.2.0
   build_runner: ^2.3.2
+  file: ^7.0.0
   freezed: ^2.3.2
   json_serializable: ^6.5.4
   test: ^1.20.2

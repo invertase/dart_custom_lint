@@ -158,8 +158,7 @@ class SocketCustomLintServerToClientChannel {
   ///
   /// Will throw if the process fails to start.
   Future<Process?> _startProcess() async {
-    final tempDirectory =
-        _tempDirectory = await _workspace.createPluginHostDirectory();
+    final tempDirectory = _tempDirectory = await _workspace.resolvePluginHost();
     _writeEntrypoint(_workspace.uniquePluginNames, tempDirectory);
 
     return _asyncRetry(retryCount: 5, () async {
