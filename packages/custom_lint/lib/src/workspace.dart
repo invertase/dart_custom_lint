@@ -906,6 +906,7 @@ class CustomLintProject {
     required this.directory,
     required this.packageConfig,
     required this.pubspec,
+    required this.pubspecOverrides,
   });
 
   /// Decode a [CustomLintProject] from a directory.
@@ -924,6 +925,7 @@ class CustomLintProject {
         errorStackTrace: stack,
       );
     });
+    final pubspecOverrides = await tryParsePubspecOverrides(directory);
     final projectPackageConfig = await parsePackageConfig(directory)
         // ignore: avoid_types_on_closure_parameters
         .catchError((Object err, StackTrace stack) {
@@ -967,6 +969,7 @@ class CustomLintProject {
       directory: directory,
       packageConfig: projectPackageConfig,
       pubspec: projectPubspec,
+      pubspecOverrides: pubspecOverrides,
     );
   }
 
@@ -975,6 +978,9 @@ class CustomLintProject {
 
   /// The pubspec.yaml at the moment of parsing.
   final Pubspec pubspec;
+
+  /// The pubspec.yaml at the moment of parsing.
+  final Map<String, Dependency>? pubspecOverrides;
 
   /// The folder of the project being analyzed.
   final Directory directory;

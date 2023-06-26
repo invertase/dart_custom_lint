@@ -1680,6 +1680,48 @@ dependency_overrides:
     });
 
     group(CustomLintWorkspace.fromPaths, () {
+      test('decode CustomLintProject.pubspecOverrides', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'with_override',
+            devDependencies: {'plugin': HostedDependency()},
+          ),
+          Pubspec(
+            'no_override',
+            devDependencies: {'plugin': HostedDependency()},
+          ),
+        ]);
+
+        workingDir.dir('with_override').pubspecOverrides.writeAsStringSync('''
+dependency_overrides:
+  plugin: any
+''');
+
+        final workspace = await fromContextRootsFromPaths(
+          ['with_override', 'no_override'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.projects, hasLength(2));
+
+        expect(workspace.projects.first.pubspec.name, 'with_override');
+        expect(workspace.projects[1].pubspec.name, 'no_override');
+
+        expect(
+          workspace.projects.first.pubspecOverrides,
+          {
+            'plugin': isA<HostedDependency>()
+                .having((e) => e.hosted, 'hosted', null)
+                .having((e) => e.version, 'version', VersionConstraint.any),
+          },
+        );
+        expect(workspace.projects[1].pubspecOverrides, isNull);
+      });
+
       test('Handles relative paths', () async {
         final workspace = await createSimpleWorkspace(['package']);
 
