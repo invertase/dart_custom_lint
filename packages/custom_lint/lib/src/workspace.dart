@@ -135,11 +135,18 @@ String _buildDependencyConstraint(
   }
 }
 
+/// A type of version conflict
 sealed class ConflictKind {
+  /// A conflict between two dependencies from different packages in the same workspace.
   factory ConflictKind.dependency(String packageName) = _DependencyConflict;
+
+  /// A conflict between two dependencies from the same package in the same workspace.
   factory ConflictKind.environment(String packageName) = _EnvironmentConflict;
 
+  /// The human readable name of the conflict type.
   String get kindDisplayString;
+
+  /// The value of the conflict.
   String get value;
 }
 
@@ -167,6 +174,7 @@ class _DependencyConflict implements ConflictKind {
   final String packageName;
 }
 
+/// Information related to a dependency and the project it is used in.
 class DependencyConstraintMeta {
   DependencyConstraintMeta._(
     this.dependencyDisplayString,
@@ -180,6 +188,7 @@ class DependencyConstraintMeta {
           ),
         );
 
+  /// Construct a [DependencyConstraintMeta] from a [VersionConstraint].
   DependencyConstraintMeta.fromVersionConstraint(
     VersionConstraint constraint,
     CustomLintProject project, {
@@ -190,6 +199,7 @@ class DependencyConstraintMeta {
           workingDirectory: workingDirectory,
         );
 
+  /// Construct a [DependencyConstraintMeta] from a [Dependency].
   DependencyConstraintMeta.fromDependency(
     Dependency dependency,
     CustomLintProject project, {
@@ -202,7 +212,11 @@ class DependencyConstraintMeta {
 
   /// Either a [VersionConstraint] or a [Dependency].
   final String dependencyDisplayString;
+
+  /// The name of the project which uses the dependency.
   final String projectName;
+
+  /// The path to the project which uses the dependency.
   final String projectPath;
 }
 
@@ -210,12 +224,10 @@ extension on Dependency {
   String getDisplayString() {
     final that = this;
     return switch (that) {
-      // TODO show hosted
       HostedDependency() when that.version == VersionConstraint.any => 'any',
       HostedDependency() => '"${that.version}"',
       PathDependency() => '"${that.path}"',
       SdkDependency() => 'sdk: ${that.sdk}',
-      // TODO show ref/path
       GitDependency() => 'git: ${that.url}',
       _ => throw ArgumentError.value(
           runtimeType,
@@ -239,7 +251,10 @@ class IncompatibleDependencyConstraintsException implements Exception {
           'Must have at least 2 items',
         );
 
+  /// The type of conflict.
   final ConflictKind kind;
+
+  /// The conflicting dependencies.
   final List<DependencyConstraintMeta> conflictingDependencies;
 
   @override
