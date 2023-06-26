@@ -588,8 +588,29 @@ void main() {
 
   group(CustomLintWorkspace, () {
     group('generatePuspecOverrides', () {
-      test(
-          'Do not generate a pubspec_overrides if none specified', () async {});
+      test('Do not generate a pubspec_overrides if none specified', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.generatePubspecOverride(), null);
+      });
 
       test('Merges dependendency_overrides', () async {
         final workingDir = await createSimpleWorkspace([
