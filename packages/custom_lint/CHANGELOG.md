@@ -1,5 +1,19 @@
 ## Unreleased minor
 
+- Now resolves packages using `pub get` if custom_lint failed to resolve packages offline.
+  This should reduce the likelyness of a version conflict in mono-repositories.
+  The conflict may still happen if two projects in a mono-repo use incompatible
+  constraints. Like:
+  ```yaml
+  name: foo
+  dependencies:
+    package: ^1.0.0
+  ```
+  ```yaml
+  name: bar
+  dependencies:
+    package: ^2.0.0
+  ```
 - The command line now shows the lints' severity (thanks to @praxder)
 - Now requires Dart 3.0.0
 
