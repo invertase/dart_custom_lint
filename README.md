@@ -23,6 +23,7 @@
 - [Usage](#usage)
   - [Creating a custom lint package](#creating-a-custom-lint-package)
   - [Using our custom lint package in an application](#using-our-custom-lint-package-in-an-application)
+  - [Enabling/disabling and configuring lints](#enablingdisabling-and-configuring-lints)
   - [Obtaining the list of lints in the CI](#obtaining-the-list-of-lints-in-the-ci)
   - [Using the Dart debugger](#using-the-dart-debugger)
   - [Testing your plugins using expect\_lint](#testing-your-plugins-using-expect_lint)
@@ -175,6 +176,51 @@ After running `pub get` (and possibly restarting their IDE), users should now
 see our custom lints in their Dart files:
 
 ![screenshot of our custom lints in the IDE](https://raw.githubusercontent.com/invertase/dart_custom_lint/main/resources/lint_showcase.png)
+
+### Enabling/disabling and configuring lints
+
+By default, custom_lint enables all installed lints.  
+But chances are you may want to disable one specific lint,
+or alternatively, disable all lints besides a few.
+
+This configuration is done in your `analysis_options.yaml`,
+but in a slightly different manner.
+
+Configurations are placed within a `custom_lint` object, as
+followed:
+
+```yaml
+analyzer:
+  plugins:
+    - custom_lint
+
+custom_lint:
+  rules:
+    - my_lint_rule: false # disable this rule
+```
+
+As mentioned before, all lints are enabled by default.
+
+```yaml
+custom_lint:
+  # Disable all lints by default
+  enable_all_lint_rules: false
+  rules:
+    - my_lint_rule # only enable my_lint_rule
+```
+
+If you want to change this, you can optionally disable
+all lints by default:
+
+Last but not least, some lint rules may be configurable.
+When a lint is configurable, you can configure it in the same place with:
+
+```yaml
+custom_lint:
+  rules:
+    - my_lint_rule:
+      some_parameter: "some value"
+```
 
 ### Obtaining the list of lints in the CI
 
