@@ -1,3 +1,7 @@
+## Unreleased patch -dev
+
+- Attempt at fixing the windows crash
+
 ## 0.5.0 - 2023-06-21
 
 - `custom_lint` upgraded to `0.5.0`

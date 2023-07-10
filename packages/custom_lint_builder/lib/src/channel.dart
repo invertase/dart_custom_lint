@@ -64,7 +64,7 @@ Future<void> runSocket(
   await asyncRunZonedGuarded(
     () => client = Future(() async {
       // ignore: close_sinks, connection stays open until the plugin is killed
-      final socket = await Socket.connect('localhost', port);
+      final socket = await Socket.connect(InternetAddress.loopbackIPv6, port);
       final socketChannel = JsonSocketChannel(Future.value(socket));
       final registeredPlugins = <String, PluginBase>{};
 
