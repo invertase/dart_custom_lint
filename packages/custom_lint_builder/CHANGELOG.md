@@ -1,4 +1,4 @@
-## Unreleased patch -dev
+## 0.5.1-dev - 2023-07-10
 
 - Attempt at fixing the windows crash
 
