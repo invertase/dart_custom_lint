@@ -588,7 +588,7 @@ void main() {
   });
 
   group(CustomLintWorkspace, () {
-    group('generatePuspecOverrides', () {
+    group('computePuspecOverrides', () {
       test('Do not generate a pubspec_overrides if none specified', () async {
         final workingDir = await createSimpleWorkspace([
           Pubspec(
