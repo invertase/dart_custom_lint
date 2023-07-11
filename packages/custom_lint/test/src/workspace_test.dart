@@ -2476,81 +2476,81 @@ dependency_overrides:
       test(
           'should create a package_config.json with no package duplicates if a dependency is used by multiple plugins',
           () async {
-        // final workspace =
-        //     await createSimpleWorkspace(withPackageConfig: false, [
-        //   Pubspec(
-        //     'dep',
-        //     dependencies: {
-        //       'custom_lint_builder': HostedDependency(),
-        //       'transitive': HostedDependency(),
-        //     },
-        //   ),
-        //   'transitive',
-        //   Pubspec(
-        //     'dep2',
-        //     dependencies: {
-        //       'custom_lint_builder': HostedDependency(),
-        //       'transitive': HostedDependency(),
-        //     },
-        //   ),
-        //   'custom_lint_builder',
-        //   Pubspec('app', devDependencies: {'dep': HostedDependency()}),
-        //   Pubspec('app2', devDependencies: {'dep2': HostedDependency()}),
-        // ]);
+        final workspace =
+            await createSimpleWorkspace(withPackageConfig: false, [
+          Pubspec(
+            'dep',
+            dependencies: {
+              'custom_lint_builder': HostedDependency(),
+              'transitive': HostedDependency(),
+            },
+          ),
+          'transitive',
+          Pubspec(
+            'dep2',
+            dependencies: {
+              'custom_lint_builder': HostedDependency(),
+              'transitive': HostedDependency(),
+            },
+          ),
+          'custom_lint_builder',
+          Pubspec('app', devDependencies: {'dep': HostedDependency()}),
+          Pubspec('app2', devDependencies: {'dep2': HostedDependency()}),
+        ]);
 
-        // enableCustomLint(workspace.dir('app'));
-        // enableCustomLint(workspace.dir('app2'));
+        enableCustomLint(workspace.dir('app'));
+        enableCustomLint(workspace.dir('app2'));
 
-        // writeSimplePackageConfig(workspace.dir('app'), {
-        //   'dep': '../dep',
-        //   'custom_lint_builder': '../custom_lint_builder',
-        //   'transitive': '../transitive',
-        // });
-        // writeSimplePackageConfig(workspace.dir('app2'), {
-        //   'dep2': '../dep2',
-        //   'custom_lint_builder': '../custom_lint_builder',
-        //   'transitive': '../transitive',
-        // });
+        writeSimplePackageConfig(workspace.dir('app'), {
+          'dep': '../dep',
+          'custom_lint_builder': '../custom_lint_builder',
+          'transitive': '../transitive',
+        });
+        writeSimplePackageConfig(workspace.dir('app2'), {
+          'dep2': '../dep2',
+          'custom_lint_builder': '../custom_lint_builder',
+          'transitive': '../transitive',
+        });
 
-        // final customLintWorkspace = await CustomLintWorkspace.fromPaths(
-        //   [workspace.path],
-        //   workingDirectory: workspace,
-        // );
+        final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+          [workspace.path],
+          workingDirectory: workspace,
+        );
 
-        // final pluginHostDirectory =
-        //     await customLintWorkspace.resolvePackageConfigOffline(
-        // createTemporaryDirectory(),
-        // );
-        // final packageConfig = parsePackageConfigSync(pluginHostDirectory);
+        final pluginHostDirectory = createTemporaryDirectory();
+        await customLintWorkspace.resolvePackageConfigOffline(
+          pluginHostDirectory,
+        );
+        final packageConfig = parsePackageConfigSync(pluginHostDirectory);
 
-        // expect(packageConfig.packages, hasLength(4));
-        // expect(
-        //   packageConfig.packages.map((p) => p.name),
-        //   unorderedEquals([
-        //     'custom_lint_builder',
-        //     'dep',
-        //     'dep2',
-        //     'transitive',
-        //   ]),
-        // );
-        // expect(
-        //   packageConfig.packages
-        //       .firstWhere((p) => p.name == 'custom_lint_builder')
-        //       .root,
-        //   workspace.dir('custom_lint_builder').uri,
-        // );
-        // expect(
-        //   packageConfig.packages.firstWhere((p) => p.name == 'dep').root,
-        //   workspace.dir('dep').uri,
-        // );
-        // expect(
-        //   packageConfig.packages.firstWhere((p) => p.name == 'dep2').root,
-        //   workspace.dir('dep2').uri,
-        // );
-        // expect(
-        //   packageConfig.packages.firstWhere((p) => p.name == 'transitive').root,
-        //   workspace.dir('transitive').uri,
-        // );
+        expect(packageConfig.packages, hasLength(4));
+        expect(
+          packageConfig.packages.map((p) => p.name),
+          unorderedEquals([
+            'custom_lint_builder',
+            'dep',
+            'dep2',
+            'transitive',
+          ]),
+        );
+        expect(
+          packageConfig.packages
+              .firstWhere((p) => p.name == 'custom_lint_builder')
+              .root,
+          workspace.dir('custom_lint_builder').uri,
+        );
+        expect(
+          packageConfig.packages.firstWhere((p) => p.name == 'dep').root,
+          workspace.dir('dep').uri,
+        );
+        expect(
+          packageConfig.packages.firstWhere((p) => p.name == 'dep2').root,
+          workspace.dir('dep2').uri,
+        );
+        expect(
+          packageConfig.packages.firstWhere((p) => p.name == 'transitive').root,
+          workspace.dir('transitive').uri,
+        );
       });
 
       test(
