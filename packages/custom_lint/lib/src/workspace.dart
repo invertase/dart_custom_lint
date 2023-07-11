@@ -766,9 +766,9 @@ publish_to: 'none'
 
   /// First attempts at creating the plugin host locally. And if it fails,
   /// it will fallback to resolving packages using "pub get".
-  Future<Directory> resolvePluginHost() async {
-    final tempDir = Directory.systemTemp.createTempSync('custom_lint_client');
-
+  Future<void> resolvePluginHost(
+    Directory tempDir,
+  ) async {
     final pubspecContent = computePubspec();
     final pubspecOverride = computePubspecOverride();
 
@@ -778,17 +778,9 @@ publish_to: 'none'
     }
 
     try {
-      try {
-        await resolvePackageConfigOffline(tempDir);
-      } on PackageVersionConflictException {
-        await runPubGet(tempDir);
-      }
-
-      return tempDir;
-    } catch (_) {
-      // If failed, delete the temporary directory.
-      tempDir.deleteSync(recursive: true);
-      rethrow;
+      await resolvePackageConfigOffline(tempDir);
+    } on PackageVersionConflictException {
+      await runPubGet(tempDir);
     }
   }
 
