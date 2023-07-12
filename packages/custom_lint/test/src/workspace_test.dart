@@ -10,6 +10,7 @@ import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:test/fake.dart';
 import 'package:test/test.dart';
 
 const conflictExplanation =
@@ -695,6 +696,268 @@ The package "package" has incompatible version constraints in the project:
           ),
         );
       });
+    });
+
+    group('resolvePluginHost', () {
+      test('Does not write pubspec_overrides if none present', () async {
+        final workingDir = await createSimpleWorkspace([
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        final tempDir = createTemporaryDirectory();
+        await workspace.resolvePluginHost(tempDir);
+
+        expect(tempDir.pubspec.existsSync(), true);
+        expect(tempDir.pubspecOverrides.existsSync(), false);
+      });
+
+      test('writes pubspecs & pubspec_overrides', () async {
+        final workingDir = await createSimpleWorkspace([
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+        ]);
+
+        workingDir.dir('a').pubspecOverrides.writeAsStringSync('''
+dependency_overrides:
+  plugin1:
+    path: "../plugin1"
+''');
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        final tempDir = createTemporaryDirectory();
+        await workspace.resolvePluginHost(tempDir);
+
+        expect(tempDir.pubspec.readAsStringSync(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dev_dependencies:
+  plugin1:
+    path: "${workingDir.dir('plugin1').path}"
+''');
+        expect(tempDir.pubspecOverrides.readAsStringSync(), '''
+dependency_overrides:
+  plugin1:
+    path: "${workingDir.dir('plugin1').path}"
+''');
+      });
+
+      test('supports out of date package_config.json', () async {
+        final workingDir = await createSimpleWorkspace([
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+        ]);
+
+        // Offline resolution will fail because "custom_lint_builder" is not
+        // present in the package_config.json naturally
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        final tempDir = createTemporaryDirectory();
+        await workspace.resolvePluginHost(tempDir);
+
+        final packageConfigJson = jsonDecode(
+          tempDir.packageConfig.readAsStringSync(),
+        ) as Map<String, dynamic>;
+
+        expect(packageConfigJson['generator'], 'pub');
+      });
+
+      test('runs offline if possible', () async {
+        final workingDir =
+            await createSimpleWorkspace(withPackageConfig: false, [
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        // Override a's package_config to include custom_lint_builder
+        // as createSimpleWorkspace doesn't resolve transitive dependencies.
+        final aPackageConfig = PackageConfig([
+          Package(
+            'custom_lint_builder',
+            workingDir.dir('custom_lint_builder').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+          Package(
+            'plugin1',
+            workingDir.dir('plugin1').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+          Package(
+            'a',
+            workingDir.dir('a').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+        ]);
+
+        workingDir
+            .dir('a') //
+            .packageConfig
+            .writeAsStringSync(
+              jsonEncode(PackageConfig.toJson(aPackageConfig)),
+            );
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        final tempDir = createTemporaryDirectory();
+        await runWithoutInternet(() => workspace.resolvePluginHost(tempDir));
+
+        final packageConfigJson = jsonDecode(
+          tempDir.packageConfig.readAsStringSync(),
+        ) as Map<String, dynamic>;
+
+        expect(packageConfigJson['generator'], 'custom_lint');
+      });
+
+      test('queries pub.dev if fails to run offline', () async {
+        final workingDir =
+            await createSimpleWorkspace(withPackageConfig: false, [
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+          Pubspec(
+            'b',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            // Same path but have it manually resolved differently in package_config,
+            // to have offline resolution fail.
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+        ]);
+
+        final aPackageConfig = PackageConfig([
+          Package(
+            'custom_lint_builder',
+            workingDir.dir('custom_lint_builder').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+          Package(
+            'plugin1',
+            workingDir.dir('plugin1').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+          Package(
+            'a',
+            workingDir.dir('a').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+        ]);
+        workingDir
+            .dir('a') //
+            .packageConfig
+            .writeAsStringSync(
+              jsonEncode(PackageConfig.toJson(aPackageConfig)),
+            );
+        final bPackageConfig = PackageConfig([
+          Package(
+            'custom_lint_builder',
+            workingDir.dir('custom_lint_builder').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+          Package(
+            'plugin1',
+            workingDir.dir('plugin12').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+          Package(
+            'b',
+            workingDir.dir('b').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+        ]);
+        workingDir
+            .dir('b') //
+            .packageConfig
+            .writeAsStringSync(
+              jsonEncode(PackageConfig.toJson(bPackageConfig)),
+            );
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        final tempDir = createTemporaryDirectory();
+        await workspace.resolvePluginHost(tempDir);
+
+        final packageConfigJson = jsonDecode(
+          tempDir.packageConfig.readAsStringSync(),
+        ) as Map<String, dynamic>;
+
+        expect(packageConfigJson['generator'], 'pub');
+      });
+    });
+
+    group('runPubGet', () {
+      test('throws if pub get fails', () {});
+      test('resolves if pub get succeeds', () {});
     });
 
     group('computePubspec', () {
@@ -3802,3 +4065,17 @@ dart pub upgrade dep
     });
   });
 }
+
+Future<void> runWithoutInternet(FutureOr<void> Function() cb) async {
+  return IOOverrides.runZoned(
+    cb,
+    socketConnect: (p0, p1, {sourceAddress, sourcePort = 0, timeout}) =>
+        throw Exception('No internet'),
+    socketStartConnect: (p0, p1, {sourceAddress, sourcePort = 0}) =>
+        throw Exception('No internet'),
+    serverSocketBind: (p0, p1, {backlog = 0, shared = false, v6Only = false}) =>
+        throw Exception('No internet'),
+  );
+}
+
+class FakeIOOveride extends Fake implements IOOverrides {}

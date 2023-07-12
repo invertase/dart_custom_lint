@@ -779,7 +779,7 @@ publish_to: 'none'
 
     try {
       await resolvePackageConfigOffline(tempDir);
-    } on PackageVersionConflictException {
+    } catch (_) {
       await runPubGet(tempDir);
     }
   }
@@ -809,6 +809,7 @@ publish_to: 'none'
       ['pub', 'get'],
       stdoutEncoding: utf8,
       stderrEncoding: utf8,
+      workingDirectory: tempDir.path,
     );
     if (result.exitCode != 0) {
       throw Exception(
