@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
@@ -84,6 +85,44 @@ extension on Dependency {
       throw ArgumentError.value(that, 'dependency', 'Unknown dependency');
     }
   }
+}
+
+void mockProcess(RunProcess mock) {
+  final previousRunProcess = runProcess;
+  addTearDown(() => runProcess = previousRunProcess);
+  runProcess = mock;
+}
+
+Queue<({String executable, List<String> args})> spyProcess() {
+  final result = Queue<({String executable, List<String> args})>();
+
+  final previousRunProcess = runProcess;
+  addTearDown(() => runProcess = previousRunProcess);
+  runProcess = (
+    executable,
+    arguments, {
+    environment,
+    includeParentEnvironment = true,
+    runInShell = false,
+    stderrEncoding,
+    stdoutEncoding,
+    workingDirectory,
+  }) {
+    result.add((executable: executable, args: arguments));
+
+    return previousRunProcess(
+      executable,
+      arguments,
+      environment: environment,
+      includeParentEnvironment: includeParentEnvironment,
+      runInShell: runInShell,
+      stderrEncoding: stderrEncoding,
+      stdoutEncoding: stdoutEncoding,
+      workingDirectory: workingDirectory,
+    );
+  };
+
+  return result;
 }
 
 extension on Pubspec {
@@ -956,8 +995,166 @@ dependency_overrides:
     });
 
     group('runPubGet', () {
-      test('throws if pub get fails', () {});
-      test('resolves if pub get succeeds', () {});
+      test('throws if pub get fails', () async {
+        final workingDir = await createSimpleWorkspace([
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        await expectLater(
+          // Pub get will fail due to missing SDK constraints.
+          () => workspace.runPubGet(workingDir.dir('a')),
+          throwsA(
+            isA<Exception>().having(
+              (e) => e.toString(),
+              'toString',
+              contains('Failed to run "pub get" in the client project:\n'),
+            ),
+          ),
+        );
+      });
+
+      test('resolves if pub get succeeds', () async {
+        final workingDir = await createSimpleWorkspace([
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+        ]);
+
+        final processes = spyProcess();
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        expect(processes, isEmpty);
+
+        await expectLater(
+          workspace.runPubGet(workingDir.dir('a')),
+          completes,
+        );
+
+        expect(
+          processes.removeFirst(),
+          (executable: 'dart', args: const ['pub', 'get']),
+        );
+        expect(processes, isEmpty);
+      });
+
+      test('uses fluter pub get if isUsingFlutter is true', () async {
+        final workingDir = await createSimpleWorkspace([
+          'flutter',
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {
+              'plugin1': PathDependency('../plugin1'),
+              'flutter': PathDependency('../flutter'),
+            },
+          ),
+        ]);
+
+        final processes = spyProcess();
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        expect(processes, isEmpty);
+
+        await expectLater(
+          workspace.runPubGet(workingDir.dir('a')),
+          completes,
+        );
+
+        expect(
+          processes.removeFirst(),
+          (executable: 'flutter', args: const ['pub', 'get']),
+        );
+        expect(processes, isEmpty);
+      });
+    });
+
+    group('isUsingFlutter', () {
+      test('returns true if flutter is found in any project in the workspace',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          'flutter',
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {
+              'plugin1': HostedDependency(),
+              'flutter': SdkDependency('flutter'),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.isUsingFlutter, true);
+      });
+
+      test(
+          'returns false if flutter is not found in any project in the workspace',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          'flutter',
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.isUsingFlutter, false);
+      });
     });
 
     group('computePubspec', () {

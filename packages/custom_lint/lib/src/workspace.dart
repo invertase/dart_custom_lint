@@ -376,6 +376,22 @@ Stream<YamlMap> visitAnalysisOptionAndIncludes(
   }
 }
 
+/// A typedef for [Process.run].
+typedef RunProcess = Future<ProcessResult> Function(
+  String executable,
+  List<String> arguments, {
+  String? workingDirectory,
+  Map<String, String>? environment,
+  bool includeParentEnvironment,
+  bool runInShell,
+  Encoding? stdoutEncoding,
+  Encoding? stderrEncoding,
+});
+
+/// A mockable way to run processes.
+@visibleForTesting
+RunProcess runProcess = Process.run;
+
 /// An error thrown when [CustomLintPlugin._visitSelfAndTransitiveDependencies] tries to iterate over
 /// the dependencies of a package, but the package cannot be found in
 /// the `package_config.json`.
@@ -483,6 +499,11 @@ class CustomLintWorkspace {
       workingDirectory: workingDirectory,
     );
   }
+
+  /// Whether the workspace is using flutter.
+  bool get isUsingFlutter => projects
+      .expand((e) => e.packageConfig.packages)
+      .any((e) => e.name == 'flutter');
 
   /// The working directory of the workspace.
   /// This is the directory from which the workspace was initialized.
@@ -803,10 +824,11 @@ publish_to: 'none'
 
   /// Run "pub get" in the client project.
   Future<void> runPubGet(Directory tempDir) async {
-    // TODO can plugins depend on Flutter?
-    final result = await Process.run(
-      'dart',
-      ['pub', 'get'],
+    final command = isUsingFlutter ? 'flutter' : 'dart';
+
+    final result = await runProcess(
+      command,
+      const ['pub', 'get'],
       stdoutEncoding: utf8,
       stderrEncoding: utf8,
       workingDirectory: tempDir.path,
