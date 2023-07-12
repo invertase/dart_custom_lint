@@ -34,6 +34,9 @@ extension PackageIOUtils on Directory {
   /// The `pubspec.yaml` file.
   File get pubspec => file('pubspec.yaml');
 
+  /// The `pubspec_overrides.yaml` file.
+  File get pubspecOverrides => file('pubspec_overrides.yaml');
+
   /// The `.dart_tool/package_config.json` file.
   File get packageConfig => file('.dart_tool', 'package_config.json');
 
@@ -79,6 +82,37 @@ Future<Pubspec?> tryParsePubspec(Directory directory) async {
 /// does not exists.
 Future<Pubspec> parsePubspec(Directory directory) async {
   return Pubspec.parse(await directory.pubspec.readAsString());
+}
+
+/// Try parsing the `pubspec_overrides.yaml` of the given directory.
+///
+/// If the parsing fails for any reason, returns null.
+Future<Map<String, Dependency>?> tryParsePubspecOverrides(
+  Directory directory,
+) async {
+  try {
+    return await parsePubspecOverrides(directory);
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Parse the `pubspec_overrides.yaml` of the given directory.
+///
+/// Throws if the parsing fails, such as if the file is badly formatted or
+/// does not exists.
+Future<Map<String, Dependency>> parsePubspecOverrides(
+  Directory directory,
+) async {
+  final content = await directory.pubspecOverrides.readAsString();
+  // Pubspec.parse requires the "name" field to be present, even though
+  // pubspec_overrides don't have one. So we inject a fake one.
+  final pubspec = Pubspec.parse('''
+name: tmp
+$content
+''');
+
+  return pubspec.dependencyOverrides;
 }
 
 /// Try parsing the package config of the given directory.
