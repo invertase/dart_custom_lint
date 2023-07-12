@@ -260,7 +260,7 @@ Exception: Failed to run "pub get" in the client project:
 Resolving dependencies...
 
 Because every version of test_lint from path depends on dep any which doesn't exist (could not find package dep at https://pub.dev), test_lint from path is forbidden.
-So, because test_app depends on test_lint from path, version solving failed.
+So, because custom_lint_client depends on test_lint from path, version solving failed.
 ''',
           ),
         );
