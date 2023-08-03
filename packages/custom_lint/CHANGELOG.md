@@ -1,3 +1,7 @@
+## 0.5.1 - 2023-08-03
+
+Support analyzer v6
+
 ## 0.5.0 - 2023-06-21
 
 - Now resolves packages using `pub get` if custom_lint failed to resolve packages offline.
