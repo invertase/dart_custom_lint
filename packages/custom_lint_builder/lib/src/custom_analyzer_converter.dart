@@ -231,7 +231,7 @@ class CustomAnalyzerConverter {
         ) {
       final type = element.type;
       // ignore: deprecated_member_use
-      if (type is InterfaceType && type.element2 == element.enclosingElement3) {
+      if (type is InterfaceType && type.element2 == element.enclosingElement) {
         return plugin.ElementKind.ENUM_CONSTANT;
       }
     }
@@ -331,9 +331,9 @@ class CustomAnalyzerConverter {
       return currentElement;
     }
     // ignore: deprecated_member_use
-    if (currentElement.enclosingElement3 is analyzer.LibraryElement) {
+    if (currentElement.enclosingElement is analyzer.LibraryElement) {
       // ignore: deprecated_member_use
-      currentElement = currentElement.enclosingElement3;
+      currentElement = currentElement.enclosingElement;
     }
     if (currentElement is analyzer.LibraryElement) {
       return currentElement.definingCompilationUnit;
@@ -341,7 +341,7 @@ class CustomAnalyzerConverter {
     for (;
         currentElement != null;
         // ignore: deprecated_member_use
-        currentElement = currentElement.enclosingElement3) {
+        currentElement = currentElement.enclosingElement) {
       if (currentElement is analyzer.CompilationUnitElement) {
         return currentElement;
       }
