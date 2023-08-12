@@ -182,17 +182,7 @@ void _renderLints(
     hasInfos = hasInfos || error.severity == AnalysisErrorSeverity.INFO;
   }
 
-  if (hasErrors) {
-    exitCode = 1;
-    return;
-  }
-
-  if (fatalWarnings && hasWarnings) {
-    exitCode = 1;
-    return;
-  }
-
-  if (fatalInfos && hasInfos) {
+  if (hasErrors || (fatalWarnings && hasWarnings) || (fatalInfos && hasInfos)) {
     exitCode = 1;
     return;
   }
