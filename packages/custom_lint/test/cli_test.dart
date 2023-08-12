@@ -87,7 +87,7 @@ lib/custom_lint_client.dart:13:29: Error: Undefined name 'createPlugin'.
     );
   });
 
-  test('exits with 1 when pass argument `--no-fatal-infos`', () async {
+  test('exits with 0 when pass argument `--no-fatal-infos`', () async {
     final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
 
     final app = createLintUsage(
