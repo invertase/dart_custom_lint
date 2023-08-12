@@ -9,7 +9,7 @@ Future<void> entrypoint([List<String> args = const []]) async {
     ..addFlag(
       'fatal-infos',
       help: 'Treat info level issues as fatal',
-      negatable: false,
+      defaultsTo: true,
     )
     ..addFlag(
       'fatal-warnings',
