@@ -20,7 +20,7 @@ final lintRuleWithFilesToAnalayze = createPluginSource([
 @override
 List<String> get filesToAnalyze => const ['test/*_test.dart'];
 ''',
-  )
+  ),
 ]);
 
 void main() {

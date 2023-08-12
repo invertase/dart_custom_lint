@@ -1,3 +1,11 @@
+## 0.5.1 - 2023-08-03
+
+Support analyzer v6
+
+## 0.5.0 - 2023-06-21
+
+- `custom_lint` upgraded to `0.5.0`
+
 ## 0.4.0 - 2023-05-12
 
 - Added support for analyzer 5.12.0

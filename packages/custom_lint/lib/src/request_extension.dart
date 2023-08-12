@@ -81,13 +81,6 @@ typedef HandleEditGetRefactoring<R> = R Function(
   EditGetRefactoringParams parameters,
 );
 
-/// Handle a 'kythe.getKytheEntries' request.
-///
-/// Throw a [RequestFailure] if the request could not be handled.
-typedef HandleKytheGetKytheEntries<R> = R Function(
-  KytheGetKytheEntriesParams parameters,
-);
-
 /// Handle a 'plugin.shutdown' request. Subclasses can override this method to
 /// perform clean-up, but cannot prevent the plugin from shutting
 /// down.
@@ -118,7 +111,6 @@ extension RequestX on Request {
     HandleEditGetAvailableRefactorings<R>? handleEditGetAvailableRefactorings,
     HandleEditGetFixes<R>? handleEditGetFixes,
     HandleEditGetRefactoring<R>? handleEditGetRefactoring,
-    HandleKytheGetKytheEntries<R>? handleKytheGetKytheEntries,
     HandlePluginVersionCheck<R>? handlePluginVersionCheck,
     HandlePluginShutdown<R>? handlePluginShutdown,
     required R Function() orElse,
@@ -198,13 +190,6 @@ extension RequestX on Request {
         if (handleEditGetRefactoring != null) {
           final params = EditGetRefactoringParams.fromRequest(this);
           return handleEditGetRefactoring(params);
-        }
-        break;
-
-      case KYTHE_REQUEST_GET_KYTHE_ENTRIES:
-        if (handleKytheGetKytheEntries != null) {
-          final params = KytheGetKytheEntriesParams.fromRequest(this);
-          return handleKytheGetKytheEntries(params);
         }
         break;
 

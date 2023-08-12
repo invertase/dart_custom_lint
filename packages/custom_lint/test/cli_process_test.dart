@@ -61,8 +61,8 @@ void main() {
       '''
 [hello_world] test_app (analyzer, analyzer_plugin)
 [hello_world] test_app2 (analyzer, analyzer_plugin)
-  test_app/lib/main.dart:1:6 • Hello world • hello_world
-  test_app2/lib/main2.dart:1:6 • Hello world • hello_world
+  test_app/lib/main.dart:1:6 • Hello world • hello_world • INFO
+  test_app2/lib/main2.dart:1:6 • Hello world • hello_world • INFO
 ''',
     );
     expect(process.exitCode, 0);
@@ -151,8 +151,8 @@ void main() {
 
         expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
         expect(process.stdout, '''
-  lib/another.dart:1:6 • Oy • oy
-  lib/main.dart:1:6 • Oy • oy
+  lib/another.dart:1:6 • Oy • oy • INFO
+  lib/main.dart:1:6 • Oy • oy • INFO
 ''');
         expect(process.exitCode, 1);
       },
@@ -230,7 +230,7 @@ void main() {
           extraPackageConfig: {'dep': workspace.dir('dep').uri},
         );
 
-        final app2 = createLintUsage(
+        createLintUsage(
           // Add the second project inside the first one, such that
           // analyzing the first project analyzes both projects
           parent: app,
@@ -256,23 +256,11 @@ void main() {
             '''
 The request analysis.setContextRoots failed with the following error:
 RequestErrorCode.PLUGIN_ERROR
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+Exception: Failed to run "pub get" in the client project:
+Resolving dependencies...
 
-Package dep:
-- Hosted with version constraint: any
-  Resolved with ${workspace.dir('dep').path}/
-  Used by plugin "test_lint" at "../test_lint" in the project "test_app" at "."
-- Hosted with version constraint: any
-  Resolved with ${workspace.dir('dep2').path}/
-  Used by plugin "test_lint" at "../test_lint" in the project "test_app2" at "test_app2"
-
-$conflictExplanation
-You could run the following commands to try fixing this:
-
-cd ${app.path}
-dart pub upgrade dep
-cd ${app2.path}
-dart pub upgrade dep
+Because every version of test_lint from path depends on dep any which doesn't exist (could not find package dep at https://pub.dev), test_lint from path is forbidden.
+So, because custom_lint_client depends on test_lint from path, version solving failed.
 ''',
           ),
         );

@@ -1,3 +1,26 @@
+## 0.5.1 - 2023-08-03
+
+Support analyzer v6
+
+## 0.5.0 - 2023-06-21
+
+- Now resolves packages using `pub get` if custom_lint failed to resolve packages offline.
+  This should reduce the likelyness of a version conflict in mono-repositories.
+  The conflict may still happen if two projects in a mono-repo use incompatible
+  constraints. Like:
+  ```yaml
+  name: foo
+  dependencies:
+    package: ^1.0.0
+  ```
+  ```yaml
+  name: bar
+  dependencies:
+    package: ^2.0.0
+  ```
+- The command line now shows the lints' severity (thanks to @praxder)
+- Now requires Dart 3.0.0
+
 ## 0.4.0 - 2023-05-12
 
 - Report uncaught exceptions inside `context.addPostRunCallback`
@@ -5,7 +28,7 @@
 
 ## 0.3.4 - 2023-04-19
 
-- custom_lint now automatically generate quick-fixes for "ignore for line/file".  
+- custom_lint now automatically generate quick-fixes for "ignore for line/file".
 - Update the socket communication logic to avoid possible problem is the message
   contains a \n.
 - fixes custom_lint on windows

@@ -45,7 +45,7 @@ void fn2() {}
 
 // expect_lint: hello_world
 void fn3() {}
-'''
+''',
       },
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',

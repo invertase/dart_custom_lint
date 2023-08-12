@@ -281,7 +281,7 @@ class _CustomLintAnalysisConfigs {
         rule.code: [
           ...rule.getFixes(),
           IgnoreCode(),
-        ]
+        ],
     };
   }
 
@@ -375,7 +375,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         for (final analysisContext in contextCollection.contexts)
           analysisContext: parsePubspec(
             io.Directory(analysisContext.contextRoot.root.path),
-          )
+          ),
       };
 
       // Running before updating the configs as the config parsing depends
@@ -598,7 +598,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
           changeReporter,
           analysisError,
           otherErrors,
-        )
+        ),
     ]);
 
     runPostRunCallbacks(postRunCallbacks);
