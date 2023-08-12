@@ -65,7 +65,7 @@ void main() {
   test_app2/lib/main2.dart:1:6 • Hello world • hello_world • INFO
 ''',
     );
-    expect(process.exitCode, 0);
+    expect(process.exitCode, 1);
   });
 
   group('Correctly exits when', () {
