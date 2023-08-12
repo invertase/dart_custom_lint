@@ -106,7 +106,9 @@ class ${fix.name} extends DartFix {
 class ${rule.code} extends DartLintRule {
   ${rule.code}()
     : super(
-        code: LintCode(name: '${rule.code}', problemMessage: '${rule.message}', errorSeverity: ErrorSeverity.${rule.errorSeverity.displayName.toUpperCase()}),
+        code: LintCode(name: '${rule.code}',
+        problemMessage: '${rule.message}',
+        errorSeverity: ErrorSeverity.${rule.errorSeverity.displayName.toUpperCase()}),
       );
 
 $fixes
