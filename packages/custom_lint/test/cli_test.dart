@@ -18,7 +18,7 @@ final helloWordPluginSource = createPluginSource([
   TestLintRule(
     code: 'hello_world',
     message: 'Hello world',
-  )
+  ),
 ]);
 
 void main() {
@@ -236,7 +236,6 @@ Bad state: fail
     final plugin = createPlugin(
       name: 'test_lint',
       main: '''
-import 'package:analyzer/error/error.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
