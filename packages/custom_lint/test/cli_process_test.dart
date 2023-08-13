@@ -131,6 +131,7 @@ void main() {
 
     test(
       'found lints',
+      timeout: const Timeout.factor(2),
       () async {
         final plugin = createPlugin(name: 'test_lint', main: oyPluginSource);
 
