@@ -91,9 +91,7 @@ lib/custom_lint_client.dart:13:29: Error: Undefined name 'createPlugin'.
     final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
 
     final app = createLintUsage(
-      source: {
-        'lib/main.dart': 'void fn() {}',
-      },
+      source: {'lib/main.dart': 'void fn() {}'},
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
     );
@@ -102,8 +100,16 @@ lib/custom_lint_client.dart:13:29: Error: Undefined name 'createPlugin'.
       (out, err) async {
         await cli.entrypoint(['--no-fatal-infos']);
 
-        expect(err, emitsDone);
         expect(exitCode, 0);
+        expect(
+          out.join(),
+          completion(
+            matchIgnoringAnsi(contains, '''
+lib/main.dart:1:6 • Hello world • hello_world • INFO
+'''),
+          ),
+        );
+        expect(err, emitsDone);
       },
       currentDirectory: app,
     );
@@ -124,9 +130,7 @@ lib/custom_lint_client.dart:13:29: Error: Undefined name 'createPlugin'.
     );
 
     final app = createLintUsage(
-      source: {
-        'lib/main.dart': 'void fn() {}',
-      },
+      source: {'lib/main.dart': 'void fn() {}'},
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
     );
@@ -135,8 +139,16 @@ lib/custom_lint_client.dart:13:29: Error: Undefined name 'createPlugin'.
       (out, err) async {
         await cli.entrypoint(['--no-fatal-warnings']);
 
-        expect(err, emitsDone);
         expect(exitCode, 0);
+        expect(
+          out.join(),
+          completion(
+            matchIgnoringAnsi(contains, '''
+lib/main.dart:1:6 • Hello world • hello_world • WARNING
+'''),
+          ),
+        );
+        expect(err, emitsDone);
       },
       currentDirectory: app,
     );
