@@ -31,7 +31,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          sdk: ${{ matrix.channel }}
+          channel: ${{ matrix.channel }}
 
       - name: Add pub cache bin to PATH
         run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
