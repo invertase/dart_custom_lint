@@ -1,6 +1,7 @@
 ## Unreleased patch
 
-Support both analyzer 5.12.0 and 6.0.0 at the same time.
+- Support both analyzer 5.12.0 and 6.0.0 at the same time.
+- Attempt at fixing the windows crash
 
 ## 0.5.1 - 2023-08-03
 
