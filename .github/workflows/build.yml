@@ -45,7 +45,7 @@ jobs:
       - run: dart pub global activate melos
 
       - name: Install dependencies
-        run: melos exec -- "dart pub ${matrix.pub}"
+        run: melos exec -- "dart pub ${{ matrix.pub }}"
 
       - name: Check format
         run: dart format --set-exit-if-changed .
