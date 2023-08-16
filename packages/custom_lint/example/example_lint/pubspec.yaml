@@ -1,12 +1,12 @@
 name: custom_lint_example_lint
-version: 0.0.4
+version: 0.0.5
 publish_to: none
 
 environment:
   sdk: '>=2.16.0 <3.0.0'
 
 dependencies:
-  analyzer: ^5.0.0
+  analyzer: ">=5.12.0 <7.0.0"
   analyzer_plugin: ^0.11.2
   custom_lint_builder:
     path: ../../../custom_lint_builder
