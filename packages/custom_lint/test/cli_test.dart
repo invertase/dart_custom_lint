@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:analyzer/error/error.dart';
 import 'package:test/test.dart';
 
 import '../bin/custom_lint.dart' as cli;
@@ -81,6 +82,73 @@ lib/custom_lint_client.dart:13:29: Error: Undefined name 'createPlugin'.
           ),
         );
         expect(out, emitsDone);
+      },
+      currentDirectory: app,
+    );
+  });
+
+  test('exits with 0 when pass argument `--no-fatal-infos`', () async {
+    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
+
+    final app = createLintUsage(
+      source: {'lib/main.dart': 'void fn() {}'},
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    await runWithIOOverride(
+      (out, err) async {
+        await cli.entrypoint(['--no-fatal-infos']);
+
+        expect(exitCode, 0);
+        expect(
+          out.join(),
+          completion(
+            matchIgnoringAnsi(contains, '''
+lib/main.dart:1:6 • Hello world • hello_world • INFO
+'''),
+          ),
+        );
+        expect(err, emitsDone);
+      },
+      currentDirectory: app,
+    );
+  });
+
+  test(
+      'exits with 0 when found warning and pass argument `--no-fatal-warnings`',
+      () async {
+    final plugin = createPlugin(
+      name: 'test_lint',
+      main: createPluginSource([
+        TestLintRule(
+          code: 'hello_world',
+          message: 'Hello world',
+          errorSeverity: ErrorSeverity.WARNING,
+        ),
+      ]),
+    );
+
+    final app = createLintUsage(
+      source: {'lib/main.dart': 'void fn() {}'},
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    await runWithIOOverride(
+      (out, err) async {
+        await cli.entrypoint(['--no-fatal-warnings']);
+
+        expect(exitCode, 0);
+        expect(
+          out.join(),
+          completion(
+            matchIgnoringAnsi(contains, '''
+lib/main.dart:1:6 • Hello world • hello_world • WARNING
+'''),
+          ),
+        );
+        expect(err, emitsDone);
       },
       currentDirectory: app,
     );

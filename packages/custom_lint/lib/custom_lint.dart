@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
@@ -36,6 +37,8 @@ q: Quit
 Future<void> customLint({
   bool watchMode = true,
   required Directory workingDirectory,
+  bool fatalInfos = true,
+  bool fatalWarnings = true,
 }) async {
   // Reset the code
   exitCode = 0;
@@ -46,6 +49,8 @@ Future<void> customLint({
       channel,
       watchMode: watchMode,
       workingDirectory: workingDirectory,
+      fatalInfos: fatalInfos,
+      fatalWarnings: fatalWarnings,
     );
   } catch (_) {
     exitCode = 1;
@@ -58,6 +63,8 @@ Future<void> _runServer(
   ServerIsolateChannel channel, {
   required bool watchMode,
   required Directory workingDirectory,
+  required bool fatalInfos,
+  required bool fatalWarnings,
 }) async {
   final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
@@ -84,10 +91,17 @@ Future<void> _runServer(
         runner,
         reload: false,
         workingDirectory: workingDirectory,
+        fatalInfos: fatalInfos,
+        fatalWarnings: fatalWarnings,
       );
 
       if (watchMode) {
-        await _startWatchMode(runner, workingDirectory: workingDirectory);
+        await _startWatchMode(
+          runner,
+          workingDirectory: workingDirectory,
+          fatalInfos: fatalInfos,
+          fatalWarnings: fatalWarnings,
+        );
       }
     } finally {
       await runner?.close();
@@ -105,15 +119,17 @@ Future<void> _runPlugins(
   CustomLintRunner runner, {
   required bool reload,
   required Directory workingDirectory,
+  required bool fatalInfos,
+  required bool fatalWarnings,
 }) async {
   try {
     final lints = await runner.getLints(reload: reload);
-
-    if (lints.any((lintsForFile) => lintsForFile.errors.isNotEmpty)) {
-      exitCode = 1;
-    }
-
-    _renderLints(lints, workingDirectory: workingDirectory);
+    _renderLints(
+      lints,
+      workingDirectory: workingDirectory,
+      fatalInfos: fatalInfos,
+      fatalWarnings: fatalWarnings,
+    );
   } catch (err, stack) {
     exitCode = 1;
     stderr.writeln('$err\n$stack');
@@ -123,6 +139,8 @@ Future<void> _runPlugins(
 void _renderLints(
   List<AnalysisErrorsParams> lints, {
   required Directory workingDirectory,
+  required bool fatalInfos,
+  required bool fatalWarnings,
 }) {
   var errors = lints.expand((lint) => lint.errors);
 
@@ -150,18 +168,31 @@ void _renderLints(
     return;
   }
 
-  exitCode = 1;
+  var hasErrors = false;
+  var hasWarnings = false;
+  var hasInfos = false;
   for (final error in errors) {
     stdout.writeln(
       '  ${_relativeFilePath(error.location.file, workingDirectory)}:${error.location.startLine}:${error.location.startColumn}'
       ' • ${error.message} • ${error.code} • ${error.severity.name}',
     );
+    hasErrors = hasErrors || error.severity == AnalysisErrorSeverity.ERROR;
+    hasWarnings =
+        hasWarnings || error.severity == AnalysisErrorSeverity.WARNING;
+    hasInfos = hasInfos || error.severity == AnalysisErrorSeverity.INFO;
+  }
+
+  if (hasErrors || (fatalWarnings && hasWarnings) || (fatalInfos && hasInfos)) {
+    exitCode = 1;
+    return;
   }
 }
 
 Future<void> _startWatchMode(
   CustomLintRunner runner, {
   required Directory workingDirectory,
+  required bool fatalInfos,
+  required bool fatalWarnings,
 }) async {
   if (stdin.hasTerminal) {
     stdin
@@ -183,6 +214,8 @@ Future<void> _startWatchMode(
           runner,
           reload: true,
           workingDirectory: workingDirectory,
+          fatalInfos: fatalInfos,
+          fatalWarnings: fatalWarnings,
         );
         break;
       case 'q':
