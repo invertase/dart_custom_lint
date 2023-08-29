@@ -6,6 +6,7 @@ import 'package:custom_lint/src/plugin_delegate.dart';
 import 'package:custom_lint/src/runner.dart';
 import 'package:custom_lint/src/server_isolate_channel.dart';
 import 'package:custom_lint/src/v2/custom_lint_analyzer_plugin.dart';
+import 'package:custom_lint/src/workspace.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -14,52 +15,82 @@ Future<List<AnalysisErrorsParams>> runServerInCliModeForApp(
 
   // to ignoreErrors as we cannot explicitly handle errors
 ) async {
-  final runner = startRunnerForApp(directory, includeBuiltInLints: false);
-  return runner.getLints(reload: false);
+  final runner = await startRunnerForApp(directory, includeBuiltInLints: false);
+  return runner.runner.getLints(reload: false);
 }
 
-CustomLintRunner startRunnerForApp(
+class ManualRunner {
+  ManualRunner(this.runner, this.channel);
+
+  final CustomLintRunner runner;
+  final ServerIsolateChannel channel;
+
+  Future<void> get initialize => runner.initialize;
+
+  Future<List<AnalysisErrorsParams>> getLints({required bool reload}) async {
+    return runner.getLints(reload: reload);
+  }
+
+  Future<EditGetFixesResult> getFixes(
+    String path,
+    int offset,
+  ) async {
+    return runner.getFixes(path, offset);
+  }
+
+  Future<void> close() async {
+    await runner.close();
+    await channel.close();
+  }
+}
+
+Future<ManualRunner> startRunnerForApp(
   Directory directory, {
   bool ignoreErrors = false,
   bool includeBuiltInLints = true,
   bool watchMode = false,
-}) {
+}) async {
   final zone = Zone.current;
   final channel = ServerIsolateChannel();
 
-  // TODO use IO override to mock & test stdout/stderr
-  return CustomLintServer.run(
+  final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
+    workingDirectory: directory,
     delegate: CommandCustomLintDelegate(),
     includeBuiltInLints: includeBuiltInLints,
     watchMode: watchMode,
-    (customLintServer) {
-      final runner = CustomLintRunner(customLintServer, directory, channel);
-      addTearDown(runner.close);
+  );
 
-      if (!ignoreErrors) {
-        runner.channel
-          ..responseErrors.listen((event) {
-            zone.handleUncaughtError(
-              TestFailure(
-                '${event.message} ${event.code}\n${event.stackTrace}',
-              ),
-              StackTrace.current,
-            );
-          })
-          ..pluginErrors.listen((event) {
-            zone.handleUncaughtError(
-              TestFailure('${event.message}\n${event.stackTrace}'),
-              StackTrace.current,
-            );
-          });
-      }
+  return CustomLintServer.runZoned(() => customLintServer, () async {
+    final workspace = await CustomLintWorkspace.fromPaths(
+      [directory.path],
+      workingDirectory: directory,
+    );
+    final runner = CustomLintRunner(customLintServer, workspace, channel);
+    addTearDown(runner.close);
 
-      unawaited(runner.initialize);
+    if (!ignoreErrors) {
+      runner.channel
+        ..responseErrors.listen((event) {
+          zone.handleUncaughtError(
+            TestFailure(
+              '${event.message} ${event.code}\n${event.stackTrace}',
+            ),
+            StackTrace.current,
+          );
+        })
+        ..pluginErrors.listen((event) {
+          zone.handleUncaughtError(
+            TestFailure('${event.message}\n${event.stackTrace}'),
+            StackTrace.current,
+          );
+        });
+    }
 
-      return runner;
-    },
-  )!;
+    unawaited(runner.initialize);
+
+    return ManualRunner(runner, channel);
+  });
 }
 
 extension LogFile on Directory {

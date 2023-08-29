@@ -110,7 +110,7 @@ class _MakeProviderFinalFix extends DartFix {
       // We define one edit, giving it a message which will show-up in the IDE.
       final changeBuilder = reporter.createChangeBuilder(
         message: 'Make provider final',
-        // This represents how high-low should this qick-fix show-up in the list
+        // This represents how high-low should this quick-fix show-up in the list
         // of quick-fixes.
         priority: 1,
       );
@@ -124,7 +124,7 @@ class _MakeProviderFinalFix extends DartFix {
           // Replace "var x = ..." into "final x = ...""
 
           // Using "builder", we can emit changes to a file.
-          // In this case, addSimpleReplacement is used to overrite a selection
+          // In this case, addSimpleReplacement is used to override a selection
           // with a new content.
           builder.addSimpleReplacement(
             SourceRange(nodeKeyword.offset, nodeKeyword.length),
@@ -173,7 +173,7 @@ class _ConvertToStreamProvider extends DartAssist {
         message: 'Convert to StreamProvider',
       );
       changeBuilder.addDartFileEdit((builder) {
-        // TODO implement change to refactor the provider
+        // <implement change to refactor the provider>
       });
     });
   }

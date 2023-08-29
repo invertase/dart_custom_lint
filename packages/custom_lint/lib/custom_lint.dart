@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
@@ -11,6 +12,7 @@ import 'src/plugin_delegate.dart';
 import 'src/runner.dart';
 import 'src/server_isolate_channel.dart';
 import 'src/v2/custom_lint_analyzer_plugin.dart';
+import 'src/workspace.dart';
 
 const _help = '''
 
@@ -36,41 +38,90 @@ q: Quit
 Future<void> customLint({
   bool watchMode = true,
   required Directory workingDirectory,
+  bool fatalInfos = true,
+  bool fatalWarnings = true,
 }) async {
   // Reset the code
   exitCode = 0;
 
   final channel = ServerIsolateChannel();
-  await CustomLintServer.run(
+  try {
+    await _runServer(
+      channel,
+      watchMode: watchMode,
+      workingDirectory: workingDirectory,
+      fatalInfos: fatalInfos,
+      fatalWarnings: fatalWarnings,
+    );
+  } catch (_) {
+    exitCode = 1;
+  } finally {
+    await channel.close();
+  }
+}
+
+Future<void> _runServer(
+  ServerIsolateChannel channel, {
+  required bool watchMode,
+  required Directory workingDirectory,
+  required bool fatalInfos,
+  required bool fatalWarnings,
+}) async {
+  final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
     watchMode: watchMode,
+    workingDirectory: workingDirectory,
     // In the CLI, only show user defined lints. Errors & logs will be
     // rendered separately
     includeBuiltInLints: false,
     delegate: CommandCustomLintDelegate(),
-    (customLintServer) async {
-      final runner =
-          CustomLintRunner(customLintServer, workingDirectory, channel);
-
-      try {
-        await runner.initialize;
-        await _runPlugins(runner, reload: false);
-
-        if (watchMode) {
-          await _startWatchMode(runner);
-        }
-      } catch (err) {
-        exitCode = 1;
-      } finally {
-        await runner.close();
-      }
-    },
   );
+
+  await CustomLintServer.runZoned(() => customLintServer, () async {
+    CustomLintRunner? runner;
+
+    try {
+      final workspace = await CustomLintWorkspace.fromPaths(
+        [workingDirectory.path],
+        workingDirectory: workingDirectory,
+      );
+      runner = CustomLintRunner(customLintServer, workspace, channel);
+
+      await runner.initialize;
+      await _runPlugins(
+        runner,
+        reload: false,
+        workingDirectory: workingDirectory,
+        fatalInfos: fatalInfos,
+        fatalWarnings: fatalWarnings,
+      );
+
+      if (watchMode) {
+        await _startWatchMode(
+          runner,
+          workingDirectory: workingDirectory,
+          fatalInfos: fatalInfos,
+          fatalWarnings: fatalWarnings,
+        );
+      }
+    } finally {
+      await runner?.close();
+    }
+  }).whenComplete(() async {
+    // Closing the server output of "runZoned" to ensure that "runZoned" completes
+    // before the server is closed.
+    // Failing to do so could cause exceptions within "runZoned" to be handled
+    // after the server is closed, preventing the exception from being printed.
+    await customLintServer.close();
+  });
 }
 
 Future<void> _runPlugins(
   CustomLintRunner runner, {
   required bool reload,
+  required Directory workingDirectory,
+  required bool fatalInfos,
+  required bool fatalWarnings,
 }) async {
   final log = Logger.standard();
   final progress = log.progress('Analyzing');
@@ -82,7 +133,9 @@ Future<void> _runPlugins(
       log,
       progress,
       lints,
-      workingDirectory: runner.workingDirectory,
+      workingDirectory: workingDirectory,
+      fatalInfos: fatalInfos,
+      fatalWarnings: fatalWarnings,
     );
   } catch (err, stack) {
     exitCode = 1;
@@ -96,6 +149,8 @@ void _renderLints(
   Progress progress,
   List<AnalysisErrorsParams> lints, {
   required Directory workingDirectory,
+  required bool fatalInfos,
+  required bool fatalWarnings,
 }) {
   var errors = lints.expand((lint) => lint.errors);
 
@@ -128,21 +183,37 @@ void _renderLints(
     return;
   }
 
-  exitCode = 1;
+  var hasErrors = false;
+  var hasWarnings = false;
+  var hasInfos = false;
   for (final error in errors) {
     log.stdout(
       '  ${_relativeFilePath(error.location.file, workingDirectory)}:${error.location.startLine}:${error.location.startColumn}'
-      ' • ${error.message} • ${error.code}',
+      ' • ${error.message} • ${error.code} • ${error.severity.name}',
     );
+    hasErrors = hasErrors || error.severity == AnalysisErrorSeverity.ERROR;
+    hasWarnings =
+        hasWarnings || error.severity == AnalysisErrorSeverity.WARNING;
+    hasInfos = hasInfos || error.severity == AnalysisErrorSeverity.INFO;
   }
 
   // Display a summary separated from the lints
   log.stdout('');
   final errorCount = errors.length;
   log.stdout('$errorCount issue${errorCount > 1 ? 's' : ''} found.');
+
+  if (hasErrors || (fatalWarnings && hasWarnings) || (fatalInfos && hasInfos)) {
+    exitCode = 1;
+    return;
+  }
 }
 
-Future<void> _startWatchMode(CustomLintRunner runner) async {
+Future<void> _startWatchMode(
+  CustomLintRunner runner, {
+  required Directory workingDirectory,
+  required bool fatalInfos,
+  required bool fatalWarnings,
+}) async {
   if (stdin.hasTerminal) {
     stdin
       // Let's not pollute the output with whatever the user types
@@ -159,12 +230,16 @@ Future<void> _startWatchMode(CustomLintRunner runner) async {
       case 'r':
         // Rerunning lints
         stdout.writeln('Manual Reload...');
-        await _runPlugins(runner, reload: true);
+        await _runPlugins(
+          runner,
+          reload: true,
+          workingDirectory: workingDirectory,
+          fatalInfos: fatalInfos,
+          fatalWarnings: fatalWarnings,
+        );
         break;
       case 'q':
-        // Let's quit the command line
-        // TODO(rrousselGit) Investigate why an "exit" is required and we can't simply "return"
-        exit(exitCode);
+      // Let's quit the command line
       default:
       // Unknown command. Nothing to do
     }

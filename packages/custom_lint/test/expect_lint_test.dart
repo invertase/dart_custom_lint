@@ -45,13 +45,13 @@ void fn2() {}
 
 // expect_lint: hello_world
 void fn3() {}
-'''
+''',
       },
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
     );
 
-    final runner = startRunnerForApp(app);
+    final runner = await startRunnerForApp(app);
     final lints = await runner.getLints(reload: false).then((lints) {
       final result = <String, AnalysisErrorsParams>{};
       for (final lint in lints) {
@@ -146,7 +146,7 @@ void ignore() {}
       name: 'test_app',
     );
 
-    final runner = startRunnerForApp(app);
+    final runner = await startRunnerForApp(app);
     final lints = StreamQueue(runner.channel.lints);
 
     expect(

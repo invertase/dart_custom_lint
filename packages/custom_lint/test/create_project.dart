@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:analyzer/error/error.dart';
 import 'package:path/path.dart';
 import 'package:test/scaffolding.dart';
 
@@ -25,18 +26,22 @@ class TestLintRule {
   TestLintRule({
     required this.code,
     required this.message,
+    this.startUp = '',
     this.onRun = '',
     this.onVariable = '',
     this.ruleMembers = '',
     this.fixes = const [],
+    this.errorSeverity = ErrorSeverity.INFO,
   });
 
   final String code;
   final String message;
+  final String startUp;
   final String onRun;
   final String onVariable;
   final String ruleMembers;
   final List<TestLintFix> fixes;
+  final ErrorSeverity errorSeverity;
 }
 
 class TestLintFix {
@@ -97,17 +102,33 @@ class ${fix.name} extends DartFix {
 ''');
     }
 
-    buffer.write(
-      '''
+    buffer.write('''
 class ${rule.code} extends DartLintRule {
   ${rule.code}()
     : super(
-        code: LintCode(name: '${rule.code}', problemMessage: '${rule.message}'),
+        code: LintCode(name: '${rule.code}',
+        problemMessage: '${rule.message}',
+        errorSeverity: ErrorSeverity.${rule.errorSeverity.displayName.toUpperCase()}),
       );
 
 $fixes
 ${rule.ruleMembers}
+''');
 
+    if (rule.startUp.isNotEmpty) {
+      buffer.write('''
+  @override
+  Future<void> startUp(
+    CustomLintResolver resolver,
+    CustomLintContext context,
+  ) async {
+    ${rule.startUp}
+  }
+''');
+    }
+
+    buffer.write(
+      '''
   @override
   void run(CustomLintResolver resolver, ErrorReporter reporter, CustomLintContext context) {
     ${rule.onRun}
@@ -127,12 +148,18 @@ ${rule.ruleMembers}
 Directory createPlugin({
   required String name,
   Directory? parent,
-  String? pubpsec = _pluginDefaultPubspec,
+  String pubpsec = _pluginDefaultPubspec,
   String? analysisOptions,
   String? main,
   Map<String, String>? sources,
   bool omitPackageConfig = false,
+  Map<String, String> extraDependencies = const {},
 }) {
+  assert(
+    pubpsec == _pluginDefaultPubspec || extraDependencies.isEmpty,
+    'Cannot specify both pubpsec and extraDependencies',
+  );
+
   return createDartProject(
     parent: parent,
     sources: {
@@ -146,13 +173,14 @@ version: 0.0.1
 publish_to: none
 
 environment:
-  sdk: ">=2.17.0 <3.0.0"
+  sdk: ">=2.17.0 <4.0.0"
 
 dependencies:
   analyzer: any
   analyzer_plugin: any
   custom_lint_builder:
     path: ${PeerProjectMeta.current.customLintBuilderPath}
+${extraDependencies.entries.map((e) => '  ${e.key}: ${e.value}').join('\n')}
 '''
         : pubpsec,
     analysisOptions: analysisOptions,
@@ -167,8 +195,8 @@ Directory createLintUsage({
   Directory? parent,
   Map<String, Uri> plugins = const {},
   Map<String, String> source = const {},
+  Map<String, Uri> extraPackageConfig = const {},
   required String name,
-  bool createDependencyOverrides = false,
 }) {
   final pluginDevDependencies = plugins.entries
       .map(
@@ -193,7 +221,7 @@ version: 0.0.1
 publish_to: none
 
 environment:
-  sdk: ">=2.17.0 <3.0.0"
+  sdk: ">=2.17.0 <4.0.0"
 
 dependencies:
   analyzer: any
@@ -203,17 +231,9 @@ dev_dependencies:
   custom_lint:
     path: ${PeerProjectMeta.current.customLintPath}
 $pluginDevDependencies
-
-${createDependencyOverrides ? '''
-dependency_overrides:
-  custom_lint:
-    path: ${PeerProjectMeta.current.customLintPath}
-  custom_lint_core:
-    path: ${PeerProjectMeta.current.customLintCorePath}
-''' : ''}
 ''',
     packageConfig: createPackageConfig(
-      plugins: plugins,
+      plugins: {...plugins, ...extraPackageConfig},
       name: name,
     ),
     name: name,
@@ -243,19 +263,19 @@ String createPackageConfig({
           'name': plugin.key,
           'rootUri': plugin.value.toString(),
           'packageUri': 'lib/',
-          'languageVersion': '2.17'
+          'languageVersion': '2.17',
         },
       <String, String>{
         'name': name,
         'rootUri': '../',
         'packageUri': 'lib/',
-        'languageVersion': '2.17'
+        'languageVersion': '2.17',
       },
       <String, String>{
         'name': 'custom_lint',
         'rootUri': 'file://${PeerProjectMeta.current.customLintPath}',
         'packageUri': 'lib/',
-        'languageVersion': '2.17'
+        'languageVersion': '2.17',
       },
       // Custom lint builder is always a transitive dev dependency if it is used,
       // so it will be in the package config
@@ -263,7 +283,7 @@ String createPackageConfig({
         'name': 'custom_lint_builder',
         'rootUri': 'file://${PeerProjectMeta.current.customLintBuilderPath}',
         'packageUri': 'lib/',
-        'languageVersion': '2.17'
+        'languageVersion': '2.17',
       },
       // Custom lint core is always a transitive dev dependency if it is used,
       // so it will be in the package config
@@ -271,7 +291,7 @@ String createPackageConfig({
         'name': 'custom_lint_core',
         'rootUri': 'file://${PeerProjectMeta.current.customLintCorePath}',
         'packageUri': 'lib/',
-        'languageVersion': '2.17'
+        'languageVersion': '2.17',
       },
     ],
   });

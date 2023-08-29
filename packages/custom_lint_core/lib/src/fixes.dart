@@ -5,6 +5,7 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:meta/meta.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 
 import 'change_reporter.dart';
 import 'lint_rule.dart';
@@ -84,18 +85,28 @@ abstract class DartFix extends Fix {
   /// Runs this fix in test mode.
   ///
   /// The result will contain all the changes that would have been applied by [run].
+  ///
+  /// The parameter [pubspec] can be used to simulate a pubspec file which will
+  /// be passed to [CustomLintContext.pubspec].
+  /// By default, an empty pubspec with the name `test_project` will be used.
   @visibleForTesting
   Future<List<PrioritizedSourceChange>> testRun(
     ResolvedUnitResult result,
     AnalysisError analysisError,
-    List<AnalysisError> others,
-  ) async {
+    List<AnalysisError> others, {
+    Pubspec? pubspec,
+  }) async {
     final registry = LintRuleNodeRegistry(
       NodeLintRegistry(LintRegistry(), enableTiming: false),
       'unknown',
     );
     final postRunCallbacks = <void Function()>[];
-    final context = CustomLintContext(registry, postRunCallbacks.add, {});
+    final context = CustomLintContext(
+      registry,
+      postRunCallbacks.add,
+      {},
+      pubspec,
+    );
     final resolver = CustomLintResolverImpl(
       () => Future.value(result),
       lineInfo: result.lineInfo,

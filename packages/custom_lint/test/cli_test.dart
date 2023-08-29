@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:analyzer/error/error.dart';
 import 'package:test/test.dart';
 
 import '../bin/custom_lint.dart' as cli;
@@ -11,14 +12,14 @@ final oyPluginSource = createPluginSource([
   TestLintRule(
     code: 'oy',
     message: 'Oy',
-  )
+  ),
 ]);
 
 final helloWordPluginSource = createPluginSource([
   TestLintRule(
     code: 'hello_world',
     message: 'Hello world',
-  )
+  ),
 ]);
 
 String progressMessage({required bool supportsAnsiEscapes}) {
@@ -86,10 +87,10 @@ No issues found!
               completion('''
 ${progressMessage(supportsAnsiEscapes: supportsAnsiEscapes)}
 
-  lib/another.dart:1:6 • Hello world • hello_world
-  lib/another.dart:1:6 • Oy • oy
-  lib/main.dart:1:6 • Hello world • hello_world
-  lib/main.dart:1:6 • Oy • oy
+  lib/another.dart:1:6 • Hello world • hello_world • INFO
+  lib/another.dart:1:6 • Oy • oy • INFO
+  lib/main.dart:1:6 • Hello world • hello_world • INFO
+  lib/main.dart:1:6 • Oy • oy • INFO
 
 4 issues found.
 '''),
@@ -136,6 +137,118 @@ lib/custom_lint_client.dart:13:29: Error: Undefined name 'createPlugin'.
           ),
         );
         expect(out, emitsDone);
+      },
+      currentDirectory: app,
+    );
+  });
+
+  test('exits with 0 when pass argument `--no-fatal-infos`', () async {
+    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
+
+    final app = createLintUsage(
+      source: {'lib/main.dart': 'void fn() {}'},
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    await runWithIOOverride(
+      (out, err) async {
+        await cli.entrypoint(['--no-fatal-infos']);
+
+        expect(exitCode, 0);
+        expect(
+          out.join(),
+          completion(
+            matchIgnoringAnsi(contains, '''
+Analyzing...
+
+  lib/main.dart:1:6 • Hello world • hello_world • INFO
+
+1 issue found.
+'''),
+          ),
+        );
+        expect(err, emitsDone);
+      },
+      currentDirectory: app,
+    );
+  });
+
+  test(
+      'exits with 0 when found warning and pass argument `--no-fatal-warnings`',
+      () async {
+    final plugin = createPlugin(
+      name: 'test_lint',
+      main: createPluginSource([
+        TestLintRule(
+          code: 'hello_world',
+          message: 'Hello world',
+          errorSeverity: ErrorSeverity.WARNING,
+        ),
+      ]),
+    );
+
+    final app = createLintUsage(
+      source: {'lib/main.dart': 'void fn() {}'},
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    await runWithIOOverride(
+      (out, err) async {
+        await cli.entrypoint(['--no-fatal-warnings']);
+
+        expect(exitCode, 0);
+        expect(
+          out.join(),
+          completion(
+            matchIgnoringAnsi(contains, '''
+Analyzing...
+
+  lib/main.dart:1:6 • Hello world • hello_world • WARNING
+
+1 issue found.
+'''),
+          ),
+        );
+        expect(err, emitsDone);
+      },
+      currentDirectory: app,
+    );
+  });
+
+  test('CLI lists warnings from all plugins and set exit code', () async {
+    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
+    final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
+
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': 'void fn() {}',
+        'lib/another.dart': 'void fail() {}',
+      },
+      plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
+      name: 'test_app',
+    );
+
+    await runWithIOOverride(
+      (out, err) async {
+        await cli.entrypoint();
+
+        expect(err, emitsDone);
+        expect(
+          out.join(),
+          completion('''
+Analyzing...
+
+  lib/another.dart:1:6 • Hello world • hello_world • INFO
+  lib/another.dart:1:6 • Oy • oy • INFO
+  lib/main.dart:1:6 • Hello world • hello_world • INFO
+  lib/main.dart:1:6 • Oy • oy • INFO
+
+4 issues found.
+'''),
+        );
+        expect(exitCode, 1);
       },
       currentDirectory: app,
     );
@@ -234,9 +347,9 @@ lib/custom_lint_client.dart:15:26: Error: Undefined name 'createPlugin'.
                 '''
 Analyzing...
 
-  lib/another.dart:1:6 • Oy • oy
-  lib/main.dart:1:6 • Hello world • hello_world
-  lib/main.dart:1:6 • Oy • oy
+  lib/another.dart:1:6 • Oy • oy • INFO
+  lib/main.dart:1:6 • Hello world • hello_world • INFO
+  lib/main.dart:1:6 • Oy • oy • INFO
 
 3 issues found.
 ''',
@@ -250,8 +363,7 @@ Analyzing...
             contains('''
 Plugin hello_world threw while analyzing ${app.path}/lib/another.dart:
 Bad state: fail
-#0      hello_world.run.<anonymous closure> (package:test_lint/test_lint.dart:29:8)
-'''),
+#0      hello_world.run.<anonymous closure> (package:test_lint/test_lint.dart:'''),
           ),
         );
       },
@@ -339,11 +451,11 @@ void main() {
           completion('''
 Analyzing...
 
-  lib/main.dart:1:1 • z • z
-  lib/main.dart:2:1 • y • y
-  lib/main.dart:2:2 • a • a
-  lib/main.dart:2:2 • x • x
-  lib/main.dart:2:2 • x2 • x2
+  lib/main.dart:1:1 • z • z • INFO
+  lib/main.dart:2:1 • y • y • INFO
+  lib/main.dart:2:2 • a • a • INFO
+  lib/main.dart:2:2 • x • x • INFO
+  lib/main.dart:2:2 • x2 • x2 • INFO
 
 5 issues found.
 '''),

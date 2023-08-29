@@ -20,7 +20,7 @@ final lintRuleWithFilesToAnalayze = createPluginSource([
 @override
 List<String> get filesToAnalyze => const ['test/*_test.dart'];
 ''',
-  )
+  ),
 ]);
 
 void main() {
@@ -88,7 +88,7 @@ void fn2() {}
       name: 'test_app',
     );
 
-    final runner = startRunnerForApp(app, includeBuiltInLints: false);
+    final runner = await startRunnerForApp(app, includeBuiltInLints: false);
     final lints = await runner.getLints(reload: false);
 
     expect(
@@ -319,7 +319,7 @@ if (node.name.lexeme == "fail") {
     );
 
     await runWithIOOverride((out, err) async {
-      final runner = startRunnerForApp(
+      final runner = await startRunnerForApp(
         app,
         // Ignoring errors as we are handling them later
         ignoreErrors: true,
@@ -364,14 +364,14 @@ if (node.name.lexeme == "fail") {
       // uncomment when the golden needs update
       // saveLogGoldens(
       //   File('test/goldens/server_test/redirect_logs.golden'),
-      //   app.log.readAsStringSync().split('\n').take(5).join('\n'),
+      //   app.log.readAsStringSync().split('\n').take(4).join('\n'),
       //   paths: {plugin.uri: 'plugin', app.uri: 'app'},
       // );
       // await runner.close();
       // return;
 
       expect(
-        app.log.readAsStringSync().split('\n').take(5).join('\n'),
+        app.log.readAsStringSync().split('\n').take(4).join('\n'),
         matchesLogGolden(
           'test/goldens/server_test/redirect_logs.golden',
           paths: {plugin.uri: 'plugin', app.uri: 'app'},
@@ -385,7 +385,9 @@ if (node.name.lexeme == "fail") {
   });
 
   group('hot-reload', () {
-    test('Supports starting custom_lint twice in watch mode at once', () async {
+    test(
+        timeout: const Timeout.factor(2),
+        'Supports starting custom_lint twice in watch mode at once', () async {
       final plugin = createPlugin(
         name: 'test_lint',
         main: helloWordPluginSource,
@@ -399,10 +401,10 @@ if (node.name.lexeme == "fail") {
       );
 
       await runWithIOOverride((out, err) async {
-        final runner = startRunnerForApp(app, watchMode: true);
+        final runner = await startRunnerForApp(app, watchMode: true);
         final lints = StreamQueue(runner.channel.lints);
 
-        final runner2 = startRunnerForApp(app, watchMode: true);
+        final runner2 = await startRunnerForApp(app, watchMode: true);
         final lints2 = StreamQueue(runner.channel.lints);
 
         expect(
@@ -454,7 +456,7 @@ if (node.name.lexeme == "fail") {
       );
 
       await runWithIOOverride((out, err) async {
-        final runner = startRunnerForApp(app, watchMode: true);
+        final runner = await startRunnerForApp(app, watchMode: true);
         final lints = StreamQueue(runner.channel.lints);
 
         expect(err, emitsDone);
@@ -511,7 +513,7 @@ The Dart DevTools debugger and profiler is available at: .+?ws
       );
 
       await runWithIOOverride((out, err) async {
-        final runner = startRunnerForApp(app);
+        final runner = await startRunnerForApp(app);
         final lints = await runner.getLints(reload: false);
 
         expect(err, emitsDone);

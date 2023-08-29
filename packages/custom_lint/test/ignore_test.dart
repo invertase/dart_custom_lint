@@ -1,9 +1,11 @@
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:custom_lint/src/package_utils.dart';
 import 'package:path/path.dart';
 import 'package:test/test.dart';
 
 import 'create_project.dart';
+import 'goldens.dart';
 import 'run_plugin.dart';
 
 final source = createPluginSource([
@@ -18,6 +20,52 @@ final source = createPluginSource([
 ]);
 
 void main() {
+  test('Emits ignore/ignore_for_file quick-fixes', () async {
+    final plugin = createPlugin(
+      name: 'test_lint',
+      main: source,
+    );
+
+    final app = createLintUsage(
+      name: 'test_app',
+      plugins: {'test_lint': plugin.uri},
+      source: {
+        'lib/main.dart': '''
+void fn() {}
+void fn2() {}
+''',
+      },
+    );
+
+    final runner = await startRunnerForApp(app);
+    await runner.getLints(reload: false);
+    final fixes = await runner
+        .getFixes(app.file('lib', 'main.dart').path, 6)
+        .then((e) => e.fixes);
+
+    expect(fixes, hasLength(2));
+
+    expect(fixes[0].fixes, hasLength(2));
+    expect(fixes[0].error.code, 'hello_world');
+    expect(
+      fixes[0].fixes.map((e) => e.change.message),
+      unorderedEquals(
+        ['Ignore "hello_world" for line', 'Ignore "hello_world" for file'],
+      ),
+    );
+
+    expect(fixes[1].fixes, hasLength(2));
+    expect(fixes[1].error.code, 'foo');
+    expect(
+      fixes[1].fixes.map((e) => e.change.message),
+      unorderedEquals(['Ignore "foo" for line', 'Ignore "foo" for file']),
+    );
+
+    // saveGoldensFixes(fixes);
+
+    expectMatchesGoldenFixes(fixes);
+  });
+
   test('supports `// ignore: code`', () async {
     final plugin = createPlugin(
       name: 'test_lint',
@@ -37,13 +85,13 @@ void fn3() {}
 
 // ignore: type=lint, some comment
 void fn3() {}
-'''
+''',
       },
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
     );
 
-    final runner = startRunnerForApp(app);
+    final runner = await startRunnerForApp(app);
 
     expect(
       await runner.channel.lints.first,
@@ -99,13 +147,13 @@ void fn2() {}
 
 // ignore: foo
 void fn3() {}
-'''
+''',
       },
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
     );
 
-    final runner = startRunnerForApp(app);
+    final runner = await startRunnerForApp(app);
 
     expect(
       await runner.channel.lints.first,
@@ -155,13 +203,13 @@ void fn2() {}
 
 // ignore: foo
 void fn3() {}
-'''
+''',
       },
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
     );
 
-    final runner = startRunnerForApp(app);
+    final runner = await startRunnerForApp(app);
     await runner.initialize;
 
     expect(runner.channel.lints, emitsDone);

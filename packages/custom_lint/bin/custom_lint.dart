@@ -7,6 +7,16 @@ import 'package:custom_lint/custom_lint.dart';
 Future<void> entrypoint([List<String> args = const []]) async {
   final parser = ArgParser()
     ..addFlag(
+      'fatal-infos',
+      help: 'Treat info level issues as fatal',
+      defaultsTo: true,
+    )
+    ..addFlag(
+      'fatal-warnings',
+      help: 'Treat warning level issues as fatal',
+      defaultsTo: true,
+    )
+    ..addFlag(
       'watch',
       help: "Watches plugins' sources and perform a hot-reload on change",
       negatable: false,
@@ -27,12 +37,22 @@ Future<void> entrypoint([List<String> args = const []]) async {
   }
 
   final watchMode = result['watch'] as bool;
+  final fatalInfos = result['fatal-infos'] as bool;
+  final fatalWarnings = result['fatal-warnings'] as bool;
 
-  await customLint(workingDirectory: Directory.current, watchMode: watchMode);
+  await customLint(
+    workingDirectory: Directory.current,
+    watchMode: watchMode,
+    fatalInfos: fatalInfos,
+    fatalWarnings: fatalWarnings,
+  );
 }
 
 void main([List<String> args = const []]) async {
-  await entrypoint(args);
-  // TODO figure out why this exit is necessary
-  exit(exitCode);
+  try {
+    await entrypoint(args);
+  } finally {
+    // TODO figure out why this exit is necessary
+    exit(exitCode);
+  }
 }
