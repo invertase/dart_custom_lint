@@ -1,4 +1,4 @@
 [hello_world] 1990-01-01T00:00:00.000 Hello world
 [hello_world] 1990-01-01T00:00:00.000 Plugin hello_world threw while analyzing app/lib/another.dart:
 [hello_world] 1990-01-01T00:00:00.000 Bad state: fail
-[hello_world] 1990-01-01T00:00:00.000 #0      hello_world.run.<anonymous closure> (package:test_lint/test_lint.dart:26:3)
+[hello_world] 1990-01-01T00:00:00.000 #0      hello_world.run.<anonymous closure> (package:test_lint/test_lint.dart:28:3)
