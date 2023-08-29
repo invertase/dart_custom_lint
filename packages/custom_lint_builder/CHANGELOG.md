@@ -1,3 +1,8 @@
+## 0.5.3 - 2023-08-29
+
+- `custom_lint` upgraded to `0.5.3`
+- `custom_lint_core` upgraded to `0.5.3`
+
 ## 0.5.2 - 2023-08-16
 
 - Support both analyzer 5.12.0 and 6.0.0 at the same time.
