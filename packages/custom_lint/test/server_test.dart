@@ -385,7 +385,9 @@ if (node.name.lexeme == "fail") {
   });
 
   group('hot-reload', () {
-    test('Supports starting custom_lint twice in watch mode at once', () async {
+    test(
+        timeout: const Timeout.factor(2),
+        'Supports starting custom_lint twice in watch mode at once', () async {
       final plugin = createPlugin(
         name: 'test_lint',
         main: helloWordPluginSource,

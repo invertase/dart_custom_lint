@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:analyzer/error/error.dart';
 import 'package:path/path.dart';
 import 'package:test/scaffolding.dart';
 
@@ -30,6 +31,7 @@ class TestLintRule {
     this.onVariable = '',
     this.ruleMembers = '',
     this.fixes = const [],
+    this.errorSeverity = ErrorSeverity.INFO,
   });
 
   final String code;
@@ -39,6 +41,7 @@ class TestLintRule {
   final String onVariable;
   final String ruleMembers;
   final List<TestLintFix> fixes;
+  final ErrorSeverity errorSeverity;
 }
 
 class TestLintFix {
@@ -103,7 +106,9 @@ class ${fix.name} extends DartFix {
 class ${rule.code} extends DartLintRule {
   ${rule.code}()
     : super(
-        code: LintCode(name: '${rule.code}', problemMessage: '${rule.message}'),
+        code: LintCode(name: '${rule.code}',
+        problemMessage: '${rule.message}',
+        errorSeverity: ErrorSeverity.${rule.errorSeverity.displayName.toUpperCase()}),
       );
 
 $fixes
