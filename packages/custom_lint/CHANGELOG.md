@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- The command line now supports ignoring warnings/infos with `--no-fatal-warnings`/`--no-fatal-infos` (thanks to @yamarkz)
+
 ## 0.5.2 - 2023-08-16
 
 - Support both analyzer 5.12.0 and 6.0.0 at the same time.
