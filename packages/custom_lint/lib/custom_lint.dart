@@ -259,7 +259,7 @@ String _relativeFilePath(String file, Directory fromDir) {
 /// which replaces print with stdout.writeln.
 class _StandardLogger implements Logger {
   _StandardLogger({Ansi? ansi})
-      : ansi = ansi ?? Ansi(Ansi.terminalSupportsAnsi);
+      : ansi = ansi ?? Ansi(io.stdout.supportsAnsiEscapes);
 
   @override
   Ansi ansi;
