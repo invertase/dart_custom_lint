@@ -22,12 +22,11 @@ final helloWordPluginSource = createPluginSource([
   ),
 ]);
 
-String progressMessage({required bool supportsAnsiEscapes}) {
-  const analyzing = 'Analyzing...';
+Pattern progressMessage({required bool supportsAnsiEscapes}) {
   if (supportsAnsiEscapes) {
-    return '$analyzing                            \b/\b0.0s';
+    return r'Analyzing\.\.\.\s+[\b\-/|]*\d{1,3}\.\ds.*';
   }
-  return analyzing;
+  return r'Analyzing\.\.\..*';
 }
 
 void main() {
@@ -50,11 +49,15 @@ void main() {
             expect(exitCode, 0);
             expect(
               out.join(),
-              completion('''
-${progressMessage(supportsAnsiEscapes: supportsAnsiEscapes)}
-
-No issues found!
-'''),
+              completion(
+                allOf(
+                    matches(
+                      progressMessage(
+                        supportsAnsiEscapes: supportsAnsiEscapes,
+                      ),
+                    ),
+                    endsWith('No issues found!\n')),
+              ),
             );
             expect(err, emitsDone);
           },
@@ -84,16 +87,22 @@ No issues found!
             expect(err, emitsDone);
             expect(
               out.join(),
-              completion('''
-${progressMessage(supportsAnsiEscapes: supportsAnsiEscapes)}
-
+              completion(
+                allOf(
+                    matches(
+                      progressMessage(
+                        supportsAnsiEscapes: supportsAnsiEscapes,
+                      ),
+                    ),
+                    endsWith('''
   lib/another.dart:1:6 • Hello world • hello_world • INFO
   lib/another.dart:1:6 • Oy • oy • INFO
   lib/main.dart:1:6 • Hello world • hello_world • INFO
   lib/main.dart:1:6 • Oy • oy • INFO
 
 4 issues found.
-'''),
+''')),
+              ),
             );
             expect(exitCode, 1);
           },
