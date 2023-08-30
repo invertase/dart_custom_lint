@@ -75,12 +75,10 @@ class CustomLintServer {
         server().handleUncaughtError(err, stack);
       },
       zoneSpecification: ZoneSpecification(
-        print: (self, parent, zone, line) {
-          server().handlePrint(
-            line,
-            isClientMessage: false,
-          );
-        },
+        print: (self, parent, zone, line) => server().handlePrint(
+          line,
+          isClientMessage: false,
+        ),
       ),
     );
   }
