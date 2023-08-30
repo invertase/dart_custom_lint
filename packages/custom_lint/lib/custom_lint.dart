@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:io' as io;
 
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
@@ -123,7 +124,7 @@ Future<void> _runPlugins(
   required bool fatalInfos,
   required bool fatalWarnings,
 }) async {
-  final log = Logger.standard();
+  final log = _StandardLogger();
   final progress = log.progress('Analyzing');
 
   try {
@@ -251,4 +252,74 @@ String _relativeFilePath(String file, Directory fromDir) {
     file,
     from: fromDir.absolute.path,
   );
+}
+
+/// Temporary copy of [StandardLogger] from `cli_util` package with a fix
+/// for https://github.com/dart-lang/cli_util/pull/87
+/// which replaces print with stdout.writeln.
+class _StandardLogger implements Logger {
+  _StandardLogger({Ansi? ansi})
+      : ansi = ansi ?? Ansi(Ansi.terminalSupportsAnsi);
+
+  @override
+  Ansi ansi;
+
+  @override
+  bool get isVerbose => false;
+
+  Progress? _currentProgress;
+
+  @override
+  void stderr(String message) {
+    _cancelProgress();
+
+    io.stderr.writeln(message);
+  }
+
+  @override
+  void stdout(String message) {
+    _cancelProgress();
+
+    io.stdout.writeln(message);
+  }
+
+  @override
+  void trace(String message) {}
+
+  @override
+  void write(String message) {
+    _cancelProgress();
+
+    io.stdout.write(message);
+  }
+
+  @override
+  void writeCharCode(int charCode) {
+    _cancelProgress();
+
+    io.stdout.writeCharCode(charCode);
+  }
+
+  void _cancelProgress() {
+    final progress = _currentProgress;
+    if (progress != null) {
+      _currentProgress = null;
+      progress.cancel();
+    }
+  }
+
+  @override
+  Progress progress(String message) {
+    _cancelProgress();
+
+    final progress = ansi.useAnsi
+        ? AnsiProgress(ansi, message)
+        : SimpleProgress(this, message);
+    _currentProgress = progress;
+    return progress;
+  }
+
+  @override
+  @Deprecated('This method will be removed in the future')
+  void flush() {}
 }

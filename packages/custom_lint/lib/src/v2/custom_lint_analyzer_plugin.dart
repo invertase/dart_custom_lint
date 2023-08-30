@@ -80,12 +80,6 @@ class CustomLintServer {
             line,
             isClientMessage: false,
           );
-          // Send the print to the parent zone.
-          // Print is heavily used by the cli_util package.
-          // Additionally developers of plugins may wonder
-          // why their print statements are not showing up
-          // when not knowing about the log file.
-          parent.print(zone, line);
         },
       ),
     );

@@ -19,15 +19,7 @@ Future<T> runWithIOOverride<T>(
 
   try {
     return await IOOverrides.runWithIOOverrides(
-      () => runZoned(
-        () => testBody(fs.stdout.stream, fs.stderr.stream),
-        zoneSpecification: ZoneSpecification(
-          print: (self, parent, zone, line) {
-            // Send the print message to the output stream as well
-            fs.stdout.writeln(line);
-          },
-        ),
-      ),
+      () => testBody(fs.stdout.stream, fs.stderr.stream),
       fs,
     );
   } finally {
