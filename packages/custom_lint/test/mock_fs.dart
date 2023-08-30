@@ -71,7 +71,7 @@ class _StdoutOverride implements Stdout {
   Future<void> flush() => throw UnimplementedError();
 
   @override
-  bool get hasTerminal => _stdout.hasTerminal;
+  bool get hasTerminal => _stdout.hasTerminal || supportsAnsiEscapes;
 
   @override
   IOSink get nonBlocking => _stdout.nonBlocking;
