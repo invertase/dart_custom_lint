@@ -219,7 +219,8 @@ Future<void> _startWatchMode(
         );
         break;
       case 'q':
-      // Let's quit the command line
+        // Let's quit the command line
+        return;
       default:
       // Unknown command. Nothing to do
     }

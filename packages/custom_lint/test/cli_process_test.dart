@@ -269,4 +269,71 @@ So, because custom_lint_client depends on test_lint from path, version solving f
       },
     );
   });
+
+  group('Watch mode', () {
+    group('[q] quits', () {
+      test('with exit code 0 when no lints', () async {
+        final workspace = createTemporaryDirectory();
+
+        final process = await Process.start(
+          'dart',
+          [
+            customLintBinPath,
+            '--watch',
+          ],
+          workingDirectory: workspace.path,
+        );
+
+        expect(
+          process.stdout.map(utf8.decode),
+          emitsThrough(contains('q: Quit')),
+        );
+
+        process.stdin.write('q');
+
+        await expectLater(process.exitCode, completion(0));
+      });
+
+      test('with exit code 1 when there are lints', () async {
+        final workspace = createTemporaryDirectory();
+
+        final plugin = createPlugin(
+          name: 'test_lint',
+          main: createPluginSource([
+            TestLintRule(
+              code: 'hello_world',
+              message: 'Hello world',
+              onRun:
+                  r"print('${context.pubspec.name} ${context.pubspec.dependencies.keys}');",
+            ),
+          ]),
+        );
+
+        createLintUsage(
+          parent: workspace,
+          source: {'lib/main.dart': 'void fn() {}'},
+          plugins: {'test_lint': plugin.uri},
+          name: 'test_app',
+        );
+
+        final process = await Process.start(
+          'dart',
+          [
+            customLintBinPath,
+            '--watch',
+          ],
+          workingDirectory: workspace.path,
+        );
+
+        expect(
+          process.stdout.map(utf8.decode),
+          emitsThrough(contains('q: Quit')),
+        );
+
+        process.stdin.write('q');
+
+        await expectLater(process.exitCode, completion(1));
+      });
+    });
+  });
 }
