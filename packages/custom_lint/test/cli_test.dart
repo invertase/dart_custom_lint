@@ -24,7 +24,7 @@ final helloWordPluginSource = createPluginSource([
 
 Pattern progressMessage({required bool supportsAnsiEscapes}) {
   if (supportsAnsiEscapes) {
-    return r'Analyzing\.\.\.\s+[\b\-/|]*\d{1,3}\.\ds.*';
+    return r'Analyzing\.\.\.\s+[\b\-/|\\]*\d{1,3}\.\ds.*';
   }
   return r'Analyzing\.\.\..*';
 }
