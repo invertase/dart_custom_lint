@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:custom_lint/src/package_utils.dart';
 import 'package:test/test.dart';
+import 'package:test_process/test_process.dart';
 
 import 'cli_test.dart';
 import 'create_project.dart';
@@ -288,5 +289,154 @@ So, because custom_lint_client depends on test_lint from path, version solving f
         expect(process.exitCode, completion(1));
       },
     );
+  });
+
+  group('Watch mode', () {
+    group('[q] quits', () {
+      test('with exit code 0 when no lints', () async {
+        final workspace = createTemporaryDirectory();
+
+        final process = await TestProcess.start(
+          'dart',
+          [
+            customLintBinPath,
+            '--watch',
+          ],
+          workingDirectory: workspace.path,
+        );
+
+        // Ignore first lines
+        await process.stdout.skip(4);
+        expect(await process.stdout.next, 'q: Quit');
+
+        process.stdin.write('q');
+
+        await expectLater(process.stdout.rest, emitsThrough(emitsDone));
+        await process.shouldExit(0);
+      });
+
+      test('with exit code 1 when there are lints', () async {
+        final workspace = createTemporaryDirectory();
+
+        final plugin = createPlugin(
+          name: 'test_lint',
+          main: createPluginSource([
+            TestLintRule(
+              code: 'hello_world',
+              message: 'Hello world',
+            ),
+          ]),
+        );
+
+        createLintUsage(
+          parent: workspace,
+          source: {'lib/main.dart': 'void fn() {}'},
+          plugins: {'test_lint': plugin.uri},
+          name: 'test_app',
+        );
+
+        final process = await TestProcess.start(
+          'dart',
+          [
+            customLintBinPath,
+            '--watch',
+          ],
+          workingDirectory: workspace.path,
+        );
+
+        // Ignore first lines
+        await process.stdout.skip(6);
+        expect(await process.stdout.next, 'q: Quit');
+
+        process.stdin.write('q');
+
+        await expectLater(process.stdout.rest, emitsThrough(emitsDone));
+        await process.shouldExit(1);
+      });
+    });
+
+    group('[r] reloads', () {
+      test('with no lints', () async {
+        final workspace = createTemporaryDirectory();
+
+        final process = await TestProcess.start(
+          'dart',
+          [
+            customLintBinPath,
+            '--watch',
+          ],
+          workingDirectory: workspace.path,
+        );
+
+        // Ignore first lines
+        expect(await process.stdout.next, 'No issues found!');
+        await process.stdout.skip(3);
+        expect(await process.stdout.next, 'q: Quit');
+
+        process.stdin.write('r');
+
+        // Skip empty lines
+        await process.stdout.skip(2);
+        expect(await process.stdout.next, 'Manual Reload...');
+        expect(await process.stdout.next, 'No issues found!');
+
+        process.stdin.write('q');
+
+        await process.shouldExit(0);
+      });
+
+      test('with lints', () async {
+        final workspace = createTemporaryDirectory();
+
+        final plugin = createPlugin(
+          name: 'test_lint',
+          main: createPluginSource([
+            TestLintRule(
+              code: 'hello_world',
+              message: 'Hello world',
+            ),
+          ]),
+        );
+
+        createLintUsage(
+          parent: workspace,
+          source: {'lib/main.dart': 'void fn() {}'},
+          plugins: {'test_lint': plugin.uri},
+          name: 'test_app',
+        );
+
+        final process = await TestProcess.start(
+          'dart',
+          [
+            customLintBinPath,
+            '--watch',
+          ],
+          workingDirectory: workspace.path,
+        );
+
+        // Ignore first lines
+        await process.stdout.skip(2);
+        expect(
+          await process.stdout.next,
+          '  test_app/lib/main.dart:1:6 • Hello world • hello_world • INFO',
+        );
+        await process.stdout.skip(3);
+        expect(await process.stdout.next, 'q: Quit');
+
+        process.stdin.write('r');
+
+        // Skip empty lines
+        await process.stdout.skip(2);
+        expect(await process.stdout.next, 'Manual Reload...');
+        expect(
+          await process.stdout.next,
+          '  test_app/lib/main.dart:1:6 • Hello world • hello_world • INFO',
+        );
+
+        process.stdin.write('q');
+
+        await process.shouldExit(1);
+      });
+    });
   });
 }

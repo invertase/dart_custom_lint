@@ -155,8 +155,13 @@ void _renderLints(
 }) {
   var errors = lints.expand((lint) => lint.errors);
 
-  // Sort errors by file, line, column, code, message
+  // Sort errors by severity, file, line, column, code, message
   errors = errors.sorted((a, b) {
+    final severityCompare = -AnalysisErrorSeverity.VALUES
+        .indexOf(a.severity)
+        .compareTo(AnalysisErrorSeverity.VALUES.indexOf(b.severity));
+    if (severityCompare != 0) return severityCompare;
+
     final fileCompare = _relativeFilePath(a.location.file, workingDirectory)
         .compareTo(_relativeFilePath(b.location.file, workingDirectory));
     if (fileCompare != 0) return fileCompare;
@@ -240,7 +245,8 @@ Future<void> _startWatchMode(
         );
         break;
       case 'q':
-      // Let's quit the command line
+        // Let's quit the command line
+        return;
       default:
       // Unknown command. Nothing to do
     }
