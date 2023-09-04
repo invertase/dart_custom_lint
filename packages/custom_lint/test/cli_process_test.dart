@@ -305,8 +305,11 @@ So, because custom_lint_client depends on test_lint from path, version solving f
           workingDirectory: workspace.path,
         );
 
-        // Ignore first lines
-        await process.stdout.skip(4);
+        expect(await process.stdout.next, 'Analyzing...');
+        await process.stdout.skip(1);
+        expect(await process.stdout.next, 'No issues found!');
+
+        await process.stdout.skip(3);
         expect(await process.stdout.next, 'q: Quit');
 
         process.stdin.write('q');
@@ -344,8 +347,24 @@ So, because custom_lint_client depends on test_lint from path, version solving f
           workingDirectory: workspace.path,
         );
 
-        // Ignore first lines
-        await process.stdout.skip(6);
+        expect(
+          await process.stdout.next,
+          startsWith('The Dart VM service is listening on'),
+        );
+        expect(
+          await process.stdout.next,
+          startsWith('The Dart DevTools debugger and profiler is available at'),
+        );
+        expect(await process.stdout.next, 'Analyzing...');
+        await process.stdout.skip(1);
+        expect(
+          await process.stdout.next,
+          '  test_app/lib/main.dart:1:6 • Hello world • hello_world • INFO',
+        );
+        await process.stdout.skip(1);
+        expect(await process.stdout.next, '1 issue found.');
+
+        await process.stdout.skip(3);
         expect(await process.stdout.next, 'q: Quit');
 
         process.stdin.write('q');
@@ -368,8 +387,10 @@ So, because custom_lint_client depends on test_lint from path, version solving f
           workingDirectory: workspace.path,
         );
 
-        // Ignore first lines
+        expect(await process.stdout.next, 'Analyzing...');
+        await process.stdout.skip(1);
         expect(await process.stdout.next, 'No issues found!');
+
         await process.stdout.skip(3);
         expect(await process.stdout.next, 'q: Quit');
 
@@ -378,6 +399,8 @@ So, because custom_lint_client depends on test_lint from path, version solving f
         // Skip empty lines
         await process.stdout.skip(2);
         expect(await process.stdout.next, 'Manual Reload...');
+        expect(await process.stdout.next, 'Analyzing...');
+        await process.stdout.skip(1);
         expect(await process.stdout.next, 'No issues found!');
 
         process.stdin.write('q');
@@ -414,12 +437,22 @@ So, because custom_lint_client depends on test_lint from path, version solving f
           workingDirectory: workspace.path,
         );
 
-        // Ignore first lines
-        await process.stdout.skip(2);
+        expect(
+          await process.stdout.next,
+          startsWith('The Dart VM service is listening on'),
+        );
+        expect(
+          await process.stdout.next,
+          startsWith('The Dart DevTools debugger and profiler is available at'),
+        );
+        expect(await process.stdout.next, 'Analyzing...');
+        await process.stdout.skip(1);
         expect(
           await process.stdout.next,
           '  test_app/lib/main.dart:1:6 • Hello world • hello_world • INFO',
         );
+        await process.stdout.skip(1);
+        expect(await process.stdout.next, '1 issue found.');
         await process.stdout.skip(3);
         expect(await process.stdout.next, 'q: Quit');
 
@@ -428,10 +461,14 @@ So, because custom_lint_client depends on test_lint from path, version solving f
         // Skip empty lines
         await process.stdout.skip(2);
         expect(await process.stdout.next, 'Manual Reload...');
+        expect(await process.stdout.next, 'Analyzing...');
+        await process.stdout.skip(1);
         expect(
           await process.stdout.next,
           '  test_app/lib/main.dart:1:6 • Hello world • hello_world • INFO',
         );
+        await process.stdout.skip(1);
+        expect(await process.stdout.next, '1 issue found.');
 
         process.stdin.write('q');
 

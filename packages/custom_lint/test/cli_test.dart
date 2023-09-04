@@ -491,8 +491,13 @@ Analyzing...
   lib/main.dart:2:2 • a • a • INFO
   lib/main.dart:2:2 • x • x • INFO
   lib/main.dart:2:2 • x2 • x2 • INFO
+  lib/other.dart:1:1 • z • z • INFO
+  lib/other.dart:2:1 • y • y • INFO
+  lib/other.dart:2:2 • a • a • INFO
+  lib/other.dart:2:2 • x • x • INFO
+  lib/other.dart:2:2 • x2 • x2 • INFO
 
-11 issues found.
+16 issues found.
 '''),
         );
       },
