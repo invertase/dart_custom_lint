@@ -304,6 +304,7 @@ Bad state: fail
     final plugin = createPlugin(
       name: 'test_lint',
       main: '''
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
@@ -349,6 +350,21 @@ class _Lint extends DartLintRule {
       0,
       1,
     );
+    reporter.reportErrorForOffset(
+      const LintCode(name: 'w', problemMessage: 'w', errorSeverity: ErrorSeverity.WARNING),
+      0,
+      1,
+    );
+    reporter.reportErrorForOffset(
+      const LintCode(name: 'e', problemMessage: 'e', errorSeverity: ErrorSeverity.ERROR),
+      0,
+      1,
+    );
+    reporter.reportErrorForOffset(
+      const LintCode(name: 's', problemMessage: 's', errorSeverity: ErrorSeverity.ERROR),
+      1,
+      2,
+    );
   }
 }
 ''',
@@ -359,6 +375,10 @@ class _Lint extends DartLintRule {
         'lib/main.dart': '''
 void main() {
   print('hello world');
+}''',
+        'lib/other.dart': '''
+void other() {
+  print('hello other world');
 }''',
       },
       plugins: {'test_lint': plugin.uri},
@@ -380,11 +400,22 @@ void main() {
           completion(
             predicate((value) {
               expect(value, '''
+  lib/main.dart:1:1 • e • e • ERROR
+  lib/main.dart:1:2 • s • s • ERROR
+  lib/other.dart:1:1 • e • e • ERROR
+  lib/other.dart:1:2 • s • s • ERROR
+  lib/main.dart:1:1 • w • w • WARNING
+  lib/other.dart:1:1 • w • w • WARNING
   lib/main.dart:1:1 • z • z • INFO
   lib/main.dart:2:1 • y • y • INFO
   lib/main.dart:2:2 • a • a • INFO
   lib/main.dart:2:2 • x • x • INFO
   lib/main.dart:2:2 • x2 • x2 • INFO
+  lib/other.dart:1:1 • z • z • INFO
+  lib/other.dart:2:1 • y • y • INFO
+  lib/other.dart:2:2 • a • a • INFO
+  lib/other.dart:2:2 • x • x • INFO
+  lib/other.dart:2:2 • x2 • x2 • INFO
 ''');
               return true;
             }),
