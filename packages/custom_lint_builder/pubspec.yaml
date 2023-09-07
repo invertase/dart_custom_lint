@@ -18,7 +18,10 @@ dependencies:
       path: packages/custom_lint/
   # Using tight constraints as custom_lint_builder communicate with each-other
   # using a specific contract
-  custom_lint_core: 0.5.3
+  custom_lint_core: 
+    git:
+      url: https://github.com/SwissAS/dart_custom_lint.git
+      path: packages/custom_lint_core/
   glob: ^2.1.1
   hotreloader: ^3.0.5
   meta: ^1.7.0
