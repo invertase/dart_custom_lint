@@ -1,3 +1,2 @@
 dependency_overrides:
-  custom_lint:
-    path: ../custom_lint
+  
