@@ -76,9 +76,13 @@ abstract class ChangeBuilder {
   ///
   /// The builder passed to the [buildFileEdit] function has no special support
   /// for any particular kind of file.
+  ///
+  /// Use the [customPath] if the collection of edits should be written to another
+  /// file.
   void addGenericFileEdit(
-    void Function(analyzer_plugin.FileEditBuilder builder) buildFileEdit,
-  );
+    void Function(analyzer_plugin.FileEditBuilder builder) buildFileEdit, {
+    String? customPath,
+  });
 
   /// Use the [buildFileEdit] function to create a collection of edits to the
   /// currently analyzed file. The edits will be added to the source change
@@ -124,10 +128,11 @@ class _ChangeBuilderImpl implements ChangeBuilder {
 
   @override
   void addGenericFileEdit(
-    void Function(analyzer_plugin.FileEditBuilder builder) buildFileEdit,
-  ) {
+    void Function(analyzer_plugin.FileEditBuilder builder) buildFileEdit, {
+    String? customPath,
+  }) {
     _operations.add(
-      _innerChangeBuilder.addGenericFileEdit(path, buildFileEdit),
+      _innerChangeBuilder.addGenericFileEdit(customPath ?? path, buildFileEdit),
     );
   }
 
