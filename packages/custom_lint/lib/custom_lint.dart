@@ -4,9 +4,11 @@ import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 
+import 'src/cli_logger.dart';
 import 'src/plugin_delegate.dart';
 import 'src/runner.dart';
 import 'src/server_isolate_channel.dart';
@@ -122,9 +124,15 @@ Future<void> _runPlugins(
   required bool fatalInfos,
   required bool fatalWarnings,
 }) async {
+  final log = CliLogger();
+  final progress = log.progress('Analyzing');
+
   try {
     final lints = await runner.getLints(reload: reload);
+
     _renderLints(
+      log,
+      progress,
       lints,
       workingDirectory: workingDirectory,
       fatalInfos: fatalInfos,
@@ -132,11 +140,14 @@ Future<void> _runPlugins(
     );
   } catch (err, stack) {
     exitCode = 1;
-    stderr.writeln('$err\n$stack');
+    log.stderr(err.toString());
+    log.stderr(stack.toString());
   }
 }
 
 void _renderLints(
+  Logger log,
+  Progress progress,
   List<AnalysisErrorsParams> lints, {
   required Directory workingDirectory,
   required bool fatalInfos,
@@ -168,8 +179,13 @@ void _renderLints(
     return a.message.compareTo(b.message);
   });
 
+  // Finish progress and display duration (only when ANSI is supported)
+  progress.finish(showTiming: true);
+
+  // Separate progress from results
+  log.stdout('');
   if (errors.isEmpty) {
-    stdout.writeln('No issues found!');
+    log.stdout('No issues found!');
     return;
   }
 
@@ -177,7 +193,7 @@ void _renderLints(
   var hasWarnings = false;
   var hasInfos = false;
   for (final error in errors) {
-    stdout.writeln(
+    log.stdout(
       '  ${_relativeFilePath(error.location.file, workingDirectory)}:${error.location.startLine}:${error.location.startColumn}'
       ' • ${error.message} • ${error.code} • ${error.severity.name}',
     );
@@ -186,6 +202,11 @@ void _renderLints(
         hasWarnings || error.severity == AnalysisErrorSeverity.WARNING;
     hasInfos = hasInfos || error.severity == AnalysisErrorSeverity.INFO;
   }
+
+  // Display a summary separated from the lints
+  log.stdout('');
+  final errorCount = errors.length;
+  log.stdout('$errorCount issue${errorCount > 1 ? 's' : ''} found.');
 
   if (hasErrors || (fatalWarnings && hasWarnings) || (fatalInfos && hasInfos)) {
     exitCode = 1;

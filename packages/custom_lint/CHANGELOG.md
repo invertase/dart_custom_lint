@@ -2,6 +2,7 @@
 
 - Sort lints by severity in the command line (thanks to @kuhnroyal)
 - Fix watch mode not quitting with `q` (thanks to @kuhnroyal)
+- Improve the command line's output (thanks to @kuhnroyal)
 
 ## 0.5.3 - 2023-08-29
 
