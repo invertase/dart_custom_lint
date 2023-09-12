@@ -65,9 +65,13 @@ abstract class ChangeBuilder {
   ///
   /// The builder passed to the [buildFileEdit] function has additional support
   /// for working with Dart source files.
+  ///
+  /// Use the [customPath] if the collection of edits should be written to another
+  /// dart file.
   void addDartFileEdit(
     void Function(DartFileEditBuilder builder) buildFileEdit, {
     ImportPrefixGenerator importPrefixGenerator,
+    String? customPath,
   });
 
   /// Use the [buildFileEdit] function to create a collection of edits to the
@@ -90,8 +94,12 @@ abstract class ChangeBuilder {
   ///
   /// The builder passed to the [buildFileEdit] function has additional support
   /// for working with YAML source files.
+  ///
+  /// Use the [customPath] if the collection of edits should be written to another
+  /// YAML file.
   void addYamlFileEdit(
     void Function(YamlFileEditBuilder builder) buildFileEdit,
+    String? customPath,
   );
 }
 
@@ -114,12 +122,13 @@ class _ChangeBuilderImpl implements ChangeBuilder {
   void addDartFileEdit(
     void Function(DartFileEditBuilder builder) buildFileEdit, {
     ImportPrefixGenerator? importPrefixGenerator,
+    String? customPath,
   }) {
     _operations.add(
       importPrefixGenerator == null
-          ? _innerChangeBuilder.addDartFileEdit(path, buildFileEdit)
+          ? _innerChangeBuilder.addDartFileEdit(customPath ?? path, buildFileEdit)
           : _innerChangeBuilder.addDartFileEdit(
-              path,
+              customPath ?? path,
               buildFileEdit,
               importPrefixGenerator: importPrefixGenerator,
             ),
@@ -139,9 +148,10 @@ class _ChangeBuilderImpl implements ChangeBuilder {
   @override
   void addYamlFileEdit(
     void Function(YamlFileEditBuilder builder) buildFileEdit,
+    String? customPath,
   ) {
     _operations.add(
-      _innerChangeBuilder.addYamlFileEdit(path, buildFileEdit),
+      _innerChangeBuilder.addYamlFileEdit(customPath ?? path, buildFileEdit),
     );
   }
 
