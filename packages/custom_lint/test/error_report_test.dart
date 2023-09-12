@@ -97,7 +97,11 @@ Bad state: hello2
         ),
       );
       expect(process.stdout, '''
+Analyzing...
+
   lib/main.dart:1:6 • Hello world • hello_world • INFO
+
+1 issue found.
 ''');
       expect(process.exitCode, 1);
     });
