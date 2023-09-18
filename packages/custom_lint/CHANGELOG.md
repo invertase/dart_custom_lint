@@ -1,3 +1,7 @@
+## Unreleased minor
+
+- Update uuid to 4.0.0
+
 ## Unreleased patch
 
 - Sort lints by severity in the command line (thanks to @kuhnroyal)
