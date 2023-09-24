@@ -51,12 +51,13 @@ void main() {
               out.join(),
               completion(
                 allOf(
-                    matches(
-                      progressMessage(
-                        supportsAnsiEscapes: supportsAnsiEscapes,
-                      ),
+                  matches(
+                    progressMessage(
+                      supportsAnsiEscapes: supportsAnsiEscapes,
                     ),
-                    endsWith('No issues found!\n')),
+                  ),
+                  endsWith('No issues found!\n'),
+                ),
               ),
             );
             expect(err, emitsDone);
@@ -89,19 +90,20 @@ void main() {
               out.join(),
               completion(
                 allOf(
-                    matches(
-                      progressMessage(
-                        supportsAnsiEscapes: supportsAnsiEscapes,
-                      ),
+                  matches(
+                    progressMessage(
+                      supportsAnsiEscapes: supportsAnsiEscapes,
                     ),
-                    endsWith('''
+                  ),
+                  endsWith('''
   lib/another.dart:1:6 • Hello world • hello_world • INFO
   lib/another.dart:1:6 • Oy • oy • INFO
   lib/main.dart:1:6 • Hello world • hello_world • INFO
   lib/main.dart:1:6 • Oy • oy • INFO
 
 4 issues found.
-''')),
+'''),
+                ),
               ),
             );
             expect(exitCode, 1);
