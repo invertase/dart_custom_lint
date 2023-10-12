@@ -1,54 +1,87 @@
-name: Build
 
-on:
-  pull_request:
-    paths-ignore:
-      - "**.md"
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "**.md"
-jobs:
-  build:
-    runs-on: ubuntu-latest
+  Skip to content
 
-    strategy:
-      matrix:
-        channel:
-          - master
-        pub:
-          - get
+    invertase
+    /
+    dart_custom_lint
+    
+    Code
+    Issues 23
+    Pull requests 2
+    Discussions
+    Actions
+    Projects
+    Security
 
-    steps:
-      - uses: actions/checkout@v3
+    Insights
+    
+    Build
+    Build #728
+    
+    Jobs
+    
+    Run details
+    
+    Workflow file for this run
+    .github/workflows/build.yml at c8b0ef8
+  name: Build
 
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: ${{ matrix.channel }}
+  on:
+    pull_request:
+      paths-ignore:
+        - "**.md"
+    push:
+      branches:
+        - main
+      paths-ignore:
+        - "**.md"
+    schedule:
+      # runs the CI everyday at 10AM
+      - cron: "0 10 * * *"
 
-      - name: Add pub cache bin to PATH
-        run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
+  jobs:
+    build:
+      runs-on: ubuntu-latest
 
-      - name: Add pub cache to PATH
-        run: echo "PUB_CACHE="$HOME/.pub-cache"" >> $GITHUB_ENV
+      strategy:
+        matrix:
+          channel:
+            - stable
+            - master
+          pub:
+            - get
+            - upgrade
 
-      - name: Add pubspec_overrides to the analyzer_plugin starter
-        run: "echo \"dependency_overrides:\n  custom_lint:\n    path: ${{github.workspace}}/packages/custom_lint\" > packages/custom_lint/tools/analyzer_plugin/pubspec_overrides.yaml"
+      steps:
+        - uses: actions/checkout@v3
 
-      - run: dart pub global activate melos
+        - uses: subosito/flutter-action@v2
+          with:
+            channel: ${{ matrix.channel }}
 
-      - name: Install dependencies
-        run: melos exec -- "dart pub ${{ matrix.pub }}"
+        - name: Add pub cache bin to PATH
+          run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
 
-      - name: Check format
-        run: dart format --set-exit-if-changed .
+        - name: Add pub cache to PATH
+          run: echo "PUB_CACHE="$HOME/.pub-cache"" >> $GITHUB_ENV
 
-      - name: Analyze
-        run: dart analyze
+        - name: Add pubspec_overrides to the analyzer_plugin starter
+          run: "echo \"dependency_overrides:\n  custom_lint:\n    path: ${{github.workspace}}/packages/custom_lint\" > packages/custom_lint/tools/analyzer_plugin/pubspec_overrides.yaml"
 
-      - name: Run tests
-        run: melos exec --dir-exists=test "dart test"
+        - run: dart pub global activate melos
 
-      # - name: Upload coverage to codecov
-      #   run: curl -s https://codecov.io/bash | bash
+        - name: Install dependencies
+          run: melos exec -- "dart pub ${{ matrix.pub }}"
+
+        - name: Check format
+          run: dart format --set-exit-if-changed .
+
+        - name: Analyze
+          run: dart analyze
+
+        - name: Run tests
+          run: melos exec --dir-exists=test "dart test"
+
+        # - name: Upload coverage to codecov
+        #   run: curl -s https://codecov.io/bash | bash
+    Upgrade SDK constraints · invertase/dart_custom_lint@c8b0ef8
