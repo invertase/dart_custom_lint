@@ -23,6 +23,11 @@ File writeToTemporaryFile(String content) {
   return file;
 }
 
+Future<List<String>> readFile(String path) async {
+  final file = io.File(path);
+  return file.readAsLines();
+}
+
 void main() {
   test('Assist.testRun', () async {
     final assist = MyAssist('MyAssist');
@@ -56,6 +61,43 @@ void main() {
       await changes2,
       matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json'),
     );
+  });
+
+  test('CustomAssist.testRun', () async {
+    final assist = MyCustomAssist('MyAssist', 'file1.txt');
+    final assist2 = MyCustomAssist('Another', 'file2.txt');
+
+    final file = writeToTemporaryFile('''
+void main() {
+  print('Hello world');
+}
+''');
+    final result = await resolveFile2(path: file.path);
+    result as ResolvedUnitResult;
+
+    final changes = assist.testRun(result, SourceRange.EMPTY);
+    final changes2 = assist2.testRun(result, SourceRange.EMPTY);
+
+    expect(
+      await changes,
+      matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot.json'),
+    );
+    expect(
+      await changes,
+      isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json')),
+    );
+
+    expect(
+      await changes2,
+      isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot.json')),
+    );
+    expect(
+      await changes2,
+      matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json'),
+    );
+
+    final lines1 = await readFile('file1.txt');
+    expect(lines1.length, 1);
   });
 
   test('Assist.testAnalyzeAndRun', () async {
@@ -117,9 +159,10 @@ class MyAssist extends DartAssist {
 }
 
 class MyCustomAssist extends DartAssist {
-  MyCustomAssist(this.name);
+  MyCustomAssist(this.name, this.customPath);
 
   final String name;
+  final String customPath;
 
   @override
   void run(
@@ -138,7 +181,7 @@ class MyCustomAssist extends DartAssist {
         (builder) {
           builder.addSimpleInsertion(node.offset, 'Hello');
         },
-        customPath: 'work_in_progress',
+        customPath: customPath,
       );
     });
   }
