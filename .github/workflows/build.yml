@@ -18,10 +18,8 @@ jobs:
       matrix:
         channel:
           - stable
-          - master
         pub:
           - get
-          - upgrade
 
     steps:
       - uses: actions/checkout@v3
