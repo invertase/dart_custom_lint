@@ -115,3 +115,31 @@ class MyAssist extends DartAssist {
     });
   }
 }
+
+class MyCustomAssist extends DartAssist {
+  MyCustomAssist(this.name);
+
+  final String name;
+
+  @override
+  void run(
+    CustomLintResolver resolver,
+    ChangeReporter reporter,
+    CustomLintContext context,
+    SourceRange target,
+  ) {
+    context.registry.addMethodInvocation((node) {
+      final changebuilder = reporter.createChangeBuilder(
+        message: name,
+        priority: 1,
+      );
+
+      changebuilder.addGenericFileEdit(
+        (builder) {
+          builder.addSimpleInsertion(node.offset, 'Hello');
+        },
+        customPath: 'work_in_progress',
+      );
+    });
+  }
+}
