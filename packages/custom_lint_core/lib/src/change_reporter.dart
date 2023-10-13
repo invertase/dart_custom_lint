@@ -126,7 +126,8 @@ class _ChangeBuilderImpl implements ChangeBuilder {
   }) {
     _operations.add(
       importPrefixGenerator == null
-          ? _innerChangeBuilder.addDartFileEdit(customPath ?? path, buildFileEdit)
+          ? _innerChangeBuilder.addDartFileEdit(
+              customPath ?? path, buildFileEdit)
           : _innerChangeBuilder.addDartFileEdit(
               customPath ?? path,
               buildFileEdit,
