@@ -89,8 +89,14 @@ Future<void> _runServer(
       runner = CustomLintRunner(customLintServer, workspace, channel);
 
       await runner.initialize;
+
+      final log = CliLogger();
+      final progress = log.progress('Analyzing');
+
       await _runPlugins(
         runner,
+        log: log,
+        progress: progress,
         reload: false,
         workingDirectory: workingDirectory,
         fatalInfos: fatalInfos,
@@ -100,6 +106,7 @@ Future<void> _runServer(
       if (watchMode) {
         await _startWatchMode(
           runner,
+          log: log,
           workingDirectory: workingDirectory,
           fatalInfos: fatalInfos,
           fatalWarnings: fatalWarnings,
@@ -119,36 +126,29 @@ Future<void> _runServer(
 
 Future<void> _runPlugins(
   CustomLintRunner runner, {
+  required Logger log,
+  required Progress progress,
   required bool reload,
   required Directory workingDirectory,
   required bool fatalInfos,
   required bool fatalWarnings,
 }) async {
-  final log = CliLogger();
-  final progress = log.progress('Analyzing');
+  final lints = await runner.getLints(reload: reload);
 
-  try {
-    final lints = await runner.getLints(reload: reload);
-
-    _renderLints(
-      log,
-      progress,
-      lints,
-      workingDirectory: workingDirectory,
-      fatalInfos: fatalInfos,
-      fatalWarnings: fatalWarnings,
-    );
-  } catch (err, stack) {
-    exitCode = 1;
-    log.stderr(err.toString());
-    log.stderr(stack.toString());
-  }
+  _renderLints(
+    lints,
+    log: log,
+    progress: progress,
+    workingDirectory: workingDirectory,
+    fatalInfos: fatalInfos,
+    fatalWarnings: fatalWarnings,
+  );
 }
 
 void _renderLints(
-  Logger log,
-  Progress progress,
   List<AnalysisErrorsParams> lints, {
+  required Logger log,
+  required Progress progress,
   required Directory workingDirectory,
   required bool fatalInfos,
   required bool fatalWarnings,
@@ -216,6 +216,7 @@ void _renderLints(
 
 Future<void> _startWatchMode(
   CustomLintRunner runner, {
+  required Logger log,
   required Directory workingDirectory,
   required bool fatalInfos,
   required bool fatalWarnings,
@@ -228,16 +229,18 @@ Future<void> _startWatchMode(
       ..lineMode = false;
   }
 
-  stdout.writeln(_help);
+  log.stdout(_help);
 
   // Handle user inputs, forcing the command to continue until the user asks to "quit"
   await for (final input in stdin.transform(utf8.decoder)) {
     switch (input) {
       case 'r':
         // Rerunning lints
-        stdout.writeln('Manual Reload...');
+        final progress = log.progress('Manual re-lint');
         await _runPlugins(
           runner,
+          log: log,
+          progress: progress,
           reload: true,
           workingDirectory: workingDirectory,
           fatalInfos: fatalInfos,
