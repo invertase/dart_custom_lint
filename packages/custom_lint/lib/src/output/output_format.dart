@@ -10,6 +10,5 @@ abstract class OutputFormat {
   void render({
     required Iterable<AnalysisError> errors,
     required Logger log,
-    required Progress progress,
   });
 }

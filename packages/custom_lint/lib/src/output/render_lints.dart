@@ -75,7 +75,6 @@ void renderLints(
   outputFormat.render(
     errors: errors,
     log: log,
-    progress: progress,
   );
 
   if (fatal) {

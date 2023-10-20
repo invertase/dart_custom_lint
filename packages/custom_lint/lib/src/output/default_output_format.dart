@@ -13,7 +13,6 @@ class DefaultOutputFormat implements OutputFormat {
   void render({
     required Iterable<AnalysisError> errors,
     required Logger log,
-    required Progress progress,
   }) {
     if (errors.isEmpty) {
       log.stdout('No issues found!');
