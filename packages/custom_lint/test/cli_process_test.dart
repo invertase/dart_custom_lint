@@ -398,8 +398,7 @@ So, because custom_lint_client depends on test_lint from path, version solving f
 
         // Skip empty lines
         await process.stdout.skip(2);
-        expect(await process.stdout.next, 'Manual Reload...');
-        expect(await process.stdout.next, 'Analyzing...');
+        expect(await process.stdout.next, 'Manual re-lint...');
         await process.stdout.skip(1);
         expect(await process.stdout.next, 'No issues found!');
 
@@ -460,8 +459,7 @@ So, because custom_lint_client depends on test_lint from path, version solving f
 
         // Skip empty lines
         await process.stdout.skip(2);
-        expect(await process.stdout.next, 'Manual Reload...');
-        expect(await process.stdout.next, 'Analyzing...');
+        expect(await process.stdout.next, 'Manual re-lint...');
         await process.stdout.skip(1);
         expect(
           await process.stdout.next,
