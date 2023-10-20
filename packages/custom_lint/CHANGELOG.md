@@ -4,6 +4,7 @@
 - Fix watch mode not quitting with `q` (thanks to @kuhnroyal)
 - Improve the command line's output (thanks to @kuhnroyal)
 - Update uuid to 4.0.0
+- Fixed a port leak
 
 ## 0.5.3 - 2023-08-29
 
