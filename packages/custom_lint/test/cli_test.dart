@@ -140,7 +140,7 @@ invalid;
 ^^^^^^^
 '''),
               matchIgnoringAnsi(contains, '''
-lib/custom_lint_client.dart:13:29: Error: Undefined name 'createPlugin'.
+lib/custom_lint_client.dart:15:29: Error: Undefined name 'createPlugin'.
     {'test_lint': test_lint.createPlugin,
                             ^^^^^^^^^^^^
 '''),
@@ -296,7 +296,7 @@ int x = 'oy';
         ^
 '''),
               matchIgnoringAnsi(contains, '''
-lib/custom_lint_client.dart:15:26: Error: Undefined name 'createPlugin'.
+lib/custom_lint_client.dart:17:26: Error: Undefined name 'createPlugin'.
 'test_lint2': test_lint2.createPlugin,
                          ^^^^^^^^^^^^
 '''),
