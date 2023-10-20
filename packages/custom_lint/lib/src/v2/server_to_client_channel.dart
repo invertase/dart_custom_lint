@@ -15,7 +15,11 @@ import 'protocol.dart';
 
 Future<int> _findPossiblyUnusedPort() {
   return SocketCustomLintServerToClientChannel._createServerSocket()
-      .then((value) => value.port);
+      .then((value) {
+    final port = value.port;
+    value.close();
+    return port;
+  });
 }
 
 Future<T> _asyncRetry<T>(
