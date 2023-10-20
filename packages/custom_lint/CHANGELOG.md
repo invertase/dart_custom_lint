@@ -5,6 +5,7 @@
 - Improve the command line's output (thanks to @kuhnroyal)
 - Update uuid to 4.0.0
 - Fixed a port leak
+- Fix connection issues on Docker/windows (thanks to @hamsbrar)
 
 ## 0.5.3 - 2023-08-29
 
