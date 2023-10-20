@@ -16,6 +16,19 @@ Future<void> entrypoint([List<String> args = const []]) async {
       help: 'Treat warning level issues as fatal',
       defaultsTo: true,
     )
+    ..addOption(
+      'format',
+      valueHelp: 'value',
+      help: 'Specifies the format to display lints.',
+      defaultsTo: 'default',
+      allowed: ['default'],
+      allowedHelp: {
+        'default':
+            'The default output format. This format is intended to be user '
+                'consumable.\nThe format is not specified and can change '
+                'between releases.',
+      },
+    )
     ..addFlag(
       'watch',
       help: "Watches plugins' sources and perform a hot-reload on change",
@@ -39,12 +52,14 @@ Future<void> entrypoint([List<String> args = const []]) async {
   final watchMode = result['watch'] as bool;
   final fatalInfos = result['fatal-infos'] as bool;
   final fatalWarnings = result['fatal-warnings'] as bool;
+  final format = result['format'] as String;
 
   await customLint(
     workingDirectory: Directory.current,
     watchMode: watchMode,
     fatalInfos: fatalInfos,
     fatalWarnings: fatalWarnings,
+    format: format,
   );
 }
 
