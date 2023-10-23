@@ -4,7 +4,6 @@ import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:cli_util/cli_logging.dart';
 
 import 'output_format.dart';
-import 'render_lints.dart';
 
 /// The JSON output format.
 ///
@@ -47,10 +46,10 @@ class JsonOutputFormat implements OutputFormat {
 
     final diagnostics = <Map<String, dynamic>>[];
     for (final error in errors) {
-      final contextMessages = [];
+      final contextMessages = <Map<String, dynamic>>[];
       if (error.contextMessages != null) {
         for (final contextMessage in error.contextMessages!) {
-          var startOffset = contextMessage.location.offset;
+          final startOffset = contextMessage.location.offset;
           contextMessages.add({
             'location': location(
               contextMessage.location.file,
@@ -97,9 +96,11 @@ class JsonOutputFormat implements OutputFormat {
         if (error.url != null) 'documentation': error.url,
       });
     }
-    log.stdout(json.encode({
-      'version': 1,
-      'diagnostics': diagnostics,
-    }));
+    log.stdout(
+      json.encode({
+        'version': 1,
+        'diagnostics': diagnostics,
+      }),
+    );
   }
 }

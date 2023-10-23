@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:custom_lint/src/package_utils.dart';
-import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_process/test_process.dart';
 
@@ -190,10 +189,10 @@ No issues found!
                             'file': '$dir/lib/another.dart',
                             'range': {
                               'start': {'offset': 5, 'line': 1, 'column': 6},
-                              'end': {'offset': 9, 'line': 1, 'column': 10}
-                            }
+                              'end': {'offset': 9, 'line': 1, 'column': 10},
+                            },
                           },
-                          'problemMessage': 'Oy'
+                          'problemMessage': 'Oy',
                         },
                         {
                           'code': 'oy',
@@ -203,12 +202,12 @@ No issues found!
                             'file': '$dir/lib/main.dart',
                             'range': {
                               'start': {'offset': 5, 'line': 1, 'column': 6},
-                              'end': {'offset': 7, 'line': 1, 'column': 8}
-                            }
+                              'end': {'offset': 7, 'line': 1, 'column': 8},
+                            },
                           },
-                          'problemMessage': 'Oy'
+                          'problemMessage': 'Oy',
                         }
-                      ]
+                      ],
                     })}\n');
           } else {
             expect(process.stdout, '''

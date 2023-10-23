@@ -91,9 +91,7 @@ void main() {
             (out, err) async {
               await cli.entrypoint(['--format', format]);
 
-              final dir = IOOverrides.current!
-                  .getCurrentDirectory()
-                  .resolveSymbolicLinksSync();
+              final dir = IOOverrides.current!.getCurrentDirectory().path;
               expect(err, emitsDone);
               expect(
                 out.join(),
@@ -118,16 +116,16 @@ void main() {
                                         'start': {
                                           'offset': 5,
                                           'line': 1,
-                                          'column': 6
+                                          'column': 6,
                                         },
                                         'end': {
                                           'offset': 9,
                                           'line': 1,
-                                          'column': 10
-                                        }
-                                      }
+                                          'column': 10,
+                                        },
+                                      },
                                     },
-                                    'problemMessage': 'Hello world'
+                                    'problemMessage': 'Hello world',
                                   },
                                   {
                                     'code': 'oy',
@@ -139,16 +137,16 @@ void main() {
                                         'start': {
                                           'offset': 5,
                                           'line': 1,
-                                          'column': 6
+                                          'column': 6,
                                         },
                                         'end': {
                                           'offset': 9,
                                           'line': 1,
-                                          'column': 10
-                                        }
-                                      }
+                                          'column': 10,
+                                        },
+                                      },
                                     },
-                                    'problemMessage': 'Oy'
+                                    'problemMessage': 'Oy',
                                   },
                                   {
                                     'code': 'hello_world',
@@ -160,16 +158,16 @@ void main() {
                                         'start': {
                                           'offset': 5,
                                           'line': 1,
-                                          'column': 6
+                                          'column': 6,
                                         },
                                         'end': {
                                           'offset': 7,
                                           'line': 1,
-                                          'column': 8
-                                        }
-                                      }
+                                          'column': 8,
+                                        },
+                                      },
                                     },
-                                    'problemMessage': 'Hello world'
+                                    'problemMessage': 'Hello world',
                                   },
                                   {
                                     'code': 'oy',
@@ -181,18 +179,18 @@ void main() {
                                         'start': {
                                           'offset': 5,
                                           'line': 1,
-                                          'column': 6
+                                          'column': 6,
                                         },
                                         'end': {
                                           'offset': 7,
                                           'line': 1,
-                                          'column': 8
-                                        }
-                                      }
+                                          'column': 8,
+                                        },
+                                      },
                                     },
-                                    'problemMessage': 'Oy'
+                                    'problemMessage': 'Oy',
                                   }
-                                ]
+                                ],
                               })}\n')
                         : endsWith('''
   lib/another.dart:1:6 • Hello world • hello_world • INFO

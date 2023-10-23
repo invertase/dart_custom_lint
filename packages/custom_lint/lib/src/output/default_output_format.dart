@@ -1,8 +1,8 @@
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:cli_util/cli_logging.dart';
 
-import 'render_lints.dart';
 import 'output_format.dart';
+import 'render_lints.dart';
 
 /// The default output format.
 class DefaultOutputFormat implements OutputFormat {
