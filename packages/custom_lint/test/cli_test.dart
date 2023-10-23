@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer/error/error.dart';
@@ -32,70 +33,168 @@ Pattern progressMessage({required bool supportsAnsiEscapes}) {
 void main() {
   // Run 2 tests, one with ANSI escapes and one without
   // One test has no lints, the other has some, this should be enough.
-  for (final supportsAnsiEscapes in [true, false]) {
-    group('With${supportsAnsiEscapes ? '' : 'out'} ANSI escapes', () {
-      test('exits with 0 when no lint and no error are found', () async {
-        final plugin = createPlugin(name: 'test_lint', main: emptyPluginSource);
+  for (final ansi in [true, false]) {
+    for (final format in ['default', 'json']) {
+      group('With ANSI: $ansi and format: $format', () {
+        test('exits with 0 when no lint and no error are found', () async {
+          final plugin =
+              createPlugin(name: 'test_lint', main: emptyPluginSource);
 
-        final app = createLintUsage(
-          source: {'lib/main.dart': 'void fn() {}'},
-          plugins: {'test_lint': plugin.uri},
-          name: 'test_app',
-        );
-        await runWithIOOverride(
-          (out, err) async {
-            await cli.entrypoint();
+          final app = createLintUsage(
+            source: {'lib/main.dart': 'void fn() {}'},
+            plugins: {'test_lint': plugin.uri},
+            name: 'test_app',
+          );
+          await runWithIOOverride(
+            (out, err) async {
+              await cli.entrypoint(['--format', format]);
 
-            expect(exitCode, 0);
-            expect(
-              out.join(),
-              completion(
-                allOf(
-                  matches(
-                    progressMessage(
-                      supportsAnsiEscapes: supportsAnsiEscapes,
+              expect(exitCode, 0);
+              expect(
+                out.join(),
+                completion(
+                  allOf(
+                    matches(
+                      progressMessage(
+                        supportsAnsiEscapes: ansi,
+                      ),
                     ),
+                    format == 'json'
+                        ? endsWith('{"version":1,"diagnostics":[]}\n')
+                        : endsWith('No issues found!\n'),
                   ),
-                  endsWith('No issues found!\n'),
                 ),
-              ),
-            );
-            expect(err, emitsDone);
-          },
-          currentDirectory: app,
-          supportsAnsiEscapes: supportsAnsiEscapes,
-        );
-      });
+              );
+              expect(err, emitsDone);
+            },
+            currentDirectory: app,
+            supportsAnsiEscapes: ansi,
+          );
+        });
 
-      test('CLI lists warnings from all plugins and set exit code', () async {
-        final plugin =
-            createPlugin(name: 'test_lint', main: helloWordPluginSource);
-        final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
+        test('CLI lists warnings from all plugins and set exit code', () async {
+          final plugin =
+              createPlugin(name: 'test_lint', main: helloWordPluginSource);
+          final plugin2 =
+              createPlugin(name: 'test_lint2', main: oyPluginSource);
 
-        final app = createLintUsage(
-          source: {
-            'lib/main.dart': 'void fn() {}',
-            'lib/another.dart': 'void fail() {}',
-          },
-          plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
-          name: 'test_app',
-        );
+          final app = createLintUsage(
+            source: {
+              'lib/main.dart': 'void fn() {}',
+              'lib/another.dart': 'void fail() {}',
+            },
+            plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
+            name: 'test_app',
+          );
 
-        await runWithIOOverride(
-          (out, err) async {
-            await cli.entrypoint();
+          await runWithIOOverride(
+            (out, err) async {
+              await cli.entrypoint(['--format', format]);
 
-            expect(err, emitsDone);
-            expect(
-              out.join(),
-              completion(
-                allOf(
-                  matches(
-                    progressMessage(
-                      supportsAnsiEscapes: supportsAnsiEscapes,
+              final dir = IOOverrides.current!
+                  .getCurrentDirectory()
+                  .resolveSymbolicLinksSync();
+              expect(err, emitsDone);
+              expect(
+                out.join(),
+                completion(
+                  allOf(
+                    matches(
+                      progressMessage(
+                        supportsAnsiEscapes: ansi,
+                      ),
                     ),
-                  ),
-                  endsWith('''
+                    format == 'json'
+                        ? endsWith('${jsonEncode({
+                                'version': 1,
+                                'diagnostics': [
+                                  {
+                                    'code': 'hello_world',
+                                    'severity': 'INFO',
+                                    'type': 'LINT',
+                                    'location': {
+                                      'file': '$dir/lib/another.dart',
+                                      'range': {
+                                        'start': {
+                                          'offset': 5,
+                                          'line': 1,
+                                          'column': 6
+                                        },
+                                        'end': {
+                                          'offset': 9,
+                                          'line': 1,
+                                          'column': 10
+                                        }
+                                      }
+                                    },
+                                    'problemMessage': 'Hello world'
+                                  },
+                                  {
+                                    'code': 'oy',
+                                    'severity': 'INFO',
+                                    'type': 'LINT',
+                                    'location': {
+                                      'file': '$dir/lib/another.dart',
+                                      'range': {
+                                        'start': {
+                                          'offset': 5,
+                                          'line': 1,
+                                          'column': 6
+                                        },
+                                        'end': {
+                                          'offset': 9,
+                                          'line': 1,
+                                          'column': 10
+                                        }
+                                      }
+                                    },
+                                    'problemMessage': 'Oy'
+                                  },
+                                  {
+                                    'code': 'hello_world',
+                                    'severity': 'INFO',
+                                    'type': 'LINT',
+                                    'location': {
+                                      'file': '$dir/lib/main.dart',
+                                      'range': {
+                                        'start': {
+                                          'offset': 5,
+                                          'line': 1,
+                                          'column': 6
+                                        },
+                                        'end': {
+                                          'offset': 7,
+                                          'line': 1,
+                                          'column': 8
+                                        }
+                                      }
+                                    },
+                                    'problemMessage': 'Hello world'
+                                  },
+                                  {
+                                    'code': 'oy',
+                                    'severity': 'INFO',
+                                    'type': 'LINT',
+                                    'location': {
+                                      'file': '$dir/lib/main.dart',
+                                      'range': {
+                                        'start': {
+                                          'offset': 5,
+                                          'line': 1,
+                                          'column': 6
+                                        },
+                                        'end': {
+                                          'offset': 7,
+                                          'line': 1,
+                                          'column': 8
+                                        }
+                                      }
+                                    },
+                                    'problemMessage': 'Oy'
+                                  }
+                                ]
+                              })}\n')
+                        : endsWith('''
   lib/another.dart:1:6 • Hello world • hello_world • INFO
   lib/another.dart:1:6 • Oy • oy • INFO
   lib/main.dart:1:6 • Hello world • hello_world • INFO
@@ -103,16 +202,17 @@ void main() {
 
 4 issues found.
 '''),
+                  ),
                 ),
-              ),
-            );
-            expect(exitCode, 1);
-          },
-          currentDirectory: app,
-          supportsAnsiEscapes: supportsAnsiEscapes,
-        );
+              );
+              expect(exitCode, 1);
+            },
+            currentDirectory: app,
+            supportsAnsiEscapes: ansi,
+          );
+        });
       });
-    });
+    }
   }
 
   test('exits with 1 if only an error but no lint are found', () async {
@@ -223,43 +323,6 @@ Analyzing...
           ),
         );
         expect(err, emitsDone);
-      },
-      currentDirectory: app,
-    );
-  });
-
-  test('CLI lists warnings from all plugins and set exit code', () async {
-    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
-    final plugin2 = createPlugin(name: 'test_lint2', main: oyPluginSource);
-
-    final app = createLintUsage(
-      source: {
-        'lib/main.dart': 'void fn() {}',
-        'lib/another.dart': 'void fail() {}',
-      },
-      plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
-      name: 'test_app',
-    );
-
-    await runWithIOOverride(
-      (out, err) async {
-        await cli.entrypoint();
-
-        expect(err, emitsDone);
-        expect(
-          out.join(),
-          completion('''
-Analyzing...
-
-  lib/another.dart:1:6 • Hello world • hello_world • INFO
-  lib/another.dart:1:6 • Oy • oy • INFO
-  lib/main.dart:1:6 • Hello world • hello_world • INFO
-  lib/main.dart:1:6 • Oy • oy • INFO
-
-4 issues found.
-'''),
-        );
-        expect(exitCode, 1);
       },
       currentDirectory: app,
     );

@@ -6,6 +6,7 @@ import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 
 import 'default_output_format.dart';
+import 'json_output_format.dart';
 import 'output_format.dart';
 
 /// Renders lints according to the given format and flags.
@@ -20,6 +21,9 @@ void renderLints(
 }) {
   final OutputFormat outputFormat;
   switch (format) {
+    case 'json':
+      outputFormat = JsonOutputFormat();
+      break;
     case 'default':
     default:
       outputFormat = DefaultOutputFormat();
@@ -39,32 +43,30 @@ void renderLints(
         (fatalInfos && error.severity == AnalysisErrorSeverity.INFO);
   }
 
-  if (outputFormat.sorted) {
-    // Sort errors by severity, file, line, column, code, message
-    // if the output format requires it
-    errors = errors.sorted((a, b) {
-      final severityCompare = -AnalysisErrorSeverity.VALUES
-          .indexOf(a.severity)
-          .compareTo(AnalysisErrorSeverity.VALUES.indexOf(b.severity));
-      if (severityCompare != 0) return severityCompare;
+  // Sort errors by severity, file, line, column, code, message
+  // if the output format requires it
+  errors = errors.sorted((a, b) {
+    final severityCompare = -AnalysisErrorSeverity.VALUES
+        .indexOf(a.severity)
+        .compareTo(AnalysisErrorSeverity.VALUES.indexOf(b.severity));
+    if (severityCompare != 0) return severityCompare;
 
-      final fileCompare =
-          a.location.relativePath.compareTo(b.location.relativePath);
-      if (fileCompare != 0) return fileCompare;
+    final fileCompare =
+        a.location.relativePath.compareTo(b.location.relativePath);
+    if (fileCompare != 0) return fileCompare;
 
-      final lineCompare = a.location.startLine.compareTo(b.location.startLine);
-      if (lineCompare != 0) return lineCompare;
+    final lineCompare = a.location.startLine.compareTo(b.location.startLine);
+    if (lineCompare != 0) return lineCompare;
 
-      final columnCompare =
-          a.location.startColumn.compareTo(b.location.startColumn);
-      if (columnCompare != 0) return columnCompare;
+    final columnCompare =
+        a.location.startColumn.compareTo(b.location.startColumn);
+    if (columnCompare != 0) return columnCompare;
 
-      final codeCompare = a.code.compareTo(b.code);
-      if (codeCompare != 0) return codeCompare;
+    final codeCompare = a.code.compareTo(b.code);
+    if (codeCompare != 0) return codeCompare;
 
-      return a.message.compareTo(b.message);
-    });
-  }
+    return a.message.compareTo(b.message);
+  });
 
   // Finish progress and display duration (only when ANSI is supported)
   progress.finish(showTiming: true);

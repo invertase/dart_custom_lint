@@ -7,9 +7,6 @@ import 'output_format.dart';
 /// The default output format.
 class DefaultOutputFormat implements OutputFormat {
   @override
-  bool get sorted => true;
-
-  @override
   void render({
     required Iterable<AnalysisError> errors,
     required Logger log,
