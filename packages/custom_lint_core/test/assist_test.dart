@@ -65,7 +65,7 @@ void main() {
   });
 
   test('CustomAssist.testRun', () async {
-    final assist = MyCustomAssist('CustomAssist', 'custom_1.txt');
+    final assist1 = MyCustomAssist('CustomAssist', 'custom_1.txt');
     final assist2 = MyCustomAssist('AnotherCustom', 'custom_2.txt');
 
     final file = writeToTemporaryFile('''
@@ -76,26 +76,22 @@ void main() {
     final result = await resolveFile2(path: file.path);
     result as ResolvedUnitResult;
 
-    final changes1 = assist.testRun(result, SourceRange.EMPTY);
-    final changes2 = assist2.testRun(result, SourceRange.EMPTY);
+    final changeList1 = await assist1.testRun(result, SourceRange.EMPTY);
+    final changeList2 = await assist2.testRun(result, SourceRange.EMPTY);
 
-    final list1 = await changes1;
     expect(
-      list1,
+      changeList1,
       matcherNormalizedPrioritizedSourceChangeSnapshot('custom.json'),
     );
+    expect(jsonEncode(changeList1[0]).contains('custom_1.txt'), true);
+    expect(jsonEncode(changeList1[0]).contains('custom_2.txt'), false);
 
-    expect(jsonEncode(list1[0]).contains('custom_1.txt'), true);
-    expect(jsonEncode(list1[0]).contains('custom_2.txt'), false);
-
-    final list2 = await changes2;
     expect(
-      list2,
+      changeList2,
       matcherNormalizedPrioritizedSourceChangeSnapshot('custom2.json'),
     );
-
-    expect(jsonEncode(list2[0]).contains('custom_1.txt'), false);
-    expect(jsonEncode(list2[0]).contains('custom_2.txt'), true);
+    expect(jsonEncode(changeList2[0]).contains('custom_1.txt'), false);
+    expect(jsonEncode(changeList2[0]).contains('custom_2.txt'), true);
   });
 
   test('Assist.testAnalyzeAndRun', () async {
