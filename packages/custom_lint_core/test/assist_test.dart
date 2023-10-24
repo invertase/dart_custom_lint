@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io' as io;
 import 'dart:io';
 
@@ -64,40 +65,37 @@ void main() {
   });
 
   test('CustomAssist.testRun', () async {
-    final assist = MyCustomAssist('MyAssist', 'file1.txt');
-    final assist2 = MyCustomAssist('Another', 'file2.txt');
+    final assist = MyCustomAssist('CustomAssist', 'custom_1.txt');
+    final assist2 = MyCustomAssist('AnotherCustom', 'custom_2.txt');
 
     final file = writeToTemporaryFile('''
 void main() {
-  print('Hello world');
+  print('Custom world');
 }
 ''');
     final result = await resolveFile2(path: file.path);
     result as ResolvedUnitResult;
 
-    final changes = assist.testRun(result, SourceRange.EMPTY);
+    final changes1 = assist.testRun(result, SourceRange.EMPTY);
     final changes2 = assist2.testRun(result, SourceRange.EMPTY);
 
+    final list1 = await changes1;
     expect(
-      await changes,
-      matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot.json'),
-    );
-    expect(
-      await changes,
-      isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json')),
+      list1,
+      matcherNormalizedPrioritizedSourceChangeSnapshot('custom.json'),
     );
 
+    expect(jsonEncode(list1[0]).contains('custom_1.txt'), true);
+    expect(jsonEncode(list1[0]).contains('custom_2.txt'), false);
+
+    final list2 = await changes2;
     expect(
-      await changes2,
-      isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot.json')),
-    );
-    expect(
-      await changes2,
-      matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json'),
+      list2,
+      matcherNormalizedPrioritizedSourceChangeSnapshot('custom2.json'),
     );
 
-    final lines1 = await readFile('file1.txt');
-    expect(lines1.length, 1);
+    expect(jsonEncode(list2[0]).contains('custom_1.txt'), false);
+    expect(jsonEncode(list2[0]).contains('custom_2.txt'), true);
   });
 
   test('Assist.testAnalyzeAndRun', () async {
@@ -179,7 +177,7 @@ class MyCustomAssist extends DartAssist {
 
       changebuilder.addGenericFileEdit(
         (builder) {
-          builder.addSimpleInsertion(node.offset, 'Hello');
+          builder.addSimpleInsertion(node.offset, 'Custom 2023');
         },
         customPath: customPath,
       );
