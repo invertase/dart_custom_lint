@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Support `hotreloader` 4.0.0
+
 ## 0.5.4 - 2023-10-20
 
 - Sort lints by severity in the command line (thanks to @kuhnroyal)
