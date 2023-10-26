@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.5.5 - 2023-10-26
 
 - Support `hotreloader` 4.0.0
 
