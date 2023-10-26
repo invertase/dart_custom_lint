@@ -17,7 +17,7 @@ dependencies:
   # using a specific contract
   custom_lint_core: 0.5.4
   glob: ^2.1.1
-  hotreloader: ^3.0.5
+  hotreloader: ">=3.0.5 <5.0.0"
   meta: ^1.7.0
   path: ^1.8.0
   pubspec_parse: ^1.2.0
