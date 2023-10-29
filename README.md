@@ -175,7 +175,7 @@ That's all!
 After running `pub get` (and possibly restarting their IDE), users should now
 see our custom lints in their Dart files:
 
-![screenshot of our custom lints in the IDE](https://raw.githubusercontent.com/invertase/dart_custom_lint/main/resources/lint_showcase.png)
+![screenshot of our custom lints in the IDE](resources\lint_showcase.png)
 
 ### Enabling/disabling and configuring lints
 
