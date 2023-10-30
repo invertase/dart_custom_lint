@@ -1,3 +1,7 @@
+## Unreleased patch
+
+Optimized logic for finding an unused VM_service port.
+
 ## 0.5.5 - 2023-10-26
 
 - Support `hotreloader` 4.0.0
