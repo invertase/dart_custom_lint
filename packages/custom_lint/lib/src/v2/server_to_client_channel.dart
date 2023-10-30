@@ -13,15 +13,6 @@ import '../workspace.dart';
 import 'custom_lint_analyzer_plugin.dart';
 import 'protocol.dart';
 
-Future<int> _findPossiblyUnusedPort() {
-  return SocketCustomLintServerToClientChannel._createServerSocket()
-      .then((value) {
-    final port = value.port;
-    value.close();
-    return port;
-  });
-}
-
 Future<T> _asyncRetry<T>(
   Future<T> Function() cb, {
   required int retryCount,
@@ -170,12 +161,10 @@ class SocketCustomLintServerToClientChannel {
       _writeEntrypoint(_workspace.uniquePluginNames, tempDir);
 
       return _asyncRetry(retryCount: 5, () async {
-        // Using "late" to fetch the port only if needed (in watch mode)
-        late final port = _findPossiblyUnusedPort();
         final process = await Process.start(
           Platform.resolvedExecutable,
           [
-            if (_server.watchMode) '--enable-vm-service=${await port}',
+            if (_server.watchMode) '--enable-vm-service=0',
             join('lib', 'custom_lint_client.dart'),
             _serverSocket.address.host,
             _serverSocket.port.toString(),
