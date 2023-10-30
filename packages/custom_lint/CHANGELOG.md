@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.5.6 - 2023-10-30
 
 Optimized logic for finding an unused VM_service port.
 
