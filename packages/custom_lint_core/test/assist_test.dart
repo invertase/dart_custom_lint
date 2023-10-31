@@ -24,11 +24,6 @@ File writeToTemporaryFile(String content) {
   return file;
 }
 
-Future<List<String>> readFile(String path) async {
-  final file = io.File(path);
-  return file.readAsLines();
-}
-
 void main() {
   test('Assist.testRun', () async {
     final assist = MyAssist('MyAssist');
