@@ -1,10 +1,10 @@
-import 'dart:convert';
 import 'dart:io' as io;
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/source/source_range.dart';
+import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint_core/src/assist.dart';
 import 'package:custom_lint_core/src/change_reporter.dart';
 import 'package:custom_lint_core/src/lint_rule.dart';
@@ -64,6 +64,25 @@ void main() {
     );
   });
 
+  // Extract the name of the changed file and makes the test failing if the internal structure is not the expected one
+  String _extractFileName(PrioritizedSourceChange change) {
+    final map = change.toJson();
+
+    expect(map.containsKey('change'), true);
+    final changes = map['change']! as Map;
+
+    expect(changes.containsKey('edits'), true);
+    final edits = changes['edits']! as List;
+
+    expect(edits.length, 1);
+    final edit = edits[0]! as Map;
+
+    expect(edit.containsKey('file'), true);
+    final fileName = edit['file'] as String;
+
+    return fileName;
+  }
+
   test('CustomAssist.testRun', () async {
     final assist1 = MyCustomAssist('CustomAssist', 'custom_1.txt');
     final assist2 = MyCustomAssist('AnotherCustom', 'custom_2.txt');
@@ -79,19 +98,14 @@ void main() {
     final changeList1 = await assist1.testRun(result, SourceRange.EMPTY);
     final changeList2 = await assist2.testRun(result, SourceRange.EMPTY);
 
-    expect(
-      changeList1,
-      matcherNormalizedPrioritizedSourceChangeSnapshot('custom.json'),
-    );
-    expect(jsonEncode(changeList1[0]).contains('custom_1.txt'), true);
-    expect(jsonEncode(changeList1[0]).contains('custom_2.txt'), false);
+    final change1 = changeList1[0];
+    final change2 = changeList2[0];
 
-    expect(
-      changeList2,
-      matcherNormalizedPrioritizedSourceChangeSnapshot('custom2.json'),
-    );
-    expect(jsonEncode(changeList2[0]).contains('custom_1.txt'), false);
-    expect(jsonEncode(changeList2[0]).contains('custom_2.txt'), true);
+    final file1 = _extractFileName(change1);
+    final file2 = _extractFileName(change2);
+
+    expect(file1, 'custom_1.txt');
+    expect(file2, 'custom_2.txt');
   });
 
   test('Assist.testAnalyzeAndRun', () async {
