@@ -195,7 +195,9 @@ void main() {
                         supportsAnsiEscapes: ansi,
                       ),
                     ),
-                    format == 'json' ? endsWith('$jsonLints\n') : endsWith('''
+                    format == 'json'
+                        ? endsWith('${jsonLints(dir)}\n')
+                        : endsWith('''
   lib/another.dart:1:6 • Hello world • hello_world • INFO
   lib/another.dart:1:6 • Oy • oy • INFO
   lib/main.dart:1:6 • Hello world • hello_world • INFO
