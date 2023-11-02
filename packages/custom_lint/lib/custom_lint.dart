@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:cli_util/cli_logging.dart';
 
 import 'src/cli_logger.dart';
+import 'src/output/output_format.dart';
 import 'src/output/render_lints.dart';
 import 'src/plugin_delegate.dart';
 import 'src/runner.dart';
@@ -38,7 +39,7 @@ Future<void> customLint({
   required Directory workingDirectory,
   bool fatalInfos = true,
   bool fatalWarnings = true,
-  String format = 'default',
+  OutputFormatEnum format = OutputFormatEnum.plain,
 }) async {
   // Reset the code
   exitCode = 0;
@@ -66,7 +67,7 @@ Future<void> _runServer(
   required Directory workingDirectory,
   required bool fatalInfos,
   required bool fatalWarnings,
-  required String format,
+  required OutputFormatEnum format,
 }) async {
   final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
@@ -134,7 +135,7 @@ Future<void> _runPlugins(
   required Directory workingDirectory,
   required bool fatalInfos,
   required bool fatalWarnings,
-  required String format,
+  required OutputFormatEnum format,
 }) async {
   final lints = await runner.getLints(reload: reload);
 
@@ -155,7 +156,7 @@ Future<void> _startWatchMode(
   required Directory workingDirectory,
   required bool fatalInfos,
   required bool fatalWarnings,
-  required String format,
+  required OutputFormatEnum format,
 }) async {
   if (stdin.hasTerminal) {
     stdin

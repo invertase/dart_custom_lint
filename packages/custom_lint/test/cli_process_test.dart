@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:custom_lint/src/output/output_format.dart';
 import 'package:custom_lint/src/package_utils.dart';
 import 'package:test/test.dart';
 import 'package:test_process/test_process.dart';
@@ -147,7 +148,7 @@ No issues found!
       },
     );
 
-    for (final format in ['default', 'json']) {
+    for (final format in OutputFormatEnum.values.map((e) => e.name)) {
       test(
         'found lints format: $format',
         () async {

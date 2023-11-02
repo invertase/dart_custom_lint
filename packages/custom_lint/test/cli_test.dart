@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer/error/error.dart';
+import 'package:custom_lint/src/output/output_format.dart';
 import 'package:test/test.dart';
 
 import '../bin/custom_lint.dart' as cli;
@@ -34,7 +35,7 @@ void main() {
   // Run 2 tests, one with ANSI escapes and one without
   // One test has no lints, the other has some, this should be enough.
   for (final ansi in [true, false]) {
-    for (final format in ['default', 'json']) {
+    for (final format in OutputFormatEnum.values.map((e) => e.name)) {
       group('With ANSI: $ansi and format: $format', () {
         test('exits with 0 when no lint and no error are found', () async {
           final plugin =

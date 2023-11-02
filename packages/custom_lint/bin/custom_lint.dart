@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:custom_lint/custom_lint.dart';
+import 'package:custom_lint/src/output/output_format.dart';
 
 Future<void> entrypoint([List<String> args = const []]) async {
   final parser = ArgParser()
@@ -22,8 +23,8 @@ Future<void> entrypoint([List<String> args = const []]) async {
       help: 'Specifies the format to display lints.',
       defaultsTo: 'default',
       allowed: [
-        'default',
-        'json',
+        OutputFormatEnum.plain.name,
+        OutputFormatEnum.json.name,
       ],
       allowedHelp: {
         'default':
@@ -63,7 +64,7 @@ Future<void> entrypoint([List<String> args = const []]) async {
     watchMode: watchMode,
     fatalInfos: fatalInfos,
     fatalWarnings: fatalWarnings,
-    format: format,
+    format: OutputFormatEnum.fromName(format),
   );
 }
 

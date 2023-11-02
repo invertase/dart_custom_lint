@@ -17,14 +17,14 @@ void renderLints(
   required Directory workingDirectory,
   required bool fatalInfos,
   required bool fatalWarnings,
-  required String format,
+  required OutputFormatEnum format,
 }) {
   final OutputFormat outputFormat;
   switch (format) {
-    case 'json':
+    case OutputFormatEnum.json:
       outputFormat = JsonOutputFormat();
       break;
-    case 'default':
+    case OutputFormatEnum.plain:
     default:
       outputFormat = DefaultOutputFormat();
   }
