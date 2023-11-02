@@ -1,3 +1,13 @@
+## 0.5.6 - 2023-10-30
+
+- `custom_lint` upgraded to `0.5.6`
+- `custom_lint_core` upgraded to `0.5.6`
+
+## 0.5.5 - 2023-10-26
+
+- `custom_lint` upgraded to `0.5.5`
+- `custom_lint_core` upgraded to `0.5.5`
+
 ## 0.5.4 - 2023-10-20
 
 - `custom_lint` upgraded to `0.5.4`

@@ -2,6 +2,14 @@
 
 - Support JSON output format via CLI parameter `--format json|default` (thanks to @kuhnroyal)
 
+## 0.5.6 - 2023-10-30
+
+Optimized logic for finding an unused VM_service port.
+
+## 0.5.5 - 2023-10-26
+
+- Support `hotreloader` 4.0.0
+
 ## 0.5.4 - 2023-10-20
 
 - Sort lints by severity in the command line (thanks to @kuhnroyal)
