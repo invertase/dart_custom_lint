@@ -15,54 +15,25 @@ class JsonOutputFormat implements OutputFormat {
     required Iterable<AnalysisError> errors,
     required Logger log,
   }) {
-    Map<String, dynamic> location(
-      String filePath,
-      Map<String, dynamic> range,
-    ) =>
-        {
-          'file': filePath,
-          'range': range,
-        };
-
-    Map<String, dynamic> position(
-      int? offset,
-      int? line,
-      int? column,
-    ) =>
-        {
-          'offset': offset,
-          'line': line,
-          'column': column,
-        };
-
-    Map<String, dynamic> range(
-      Map<String, dynamic> start,
-      Map<String, dynamic> end,
-    ) =>
-        {
-          'start': start,
-          'end': end,
-        };
-
-    final diagnostics = <Map<String, dynamic>>[];
+    final diagnostics = <Map<String, Object?>>[];
     for (final error in errors) {
-      final contextMessages = <Map<String, dynamic>>[];
+      final contextMessages = <Map<String, Object?>>[];
       if (error.contextMessages != null) {
         for (final contextMessage in error.contextMessages!) {
           final startOffset = contextMessage.location.offset;
           contextMessages.add({
-            'location': location(
-              contextMessage.location.file,
-              range(
-                position(
-                  startOffset,
-                  contextMessage.location.startLine,
-                  contextMessage.location.startColumn,
+            'location': _location(
+              file: contextMessage.location.file,
+              range: _range(
+                start: _position(
+                  offset: startOffset,
+                  line: contextMessage.location.startLine,
+                  column: contextMessage.location.startColumn,
                 ),
-                position(
-                  startOffset + contextMessage.location.length,
-                  contextMessage.location.endLine,
-                  contextMessage.location.endColumn,
+                end: _position(
+                  offset: startOffset + contextMessage.location.length,
+                  line: contextMessage.location.endLine,
+                  column: contextMessage.location.endColumn,
                 ),
               ),
             ),
@@ -75,18 +46,18 @@ class JsonOutputFormat implements OutputFormat {
         'code': error.code,
         'severity': error.severity,
         'type': error.type,
-        'location': location(
-          error.location.file,
-          range(
-            position(
-              startOffset,
-              error.location.startLine,
-              error.location.startColumn,
+        'location': _location(
+          file: error.location.file,
+          range: _range(
+            start: _position(
+              offset: startOffset,
+              line: error.location.startLine,
+              column: error.location.startColumn,
             ),
-            position(
-              startOffset + error.location.length,
-              error.location.endLine,
-              error.location.endColumn,
+            end: _position(
+              offset: startOffset + error.location.length,
+              line: error.location.endLine,
+              column: error.location.endColumn,
             ),
           ),
         ),
@@ -102,5 +73,37 @@ class JsonOutputFormat implements OutputFormat {
         'diagnostics': diagnostics,
       }),
     );
+  }
+
+  Map<String, Object?> _location({
+    required String file,
+    required Map<String, Object?> range,
+  }) {
+    return {
+      'file': file,
+      'range': range,
+    };
+  }
+
+  Map<String, Object?> _position({
+    int? offset,
+    int? line,
+    int? column,
+  }) {
+    return {
+      'offset': offset,
+      'line': line,
+      'column': column,
+    };
+  }
+
+  Map<String, Object?> _range({
+    required Map<String, Object?> start,
+    required Map<String, Object?> end,
+  }) {
+    return {
+      'start': start,
+      'end': end,
+    };
   }
 }
