@@ -31,6 +31,98 @@ Pattern progressMessage({required bool supportsAnsiEscapes}) {
   return r'Analyzing\.\.\..*';
 }
 
+String jsonLints(String dir) {
+  return jsonEncode({
+    'version': 1,
+    'diagnostics': [
+      {
+        'code': 'hello_world',
+        'severity': 'INFO',
+        'type': 'LINT',
+        'location': {
+          'file': '$dir/lib/another.dart',
+          'range': {
+            'start': {
+              'offset': 5,
+              'line': 1,
+              'column': 6,
+            },
+            'end': {
+              'offset': 9,
+              'line': 1,
+              'column': 10,
+            },
+          },
+        },
+        'problemMessage': 'Hello world',
+      },
+      {
+        'code': 'oy',
+        'severity': 'INFO',
+        'type': 'LINT',
+        'location': {
+          'file': '$dir/lib/another.dart',
+          'range': {
+            'start': {
+              'offset': 5,
+              'line': 1,
+              'column': 6,
+            },
+            'end': {
+              'offset': 9,
+              'line': 1,
+              'column': 10,
+            },
+          },
+        },
+        'problemMessage': 'Oy',
+      },
+      {
+        'code': 'hello_world',
+        'severity': 'INFO',
+        'type': 'LINT',
+        'location': {
+          'file': '$dir/lib/main.dart',
+          'range': {
+            'start': {
+              'offset': 5,
+              'line': 1,
+              'column': 6,
+            },
+            'end': {
+              'offset': 7,
+              'line': 1,
+              'column': 8,
+            },
+          },
+        },
+        'problemMessage': 'Hello world',
+      },
+      {
+        'code': 'oy',
+        'severity': 'INFO',
+        'type': 'LINT',
+        'location': {
+          'file': '$dir/lib/main.dart',
+          'range': {
+            'start': {
+              'offset': 5,
+              'line': 1,
+              'column': 6,
+            },
+            'end': {
+              'offset': 7,
+              'line': 1,
+              'column': 8,
+            },
+          },
+        },
+        'problemMessage': 'Oy',
+      }
+    ],
+  });
+}
+
 void main() {
   // Run 2 tests, one with ANSI escapes and one without
   // One test has no lints, the other has some, this should be enough.
@@ -103,97 +195,7 @@ void main() {
                         supportsAnsiEscapes: ansi,
                       ),
                     ),
-                    format == 'json'
-                        ? endsWith('${jsonEncode({
-                                'version': 1,
-                                'diagnostics': [
-                                  {
-                                    'code': 'hello_world',
-                                    'severity': 'INFO',
-                                    'type': 'LINT',
-                                    'location': {
-                                      'file': '$dir/lib/another.dart',
-                                      'range': {
-                                        'start': {
-                                          'offset': 5,
-                                          'line': 1,
-                                          'column': 6,
-                                        },
-                                        'end': {
-                                          'offset': 9,
-                                          'line': 1,
-                                          'column': 10,
-                                        },
-                                      },
-                                    },
-                                    'problemMessage': 'Hello world',
-                                  },
-                                  {
-                                    'code': 'oy',
-                                    'severity': 'INFO',
-                                    'type': 'LINT',
-                                    'location': {
-                                      'file': '$dir/lib/another.dart',
-                                      'range': {
-                                        'start': {
-                                          'offset': 5,
-                                          'line': 1,
-                                          'column': 6,
-                                        },
-                                        'end': {
-                                          'offset': 9,
-                                          'line': 1,
-                                          'column': 10,
-                                        },
-                                      },
-                                    },
-                                    'problemMessage': 'Oy',
-                                  },
-                                  {
-                                    'code': 'hello_world',
-                                    'severity': 'INFO',
-                                    'type': 'LINT',
-                                    'location': {
-                                      'file': '$dir/lib/main.dart',
-                                      'range': {
-                                        'start': {
-                                          'offset': 5,
-                                          'line': 1,
-                                          'column': 6,
-                                        },
-                                        'end': {
-                                          'offset': 7,
-                                          'line': 1,
-                                          'column': 8,
-                                        },
-                                      },
-                                    },
-                                    'problemMessage': 'Hello world',
-                                  },
-                                  {
-                                    'code': 'oy',
-                                    'severity': 'INFO',
-                                    'type': 'LINT',
-                                    'location': {
-                                      'file': '$dir/lib/main.dart',
-                                      'range': {
-                                        'start': {
-                                          'offset': 5,
-                                          'line': 1,
-                                          'column': 6,
-                                        },
-                                        'end': {
-                                          'offset': 7,
-                                          'line': 1,
-                                          'column': 8,
-                                        },
-                                      },
-                                    },
-                                    'problemMessage': 'Oy',
-                                  }
-                                ],
-                              })}\n')
-                        : endsWith('''
+                    format == 'json' ? endsWith('$jsonLints\n') : endsWith('''
   lib/another.dart:1:6 • Hello world • hello_world • INFO
   lib/another.dart:1:6 • Oy • oy • INFO
   lib/main.dart:1:6 • Hello world • hello_world • INFO

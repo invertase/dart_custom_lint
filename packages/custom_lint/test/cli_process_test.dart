@@ -177,39 +177,38 @@ No issues found!
 
           if (format == 'json') {
             final dir = Directory(app.path).resolveSymbolicLinksSync();
-            expect(
-                process.stdout,
-                'Analyzing...\n\n${jsonEncode({
-                      'version': 1,
-                      'diagnostics': [
-                        {
-                          'code': 'oy',
-                          'severity': 'INFO',
-                          'type': 'LINT',
-                          'location': {
-                            'file': '$dir/lib/another.dart',
-                            'range': {
-                              'start': {'offset': 5, 'line': 1, 'column': 6},
-                              'end': {'offset': 9, 'line': 1, 'column': 10},
-                            },
-                          },
-                          'problemMessage': 'Oy',
-                        },
-                        {
-                          'code': 'oy',
-                          'severity': 'INFO',
-                          'type': 'LINT',
-                          'location': {
-                            'file': '$dir/lib/main.dart',
-                            'range': {
-                              'start': {'offset': 5, 'line': 1, 'column': 6},
-                              'end': {'offset': 7, 'line': 1, 'column': 8},
-                            },
-                          },
-                          'problemMessage': 'Oy',
-                        }
-                      ],
-                    })}\n');
+            final json = jsonEncode({
+              'version': 1,
+              'diagnostics': [
+                {
+                  'code': 'oy',
+                  'severity': 'INFO',
+                  'type': 'LINT',
+                  'location': {
+                    'file': '$dir/lib/another.dart',
+                    'range': {
+                      'start': {'offset': 5, 'line': 1, 'column': 6},
+                      'end': {'offset': 9, 'line': 1, 'column': 10},
+                    },
+                  },
+                  'problemMessage': 'Oy',
+                },
+                {
+                  'code': 'oy',
+                  'severity': 'INFO',
+                  'type': 'LINT',
+                  'location': {
+                    'file': '$dir/lib/main.dart',
+                    'range': {
+                      'start': {'offset': 5, 'line': 1, 'column': 6},
+                      'end': {'offset': 7, 'line': 1, 'column': 8},
+                    },
+                  },
+                  'problemMessage': 'Oy',
+                }
+              ],
+            });
+            expect(process.stdout, 'Analyzing...\n\n$json\n');
           } else {
             expect(process.stdout, '''
 Analyzing...
