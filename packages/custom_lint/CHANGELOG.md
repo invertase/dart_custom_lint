@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Support JSON output format via CLI parameter `--format json|default` (thanks to @kuhnroyal)
+
 ## 0.5.6 - 2023-10-30
 
 Optimized logic for finding an unused VM_service port.
