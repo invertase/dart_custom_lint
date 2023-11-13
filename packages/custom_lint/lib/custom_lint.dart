@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer_plugin/protocol/protocol_common.dart';
-import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-import 'package:collection/collection.dart';
-import 'package:path/path.dart' as p;
+import 'package:cli_util/cli_logging.dart';
 
+import 'src/cli_logger.dart';
+import 'src/output/output_format.dart';
+import 'src/output/render_lints.dart';
 import 'src/plugin_delegate.dart';
 import 'src/runner.dart';
 import 'src/server_isolate_channel.dart';
@@ -39,6 +39,7 @@ Future<void> customLint({
   required Directory workingDirectory,
   bool fatalInfos = true,
   bool fatalWarnings = true,
+  OutputFormatEnum format = OutputFormatEnum.plain,
 }) async {
   // Reset the code
   exitCode = 0;
@@ -51,6 +52,7 @@ Future<void> customLint({
       workingDirectory: workingDirectory,
       fatalInfos: fatalInfos,
       fatalWarnings: fatalWarnings,
+      format: format,
     );
   } catch (_) {
     exitCode = 1;
@@ -65,6 +67,7 @@ Future<void> _runServer(
   required Directory workingDirectory,
   required bool fatalInfos,
   required bool fatalWarnings,
+  required OutputFormatEnum format,
 }) async {
   final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
@@ -87,20 +90,29 @@ Future<void> _runServer(
       runner = CustomLintRunner(customLintServer, workspace, channel);
 
       await runner.initialize;
+
+      final log = CliLogger();
+      final progress = log.progress('Analyzing');
+
       await _runPlugins(
         runner,
+        log: log,
+        progress: progress,
         reload: false,
         workingDirectory: workingDirectory,
         fatalInfos: fatalInfos,
         fatalWarnings: fatalWarnings,
+        format: format,
       );
 
       if (watchMode) {
         await _startWatchMode(
           runner,
+          log: log,
           workingDirectory: workingDirectory,
           fatalInfos: fatalInfos,
           fatalWarnings: fatalWarnings,
+          format: format,
         );
       }
     } finally {
@@ -117,87 +129,34 @@ Future<void> _runServer(
 
 Future<void> _runPlugins(
   CustomLintRunner runner, {
+  required Logger log,
+  required Progress progress,
   required bool reload,
   required Directory workingDirectory,
   required bool fatalInfos,
   required bool fatalWarnings,
+  required OutputFormatEnum format,
 }) async {
-  try {
-    final lints = await runner.getLints(reload: reload);
-    _renderLints(
-      lints,
-      workingDirectory: workingDirectory,
-      fatalInfos: fatalInfos,
-      fatalWarnings: fatalWarnings,
-    );
-  } catch (err, stack) {
-    exitCode = 1;
-    stderr.writeln('$err\n$stack');
-  }
-}
+  final lints = await runner.getLints(reload: reload);
 
-void _renderLints(
-  List<AnalysisErrorsParams> lints, {
-  required Directory workingDirectory,
-  required bool fatalInfos,
-  required bool fatalWarnings,
-}) {
-  var errors = lints.expand((lint) => lint.errors);
-
-  // Sort errors by severity, file, line, column, code, message
-  errors = errors.sorted((a, b) {
-    final severityCompare = -AnalysisErrorSeverity.VALUES
-        .indexOf(a.severity)
-        .compareTo(AnalysisErrorSeverity.VALUES.indexOf(b.severity));
-    if (severityCompare != 0) return severityCompare;
-
-    final fileCompare = _relativeFilePath(a.location.file, workingDirectory)
-        .compareTo(_relativeFilePath(b.location.file, workingDirectory));
-    if (fileCompare != 0) return fileCompare;
-
-    final lineCompare = a.location.startLine.compareTo(b.location.startLine);
-    if (lineCompare != 0) return lineCompare;
-
-    final columnCompare =
-        a.location.startColumn.compareTo(b.location.startColumn);
-    if (columnCompare != 0) return columnCompare;
-
-    final codeCompare = a.code.compareTo(b.code);
-    if (codeCompare != 0) return codeCompare;
-
-    return a.message.compareTo(b.message);
-  });
-
-  if (errors.isEmpty) {
-    stdout.writeln('No issues found!');
-    return;
-  }
-
-  var hasErrors = false;
-  var hasWarnings = false;
-  var hasInfos = false;
-  for (final error in errors) {
-    stdout.writeln(
-      '  ${_relativeFilePath(error.location.file, workingDirectory)}:${error.location.startLine}:${error.location.startColumn}'
-      ' • ${error.message} • ${error.code} • ${error.severity.name}',
-    );
-    hasErrors = hasErrors || error.severity == AnalysisErrorSeverity.ERROR;
-    hasWarnings =
-        hasWarnings || error.severity == AnalysisErrorSeverity.WARNING;
-    hasInfos = hasInfos || error.severity == AnalysisErrorSeverity.INFO;
-  }
-
-  if (hasErrors || (fatalWarnings && hasWarnings) || (fatalInfos && hasInfos)) {
-    exitCode = 1;
-    return;
-  }
+  renderLints(
+    lints,
+    log: log,
+    progress: progress,
+    workingDirectory: workingDirectory,
+    fatalInfos: fatalInfos,
+    fatalWarnings: fatalWarnings,
+    format: format,
+  );
 }
 
 Future<void> _startWatchMode(
   CustomLintRunner runner, {
+  required Logger log,
   required Directory workingDirectory,
   required bool fatalInfos,
   required bool fatalWarnings,
+  required OutputFormatEnum format,
 }) async {
   if (stdin.hasTerminal) {
     stdin
@@ -207,20 +166,23 @@ Future<void> _startWatchMode(
       ..lineMode = false;
   }
 
-  stdout.writeln(_help);
+  log.stdout(_help);
 
   // Handle user inputs, forcing the command to continue until the user asks to "quit"
   await for (final input in stdin.transform(utf8.decoder)) {
     switch (input) {
       case 'r':
         // Rerunning lints
-        stdout.writeln('Manual Reload...');
+        final progress = log.progress('Manual re-lint');
         await _runPlugins(
           runner,
+          log: log,
+          progress: progress,
           reload: true,
           workingDirectory: workingDirectory,
           fatalInfos: fatalInfos,
           fatalWarnings: fatalWarnings,
+          format: format,
         );
         break;
       case 'q':
@@ -230,11 +192,4 @@ Future<void> _startWatchMode(
       // Unknown command. Nothing to do
     }
   }
-}
-
-String _relativeFilePath(String file, Directory fromDir) {
-  return p.relative(
-    file,
-    from: fromDir.absolute.path,
-  );
 }
