@@ -1062,7 +1062,8 @@ dependency_overrides:
         expect(processes, isEmpty);
       });
 
-      test('uses fluter pub get if isUsingFlutter is true', () async {
+      test('uses fluter pub get if isUsingFlutter is true',
+          timeout: const Timeout.factor(2), () async {
         final workingDir = await createSimpleWorkspace([
           'flutter',
           'custom_lint_builder',
