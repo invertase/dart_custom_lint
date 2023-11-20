@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.5.7 - 2023-11-20
 
 - Support JSON output format via CLI parameter `--format json|default` (thanks to @kuhnroyal)
 
