@@ -22,6 +22,7 @@ File createAnalysisOptions(String content) {
 void main() {
   late File includeFile;
   late CustomLintConfigs includeConfig;
+  const testConfigUri = 'package:include_test_package/analysis_options.yaml';
   setUp(() {
     includeFile = createAnalysisOptions(
       '''
@@ -150,6 +151,15 @@ custom_lint:
       expect(configs.rules, {
         'a': const LintOptions.empty(enabled: true),
       });
+    });
+
+    test('include config using "package:" uri', () {
+      final file = createAnalysisOptions('''
+include: $testConfigUri
+      ''');
+      final configs = CustomLintConfigs.parse(file);
+
+      expect(configs.rules.containsKey('from_package'), true);
     });
 
     test('if custom_lint.rules is present, merges with "include"', () {

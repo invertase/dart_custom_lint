@@ -42,9 +42,11 @@ class CustomLintConfigs {
 
       final includeAbsolutePath = includeUri.isAbsolute
           ? includeUri.toFilePath()
-          : absolute(
-              analysisOptionsFile.parent.path,
-              includeUri.path,
+          : normalize(
+              absolute(
+                analysisOptionsFile.parent.path,
+                includeUri.path,
+              ),
             );
 
       includedOptions = CustomLintConfigs.parse(
