@@ -37,10 +37,15 @@ class CustomLintConfigs {
     final include = yaml['include'] as Object?;
     var includedOptions = CustomLintConfigs.empty;
     if (include is String) {
-      final includeAbsolutePath = absolute(
-        analysisOptionsFile.parent.path,
-        Isolate.resolvePackageUriSync(Uri.parse(include))?.toFilePath(),
-      );
+      var includeUri = Uri.parse(include);
+      includeUri = Isolate.resolvePackageUriSync(includeUri) ?? includeUri;
+
+      final includeAbsolutePath = includeUri.isAbsolute
+          ? includeUri.toFilePath()
+          : absolute(
+              analysisOptionsFile.parent.path,
+              includeUri.path,
+            );
 
       includedOptions = CustomLintConfigs.parse(
         analysisOptionsFile.provider.getFile(includeAbsolutePath),
