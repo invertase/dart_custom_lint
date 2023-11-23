@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
@@ -35,13 +37,18 @@ class CustomLintConfigs {
     final include = yaml['include'] as Object?;
     var includedOptions = CustomLintConfigs.empty;
     if (include is String) {
-      final includeAbsolutePath = absolute(
-        analysisOptionsFile.parent.path,
-        include,
-      );
-      includedOptions = CustomLintConfigs.parse(
-        analysisOptionsFile.provider.getFile(includeAbsolutePath),
-      );
+      final includeAbsolutePath = include.startsWith('package:')
+          ? Isolate.resolvePackageUriSync(Uri.parse(include))?.toFilePath()
+          : absolute(
+              analysisOptionsFile.parent.path,
+              include,
+            );
+
+      if (includeAbsolutePath != null) {
+        includedOptions = CustomLintConfigs.parse(
+          analysisOptionsFile.provider.getFile(includeAbsolutePath),
+        );
+      }
     }
 
     final customLint = yaml['custom_lint'] as Object?;
