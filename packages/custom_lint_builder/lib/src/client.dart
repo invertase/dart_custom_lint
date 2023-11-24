@@ -233,13 +233,13 @@ class _CustomLintAnalysisConfigs {
     this.pubspec,
   );
 
-  factory _CustomLintAnalysisConfigs.from(
+  static Future<_CustomLintAnalysisConfigs> from(
     Pubspec pubspecForContext,
     AnalysisContext analysisContext,
     CustomLintPluginClient client,
-  ) {
+  ) async {
     final configs =
-        CustomLintConfigs.parse(analysisContext.contextRoot.optionsFile);
+        await CustomLintConfigs.parse(analysisContext.contextRoot.optionsFile);
 
     final activePluginsForContext = Map.fromEntries(
       client._channel.registeredPlugins.entries.where(
@@ -384,7 +384,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
       _customLintConfigsForAnalysisContexts = {
         for (final pubspecEntry in pubspecs.entries)
-          pubspecEntry.key: _CustomLintAnalysisConfigs.from(
+          pubspecEntry.key: await _CustomLintAnalysisConfigs.from(
             await pubspecEntry.value,
             pubspecEntry.key,
             _client,

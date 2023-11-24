@@ -101,25 +101,25 @@ void main() {
       expect(offByDefault.isEnabled(CustomLintConfigs.empty), false);
     });
 
-    test('always enabled if on in the config files', () {
+    test('always enabled if on in the config files', () async {
       final analysisOptionFile = createAnalysisOptions('''
 custom_lint:
   rules:
   - test_lint
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptionFile);
+      final configs = await CustomLintConfigs.parse(analysisOptionFile);
 
       expect(onByDefault.isEnabled(configs), true);
       expect(offByDefault.isEnabled(configs), true);
     });
 
-    test('always disabled if off in the config files', () {
+    test('always disabled if off in the config files', () async {
       final analysisOptionFile = createAnalysisOptions('''
 custom_lint:
   rules:
   - test_lint: false
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptionFile);
+      final configs = await CustomLintConfigs.parse(analysisOptionFile);
 
       expect(onByDefault.isEnabled(configs), false);
       expect(offByDefault.isEnabled(configs), false);

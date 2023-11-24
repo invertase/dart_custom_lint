@@ -20,7 +20,7 @@ class CustomLintConfigs {
 
   /// Decode a [CustomLintConfigs] from a file.
   @internal
-  factory CustomLintConfigs.parse(File? analysisOptionsFile) {
+  static Future<CustomLintConfigs> parse(File? analysisOptionsFile) async {
     if (analysisOptionsFile == null || !analysisOptionsFile.exists) {
       return CustomLintConfigs.empty;
     }
@@ -38,7 +38,7 @@ class CustomLintConfigs {
     var includedOptions = CustomLintConfigs.empty;
     if (include is String) {
       var includeUri = Uri.parse(include);
-      includeUri = Isolate.resolvePackageUriSync(includeUri) ?? includeUri;
+      includeUri = (await Isolate.resolvePackageUri(includeUri)) ?? includeUri;
 
       final includeAbsolutePath = includeUri.isAbsolute
           ? includeUri.toFilePath()
@@ -49,7 +49,7 @@ class CustomLintConfigs {
               ),
             );
 
-      includedOptions = CustomLintConfigs.parse(
+      includedOptions = await CustomLintConfigs.parse(
         analysisOptionsFile.provider.getFile(includeAbsolutePath),
       );
     }

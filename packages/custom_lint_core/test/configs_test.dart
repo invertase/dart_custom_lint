@@ -23,7 +23,7 @@ void main() {
   late File includeFile;
   late CustomLintConfigs includeConfig;
   const testConfigUri = 'package:include_test_package/analysis_options.yaml';
-  setUp(() {
+  setUp(() async {
     includeFile = createAnalysisOptions(
       '''
 custom_lint:
@@ -36,7 +36,7 @@ custom_lint:
 ''',
     );
 
-    includeConfig = CustomLintConfigs.parse(includeFile);
+    includeConfig = await CustomLintConfigs.parse(includeFile);
   });
 
   test('Empty config', () {
@@ -45,43 +45,45 @@ custom_lint:
   });
 
   group('parse', () {
-    test('if file is null, defaults to empty', () {
-      final configs = CustomLintConfigs.parse(null);
+    test('if file is null, defaults to empty', () async {
+      final configs = await CustomLintConfigs.parse(null);
       expect(configs, same(CustomLintConfigs.empty));
     });
 
-    test('if file does not exist, defaults to empty ', () {
-      final configs = CustomLintConfigs.parse(
+    test('if file does not exist, defaults to empty ', () async {
+      final configs = await CustomLintConfigs.parse(
         PhysicalResourceProvider.INSTANCE.getFile('/this-does-no-exist'),
       );
       expect(configs, same(CustomLintConfigs.empty));
     });
 
-    test('if custom_lint not present in the option file, clones "include"', () {
+    test('if custom_lint not present in the option file, clones "include"',
+        () async {
       final analysisOptions = createAnalysisOptions('''
 include: ${includeFile.path}
 linter:
   rules:
     public_member_api_docs: false
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = await CustomLintConfigs.parse(analysisOptions);
 
       expect(configs, includeConfig);
     });
 
-    test('if custom_lint not present in the option file, clones "include"', () {
+    test('if custom_lint not present in the option file, clones "include"',
+        () async {
       final analysisOptions = createAnalysisOptions('''
 include: ${includeFile.path}
 linter:
   rules:
     public_member_api_docs: false
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = await CustomLintConfigs.parse(analysisOptions);
 
       expect(configs, includeConfig);
     });
 
-    test('if custom_lint is present but empty, clones "include"', () {
+    test('if custom_lint is present but empty, clones "include"', () async {
       final analysisOptions = createAnalysisOptions('''
 include: ${includeFile.path}
 linter:
@@ -90,18 +92,18 @@ linter:
 
 custom_lint:
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = await CustomLintConfigs.parse(analysisOptions);
 
       expect(configs, includeConfig);
     });
 
-    test('has an immutable list of rules', () {
+    test('has an immutable list of rules', () async {
       final analysisOptions = createAnalysisOptions('''
 custom_lint:
   rules: 
   - a
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = await CustomLintConfigs.parse(analysisOptions);
 
       expect(
         configs.rules,
@@ -116,7 +118,7 @@ custom_lint:
 
     test(
         'if custom_lint is present and defines some properties, merges with "include"',
-        () {
+        () async {
       final analysisOptions = createAnalysisOptions('''
 include: ${includeFile.path}
 linter:
@@ -126,7 +128,7 @@ linter:
 custom_lint:
   enable_all_lint_rules: false
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = await CustomLintConfigs.parse(analysisOptions);
 
       expect(configs.enableAllLintRules, false);
       expect(configs.rules, includeConfig.rules);
@@ -134,7 +136,7 @@ custom_lint:
 
     test(
         'if custom_lint.enable_all_lint_rules is not present, uses value from "include"',
-        () {
+        () async {
       final included = createAnalysisOptions('''
 custom_lint:
   enable_all_lint_rules: false
@@ -145,7 +147,7 @@ custom_lint:
   rules:
   - a
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = await CustomLintConfigs.parse(analysisOptions);
 
       expect(configs.enableAllLintRules, false);
       expect(configs.rules, {
@@ -153,16 +155,16 @@ custom_lint:
       });
     });
 
-    test('include config using "package:" uri', () {
+    test('include config using "package:" uri', () async {
       final file = createAnalysisOptions('''
 include: $testConfigUri
       ''');
-      final configs = CustomLintConfigs.parse(file);
+      final configs = await CustomLintConfigs.parse(file);
 
       expect(configs.rules.containsKey('from_package'), true);
     });
 
-    test('if custom_lint.rules is present, merges with "include"', () {
+    test('if custom_lint.rules is present, merges with "include"', () async {
       final analysisOptions = createAnalysisOptions('''
 include: ${includeFile.path}
 linter:
@@ -178,7 +180,7 @@ custom_lint:
     foo: 21
   - d
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = await CustomLintConfigs.parse(analysisOptions);
 
       expect(configs.enableAllLintRules, true);
       expect(configs.rules, {
@@ -193,8 +195,8 @@ custom_lint:
     });
 
     group('Handles errors', () {
-      test('Defaults to empty if yaml fails to parse', () {
-        final configs = CustomLintConfigs.parse(
+      test('Defaults to empty if yaml fails to parse', () async {
+        final configs = await CustomLintConfigs.parse(
           createAnalysisOptions('''
 foo:
     bar:
