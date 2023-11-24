@@ -155,13 +155,21 @@ custom_lint:
       });
     });
 
-    test('include config using "package:" uri', () async {
+    test('include config using package: uri', () async {
       final file = createAnalysisOptions('''
 include: $testConfigUri
       ''');
       final configs = await CustomLintConfigs.parse(file);
 
       expect(configs.rules.containsKey('from_package'), true);
+    });
+
+    test('if package: uri is not resolved default to empty', () async {
+      final file = createAnalysisOptions('''
+include: $testConfigUri/notexists
+      ''');
+      final configs = await CustomLintConfigs.parse(file);
+      expect(configs, same(CustomLintConfigs.empty));
     });
 
     test('if custom_lint.rules is present, merges with "include"', () async {
