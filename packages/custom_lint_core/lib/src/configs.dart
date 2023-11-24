@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
@@ -18,7 +20,7 @@ class CustomLintConfigs {
 
   /// Decode a [CustomLintConfigs] from a file.
   @internal
-  factory CustomLintConfigs.parse(File? analysisOptionsFile) {
+  static Future<CustomLintConfigs> parse(File? analysisOptionsFile) async {
     if (analysisOptionsFile == null || !analysisOptionsFile.exists) {
       return CustomLintConfigs.empty;
     }
@@ -35,11 +37,19 @@ class CustomLintConfigs {
     final include = yaml['include'] as Object?;
     var includedOptions = CustomLintConfigs.empty;
     if (include is String) {
-      final includeAbsolutePath = absolute(
-        analysisOptionsFile.parent.path,
-        include,
-      );
-      includedOptions = CustomLintConfigs.parse(
+      var includeUri = Uri.parse(include);
+      includeUri = (await Isolate.resolvePackageUri(includeUri)) ?? includeUri;
+
+      final includeAbsolutePath = includeUri.isAbsolute
+          ? includeUri.toFilePath()
+          : normalize(
+              absolute(
+                analysisOptionsFile.parent.path,
+                includeUri.path,
+              ),
+            );
+
+      includedOptions = await CustomLintConfigs.parse(
         analysisOptionsFile.provider.getFile(includeAbsolutePath),
       );
     }
