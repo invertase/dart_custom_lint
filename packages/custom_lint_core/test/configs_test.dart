@@ -75,6 +75,7 @@ Future<void> patchPackageConfig(
 void main() {
   late File includeFile;
   late CustomLintConfigs includeConfig;
+  const testPackageName = 'test_package_with_config';
   setUp(() async {
     includeFile = createAnalysisOptions(
       '''
@@ -206,8 +207,6 @@ custom_lint:
         'a': const LintOptions.empty(enabled: true),
       });
     });
-
-    const testPackageName = 'test_package_with_config';
 
     test('include config using package: uri', () async {
       final dir = createDir();
