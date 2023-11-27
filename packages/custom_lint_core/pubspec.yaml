@@ -24,4 +24,5 @@ dev_dependencies:
   build_runner: ^2.3.3
   lint_visitor_generator:
     path: ../lint_visitor_generator
+  package_config: ^2.1.0
   test: ^1.22.2

@@ -3,6 +3,7 @@ import 'dart:io' as io;
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:custom_lint_core/custom_lint_core.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
 import 'package:test/test.dart';
 
@@ -19,10 +20,62 @@ File createAnalysisOptions(String content) {
   return PhysicalResourceProvider.INSTANCE.getFile(ioFile.path);
 }
 
+Future<String> createTempProject(String projectName, String tempDirPath) async {
+  final projectPath = join(tempDirPath, projectName);
+
+  final dir = io.Directory(projectPath);
+  await dir.create();
+
+  final libPath = join(dir.path, 'lib');
+  await io.Directory(libPath).create();
+
+  final analysisOptionsPath = join(libPath, 'analysis_options.yaml');
+  await io.File(analysisOptionsPath).writeAsString('''
+custom_lint:
+  rules:
+    - from_package
+  ''');
+
+  return dir.path;
+}
+
+Future<void> patchPackageConfig(
+  String packageName,
+  String packagePath,
+) async {
+  final currentPackageConfig = await findPackageConfig(io.Directory.current);
+  if (currentPackageConfig == null) {
+    throw Exception('Could not find package config');
+  }
+
+  final patchedPackages = currentPackageConfig.packages.toList()
+    ..add(
+      Package(
+        packageName,
+        Uri.file('$packagePath/'),
+        packageUriRoot: Uri.parse('lib/'),
+      ),
+    );
+
+  final patchedPackageConfig = PackageConfig(
+    patchedPackages,
+    extraData: currentPackageConfig.extraData,
+  );
+
+  await savePackageConfig(
+    patchedPackageConfig,
+    io.Directory.current,
+  );
+
+  addTearDown(
+    () async => savePackageConfig(currentPackageConfig, io.Directory.current),
+  );
+}
+
 void main() {
   late File includeFile;
   late CustomLintConfigs includeConfig;
-  const testConfigUri = 'package:include_test_package/analysis_options.yaml';
+  const testPackageName = 'test_package_with_config';
   setUp(() async {
     includeFile = createAnalysisOptions(
       '''
@@ -156,19 +209,30 @@ custom_lint:
     });
 
     test('include config using package: uri', () async {
+      final dir = createDir();
       final file = createAnalysisOptions('''
-include: $testConfigUri
+include: package:$testPackageName/analysis_options.yaml
       ''');
+
+      final tempProjectDir = await createTempProject(dir.path, testPackageName);
+      await patchPackageConfig(testPackageName, tempProjectDir);
       final configs = await CustomLintConfigs.parse(file);
 
       expect(configs.rules.containsKey('from_package'), true);
     });
 
     test('if package: uri is not resolved default to empty', () async {
+      const notExistedFileName = 'this-does-not-exist';
+
       final file = createAnalysisOptions('''
-include: $testConfigUri/notexists
+include: package:$testPackageName/$notExistedFileName
       ''');
+      final dir = createDir();
+
+      final tempProjectDir = await createTempProject(dir.path, testPackageName);
+      await patchPackageConfig(testPackageName, tempProjectDir);
       final configs = await CustomLintConfigs.parse(file);
+
       expect(configs, same(CustomLintConfigs.empty));
     });
 
