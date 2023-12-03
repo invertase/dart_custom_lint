@@ -66,6 +66,34 @@ void fn2() {}
     expectMatchesGoldenFixes(fixes);
   });
 
+  test('Emits indented ignore quick-fix', () async {
+    final plugin = createPlugin(
+      name: 'test_lint',
+      main: source,
+    );
+
+    final app = createLintUsage(
+      name: 'test_app',
+      plugins: {'test_lint': plugin.uri},
+      source: {
+        'lib/main.dart': '''
+    void fn() {}
+''',
+      },
+    );
+
+    final runner = await startRunnerForApp(app);
+    await runner.getLints(reload: false);
+    final fixes = await runner
+        .getFixes(app.file('lib', 'main.dart').path, 10)
+        .then((e) => e.fixes);
+
+    expect(
+      fixes[0].fixes[0].change.edits[0].edits[0].replacement,
+      startsWith('${' ' * 4}// ignore: hello_world'),
+    );
+  });
+
   test('supports `// ignore: code`', () async {
     final plugin = createPlugin(
       name: 'test_lint',
