@@ -128,9 +128,13 @@ class IgnoreCode extends DartFix {
 
         final startLineOffset = resolver.lineInfo.getOffsetOfLine(offsetLine);
 
+        final indentLength = resolver.source.contents.data
+            .substring(startLineOffset)
+            .indexOf(RegExp(r'\S'));
+
         builder.addSimpleInsertion(
           startLineOffset,
-          '// ignore: ${analysisError.errorCode.name}\n',
+          '${' ' * indentLength}// ignore: ${analysisError.errorCode.name}\n',
         );
       }
     });
