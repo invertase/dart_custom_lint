@@ -1,3 +1,7 @@
+## Unreleased fix
+
+- `// ignore` comments now correctly respect indentation when they are inserted (thanks to @PiotrRogulski)
+
 ## 0.5.7 - 2023-11-20
 
 - `custom_lint` upgraded to `0.5.7`
