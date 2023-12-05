@@ -4,6 +4,7 @@ import 'package:analyzer/file_system/file_system.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
+import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
 import '../custom_lint_core.dart';
@@ -37,20 +38,30 @@ class CustomLintConfigs {
     final include = yaml['include'] as Object?;
     var includedOptions = CustomLintConfigs.empty;
     if (include is String) {
-      final includeUri = Uri.parse(include);
-
-      var includeAbsoluteUri = includeUri;
-      if (!includeUri.isAbsolute) {
+      String includeAbsolutePath;
+      if (include.startsWith('package:')) {
         final packageConfig = await findPackageConfig(io.Directory.current);
         if (packageConfig == null) {
-          throw Exception('Could not find package config');
+          throw Exception(
+            'package_config.json is not found. Try running "pub get"',
+          );
         }
 
-        includeAbsoluteUri = packageConfig.resolve(includeUri) ?? includeUri;
+        final packageUri = packageConfig.resolve(Uri.parse(include));
+        if (packageUri == null) {
+          throw Exception('Could not find package by uri "$include"');
+        }
+
+        includeAbsolutePath = packageUri.toFilePath();
+      } else {
+        includeAbsolutePath = join(
+          analysisOptionsFile.parent.path,
+          include,
+        );
       }
 
       includedOptions = await CustomLintConfigs.parse(
-        analysisOptionsFile.provider.getFile(includeAbsoluteUri.toString()),
+        analysisOptionsFile.provider.getFile(includeAbsolutePath),
       );
     }
 
