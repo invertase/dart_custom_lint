@@ -1,4 +1,8 @@
-## Unreleased patch
+## Unreleased fix
+
+- `// ignore` comments now correctly respect indentation when they are inserted (thanks to @PiotrRogulski)
+
+## 0.5.7 - 2023-11-20
 
 - Support JSON output format via CLI parameter `--format json|default` (thanks to @kuhnroyal)
 
