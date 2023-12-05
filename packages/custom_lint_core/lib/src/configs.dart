@@ -1,9 +1,9 @@
-import 'dart:isolate';
+import 'dart:io' as io;
 
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
-import 'package:path/path.dart';
+import 'package:package_config/package_config.dart';
 import 'package:yaml/yaml.dart';
 
 import '../custom_lint_core.dart';
@@ -37,20 +37,20 @@ class CustomLintConfigs {
     final include = yaml['include'] as Object?;
     var includedOptions = CustomLintConfigs.empty;
     if (include is String) {
-      var includeUri = Uri.parse(include);
-      includeUri = (await Isolate.resolvePackageUri(includeUri)) ?? includeUri;
+      final includeUri = Uri.parse(include);
 
-      final includeAbsolutePath = includeUri.isAbsolute
-          ? includeUri.toFilePath()
-          : normalize(
-              absolute(
-                analysisOptionsFile.parent.path,
-                includeUri.path,
-              ),
-            );
+      var includeAbsoluteUri = includeUri;
+      if (!includeUri.isAbsolute) {
+        final packageConfig = await findPackageConfig(io.Directory.current);
+        if (packageConfig == null) {
+          throw Exception('Could not find package config');
+        }
+
+        includeAbsoluteUri = packageConfig.resolve(includeUri) ?? includeUri;
+      }
 
       includedOptions = await CustomLintConfigs.parse(
-        analysisOptionsFile.provider.getFile(includeAbsolutePath),
+        analysisOptionsFile.provider.getFile(includeAbsoluteUri.toString()),
       );
     }
 
