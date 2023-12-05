@@ -38,16 +38,24 @@ class CustomLintConfigs {
     var includedOptions = CustomLintConfigs.empty;
     if (include is String) {
       var includeUri = Uri.parse(include);
-      includeUri = (await Isolate.resolvePackageUri(includeUri)) ?? includeUri;
 
-      final includeAbsolutePath = includeUri.isAbsolute
-          ? includeUri.toFilePath()
-          : normalize(
-              absolute(
-                analysisOptionsFile.parent.path,
-                includeUri.path,
-              ),
-            );
+      final packageUri = await Isolate.resolvePackageUri(includeUri);
+      if (packageUri != null) {
+        includeUri = packageUri;
+      }
+
+      final includePath = includeUri.toFilePath();
+      String includeAbsolutePath;
+      if (includeUri.isAbsolute) {
+        includeAbsolutePath = includePath;
+      } else {
+        includeAbsolutePath = normalize(
+          absolute(
+            analysisOptionsFile.parent.path,
+            includePath,
+          ),
+        );
+      }
 
       includedOptions = await CustomLintConfigs.parse(
         analysisOptionsFile.provider.getFile(includeAbsolutePath),
