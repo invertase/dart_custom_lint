@@ -51,7 +51,7 @@ class CustomLintConfigs {
         includeAbsolutePath = normalize(
           absolute(
             analysisOptionsFile.parent.path,
-            include,
+            includeUri.toFilePath(),
           ),
         );
       }
