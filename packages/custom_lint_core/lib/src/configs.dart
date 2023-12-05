@@ -44,14 +44,15 @@ class CustomLintConfigs {
         includeUri = packageUri;
       }
 
+      final includePath = includeUri.toFilePath();
       String includeAbsolutePath;
       if (includeUri.isAbsolute) {
-        includeAbsolutePath = includeUri.toFilePath();
+        includeAbsolutePath = includePath;
       } else {
         includeAbsolutePath = normalize(
           absolute(
             analysisOptionsFile.parent.path,
-            includeUri.toFilePath(),
+            includePath,
           ),
         );
       }
