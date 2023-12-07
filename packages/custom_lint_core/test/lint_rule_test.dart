@@ -107,7 +107,7 @@ custom_lint:
   rules:
   - test_lint
 ''');
-      final configs = await CustomLintConfigs.parse(analysisOptionFile);
+      final configs = CustomLintConfigs.parse(analysisOptionFile);
 
       expect(onByDefault.isEnabled(configs), true);
       expect(offByDefault.isEnabled(configs), true);
@@ -119,7 +119,7 @@ custom_lint:
   rules:
   - test_lint: false
 ''');
-      final configs = await CustomLintConfigs.parse(analysisOptionFile);
+      final configs = CustomLintConfigs.parse(analysisOptionFile);
 
       expect(onByDefault.isEnabled(configs), false);
       expect(offByDefault.isEnabled(configs), false);
