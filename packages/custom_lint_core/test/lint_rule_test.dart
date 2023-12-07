@@ -101,7 +101,7 @@ void main() {
       expect(offByDefault.isEnabled(CustomLintConfigs.empty), false);
     });
 
-    test('always enabled if on in the config files', () async {
+    test('always enabled if on in the config files', () {
       final analysisOptionFile = createAnalysisOptions('''
 custom_lint:
   rules:
@@ -113,7 +113,7 @@ custom_lint:
       expect(offByDefault.isEnabled(configs), true);
     });
 
-    test('always disabled if off in the config files', () async {
+    test('always disabled if off in the config files', () {
       final analysisOptionFile = createAnalysisOptions('''
 custom_lint:
   rules:
