@@ -1,3 +1,7 @@
+## Unreleased patch
+
+Added an optional `customPath` to the various `ChangeReporter` methods (thanks to @laurentschall)
+
 ## 0.5.7 - 2023-11-20
 
 - `custom_lint` upgraded to `0.5.7`
@@ -50,6 +54,7 @@ Support analyzer v6
 - `custom_lint` upgraded to `0.3.2`
 
 ## 0.3.1 - 2023-03-09
+
 Update dependencies
 
 ## 0.3.0 - 2023-03-09
