@@ -122,25 +122,25 @@ class _$CustomLintRequestCopyWithImpl<$Res, $Val extends CustomLintRequest>
 }
 
 /// @nodoc
-abstract class _$$CustomLintRequestAnalyzerPluginRequestCopyWith<$Res>
+abstract class _$$CustomLintRequestAnalyzerPluginRequestImplCopyWith<$Res>
     implements $CustomLintRequestCopyWith<$Res> {
-  factory _$$CustomLintRequestAnalyzerPluginRequestCopyWith(
-          _$CustomLintRequestAnalyzerPluginRequest value,
-          $Res Function(_$CustomLintRequestAnalyzerPluginRequest) then) =
-      __$$CustomLintRequestAnalyzerPluginRequestCopyWithImpl<$Res>;
+  factory _$$CustomLintRequestAnalyzerPluginRequestImplCopyWith(
+          _$CustomLintRequestAnalyzerPluginRequestImpl value,
+          $Res Function(_$CustomLintRequestAnalyzerPluginRequestImpl) then) =
+      __$$CustomLintRequestAnalyzerPluginRequestImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({Request request, String id});
 }
 
 /// @nodoc
-class __$$CustomLintRequestAnalyzerPluginRequestCopyWithImpl<$Res>
+class __$$CustomLintRequestAnalyzerPluginRequestImplCopyWithImpl<$Res>
     extends _$CustomLintRequestCopyWithImpl<$Res,
-        _$CustomLintRequestAnalyzerPluginRequest>
-    implements _$$CustomLintRequestAnalyzerPluginRequestCopyWith<$Res> {
-  __$$CustomLintRequestAnalyzerPluginRequestCopyWithImpl(
-      _$CustomLintRequestAnalyzerPluginRequest _value,
-      $Res Function(_$CustomLintRequestAnalyzerPluginRequest) _then)
+        _$CustomLintRequestAnalyzerPluginRequestImpl>
+    implements _$$CustomLintRequestAnalyzerPluginRequestImplCopyWith<$Res> {
+  __$$CustomLintRequestAnalyzerPluginRequestImplCopyWithImpl(
+      _$CustomLintRequestAnalyzerPluginRequestImpl _value,
+      $Res Function(_$CustomLintRequestAnalyzerPluginRequestImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -149,7 +149,7 @@ class __$$CustomLintRequestAnalyzerPluginRequestCopyWithImpl<$Res>
     Object? request = null,
     Object? id = null,
   }) {
-    return _then(_$CustomLintRequestAnalyzerPluginRequest(
+    return _then(_$CustomLintRequestAnalyzerPluginRequestImpl(
       null == request
           ? _value.request
           : request // ignore: cast_nullable_to_non_nullable
@@ -164,15 +164,15 @@ class __$$CustomLintRequestAnalyzerPluginRequestCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$CustomLintRequestAnalyzerPluginRequest
+class _$CustomLintRequestAnalyzerPluginRequestImpl
     implements CustomLintRequestAnalyzerPluginRequest {
-  _$CustomLintRequestAnalyzerPluginRequest(this.request,
+  _$CustomLintRequestAnalyzerPluginRequestImpl(this.request,
       {required this.id, final String? $type})
       : $type = $type ?? 'analyzerPluginRequest';
 
-  factory _$CustomLintRequestAnalyzerPluginRequest.fromJson(
+  factory _$CustomLintRequestAnalyzerPluginRequestImpl.fromJson(
           Map<String, dynamic> json) =>
-      _$$CustomLintRequestAnalyzerPluginRequestFromJson(json);
+      _$$CustomLintRequestAnalyzerPluginRequestImplFromJson(json);
 
   @override
   final Request request;
@@ -188,10 +188,10 @@ class _$CustomLintRequestAnalyzerPluginRequest
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$CustomLintRequestAnalyzerPluginRequest &&
+            other is _$CustomLintRequestAnalyzerPluginRequestImpl &&
             (identical(other.request, request) || other.request == request) &&
             (identical(other.id, id) || other.id == id));
   }
@@ -203,10 +203,11 @@ class _$CustomLintRequestAnalyzerPluginRequest
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$CustomLintRequestAnalyzerPluginRequestCopyWith<
-          _$CustomLintRequestAnalyzerPluginRequest>
-      get copyWith => __$$CustomLintRequestAnalyzerPluginRequestCopyWithImpl<
-          _$CustomLintRequestAnalyzerPluginRequest>(this, _$identity);
+  _$$CustomLintRequestAnalyzerPluginRequestImplCopyWith<
+          _$CustomLintRequestAnalyzerPluginRequestImpl>
+      get copyWith =>
+          __$$CustomLintRequestAnalyzerPluginRequestImplCopyWithImpl<
+              _$CustomLintRequestAnalyzerPluginRequestImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -284,7 +285,7 @@ class _$CustomLintRequestAnalyzerPluginRequest
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$CustomLintRequestAnalyzerPluginRequestToJson(
+    return _$$CustomLintRequestAnalyzerPluginRequestImplToJson(
       this,
     );
   }
@@ -293,42 +294,43 @@ class _$CustomLintRequestAnalyzerPluginRequest
 abstract class CustomLintRequestAnalyzerPluginRequest
     implements CustomLintRequest {
   factory CustomLintRequestAnalyzerPluginRequest(final Request request,
-      {required final String id}) = _$CustomLintRequestAnalyzerPluginRequest;
+          {required final String id}) =
+      _$CustomLintRequestAnalyzerPluginRequestImpl;
 
   factory CustomLintRequestAnalyzerPluginRequest.fromJson(
           Map<String, dynamic> json) =
-      _$CustomLintRequestAnalyzerPluginRequest.fromJson;
+      _$CustomLintRequestAnalyzerPluginRequestImpl.fromJson;
 
   Request get request;
   @override
   String get id;
   @override
   @JsonKey(ignore: true)
-  _$$CustomLintRequestAnalyzerPluginRequestCopyWith<
-          _$CustomLintRequestAnalyzerPluginRequest>
+  _$$CustomLintRequestAnalyzerPluginRequestImplCopyWith<
+          _$CustomLintRequestAnalyzerPluginRequestImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintRequestAwaitAnalysisDoneCopyWith<$Res>
+abstract class _$$CustomLintRequestAwaitAnalysisDoneImplCopyWith<$Res>
     implements $CustomLintRequestCopyWith<$Res> {
-  factory _$$_CustomLintRequestAwaitAnalysisDoneCopyWith(
-          _$_CustomLintRequestAwaitAnalysisDone value,
-          $Res Function(_$_CustomLintRequestAwaitAnalysisDone) then) =
-      __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>;
+  factory _$$CustomLintRequestAwaitAnalysisDoneImplCopyWith(
+          _$CustomLintRequestAwaitAnalysisDoneImpl value,
+          $Res Function(_$CustomLintRequestAwaitAnalysisDoneImpl) then) =
+      __$$CustomLintRequestAwaitAnalysisDoneImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String id, bool reload});
 }
 
 /// @nodoc
-class __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>
+class __$$CustomLintRequestAwaitAnalysisDoneImplCopyWithImpl<$Res>
     extends _$CustomLintRequestCopyWithImpl<$Res,
-        _$_CustomLintRequestAwaitAnalysisDone>
-    implements _$$_CustomLintRequestAwaitAnalysisDoneCopyWith<$Res> {
-  __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl(
-      _$_CustomLintRequestAwaitAnalysisDone _value,
-      $Res Function(_$_CustomLintRequestAwaitAnalysisDone) _then)
+        _$CustomLintRequestAwaitAnalysisDoneImpl>
+    implements _$$CustomLintRequestAwaitAnalysisDoneImplCopyWith<$Res> {
+  __$$CustomLintRequestAwaitAnalysisDoneImplCopyWithImpl(
+      _$CustomLintRequestAwaitAnalysisDoneImpl _value,
+      $Res Function(_$CustomLintRequestAwaitAnalysisDoneImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -337,7 +339,7 @@ class __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>
     Object? id = null,
     Object? reload = null,
   }) {
-    return _then(_$_CustomLintRequestAwaitAnalysisDone(
+    return _then(_$CustomLintRequestAwaitAnalysisDoneImpl(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -352,15 +354,15 @@ class __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintRequestAwaitAnalysisDone
+class _$CustomLintRequestAwaitAnalysisDoneImpl
     implements _CustomLintRequestAwaitAnalysisDone {
-  _$_CustomLintRequestAwaitAnalysisDone(
+  _$CustomLintRequestAwaitAnalysisDoneImpl(
       {required this.id, required this.reload, final String? $type})
       : $type = $type ?? 'awaitAnalysisDone';
 
-  factory _$_CustomLintRequestAwaitAnalysisDone.fromJson(
+  factory _$CustomLintRequestAwaitAnalysisDoneImpl.fromJson(
           Map<String, dynamic> json) =>
-      _$$_CustomLintRequestAwaitAnalysisDoneFromJson(json);
+      _$$CustomLintRequestAwaitAnalysisDoneImplFromJson(json);
 
   @override
   final String id;
@@ -376,10 +378,10 @@ class _$_CustomLintRequestAwaitAnalysisDone
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintRequestAwaitAnalysisDone &&
+            other is _$CustomLintRequestAwaitAnalysisDoneImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.reload, reload) || other.reload == reload));
   }
@@ -391,10 +393,10 @@ class _$_CustomLintRequestAwaitAnalysisDone
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintRequestAwaitAnalysisDoneCopyWith<
-          _$_CustomLintRequestAwaitAnalysisDone>
-      get copyWith => __$$_CustomLintRequestAwaitAnalysisDoneCopyWithImpl<
-          _$_CustomLintRequestAwaitAnalysisDone>(this, _$identity);
+  _$$CustomLintRequestAwaitAnalysisDoneImplCopyWith<
+          _$CustomLintRequestAwaitAnalysisDoneImpl>
+      get copyWith => __$$CustomLintRequestAwaitAnalysisDoneImplCopyWithImpl<
+          _$CustomLintRequestAwaitAnalysisDoneImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -472,7 +474,7 @@ class _$_CustomLintRequestAwaitAnalysisDone
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintRequestAwaitAnalysisDoneToJson(
+    return _$$CustomLintRequestAwaitAnalysisDoneImplToJson(
       this,
     );
   }
@@ -482,39 +484,40 @@ abstract class _CustomLintRequestAwaitAnalysisDone
     implements CustomLintRequest {
   factory _CustomLintRequestAwaitAnalysisDone(
       {required final String id,
-      required final bool reload}) = _$_CustomLintRequestAwaitAnalysisDone;
+      required final bool reload}) = _$CustomLintRequestAwaitAnalysisDoneImpl;
 
   factory _CustomLintRequestAwaitAnalysisDone.fromJson(
           Map<String, dynamic> json) =
-      _$_CustomLintRequestAwaitAnalysisDone.fromJson;
+      _$CustomLintRequestAwaitAnalysisDoneImpl.fromJson;
 
   @override
   String get id;
   bool get reload;
   @override
   @JsonKey(ignore: true)
-  _$$_CustomLintRequestAwaitAnalysisDoneCopyWith<
-          _$_CustomLintRequestAwaitAnalysisDone>
+  _$$CustomLintRequestAwaitAnalysisDoneImplCopyWith<
+          _$CustomLintRequestAwaitAnalysisDoneImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintRequestPingCopyWith<$Res>
+abstract class _$$CustomLintRequestPingImplCopyWith<$Res>
     implements $CustomLintRequestCopyWith<$Res> {
-  factory _$$_CustomLintRequestPingCopyWith(_$_CustomLintRequestPing value,
-          $Res Function(_$_CustomLintRequestPing) then) =
-      __$$_CustomLintRequestPingCopyWithImpl<$Res>;
+  factory _$$CustomLintRequestPingImplCopyWith(
+          _$CustomLintRequestPingImpl value,
+          $Res Function(_$CustomLintRequestPingImpl) then) =
+      __$$CustomLintRequestPingImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String id});
 }
 
 /// @nodoc
-class __$$_CustomLintRequestPingCopyWithImpl<$Res>
-    extends _$CustomLintRequestCopyWithImpl<$Res, _$_CustomLintRequestPing>
-    implements _$$_CustomLintRequestPingCopyWith<$Res> {
-  __$$_CustomLintRequestPingCopyWithImpl(_$_CustomLintRequestPing _value,
-      $Res Function(_$_CustomLintRequestPing) _then)
+class __$$CustomLintRequestPingImplCopyWithImpl<$Res>
+    extends _$CustomLintRequestCopyWithImpl<$Res, _$CustomLintRequestPingImpl>
+    implements _$$CustomLintRequestPingImplCopyWith<$Res> {
+  __$$CustomLintRequestPingImplCopyWithImpl(_$CustomLintRequestPingImpl _value,
+      $Res Function(_$CustomLintRequestPingImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -522,7 +525,7 @@ class __$$_CustomLintRequestPingCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
   }) {
-    return _then(_$_CustomLintRequestPing(
+    return _then(_$CustomLintRequestPingImpl(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -533,12 +536,12 @@ class __$$_CustomLintRequestPingCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintRequestPing implements _CustomLintRequestPing {
-  _$_CustomLintRequestPing({required this.id, final String? $type})
+class _$CustomLintRequestPingImpl implements _CustomLintRequestPing {
+  _$CustomLintRequestPingImpl({required this.id, final String? $type})
       : $type = $type ?? 'ping';
 
-  factory _$_CustomLintRequestPing.fromJson(Map<String, dynamic> json) =>
-      _$$_CustomLintRequestPingFromJson(json);
+  factory _$CustomLintRequestPingImpl.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintRequestPingImplFromJson(json);
 
   @override
   final String id;
@@ -552,10 +555,10 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintRequestPing &&
+            other is _$CustomLintRequestPingImpl &&
             (identical(other.id, id) || other.id == id));
   }
 
@@ -566,9 +569,9 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintRequestPingCopyWith<_$_CustomLintRequestPing> get copyWith =>
-      __$$_CustomLintRequestPingCopyWithImpl<_$_CustomLintRequestPing>(
-          this, _$identity);
+  _$$CustomLintRequestPingImplCopyWith<_$CustomLintRequestPingImpl>
+      get copyWith => __$$CustomLintRequestPingImplCopyWithImpl<
+          _$CustomLintRequestPingImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -646,7 +649,7 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintRequestPingToJson(
+    return _$$CustomLintRequestPingImplToJson(
       this,
     );
   }
@@ -654,17 +657,17 @@ class _$_CustomLintRequestPing implements _CustomLintRequestPing {
 
 abstract class _CustomLintRequestPing implements CustomLintRequest {
   factory _CustomLintRequestPing({required final String id}) =
-      _$_CustomLintRequestPing;
+      _$CustomLintRequestPingImpl;
 
   factory _CustomLintRequestPing.fromJson(Map<String, dynamic> json) =
-      _$_CustomLintRequestPing.fromJson;
+      _$CustomLintRequestPingImpl.fromJson;
 
   @override
   String get id;
   @override
   @JsonKey(ignore: true)
-  _$$_CustomLintRequestPingCopyWith<_$_CustomLintRequestPing> get copyWith =>
-      throw _privateConstructorUsedError;
+  _$$CustomLintRequestPingImplCopyWith<_$CustomLintRequestPingImpl>
+      get copyWith => throw _privateConstructorUsedError;
 }
 
 CustomLintResponse _$CustomLintResponseFromJson(Map<String, dynamic> json) {
@@ -785,25 +788,25 @@ class _$CustomLintResponseCopyWithImpl<$Res, $Val extends CustomLintResponse>
 }
 
 /// @nodoc
-abstract class _$$_CustomLintResponseAnalyzerPluginResponseCopyWith<$Res>
+abstract class _$$CustomLintResponseAnalyzerPluginResponseImplCopyWith<$Res>
     implements $CustomLintResponseCopyWith<$Res> {
-  factory _$$_CustomLintResponseAnalyzerPluginResponseCopyWith(
-          _$_CustomLintResponseAnalyzerPluginResponse value,
-          $Res Function(_$_CustomLintResponseAnalyzerPluginResponse) then) =
-      __$$_CustomLintResponseAnalyzerPluginResponseCopyWithImpl<$Res>;
+  factory _$$CustomLintResponseAnalyzerPluginResponseImplCopyWith(
+          _$CustomLintResponseAnalyzerPluginResponseImpl value,
+          $Res Function(_$CustomLintResponseAnalyzerPluginResponseImpl) then) =
+      __$$CustomLintResponseAnalyzerPluginResponseImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({Response response, String id});
 }
 
 /// @nodoc
-class __$$_CustomLintResponseAnalyzerPluginResponseCopyWithImpl<$Res>
+class __$$CustomLintResponseAnalyzerPluginResponseImplCopyWithImpl<$Res>
     extends _$CustomLintResponseCopyWithImpl<$Res,
-        _$_CustomLintResponseAnalyzerPluginResponse>
-    implements _$$_CustomLintResponseAnalyzerPluginResponseCopyWith<$Res> {
-  __$$_CustomLintResponseAnalyzerPluginResponseCopyWithImpl(
-      _$_CustomLintResponseAnalyzerPluginResponse _value,
-      $Res Function(_$_CustomLintResponseAnalyzerPluginResponse) _then)
+        _$CustomLintResponseAnalyzerPluginResponseImpl>
+    implements _$$CustomLintResponseAnalyzerPluginResponseImplCopyWith<$Res> {
+  __$$CustomLintResponseAnalyzerPluginResponseImplCopyWithImpl(
+      _$CustomLintResponseAnalyzerPluginResponseImpl _value,
+      $Res Function(_$CustomLintResponseAnalyzerPluginResponseImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -812,7 +815,7 @@ class __$$_CustomLintResponseAnalyzerPluginResponseCopyWithImpl<$Res>
     Object? response = null,
     Object? id = null,
   }) {
-    return _then(_$_CustomLintResponseAnalyzerPluginResponse(
+    return _then(_$CustomLintResponseAnalyzerPluginResponseImpl(
       null == response
           ? _value.response
           : response // ignore: cast_nullable_to_non_nullable
@@ -827,15 +830,15 @@ class __$$_CustomLintResponseAnalyzerPluginResponseCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintResponseAnalyzerPluginResponse
+class _$CustomLintResponseAnalyzerPluginResponseImpl
     implements _CustomLintResponseAnalyzerPluginResponse {
-  _$_CustomLintResponseAnalyzerPluginResponse(this.response,
+  _$CustomLintResponseAnalyzerPluginResponseImpl(this.response,
       {required this.id, final String? $type})
       : $type = $type ?? 'analyzerPluginResponse';
 
-  factory _$_CustomLintResponseAnalyzerPluginResponse.fromJson(
+  factory _$CustomLintResponseAnalyzerPluginResponseImpl.fromJson(
           Map<String, dynamic> json) =>
-      _$$_CustomLintResponseAnalyzerPluginResponseFromJson(json);
+      _$$CustomLintResponseAnalyzerPluginResponseImplFromJson(json);
 
   @override
   final Response response;
@@ -851,10 +854,10 @@ class _$_CustomLintResponseAnalyzerPluginResponse
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintResponseAnalyzerPluginResponse &&
+            other is _$CustomLintResponseAnalyzerPluginResponseImpl &&
             (identical(other.response, response) ||
                 other.response == response) &&
             (identical(other.id, id) || other.id == id));
@@ -867,10 +870,11 @@ class _$_CustomLintResponseAnalyzerPluginResponse
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintResponseAnalyzerPluginResponseCopyWith<
-          _$_CustomLintResponseAnalyzerPluginResponse>
-      get copyWith => __$$_CustomLintResponseAnalyzerPluginResponseCopyWithImpl<
-          _$_CustomLintResponseAnalyzerPluginResponse>(this, _$identity);
+  _$$CustomLintResponseAnalyzerPluginResponseImplCopyWith<
+          _$CustomLintResponseAnalyzerPluginResponseImpl>
+      get copyWith =>
+          __$$CustomLintResponseAnalyzerPluginResponseImplCopyWithImpl<
+              _$CustomLintResponseAnalyzerPluginResponseImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -956,7 +960,7 @@ class _$_CustomLintResponseAnalyzerPluginResponse
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintResponseAnalyzerPluginResponseToJson(
+    return _$$CustomLintResponseAnalyzerPluginResponseImplToJson(
       this,
     );
   }
@@ -965,42 +969,43 @@ class _$_CustomLintResponseAnalyzerPluginResponse
 abstract class _CustomLintResponseAnalyzerPluginResponse
     implements CustomLintResponse {
   factory _CustomLintResponseAnalyzerPluginResponse(final Response response,
-      {required final String id}) = _$_CustomLintResponseAnalyzerPluginResponse;
+          {required final String id}) =
+      _$CustomLintResponseAnalyzerPluginResponseImpl;
 
   factory _CustomLintResponseAnalyzerPluginResponse.fromJson(
           Map<String, dynamic> json) =
-      _$_CustomLintResponseAnalyzerPluginResponse.fromJson;
+      _$CustomLintResponseAnalyzerPluginResponseImpl.fromJson;
 
   Response get response;
   @override
   String get id;
   @override
   @JsonKey(ignore: true)
-  _$$_CustomLintResponseAnalyzerPluginResponseCopyWith<
-          _$_CustomLintResponseAnalyzerPluginResponse>
+  _$$CustomLintResponseAnalyzerPluginResponseImplCopyWith<
+          _$CustomLintResponseAnalyzerPluginResponseImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintResponseAwaitAnalysisDoneCopyWith<$Res>
+abstract class _$$CustomLintResponseAwaitAnalysisDoneImplCopyWith<$Res>
     implements $CustomLintResponseCopyWith<$Res> {
-  factory _$$_CustomLintResponseAwaitAnalysisDoneCopyWith(
-          _$_CustomLintResponseAwaitAnalysisDone value,
-          $Res Function(_$_CustomLintResponseAwaitAnalysisDone) then) =
-      __$$_CustomLintResponseAwaitAnalysisDoneCopyWithImpl<$Res>;
+  factory _$$CustomLintResponseAwaitAnalysisDoneImplCopyWith(
+          _$CustomLintResponseAwaitAnalysisDoneImpl value,
+          $Res Function(_$CustomLintResponseAwaitAnalysisDoneImpl) then) =
+      __$$CustomLintResponseAwaitAnalysisDoneImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String id});
 }
 
 /// @nodoc
-class __$$_CustomLintResponseAwaitAnalysisDoneCopyWithImpl<$Res>
+class __$$CustomLintResponseAwaitAnalysisDoneImplCopyWithImpl<$Res>
     extends _$CustomLintResponseCopyWithImpl<$Res,
-        _$_CustomLintResponseAwaitAnalysisDone>
-    implements _$$_CustomLintResponseAwaitAnalysisDoneCopyWith<$Res> {
-  __$$_CustomLintResponseAwaitAnalysisDoneCopyWithImpl(
-      _$_CustomLintResponseAwaitAnalysisDone _value,
-      $Res Function(_$_CustomLintResponseAwaitAnalysisDone) _then)
+        _$CustomLintResponseAwaitAnalysisDoneImpl>
+    implements _$$CustomLintResponseAwaitAnalysisDoneImplCopyWith<$Res> {
+  __$$CustomLintResponseAwaitAnalysisDoneImplCopyWithImpl(
+      _$CustomLintResponseAwaitAnalysisDoneImpl _value,
+      $Res Function(_$CustomLintResponseAwaitAnalysisDoneImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -1008,7 +1013,7 @@ class __$$_CustomLintResponseAwaitAnalysisDoneCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
   }) {
-    return _then(_$_CustomLintResponseAwaitAnalysisDone(
+    return _then(_$CustomLintResponseAwaitAnalysisDoneImpl(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -1019,15 +1024,15 @@ class __$$_CustomLintResponseAwaitAnalysisDoneCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintResponseAwaitAnalysisDone
+class _$CustomLintResponseAwaitAnalysisDoneImpl
     implements _CustomLintResponseAwaitAnalysisDone {
-  _$_CustomLintResponseAwaitAnalysisDone(
+  _$CustomLintResponseAwaitAnalysisDoneImpl(
       {required this.id, final String? $type})
       : $type = $type ?? 'awaitAnalysisDone';
 
-  factory _$_CustomLintResponseAwaitAnalysisDone.fromJson(
+  factory _$CustomLintResponseAwaitAnalysisDoneImpl.fromJson(
           Map<String, dynamic> json) =>
-      _$$_CustomLintResponseAwaitAnalysisDoneFromJson(json);
+      _$$CustomLintResponseAwaitAnalysisDoneImplFromJson(json);
 
   @override
   final String id;
@@ -1041,10 +1046,10 @@ class _$_CustomLintResponseAwaitAnalysisDone
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintResponseAwaitAnalysisDone &&
+            other is _$CustomLintResponseAwaitAnalysisDoneImpl &&
             (identical(other.id, id) || other.id == id));
   }
 
@@ -1055,10 +1060,10 @@ class _$_CustomLintResponseAwaitAnalysisDone
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintResponseAwaitAnalysisDoneCopyWith<
-          _$_CustomLintResponseAwaitAnalysisDone>
-      get copyWith => __$$_CustomLintResponseAwaitAnalysisDoneCopyWithImpl<
-          _$_CustomLintResponseAwaitAnalysisDone>(this, _$identity);
+  _$$CustomLintResponseAwaitAnalysisDoneImplCopyWith<
+          _$CustomLintResponseAwaitAnalysisDoneImpl>
+      get copyWith => __$$CustomLintResponseAwaitAnalysisDoneImplCopyWithImpl<
+          _$CustomLintResponseAwaitAnalysisDoneImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1144,7 +1149,7 @@ class _$_CustomLintResponseAwaitAnalysisDone
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintResponseAwaitAnalysisDoneToJson(
+    return _$$CustomLintResponseAwaitAnalysisDoneImplToJson(
       this,
     );
   }
@@ -1153,38 +1158,40 @@ class _$_CustomLintResponseAwaitAnalysisDone
 abstract class _CustomLintResponseAwaitAnalysisDone
     implements CustomLintResponse {
   factory _CustomLintResponseAwaitAnalysisDone({required final String id}) =
-      _$_CustomLintResponseAwaitAnalysisDone;
+      _$CustomLintResponseAwaitAnalysisDoneImpl;
 
   factory _CustomLintResponseAwaitAnalysisDone.fromJson(
           Map<String, dynamic> json) =
-      _$_CustomLintResponseAwaitAnalysisDone.fromJson;
+      _$CustomLintResponseAwaitAnalysisDoneImpl.fromJson;
 
   @override
   String get id;
   @override
   @JsonKey(ignore: true)
-  _$$_CustomLintResponseAwaitAnalysisDoneCopyWith<
-          _$_CustomLintResponseAwaitAnalysisDone>
+  _$$CustomLintResponseAwaitAnalysisDoneImplCopyWith<
+          _$CustomLintResponseAwaitAnalysisDoneImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintResponsePongCopyWith<$Res>
+abstract class _$$CustomLintResponsePongImplCopyWith<$Res>
     implements $CustomLintResponseCopyWith<$Res> {
-  factory _$$_CustomLintResponsePongCopyWith(_$_CustomLintResponsePong value,
-          $Res Function(_$_CustomLintResponsePong) then) =
-      __$$_CustomLintResponsePongCopyWithImpl<$Res>;
+  factory _$$CustomLintResponsePongImplCopyWith(
+          _$CustomLintResponsePongImpl value,
+          $Res Function(_$CustomLintResponsePongImpl) then) =
+      __$$CustomLintResponsePongImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String id});
 }
 
 /// @nodoc
-class __$$_CustomLintResponsePongCopyWithImpl<$Res>
-    extends _$CustomLintResponseCopyWithImpl<$Res, _$_CustomLintResponsePong>
-    implements _$$_CustomLintResponsePongCopyWith<$Res> {
-  __$$_CustomLintResponsePongCopyWithImpl(_$_CustomLintResponsePong _value,
-      $Res Function(_$_CustomLintResponsePong) _then)
+class __$$CustomLintResponsePongImplCopyWithImpl<$Res>
+    extends _$CustomLintResponseCopyWithImpl<$Res, _$CustomLintResponsePongImpl>
+    implements _$$CustomLintResponsePongImplCopyWith<$Res> {
+  __$$CustomLintResponsePongImplCopyWithImpl(
+      _$CustomLintResponsePongImpl _value,
+      $Res Function(_$CustomLintResponsePongImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -1192,7 +1199,7 @@ class __$$_CustomLintResponsePongCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
   }) {
-    return _then(_$_CustomLintResponsePong(
+    return _then(_$CustomLintResponsePongImpl(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -1203,12 +1210,12 @@ class __$$_CustomLintResponsePongCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintResponsePong implements _CustomLintResponsePong {
-  _$_CustomLintResponsePong({required this.id, final String? $type})
+class _$CustomLintResponsePongImpl implements _CustomLintResponsePong {
+  _$CustomLintResponsePongImpl({required this.id, final String? $type})
       : $type = $type ?? 'pong';
 
-  factory _$_CustomLintResponsePong.fromJson(Map<String, dynamic> json) =>
-      _$$_CustomLintResponsePongFromJson(json);
+  factory _$CustomLintResponsePongImpl.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintResponsePongImplFromJson(json);
 
   @override
   final String id;
@@ -1222,10 +1229,10 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintResponsePong &&
+            other is _$CustomLintResponsePongImpl &&
             (identical(other.id, id) || other.id == id));
   }
 
@@ -1236,9 +1243,9 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintResponsePongCopyWith<_$_CustomLintResponsePong> get copyWith =>
-      __$$_CustomLintResponsePongCopyWithImpl<_$_CustomLintResponsePong>(
-          this, _$identity);
+  _$$CustomLintResponsePongImplCopyWith<_$CustomLintResponsePongImpl>
+      get copyWith => __$$CustomLintResponsePongImplCopyWithImpl<
+          _$CustomLintResponsePongImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1324,7 +1331,7 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintResponsePongToJson(
+    return _$$CustomLintResponsePongImplToJson(
       this,
     );
   }
@@ -1332,36 +1339,39 @@ class _$_CustomLintResponsePong implements _CustomLintResponsePong {
 
 abstract class _CustomLintResponsePong implements CustomLintResponse {
   factory _CustomLintResponsePong({required final String id}) =
-      _$_CustomLintResponsePong;
+      _$CustomLintResponsePongImpl;
 
   factory _CustomLintResponsePong.fromJson(Map<String, dynamic> json) =
-      _$_CustomLintResponsePong.fromJson;
+      _$CustomLintResponsePongImpl.fromJson;
 
   @override
   String get id;
   @override
   @JsonKey(ignore: true)
-  _$$_CustomLintResponsePongCopyWith<_$_CustomLintResponsePong> get copyWith =>
-      throw _privateConstructorUsedError;
+  _$$CustomLintResponsePongImplCopyWith<_$CustomLintResponsePongImpl>
+      get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintResponseErrorCopyWith<$Res>
+abstract class _$$CustomLintResponseErrorImplCopyWith<$Res>
     implements $CustomLintResponseCopyWith<$Res> {
-  factory _$$_CustomLintResponseErrorCopyWith(_$_CustomLintResponseError value,
-          $Res Function(_$_CustomLintResponseError) then) =
-      __$$_CustomLintResponseErrorCopyWithImpl<$Res>;
+  factory _$$CustomLintResponseErrorImplCopyWith(
+          _$CustomLintResponseErrorImpl value,
+          $Res Function(_$CustomLintResponseErrorImpl) then) =
+      __$$CustomLintResponseErrorImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String id, String message, String stackTrace});
 }
 
 /// @nodoc
-class __$$_CustomLintResponseErrorCopyWithImpl<$Res>
-    extends _$CustomLintResponseCopyWithImpl<$Res, _$_CustomLintResponseError>
-    implements _$$_CustomLintResponseErrorCopyWith<$Res> {
-  __$$_CustomLintResponseErrorCopyWithImpl(_$_CustomLintResponseError _value,
-      $Res Function(_$_CustomLintResponseError) _then)
+class __$$CustomLintResponseErrorImplCopyWithImpl<$Res>
+    extends _$CustomLintResponseCopyWithImpl<$Res,
+        _$CustomLintResponseErrorImpl>
+    implements _$$CustomLintResponseErrorImplCopyWith<$Res> {
+  __$$CustomLintResponseErrorImplCopyWithImpl(
+      _$CustomLintResponseErrorImpl _value,
+      $Res Function(_$CustomLintResponseErrorImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -1371,7 +1381,7 @@ class __$$_CustomLintResponseErrorCopyWithImpl<$Res>
     Object? message = null,
     Object? stackTrace = null,
   }) {
-    return _then(_$_CustomLintResponseError(
+    return _then(_$CustomLintResponseErrorImpl(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -1390,16 +1400,16 @@ class __$$_CustomLintResponseErrorCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintResponseError implements _CustomLintResponseError {
-  _$_CustomLintResponseError(
+class _$CustomLintResponseErrorImpl implements _CustomLintResponseError {
+  _$CustomLintResponseErrorImpl(
       {required this.id,
       required this.message,
       required this.stackTrace,
       final String? $type})
       : $type = $type ?? 'error';
 
-  factory _$_CustomLintResponseError.fromJson(Map<String, dynamic> json) =>
-      _$$_CustomLintResponseErrorFromJson(json);
+  factory _$CustomLintResponseErrorImpl.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintResponseErrorImplFromJson(json);
 
   @override
   final String id;
@@ -1417,10 +1427,10 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintResponseError &&
+            other is _$CustomLintResponseErrorImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.message, message) || other.message == message) &&
             (identical(other.stackTrace, stackTrace) ||
@@ -1434,10 +1444,9 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintResponseErrorCopyWith<_$_CustomLintResponseError>
-      get copyWith =>
-          __$$_CustomLintResponseErrorCopyWithImpl<_$_CustomLintResponseError>(
-              this, _$identity);
+  _$$CustomLintResponseErrorImplCopyWith<_$CustomLintResponseErrorImpl>
+      get copyWith => __$$CustomLintResponseErrorImplCopyWithImpl<
+          _$CustomLintResponseErrorImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1523,7 +1532,7 @@ class _$_CustomLintResponseError implements _CustomLintResponseError {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintResponseErrorToJson(
+    return _$$CustomLintResponseErrorImplToJson(
       this,
     );
   }
@@ -1533,10 +1542,10 @@ abstract class _CustomLintResponseError implements CustomLintResponse {
   factory _CustomLintResponseError(
       {required final String id,
       required final String message,
-      required final String stackTrace}) = _$_CustomLintResponseError;
+      required final String stackTrace}) = _$CustomLintResponseErrorImpl;
 
   factory _CustomLintResponseError.fromJson(Map<String, dynamic> json) =
-      _$_CustomLintResponseError.fromJson;
+      _$CustomLintResponseErrorImpl.fromJson;
 
   @override
   String get id;
@@ -1544,7 +1553,7 @@ abstract class _CustomLintResponseError implements CustomLintResponse {
   String get stackTrace;
   @override
   @JsonKey(ignore: true)
-  _$$_CustomLintResponseErrorCopyWith<_$_CustomLintResponseError>
+  _$$CustomLintResponseErrorImplCopyWith<_$CustomLintResponseErrorImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -1623,10 +1632,11 @@ class _$CustomLintMessageCopyWithImpl<$Res, $Val extends CustomLintMessage>
 }
 
 /// @nodoc
-abstract class _$$CustomLintMessageEventCopyWith<$Res> {
-  factory _$$CustomLintMessageEventCopyWith(_$CustomLintMessageEvent value,
-          $Res Function(_$CustomLintMessageEvent) then) =
-      __$$CustomLintMessageEventCopyWithImpl<$Res>;
+abstract class _$$CustomLintMessageEventImplCopyWith<$Res> {
+  factory _$$CustomLintMessageEventImplCopyWith(
+          _$CustomLintMessageEventImpl value,
+          $Res Function(_$CustomLintMessageEventImpl) then) =
+      __$$CustomLintMessageEventImplCopyWithImpl<$Res>;
   @useResult
   $Res call({CustomLintEvent event});
 
@@ -1634,11 +1644,12 @@ abstract class _$$CustomLintMessageEventCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$CustomLintMessageEventCopyWithImpl<$Res>
-    extends _$CustomLintMessageCopyWithImpl<$Res, _$CustomLintMessageEvent>
-    implements _$$CustomLintMessageEventCopyWith<$Res> {
-  __$$CustomLintMessageEventCopyWithImpl(_$CustomLintMessageEvent _value,
-      $Res Function(_$CustomLintMessageEvent) _then)
+class __$$CustomLintMessageEventImplCopyWithImpl<$Res>
+    extends _$CustomLintMessageCopyWithImpl<$Res, _$CustomLintMessageEventImpl>
+    implements _$$CustomLintMessageEventImplCopyWith<$Res> {
+  __$$CustomLintMessageEventImplCopyWithImpl(
+      _$CustomLintMessageEventImpl _value,
+      $Res Function(_$CustomLintMessageEventImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -1646,7 +1657,7 @@ class __$$CustomLintMessageEventCopyWithImpl<$Res>
   $Res call({
     Object? event = null,
   }) {
-    return _then(_$CustomLintMessageEvent(
+    return _then(_$CustomLintMessageEventImpl(
       null == event
           ? _value.event
           : event // ignore: cast_nullable_to_non_nullable
@@ -1665,12 +1676,12 @@ class __$$CustomLintMessageEventCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$CustomLintMessageEvent implements CustomLintMessageEvent {
-  _$CustomLintMessageEvent(this.event, {final String? $type})
+class _$CustomLintMessageEventImpl implements CustomLintMessageEvent {
+  _$CustomLintMessageEventImpl(this.event, {final String? $type})
       : $type = $type ?? 'event';
 
-  factory _$CustomLintMessageEvent.fromJson(Map<String, dynamic> json) =>
-      _$$CustomLintMessageEventFromJson(json);
+  factory _$CustomLintMessageEventImpl.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintMessageEventImplFromJson(json);
 
   @override
   final CustomLintEvent event;
@@ -1684,10 +1695,10 @@ class _$CustomLintMessageEvent implements CustomLintMessageEvent {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$CustomLintMessageEvent &&
+            other is _$CustomLintMessageEventImpl &&
             (identical(other.event, event) || other.event == event));
   }
 
@@ -1698,9 +1709,9 @@ class _$CustomLintMessageEvent implements CustomLintMessageEvent {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$CustomLintMessageEventCopyWith<_$CustomLintMessageEvent> get copyWith =>
-      __$$CustomLintMessageEventCopyWithImpl<_$CustomLintMessageEvent>(
-          this, _$identity);
+  _$$CustomLintMessageEventImplCopyWith<_$CustomLintMessageEventImpl>
+      get copyWith => __$$CustomLintMessageEventImplCopyWithImpl<
+          _$CustomLintMessageEventImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1766,7 +1777,7 @@ class _$CustomLintMessageEvent implements CustomLintMessageEvent {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$CustomLintMessageEventToJson(
+    return _$$CustomLintMessageEventImplToJson(
       this,
     );
   }
@@ -1774,23 +1785,23 @@ class _$CustomLintMessageEvent implements CustomLintMessageEvent {
 
 abstract class CustomLintMessageEvent implements CustomLintMessage {
   factory CustomLintMessageEvent(final CustomLintEvent event) =
-      _$CustomLintMessageEvent;
+      _$CustomLintMessageEventImpl;
 
   factory CustomLintMessageEvent.fromJson(Map<String, dynamic> json) =
-      _$CustomLintMessageEvent.fromJson;
+      _$CustomLintMessageEventImpl.fromJson;
 
   CustomLintEvent get event;
   @JsonKey(ignore: true)
-  _$$CustomLintMessageEventCopyWith<_$CustomLintMessageEvent> get copyWith =>
-      throw _privateConstructorUsedError;
+  _$$CustomLintMessageEventImplCopyWith<_$CustomLintMessageEventImpl>
+      get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$CustomLintMessageResponseCopyWith<$Res> {
-  factory _$$CustomLintMessageResponseCopyWith(
-          _$CustomLintMessageResponse value,
-          $Res Function(_$CustomLintMessageResponse) then) =
-      __$$CustomLintMessageResponseCopyWithImpl<$Res>;
+abstract class _$$CustomLintMessageResponseImplCopyWith<$Res> {
+  factory _$$CustomLintMessageResponseImplCopyWith(
+          _$CustomLintMessageResponseImpl value,
+          $Res Function(_$CustomLintMessageResponseImpl) then) =
+      __$$CustomLintMessageResponseImplCopyWithImpl<$Res>;
   @useResult
   $Res call({CustomLintResponse response});
 
@@ -1798,11 +1809,13 @@ abstract class _$$CustomLintMessageResponseCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$CustomLintMessageResponseCopyWithImpl<$Res>
-    extends _$CustomLintMessageCopyWithImpl<$Res, _$CustomLintMessageResponse>
-    implements _$$CustomLintMessageResponseCopyWith<$Res> {
-  __$$CustomLintMessageResponseCopyWithImpl(_$CustomLintMessageResponse _value,
-      $Res Function(_$CustomLintMessageResponse) _then)
+class __$$CustomLintMessageResponseImplCopyWithImpl<$Res>
+    extends _$CustomLintMessageCopyWithImpl<$Res,
+        _$CustomLintMessageResponseImpl>
+    implements _$$CustomLintMessageResponseImplCopyWith<$Res> {
+  __$$CustomLintMessageResponseImplCopyWithImpl(
+      _$CustomLintMessageResponseImpl _value,
+      $Res Function(_$CustomLintMessageResponseImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -1810,7 +1823,7 @@ class __$$CustomLintMessageResponseCopyWithImpl<$Res>
   $Res call({
     Object? response = null,
   }) {
-    return _then(_$CustomLintMessageResponse(
+    return _then(_$CustomLintMessageResponseImpl(
       null == response
           ? _value.response
           : response // ignore: cast_nullable_to_non_nullable
@@ -1829,12 +1842,12 @@ class __$$CustomLintMessageResponseCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$CustomLintMessageResponse implements CustomLintMessageResponse {
-  _$CustomLintMessageResponse(this.response, {final String? $type})
+class _$CustomLintMessageResponseImpl implements CustomLintMessageResponse {
+  _$CustomLintMessageResponseImpl(this.response, {final String? $type})
       : $type = $type ?? 'response';
 
-  factory _$CustomLintMessageResponse.fromJson(Map<String, dynamic> json) =>
-      _$$CustomLintMessageResponseFromJson(json);
+  factory _$CustomLintMessageResponseImpl.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintMessageResponseImplFromJson(json);
 
   @override
   final CustomLintResponse response;
@@ -1848,10 +1861,10 @@ class _$CustomLintMessageResponse implements CustomLintMessageResponse {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$CustomLintMessageResponse &&
+            other is _$CustomLintMessageResponseImpl &&
             (identical(other.response, response) ||
                 other.response == response));
   }
@@ -1863,9 +1876,9 @@ class _$CustomLintMessageResponse implements CustomLintMessageResponse {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$CustomLintMessageResponseCopyWith<_$CustomLintMessageResponse>
-      get copyWith => __$$CustomLintMessageResponseCopyWithImpl<
-          _$CustomLintMessageResponse>(this, _$identity);
+  _$$CustomLintMessageResponseImplCopyWith<_$CustomLintMessageResponseImpl>
+      get copyWith => __$$CustomLintMessageResponseImplCopyWithImpl<
+          _$CustomLintMessageResponseImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1931,7 +1944,7 @@ class _$CustomLintMessageResponse implements CustomLintMessageResponse {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$CustomLintMessageResponseToJson(
+    return _$$CustomLintMessageResponseImplToJson(
       this,
     );
   }
@@ -1939,14 +1952,14 @@ class _$CustomLintMessageResponse implements CustomLintMessageResponse {
 
 abstract class CustomLintMessageResponse implements CustomLintMessage {
   factory CustomLintMessageResponse(final CustomLintResponse response) =
-      _$CustomLintMessageResponse;
+      _$CustomLintMessageResponseImpl;
 
   factory CustomLintMessageResponse.fromJson(Map<String, dynamic> json) =
-      _$CustomLintMessageResponse.fromJson;
+      _$CustomLintMessageResponseImpl.fromJson;
 
   CustomLintResponse get response;
   @JsonKey(ignore: true)
-  _$$CustomLintMessageResponseCopyWith<_$CustomLintMessageResponse>
+  _$$CustomLintMessageResponseImplCopyWith<_$CustomLintMessageResponseImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -2044,23 +2057,23 @@ class _$CustomLintEventCopyWithImpl<$Res, $Val extends CustomLintEvent>
 }
 
 /// @nodoc
-abstract class _$$_CustomLintEventAnalyzerPluginNotificationCopyWith<$Res> {
-  factory _$$_CustomLintEventAnalyzerPluginNotificationCopyWith(
-          _$_CustomLintEventAnalyzerPluginNotification value,
-          $Res Function(_$_CustomLintEventAnalyzerPluginNotification) then) =
-      __$$_CustomLintEventAnalyzerPluginNotificationCopyWithImpl<$Res>;
+abstract class _$$CustomLintEventAnalyzerPluginNotificationImplCopyWith<$Res> {
+  factory _$$CustomLintEventAnalyzerPluginNotificationImplCopyWith(
+          _$CustomLintEventAnalyzerPluginNotificationImpl value,
+          $Res Function(_$CustomLintEventAnalyzerPluginNotificationImpl) then) =
+      __$$CustomLintEventAnalyzerPluginNotificationImplCopyWithImpl<$Res>;
   @useResult
   $Res call({@NotificationJsonConverter() Notification notification});
 }
 
 /// @nodoc
-class __$$_CustomLintEventAnalyzerPluginNotificationCopyWithImpl<$Res>
+class __$$CustomLintEventAnalyzerPluginNotificationImplCopyWithImpl<$Res>
     extends _$CustomLintEventCopyWithImpl<$Res,
-        _$_CustomLintEventAnalyzerPluginNotification>
-    implements _$$_CustomLintEventAnalyzerPluginNotificationCopyWith<$Res> {
-  __$$_CustomLintEventAnalyzerPluginNotificationCopyWithImpl(
-      _$_CustomLintEventAnalyzerPluginNotification _value,
-      $Res Function(_$_CustomLintEventAnalyzerPluginNotification) _then)
+        _$CustomLintEventAnalyzerPluginNotificationImpl>
+    implements _$$CustomLintEventAnalyzerPluginNotificationImplCopyWith<$Res> {
+  __$$CustomLintEventAnalyzerPluginNotificationImplCopyWithImpl(
+      _$CustomLintEventAnalyzerPluginNotificationImpl _value,
+      $Res Function(_$CustomLintEventAnalyzerPluginNotificationImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -2068,7 +2081,7 @@ class __$$_CustomLintEventAnalyzerPluginNotificationCopyWithImpl<$Res>
   $Res call({
     Object? notification = null,
   }) {
-    return _then(_$_CustomLintEventAnalyzerPluginNotification(
+    return _then(_$CustomLintEventAnalyzerPluginNotificationImpl(
       null == notification
           ? _value.notification
           : notification // ignore: cast_nullable_to_non_nullable
@@ -2079,16 +2092,16 @@ class __$$_CustomLintEventAnalyzerPluginNotificationCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintEventAnalyzerPluginNotification
+class _$CustomLintEventAnalyzerPluginNotificationImpl
     implements _CustomLintEventAnalyzerPluginNotification {
-  _$_CustomLintEventAnalyzerPluginNotification(
+  _$CustomLintEventAnalyzerPluginNotificationImpl(
       @NotificationJsonConverter() this.notification,
       {final String? $type})
       : $type = $type ?? 'analyzerPluginNotification';
 
-  factory _$_CustomLintEventAnalyzerPluginNotification.fromJson(
+  factory _$CustomLintEventAnalyzerPluginNotificationImpl.fromJson(
           Map<String, dynamic> json) =>
-      _$$_CustomLintEventAnalyzerPluginNotificationFromJson(json);
+      _$$CustomLintEventAnalyzerPluginNotificationImplFromJson(json);
 
   @override
   @NotificationJsonConverter()
@@ -2103,10 +2116,10 @@ class _$_CustomLintEventAnalyzerPluginNotification
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintEventAnalyzerPluginNotification &&
+            other is _$CustomLintEventAnalyzerPluginNotificationImpl &&
             (identical(other.notification, notification) ||
                 other.notification == notification));
   }
@@ -2118,11 +2131,12 @@ class _$_CustomLintEventAnalyzerPluginNotification
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintEventAnalyzerPluginNotificationCopyWith<
-          _$_CustomLintEventAnalyzerPluginNotification>
+  _$$CustomLintEventAnalyzerPluginNotificationImplCopyWith<
+          _$CustomLintEventAnalyzerPluginNotificationImpl>
       get copyWith =>
-          __$$_CustomLintEventAnalyzerPluginNotificationCopyWithImpl<
-              _$_CustomLintEventAnalyzerPluginNotification>(this, _$identity);
+          __$$CustomLintEventAnalyzerPluginNotificationImplCopyWithImpl<
+                  _$CustomLintEventAnalyzerPluginNotificationImpl>(
+              this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -2205,7 +2219,7 @@ class _$_CustomLintEventAnalyzerPluginNotification
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintEventAnalyzerPluginNotificationToJson(
+    return _$$CustomLintEventAnalyzerPluginNotificationImplToJson(
       this,
     );
   }
@@ -2215,35 +2229,35 @@ abstract class _CustomLintEventAnalyzerPluginNotification
     implements CustomLintEvent {
   factory _CustomLintEventAnalyzerPluginNotification(
           @NotificationJsonConverter() final Notification notification) =
-      _$_CustomLintEventAnalyzerPluginNotification;
+      _$CustomLintEventAnalyzerPluginNotificationImpl;
 
   factory _CustomLintEventAnalyzerPluginNotification.fromJson(
           Map<String, dynamic> json) =
-      _$_CustomLintEventAnalyzerPluginNotification.fromJson;
+      _$CustomLintEventAnalyzerPluginNotificationImpl.fromJson;
 
   @NotificationJsonConverter()
   Notification get notification;
   @JsonKey(ignore: true)
-  _$$_CustomLintEventAnalyzerPluginNotificationCopyWith<
-          _$_CustomLintEventAnalyzerPluginNotification>
+  _$$CustomLintEventAnalyzerPluginNotificationImplCopyWith<
+          _$CustomLintEventAnalyzerPluginNotificationImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintEventErrorCopyWith<$Res> {
-  factory _$$_CustomLintEventErrorCopyWith(_$_CustomLintEventError value,
-          $Res Function(_$_CustomLintEventError) then) =
-      __$$_CustomLintEventErrorCopyWithImpl<$Res>;
+abstract class _$$CustomLintEventErrorImplCopyWith<$Res> {
+  factory _$$CustomLintEventErrorImplCopyWith(_$CustomLintEventErrorImpl value,
+          $Res Function(_$CustomLintEventErrorImpl) then) =
+      __$$CustomLintEventErrorImplCopyWithImpl<$Res>;
   @useResult
   $Res call({String message, String stackTrace, String? pluginName});
 }
 
 /// @nodoc
-class __$$_CustomLintEventErrorCopyWithImpl<$Res>
-    extends _$CustomLintEventCopyWithImpl<$Res, _$_CustomLintEventError>
-    implements _$$_CustomLintEventErrorCopyWith<$Res> {
-  __$$_CustomLintEventErrorCopyWithImpl(_$_CustomLintEventError _value,
-      $Res Function(_$_CustomLintEventError) _then)
+class __$$CustomLintEventErrorImplCopyWithImpl<$Res>
+    extends _$CustomLintEventCopyWithImpl<$Res, _$CustomLintEventErrorImpl>
+    implements _$$CustomLintEventErrorImplCopyWith<$Res> {
+  __$$CustomLintEventErrorImplCopyWithImpl(_$CustomLintEventErrorImpl _value,
+      $Res Function(_$CustomLintEventErrorImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -2253,7 +2267,7 @@ class __$$_CustomLintEventErrorCopyWithImpl<$Res>
     Object? stackTrace = null,
     Object? pluginName = freezed,
   }) {
-    return _then(_$_CustomLintEventError(
+    return _then(_$CustomLintEventErrorImpl(
       null == message
           ? _value.message
           : message // ignore: cast_nullable_to_non_nullable
@@ -2272,13 +2286,13 @@ class __$$_CustomLintEventErrorCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintEventError implements _CustomLintEventError {
-  _$_CustomLintEventError(this.message, this.stackTrace,
+class _$CustomLintEventErrorImpl implements _CustomLintEventError {
+  _$CustomLintEventErrorImpl(this.message, this.stackTrace,
       {required this.pluginName, final String? $type})
       : $type = $type ?? 'error';
 
-  factory _$_CustomLintEventError.fromJson(Map<String, dynamic> json) =>
-      _$$_CustomLintEventErrorFromJson(json);
+  factory _$CustomLintEventErrorImpl.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintEventErrorImplFromJson(json);
 
   @override
   final String message;
@@ -2296,10 +2310,10 @@ class _$_CustomLintEventError implements _CustomLintEventError {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintEventError &&
+            other is _$CustomLintEventErrorImpl &&
             (identical(other.message, message) || other.message == message) &&
             (identical(other.stackTrace, stackTrace) ||
                 other.stackTrace == stackTrace) &&
@@ -2314,9 +2328,10 @@ class _$_CustomLintEventError implements _CustomLintEventError {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintEventErrorCopyWith<_$_CustomLintEventError> get copyWith =>
-      __$$_CustomLintEventErrorCopyWithImpl<_$_CustomLintEventError>(
-          this, _$identity);
+  _$$CustomLintEventErrorImplCopyWith<_$CustomLintEventErrorImpl>
+      get copyWith =>
+          __$$CustomLintEventErrorImplCopyWithImpl<_$CustomLintEventErrorImpl>(
+              this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -2399,7 +2414,7 @@ class _$_CustomLintEventError implements _CustomLintEventError {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintEventErrorToJson(
+    return _$$CustomLintEventErrorImplToJson(
       this,
     );
   }
@@ -2407,34 +2422,34 @@ class _$_CustomLintEventError implements _CustomLintEventError {
 
 abstract class _CustomLintEventError implements CustomLintEvent {
   factory _CustomLintEventError(final String message, final String stackTrace,
-      {required final String? pluginName}) = _$_CustomLintEventError;
+      {required final String? pluginName}) = _$CustomLintEventErrorImpl;
 
   factory _CustomLintEventError.fromJson(Map<String, dynamic> json) =
-      _$_CustomLintEventError.fromJson;
+      _$CustomLintEventErrorImpl.fromJson;
 
   String get message;
   String get stackTrace;
   String? get pluginName;
   @JsonKey(ignore: true)
-  _$$_CustomLintEventErrorCopyWith<_$_CustomLintEventError> get copyWith =>
-      throw _privateConstructorUsedError;
+  _$$CustomLintEventErrorImplCopyWith<_$CustomLintEventErrorImpl>
+      get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$_CustomLintEventPrintCopyWith<$Res> {
-  factory _$$_CustomLintEventPrintCopyWith(_$_CustomLintEventPrint value,
-          $Res Function(_$_CustomLintEventPrint) then) =
-      __$$_CustomLintEventPrintCopyWithImpl<$Res>;
+abstract class _$$CustomLintEventPrintImplCopyWith<$Res> {
+  factory _$$CustomLintEventPrintImplCopyWith(_$CustomLintEventPrintImpl value,
+          $Res Function(_$CustomLintEventPrintImpl) then) =
+      __$$CustomLintEventPrintImplCopyWithImpl<$Res>;
   @useResult
   $Res call({String message, String? pluginName});
 }
 
 /// @nodoc
-class __$$_CustomLintEventPrintCopyWithImpl<$Res>
-    extends _$CustomLintEventCopyWithImpl<$Res, _$_CustomLintEventPrint>
-    implements _$$_CustomLintEventPrintCopyWith<$Res> {
-  __$$_CustomLintEventPrintCopyWithImpl(_$_CustomLintEventPrint _value,
-      $Res Function(_$_CustomLintEventPrint) _then)
+class __$$CustomLintEventPrintImplCopyWithImpl<$Res>
+    extends _$CustomLintEventCopyWithImpl<$Res, _$CustomLintEventPrintImpl>
+    implements _$$CustomLintEventPrintImplCopyWith<$Res> {
+  __$$CustomLintEventPrintImplCopyWithImpl(_$CustomLintEventPrintImpl _value,
+      $Res Function(_$CustomLintEventPrintImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -2443,7 +2458,7 @@ class __$$_CustomLintEventPrintCopyWithImpl<$Res>
     Object? message = null,
     Object? pluginName = freezed,
   }) {
-    return _then(_$_CustomLintEventPrint(
+    return _then(_$CustomLintEventPrintImpl(
       null == message
           ? _value.message
           : message // ignore: cast_nullable_to_non_nullable
@@ -2458,13 +2473,13 @@ class __$$_CustomLintEventPrintCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CustomLintEventPrint implements _CustomLintEventPrint {
-  _$_CustomLintEventPrint(this.message,
+class _$CustomLintEventPrintImpl implements _CustomLintEventPrint {
+  _$CustomLintEventPrintImpl(this.message,
       {required this.pluginName, final String? $type})
       : $type = $type ?? 'print';
 
-  factory _$_CustomLintEventPrint.fromJson(Map<String, dynamic> json) =>
-      _$$_CustomLintEventPrintFromJson(json);
+  factory _$CustomLintEventPrintImpl.fromJson(Map<String, dynamic> json) =>
+      _$$CustomLintEventPrintImplFromJson(json);
 
   @override
   final String message;
@@ -2480,10 +2495,10 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CustomLintEventPrint &&
+            other is _$CustomLintEventPrintImpl &&
             (identical(other.message, message) || other.message == message) &&
             (identical(other.pluginName, pluginName) ||
                 other.pluginName == pluginName));
@@ -2496,9 +2511,10 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CustomLintEventPrintCopyWith<_$_CustomLintEventPrint> get copyWith =>
-      __$$_CustomLintEventPrintCopyWithImpl<_$_CustomLintEventPrint>(
-          this, _$identity);
+  _$$CustomLintEventPrintImplCopyWith<_$CustomLintEventPrintImpl>
+      get copyWith =>
+          __$$CustomLintEventPrintImplCopyWithImpl<_$CustomLintEventPrintImpl>(
+              this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -2581,7 +2597,7 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CustomLintEventPrintToJson(
+    return _$$CustomLintEventPrintImplToJson(
       this,
     );
   }
@@ -2589,14 +2605,14 @@ class _$_CustomLintEventPrint implements _CustomLintEventPrint {
 
 abstract class _CustomLintEventPrint implements CustomLintEvent {
   factory _CustomLintEventPrint(final String message,
-      {required final String? pluginName}) = _$_CustomLintEventPrint;
+      {required final String? pluginName}) = _$CustomLintEventPrintImpl;
 
   factory _CustomLintEventPrint.fromJson(Map<String, dynamic> json) =
-      _$_CustomLintEventPrint.fromJson;
+      _$CustomLintEventPrintImpl.fromJson;
 
   String get message;
   String? get pluginName;
   @JsonKey(ignore: true)
-  _$$_CustomLintEventPrintCopyWith<_$_CustomLintEventPrint> get copyWith =>
-      throw _privateConstructorUsedError;
+  _$$CustomLintEventPrintImplCopyWith<_$CustomLintEventPrintImpl>
+      get copyWith => throw _privateConstructorUsedError;
 }
