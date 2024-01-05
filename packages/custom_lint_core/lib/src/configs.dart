@@ -42,7 +42,7 @@ class CustomLintConfigs {
       final includeUri = Uri.parse(include);
       String? includeAbsolutePath;
 
-      if (include.startsWith('package:')) {
+      if (includeUri.scheme == 'package') {
         final packageConfig = parsePackageConfigSync(Directory.current);
         final packageUri = packageConfig.resolve(includeUri);
 
