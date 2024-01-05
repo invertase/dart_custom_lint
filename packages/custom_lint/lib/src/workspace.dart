@@ -495,8 +495,10 @@ class CustomLintWorkspace {
     final uniquePluginNames =
         projects.expand((e) => e.plugins).map((e) => e.name).toSet();
 
+    final realProjects = projects.where((e) => e.isProjectRoot).toList();
+
     return CustomLintWorkspace._(
-      projects,
+      realProjects,
       contextRoots,
       uniquePluginNames,
       workingDirectory: workingDirectory,
@@ -972,6 +974,7 @@ class CustomLintProject {
     required this.packageConfig,
     required this.pubspec,
     required this.pubspecOverrides,
+    required this.analysisDirectory,
   });
 
   /// Decode a [CustomLintProject] from a directory.
@@ -1031,7 +1034,8 @@ class CustomLintProject {
 
     return CustomLintProject._(
       plugins: plugins.whereNotNull().toList(),
-      directory: directory,
+      directory: projectDirectory,
+      analysisDirectory: directory,
       packageConfig: projectPackageConfig,
       pubspec: projectPubspec,
       pubspecOverrides: pubspecOverrides,
@@ -1048,10 +1052,21 @@ class CustomLintProject {
   final Map<String, Dependency>? pubspecOverrides;
 
   /// The folder of the project being analyzed.
+  /// Generally, where the pubspec.yaml is located
   final Directory directory;
 
   /// The enabled plugins for this project.
   final List<CustomLintPlugin> plugins;
+
+  /// Where the analysis options file is located
+  /// It could be null if the project doesn't have an analysis options file.
+  ///
+  /// The analysis options file doesn't not have to be in [directory]
+  final Directory? analysisDirectory;
+
+  bool get isProjectRoot {
+    return analysisDirectory == directory;
+  }
 }
 
 class _PackageAndPubspec {
