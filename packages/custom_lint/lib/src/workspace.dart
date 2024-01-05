@@ -990,8 +990,8 @@ class CustomLintProject {
         errorStackTrace: stack,
       );
     });
-    final pubspecOverrides = await tryParsePubspecOverrides(directory);
-    final projectPackageConfig = await parsePackageConfig(directory)
+    final pubspecOverrides = await tryParsePubspecOverrides(projectDirectory);
+    final projectPackageConfig = await parsePackageConfig(projectDirectory)
         // ignore: avoid_types_on_closure_parameters
         .catchError((Object err, StackTrace stack) {
       throw PackageConfigParseError._(
