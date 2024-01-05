@@ -2,10 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-import 'package:collection/collection.dart';
-import 'package:path/path.dart' as p;
+import 'package:cli_util/cli_logging.dart';
 
+import 'src/cli_logger.dart';
+import 'src/output/output_format.dart';
+import 'src/output/render_lints.dart';
 import 'src/plugin_delegate.dart';
 import 'src/runner.dart';
 import 'src/server_isolate_channel.dart';
@@ -36,6 +37,9 @@ q: Quit
 Future<void> customLint({
   bool watchMode = true,
   required Directory workingDirectory,
+  bool fatalInfos = true,
+  bool fatalWarnings = true,
+  OutputFormatEnum format = OutputFormatEnum.plain,
 }) async {
   // Reset the code
   exitCode = 0;
@@ -46,6 +50,9 @@ Future<void> customLint({
       channel,
       watchMode: watchMode,
       workingDirectory: workingDirectory,
+      fatalInfos: fatalInfos,
+      fatalWarnings: fatalWarnings,
+      format: format,
     );
   } catch (_) {
     exitCode = 1;
@@ -58,6 +65,9 @@ Future<void> _runServer(
   ServerIsolateChannel channel, {
   required bool watchMode,
   required Directory workingDirectory,
+  required bool fatalInfos,
+  required bool fatalWarnings,
+  required OutputFormatEnum format,
 }) async {
   final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
@@ -80,14 +90,30 @@ Future<void> _runServer(
       runner = CustomLintRunner(customLintServer, workspace, channel);
 
       await runner.initialize;
+
+      final log = CliLogger();
+      final progress = log.progress('Analyzing');
+
       await _runPlugins(
         runner,
+        log: log,
+        progress: progress,
         reload: false,
         workingDirectory: workingDirectory,
+        fatalInfos: fatalInfos,
+        fatalWarnings: fatalWarnings,
+        format: format,
       );
 
       if (watchMode) {
-        await _startWatchMode(runner, workingDirectory: workingDirectory);
+        await _startWatchMode(
+          runner,
+          log: log,
+          workingDirectory: workingDirectory,
+          fatalInfos: fatalInfos,
+          fatalWarnings: fatalWarnings,
+          format: format,
+        );
       }
     } finally {
       await runner?.close();
@@ -103,65 +129,34 @@ Future<void> _runServer(
 
 Future<void> _runPlugins(
   CustomLintRunner runner, {
+  required Logger log,
+  required Progress progress,
   required bool reload,
   required Directory workingDirectory,
+  required bool fatalInfos,
+  required bool fatalWarnings,
+  required OutputFormatEnum format,
 }) async {
-  try {
-    final lints = await runner.getLints(reload: reload);
+  final lints = await runner.getLints(reload: reload);
 
-    if (lints.any((lintsForFile) => lintsForFile.errors.isNotEmpty)) {
-      exitCode = 1;
-    }
-
-    _renderLints(lints, workingDirectory: workingDirectory);
-  } catch (err, stack) {
-    exitCode = 1;
-    stderr.writeln('$err\n$stack');
-  }
-}
-
-void _renderLints(
-  List<AnalysisErrorsParams> lints, {
-  required Directory workingDirectory,
-}) {
-  var errors = lints.expand((lint) => lint.errors);
-
-  // Sort errors by file, line, column, code, message
-  errors = errors.sorted((a, b) {
-    final fileCompare = _relativeFilePath(a.location.file, workingDirectory)
-        .compareTo(_relativeFilePath(b.location.file, workingDirectory));
-    if (fileCompare != 0) return fileCompare;
-
-    final lineCompare = a.location.startLine.compareTo(b.location.startLine);
-    if (lineCompare != 0) return lineCompare;
-
-    final columnCompare =
-        a.location.startColumn.compareTo(b.location.startColumn);
-    if (columnCompare != 0) return columnCompare;
-
-    final codeCompare = a.code.compareTo(b.code);
-    if (codeCompare != 0) return codeCompare;
-
-    return a.message.compareTo(b.message);
-  });
-
-  if (errors.isEmpty) {
-    stdout.writeln('No issues found!');
-    return;
-  }
-
-  exitCode = 1;
-  for (final error in errors) {
-    stdout.writeln(
-      '  ${_relativeFilePath(error.location.file, workingDirectory)}:${error.location.startLine}:${error.location.startColumn}'
-      ' • ${error.message} • ${error.code} • ${error.severity.name}',
-    );
-  }
+  renderLints(
+    lints,
+    log: log,
+    progress: progress,
+    workingDirectory: workingDirectory,
+    fatalInfos: fatalInfos,
+    fatalWarnings: fatalWarnings,
+    format: format,
+  );
 }
 
 Future<void> _startWatchMode(
   CustomLintRunner runner, {
+  required Logger log,
   required Directory workingDirectory,
+  required bool fatalInfos,
+  required bool fatalWarnings,
+  required OutputFormatEnum format,
 }) async {
   if (stdin.hasTerminal) {
     stdin
@@ -171,31 +166,30 @@ Future<void> _startWatchMode(
       ..lineMode = false;
   }
 
-  stdout.writeln(_help);
+  log.stdout(_help);
 
   // Handle user inputs, forcing the command to continue until the user asks to "quit"
   await for (final input in stdin.transform(utf8.decoder)) {
     switch (input) {
       case 'r':
         // Rerunning lints
-        stdout.writeln('Manual Reload...');
+        final progress = log.progress('Manual re-lint');
         await _runPlugins(
           runner,
+          log: log,
+          progress: progress,
           reload: true,
           workingDirectory: workingDirectory,
+          fatalInfos: fatalInfos,
+          fatalWarnings: fatalWarnings,
+          format: format,
         );
         break;
       case 'q':
-      // Let's quit the command line
+        // Let's quit the command line
+        return;
       default:
       // Unknown command. Nothing to do
     }
   }
-}
-
-String _relativeFilePath(String file, Directory fromDir) {
-  return p.relative(
-    file,
-    from: fromDir.absolute.path,
-  );
 }

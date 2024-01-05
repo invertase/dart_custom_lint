@@ -57,6 +57,7 @@ typedef CreatePluginMain = PluginBase Function();
 Future<void> runSocket(
   Map<String, CreatePluginMain> pluginMains, {
   required int port,
+  required String host,
   required bool includeBuiltInLints,
 }) async {
   late Future<CustomLintPluginClient> client;
@@ -64,7 +65,7 @@ Future<void> runSocket(
   await asyncRunZonedGuarded(
     () => client = Future(() async {
       // ignore: close_sinks, connection stays open until the plugin is killed
-      final socket = await Socket.connect('localhost', port);
+      final socket = await Socket.connect(host, port);
       final socketChannel = JsonSocketChannel(Future.value(socket));
       final registeredPlugins = <String, PluginBase>{};
 

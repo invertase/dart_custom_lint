@@ -12,41 +12,276 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:yaml/yaml.dart';
 
 import 'package_utils.dart';
 
-String _computePubspec(
-  Iterable<String> plugins,
-  Map<String, Package> allDependencies,
-) {
-  // TODO should import dependency_overrides related to the plugin too
-  // TODO handle environment constraints conflicts.
-  final dependencies = plugins.map((plugin) => '  $plugin: any').join('\n');
+/// Compute the constraint for a dependency which matches with all the constraints
+/// used in the workspace.
+String _buildDependencyConstraint(
+  String name,
+  List<({CustomLintProject project, Dependency dependency})> dependencies, {
+  required Directory workingDirectory,
+  required String fileName,
+}) {
+  // We can't pick the "first" then use .skip(1) because the pattern match
+  // may transform the shared constraint. Such as modifying path dependencies
+  // to all use absolute paths.
+  Dependency? sharedConstraint;
+  for (final (:project, :dependency) in dependencies) {
+    final dependencyMeta = dependencies.map(
+      (d) => DependencyConstraintMeta.fromDependency(
+        d.dependency,
+        d.project,
+        workingDirectory: workingDirectory,
+      ),
+    );
 
-  final dependencyOverrides = allDependencies.entries
-      .map((dep) => '  ${dep.key}:\n    path: ${dep.value.root.toFilePath()}')
-      .join('\n');
+    Never throws() => throw IncompatibleDependencyConstraintsException(
+          ConflictKind.dependency(name),
+          dependencyMeta.toList(),
+          fileName: fileName,
+        );
 
-  return '''
-name: custom_lint_client
-version: 0.0.1
-publish_to: 'none'
+    switch ((dependency: dependency, constraint: sharedConstraint)) {
+      case (
+          :final HostedDependency dependency,
+          :final HostedDependency? constraint,
+        ):
+        sharedConstraint = dependency;
 
-environment:
-  sdk: '>=2.17.1 <3.0.0'
+        if (constraint == null) continue;
 
-dependencies:
-$dependencies
+        if (constraint.hosted?.declaredName !=
+                dependency.hosted?.declaredName ||
+            constraint.hosted?.url != dependency.hosted?.url) {
+          throws();
+        }
 
-# Set dependency overrides to match the package_config.json.
-# This ensures that if "pub get" is run, the dependencies are resolved.
-# This may happen in different versions of the Dart SDK.
-dependency_overrides:
-$dependencyOverrides
-''';
+        final newConstraint = constraint.version.intersect(dependency.version);
+        if (newConstraint.isEmpty) throws();
+
+        sharedConstraint = HostedDependency(
+          version: newConstraint,
+          hosted: constraint.hosted,
+        );
+
+      case (
+          :final PathDependency dependency,
+          :final PathDependency? constraint,
+        ):
+        final absoluteDependencyPath = normalize(
+          absolute(
+            project.directory.path,
+            dependency.path,
+          ),
+        );
+        sharedConstraint = PathDependency(absoluteDependencyPath);
+
+        if (constraint == null) continue;
+        if (constraint.path != absoluteDependencyPath) throws();
+
+      case (
+          :final SdkDependency dependency,
+          :final SdkDependency? constraint,
+        ):
+        sharedConstraint = dependency;
+
+        if (constraint == null) continue;
+        if (constraint.sdk != dependency.sdk) throws();
+
+      case (
+          :final GitDependency dependency,
+          :final GitDependency? constraint,
+        ):
+        sharedConstraint = dependency;
+
+        if (constraint == null) continue;
+        if (constraint.url != dependency.url ||
+            constraint.path != dependency.path ||
+            constraint.ref != dependency.ref) {
+          throws();
+        }
+
+      default:
+        throws();
+    }
+  }
+
+  switch (sharedConstraint) {
+    case HostedDependency():
+      return ' ${sharedConstraint.getDisplayString()}';
+    case PathDependency():
+      return '\n    path: "${sharedConstraint.path}"';
+    case SdkDependency():
+      return '\n    sdk: ${sharedConstraint.sdk}';
+    case GitDependency():
+      final result = StringBuffer('\n    git:');
+      result.write('\n      url: ${sharedConstraint.url}');
+
+      if (sharedConstraint.ref != null) {
+        result.write('\n      ref: ${sharedConstraint.ref}');
+      }
+      if (sharedConstraint.path != null) {
+        result.write('\n      path: "${sharedConstraint.path}"');
+      }
+
+      return result.toString();
+    case _:
+      throw StateError(
+        'Unknown constraint type: ${sharedConstraint.runtimeType}',
+      );
+  }
+}
+
+/// A type of version conflict
+sealed class ConflictKind {
+  /// A conflict between two dependencies from different packages in the same workspace.
+  factory ConflictKind.dependency(String packageName) = _DependencyConflict;
+
+  /// A conflict between two dependencies from the same package in the same workspace.
+  factory ConflictKind.environment(String packageName) = _EnvironmentConflict;
+
+  /// The human readable name of the conflict type.
+  String get kindDisplayString;
+
+  /// The value of the conflict.
+  String get value;
+}
+
+class _EnvironmentConflict implements ConflictKind {
+  _EnvironmentConflict(this.key);
+
+  @override
+  String get kindDisplayString => 'environment';
+
+  @override
+  String get value => key;
+
+  final String key;
+}
+
+class _DependencyConflict implements ConflictKind {
+  _DependencyConflict(this.packageName);
+
+  @override
+  String get kindDisplayString => 'package';
+
+  @override
+  String get value => packageName;
+
+  final String packageName;
+}
+
+/// Information related to a dependency and the project it is used in.
+class DependencyConstraintMeta {
+  DependencyConstraintMeta._(
+    this.dependencyDisplayString,
+    CustomLintProject project, {
+    required Directory workingDirectory,
+  })  : projectName = project.pubspec.name,
+        projectPath = join(
+          '.',
+          normalize(
+            relative(project.directory.path, from: workingDirectory.path),
+          ),
+        );
+
+  /// Construct a [DependencyConstraintMeta] from a [VersionConstraint].
+  DependencyConstraintMeta.fromVersionConstraint(
+    VersionConstraint constraint,
+    CustomLintProject project, {
+    required Directory workingDirectory,
+  }) : this._(
+          HostedDependency(version: constraint).getDisplayString(),
+          project,
+          workingDirectory: workingDirectory,
+        );
+
+  /// Construct a [DependencyConstraintMeta] from a [Dependency].
+  DependencyConstraintMeta.fromDependency(
+    Dependency dependency,
+    CustomLintProject project, {
+    required Directory workingDirectory,
+  }) : this._(
+          dependency.getDisplayString(),
+          project,
+          workingDirectory: workingDirectory,
+        );
+
+  /// Either a [VersionConstraint] or a [Dependency].
+  final String dependencyDisplayString;
+
+  /// The name of the project which uses the dependency.
+  final String projectName;
+
+  /// The path to the project which uses the dependency.
+  final String projectPath;
+}
+
+extension on Dependency {
+  String getDisplayString() {
+    final that = this;
+    return switch (that) {
+      HostedDependency() when that.version == VersionConstraint.any => 'any',
+      HostedDependency() => '"${that.version}"',
+      PathDependency() => '"${that.path}"',
+      SdkDependency() => 'sdk: ${that.sdk}',
+      GitDependency() => 'git: ${that.url}',
+      _ => throw ArgumentError.value(
+          runtimeType,
+          'this',
+          'Unknown dependency type',
+        ),
+    };
+  }
+}
+
+/// {@template IncompatibleDependencyConstraintsException}
+/// An exception thrown when a dependency is used with different constraints
+/// {@endtemplate}
+class IncompatibleDependencyConstraintsException implements Exception {
+  /// {@macro IncompatibleDependencyConstraintsException}
+  IncompatibleDependencyConstraintsException(
+    this.kind,
+    this.conflictingDependencies, {
+    required this.fileName,
+  }) : assert(
+          conflictingDependencies.length > 1,
+          'Must have at least 2 items',
+        );
+
+  /// The name of the file where the conflict was found.
+  final String fileName;
+
+  /// The type of conflict.
+  final ConflictKind kind;
+
+  /// The conflicting dependencies.
+  final List<DependencyConstraintMeta> conflictingDependencies;
+
+  @override
+  String toString() {
+    final buffer = StringBuffer(
+      'The ${kind.kindDisplayString} "${kind.value}" has incompatible version constraints in the project:\n',
+    );
+
+    for (final DependencyConstraintMeta(
+          dependencyDisplayString: dependency,
+          :projectName,
+          :projectPath
+        ) in conflictingDependencies) {
+      buffer.write('''
+- $dependency
+  from "$projectName" at "${join(projectPath, fileName)}".
+''');
+    }
+
+    return buffer.toString();
+  }
 }
 
 /// An exception thrown by [visitAnalysisOptionAndIncludes] when an "include"
@@ -140,6 +375,22 @@ Stream<YamlMap> visitAnalysisOptionAndIncludes(
     optionsPath = optionsPath.resolveUri(includeUri);
   }
 }
+
+/// A typedef for [Process.run].
+typedef RunProcess = Future<ProcessResult> Function(
+  String executable,
+  List<String> arguments, {
+  String? workingDirectory,
+  Map<String, String>? environment,
+  bool includeParentEnvironment,
+  bool runInShell,
+  Encoding? stdoutEncoding,
+  Encoding? stderrEncoding,
+});
+
+/// A mockable way to run processes.
+@visibleForTesting
+RunProcess runProcess = Process.run;
 
 /// An error thrown when [CustomLintPlugin._visitSelfAndTransitiveDependencies] tries to iterate over
 /// the dependencies of a package, but the package cannot be found in
@@ -252,6 +503,11 @@ class CustomLintWorkspace {
     );
   }
 
+  /// Whether the workspace is using flutter.
+  bool get isUsingFlutter => projects
+      .expand((e) => e.packageConfig.packages)
+      .any((e) => e.name == 'flutter');
+
   /// The working directory of the workspace.
   /// This is the directory from which the workspace was initialized.
   final Directory workingDirectory;
@@ -264,6 +520,196 @@ class CustomLintWorkspace {
 
   /// The names of all enabled plugins.
   final Set<String> uniquePluginNames;
+
+  /// A method to generate a `pubspec.yaml` in the client project
+  ///
+  /// This is the combination of all `pubspec.yaml` in the workspace.
+  @internal
+  String computePubspec() {
+    final buffer = StringBuffer('''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+''');
+
+    _writeEnvironment(buffer);
+    _writePubspecDependencies(buffer);
+
+    return buffer.toString();
+  }
+
+  void _writeEnvironment(StringBuffer buffer) {
+    final environmentKeys = projects
+        .expand((e) => e.pubspec.environment?.keys ?? <String>[])
+        .toSet();
+
+    if (environmentKeys.isEmpty) return;
+
+    buffer.writeln('\nenvironment:');
+
+    for (final key in environmentKeys) {
+      final projectMeta = projects
+          .map((project) {
+            final constraint = project.pubspec.environment?[key];
+            if (constraint == null) return null;
+            return (project: project, constraint: constraint);
+          })
+          // TODO what if some projects specify SDK/Flutter but some don't?
+          .whereNotNull()
+          .toList();
+
+      final constraintCompatibleWithAllProjects = projectMeta.fold(
+        VersionConstraint.any,
+        (acc, constraint) => acc.intersect(constraint.constraint),
+      );
+
+      if (constraintCompatibleWithAllProjects.isEmpty) {
+        throw IncompatibleDependencyConstraintsException(
+          ConflictKind.environment(key),
+          projectMeta
+              .map(
+                (e) => DependencyConstraintMeta.fromVersionConstraint(
+                  e.constraint,
+                  e.project,
+                  workingDirectory: workingDirectory,
+                ),
+              )
+              .toList(),
+          fileName: 'pubspec.yaml',
+        );
+      }
+
+      buffer.writeln('  $key: "$constraintCompatibleWithAllProjects"');
+    }
+  }
+
+  void _writePubspecDependencies(StringBuffer buffer) {
+    final uniqueDependencyNames = projects.expand((e) sync* {
+      yield* e.pubspec.devDependencies.keys;
+      yield* e.pubspec.dependencyOverrides.keys;
+    }).toSet();
+
+    final dependenciesByName = {
+      for (final name in uniqueDependencyNames)
+        name: (
+          devDependencies: projects
+              .map((project) {
+                final dependency = project.pubspec.devDependencies[name];
+                if (dependency == null) return null;
+                return (project: project, dependency: dependency);
+              })
+              .whereNotNull()
+              .toList(),
+          dependencyOverrides: projects
+              .map((project) {
+                final dependency = project.pubspec.dependencyOverrides[name];
+                if (dependency == null) return null;
+                return (project: project, dependency: dependency);
+              })
+              .whereNotNull()
+              .toList(),
+        ),
+    };
+
+    // A flag for whether the "dependencies:" header has been written.
+    var didWriteDevDependenciesHeader = false;
+    // Write dev_dependencies
+    for (final name in uniquePluginNames) {
+      final allDependencies = dependenciesByName[name];
+      if (allDependencies == null) continue;
+
+      // // We don't write dev_dependencies which are sometimes prod dependencies,
+      // // as dev_dependencies, because then we'd be specifying the dependency twice.
+      if (
+          // allDependencies.dependencies.isNotEmpty ||
+          allDependencies.devDependencies.isEmpty) {
+        continue;
+      }
+
+      if (!didWriteDevDependenciesHeader) {
+        didWriteDevDependenciesHeader = true;
+        buffer.writeln('\ndev_dependencies:');
+      }
+
+      final constraint = allDependencies.dependencyOverrides.isNotEmpty
+          ? ' any'
+          : _buildDependencyConstraint(
+              name,
+              allDependencies.devDependencies,
+              workingDirectory: workingDirectory,
+              fileName: 'pubspec.yaml',
+            );
+      buffer.writeln('  $name:$constraint');
+    }
+
+    _writeDependencyOverrides(
+      buffer,
+      dependencyOverrides: {
+        for (final entry in dependenciesByName.entries)
+          if (entry.value.dependencyOverrides.isNotEmpty)
+            entry.key: entry.value.dependencyOverrides,
+      },
+    );
+  }
+
+  void _writeDependencyOverrides(
+    StringBuffer buffer, {
+    required Map<String,
+            List<({Dependency dependency, CustomLintProject project})>>
+        dependencyOverrides,
+  }) {
+    var didWriteDependencyOverridesHeader = false;
+    for (final entry in dependencyOverrides.entries) {
+      if (!didWriteDependencyOverridesHeader) {
+        didWriteDependencyOverridesHeader = true;
+        // Add empty line to separate dependency_overrides from other dependencies.
+        if (buffer.isNotEmpty) buffer.writeln();
+        buffer.writeln('dependency_overrides:');
+      }
+
+      final constraint = _buildDependencyConstraint(
+        entry.key,
+        entry.value,
+        workingDirectory: workingDirectory,
+        fileName: 'pubspec_overrides.yaml',
+      );
+      buffer.writeln('  ${entry.key}:$constraint');
+    }
+  }
+
+  /// A method to generate a `pubspec_overrides.yaml` in the client project.
+  ///
+  /// This is the combination of all `pubspec_overrides.yaml` in the workspace.
+  @internal
+  String? computePubspecOverride() {
+    final uniqueDependencyNames = projects //
+        .expand((e) => e.pubspecOverrides?.keys ?? <String>[])
+        .toSet();
+
+    if (uniqueDependencyNames.isEmpty) return null;
+
+    final dependenciesByName = {
+      for (final name in uniqueDependencyNames)
+        name: projects
+            .map((project) {
+              final dependency = project.pubspecOverrides?[name];
+              if (dependency == null) return null;
+              return (project: project, dependency: dependency);
+            })
+            .whereNotNull()
+            .toList(),
+    };
+
+    final buffer = StringBuffer();
+
+    _writeDependencyOverrides(
+      buffer,
+      dependencyOverrides: dependenciesByName,
+    );
+
+    return buffer.toString();
+  }
 
   /// Generate a package_config.json combining all the dependencies from all
   /// the contextRoots.
@@ -342,34 +788,61 @@ class CustomLintWorkspace {
     });
   }
 
-  /// Create the Dart project which will contain all the custom_lint plugins.
-  Future<Directory> createPluginHostDirectory() async {
+  /// First attempts at creating the plugin host locally. And if it fails,
+  /// it will fallback to resolving packages using "pub get".
+  Future<void> resolvePluginHost(
+    Directory tempDir,
+  ) async {
+    final pubspecContent = computePubspec();
+    final pubspecOverride = computePubspecOverride();
+
+    tempDir.pubspec.writeAsStringSync(pubspecContent);
+    if (pubspecOverride != null) {
+      tempDir.pubspecOverrides.writeAsStringSync(pubspecOverride);
+    }
+
+    try {
+      await resolvePackageConfigOffline(tempDir);
+    } catch (_) {
+      await runPubGet(tempDir);
+    }
+  }
+
+  /// Attempts at creating the plugin host without having to run "pub get".
+  ///
+  /// This works by combining all the `package_config.json` of the various
+  /// plugins.
+  ///
+  /// May throw if failed to create the plugin host.
+  /// Will throw a [PackageVersionConflictException] if there are conflicting
+  /// versions of the same package.
+  Future<void> resolvePackageConfigOffline(Directory tempDir) async {
     final dependencies = _computeDependencies();
     final packageConfigContent = _computePackageConfig(dependencies);
-    // The previous lines will throw if there are conflicting packages.
-    // So it is safe to deduplicate the plugins by name here.
-    final pubspecContent = _computePubspec(
-      uniquePluginNames,
-      dependencies,
-    );
-
-    // We only create the temporary directories after computing all the files.
-    // This avoids creating a temporary directory if we're going to throw anyway.
-    final tempDir = Directory.systemTemp.createTempSync('custom_lint_client');
-    final pubspecFile = tempDir.pubspec;
     final packageConfigFile = tempDir.packageConfig;
 
-    await Future.wait([
-      pubspecFile
-          .create(recursive: true)
-          .then((_) => pubspecFile.writeAsString(pubspecContent)),
-      Future(() async {
-        await packageConfigFile.create(recursive: true);
-        await packageConfigFile.writeAsString(packageConfigContent);
-      }),
-    ]);
+    await packageConfigFile.create(recursive: true);
+    await packageConfigFile.writeAsString(packageConfigContent);
+  }
 
-    return tempDir;
+  /// Run "pub get" in the client project.
+  Future<void> runPubGet(Directory tempDir) async {
+    final command = isUsingFlutter ? 'flutter' : 'dart';
+
+    final result = await runProcess(
+      command,
+      const ['pub', 'get'],
+      stdoutEncoding: utf8,
+      stderrEncoding: utf8,
+      workingDirectory: tempDir.path,
+    );
+    if (result.exitCode != 0) {
+      throw Exception(
+        'Failed to run "pub get" in the client project:\n'
+        '${result.stdout}\n'
+        '${result.stderr}',
+      );
+    }
   }
 }
 
@@ -498,6 +971,7 @@ class CustomLintProject {
     required this.directory,
     required this.packageConfig,
     required this.pubspec,
+    required this.pubspecOverrides,
   });
 
   /// Decode a [CustomLintProject] from a directory.
@@ -516,10 +990,10 @@ class CustomLintProject {
         errorStackTrace: stack,
       );
     });
-    final projectPackageConfig =
-        await parsePackageConfig(projectDirectory).catchError(
-            // ignore: avoid_types_on_closure_parameters
-            (Object err, StackTrace stack) {
+    final pubspecOverrides = await tryParsePubspecOverrides(directory);
+    final projectPackageConfig = await parsePackageConfig(directory)
+        // ignore: avoid_types_on_closure_parameters
+        .catchError((Object err, StackTrace stack) {
       throw PackageConfigParseError._(
         directory.path,
         error: err,
@@ -560,6 +1034,7 @@ class CustomLintProject {
       directory: directory,
       packageConfig: projectPackageConfig,
       pubspec: projectPubspec,
+      pubspecOverrides: pubspecOverrides,
     );
   }
 
@@ -568,6 +1043,9 @@ class CustomLintProject {
 
   /// The pubspec.yaml at the moment of parsing.
   final Pubspec pubspec;
+
+  /// The pubspec.yaml at the moment of parsing.
+  final Map<String, Dependency>? pubspecOverrides;
 
   /// The folder of the project being analyzed.
   final Directory directory;
@@ -979,7 +1457,7 @@ class _ConflictingPackagesChecker {
     // If there are no conflicting versions, return
     if (packagesWithConflictingVersions.isEmpty) return;
 
-    throw PackageVersionConflictError._(
+    throw PackageVersionConflictException._(
       packagesWithConflictingVersions,
       _entries,
     );
@@ -988,8 +1466,8 @@ class _ConflictingPackagesChecker {
 
 /// An error thrown if a custom_lint workspace contains two or more projects
 /// which depend on the same package (directly or transitively) with different versions.
-class PackageVersionConflictError extends Error {
-  PackageVersionConflictError._(
+class PackageVersionConflictException implements Exception {
+  PackageVersionConflictException._(
     this._packagesWithConflictingVersions,
     this._entries,
   );
@@ -1011,7 +1489,7 @@ class PackageVersionConflictError extends Error {
     );
 
     final errorMessageBuilder = StringBuffer('''
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+PackageVersionConflictException – Some dependencies with conflicting versions were identified:
 
 ''');
 

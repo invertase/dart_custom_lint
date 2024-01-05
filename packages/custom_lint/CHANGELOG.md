@@ -1,6 +1,59 @@
+## Unreleased fix
+
+- `// ignore` comments now correctly respect indentation when they are inserted (thanks to @PiotrRogulski)
+
+## 0.5.7 - 2023-11-20
+
+- Support JSON output format via CLI parameter `--format json|default` (thanks to @kuhnroyal)
+
+## 0.5.6 - 2023-10-30
+
+Optimized logic for finding an unused VM_service port.
+
+## 0.5.5 - 2023-10-26
+
+- Support `hotreloader` 4.0.0
+
+## 0.5.4 - 2023-10-20
+
+- Sort lints by severity in the command line (thanks to @kuhnroyal)
+- Fix watch mode not quitting with `q` (thanks to @kuhnroyal)
+- Improve the command line's output (thanks to @kuhnroyal)
+- Update uuid to 4.0.0
+- Fixed a port leak
+- Fix connection issues on Docker/windows (thanks to @hamsbrar)
+
+## 0.5.3 - 2023-08-29
+
+- The command line now supports ignoring warnings/infos with `--no-fatal-warnings`/`--no-fatal-infos` (thanks to @yamarkz)
+
+## 0.5.2 - 2023-08-16
+
+- Support both analyzer 5.12.0 and 6.0.0 at the same time.
+- Attempt at fixing the windows crash
+
+## 0.5.1 - 2023-08-03
+
+Support analyzer v6
+
 ## 0.5.0 - 2023-06-21
 
+- Now resolves packages using `pub get` if custom_lint failed to resolve packages offline.
+  This should reduce the likelyness of a version conflict in mono-repositories.
+  The conflict may still happen if two projects in a mono-repo use incompatible
+  constraints. Like:
+  ```yaml
+  name: foo
+  dependencies:
+    package: ^1.0.0
+  ```
+  ```yaml
+  name: bar
+  dependencies:
+    package: ^2.0.0
+  ```
 - The command line now shows the lints' severity (thanks to @praxder)
+- Now requires Dart 3.0.0
 
 ## 0.4.0 - 2023-05-12
 

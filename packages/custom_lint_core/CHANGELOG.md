@@ -1,3 +1,36 @@
+## Unreleased patch
+
+Added an optional `customPath` to the various `ChangeReporter` methods (thanks to @laurentschall)
+
+## 0.5.7 - 2023-11-20
+
+- `custom_lint` upgraded to `0.5.7`
+
+## 0.5.6 - 2023-10-30
+
+- `custom_lint` upgraded to `0.5.6`
+
+## 0.5.5 - 2023-10-26
+
+- `custom_lint` upgraded to `0.5.5`
+
+## 0.5.4 - 2023-10-20
+
+- `custom_lint` upgraded to `0.5.4`
+
+## 0.5.3 - 2023-08-29
+
+- `custom_lint` upgraded to `0.5.3`
+
+## 0.5.2 - 2023-08-16
+
+- Support both analyzer 5.12.0 and 6.0.0 at the same time.
+- Attempt at fixing the windows crash
+
+## 0.5.1 - 2023-08-03
+
+Support analyzer v6
+
 ## 0.5.0 - 2023-06-21
 
 - `custom_lint` upgraded to `0.5.0`
@@ -21,6 +54,7 @@
 - `custom_lint` upgraded to `0.3.2`
 
 ## 0.3.1 - 2023-03-09
+
 Update dependencies
 
 ## 0.3.0 - 2023-03-09

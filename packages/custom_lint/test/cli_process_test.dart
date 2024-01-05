@@ -1,8 +1,11 @@
+@Timeout.factor(2)
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:custom_lint/src/output/output_format.dart';
 import 'package:custom_lint/src/package_utils.dart';
 import 'package:test/test.dart';
+import 'package:test_process/test_process.dart';
 
 import 'cli_test.dart';
 import 'create_project.dart';
@@ -61,8 +64,12 @@ void main() {
       '''
 [hello_world] test_app (analyzer, analyzer_plugin)
 [hello_world] test_app2 (analyzer, analyzer_plugin)
+Analyzing...
+
   test_app/lib/main.dart:1:6 • Hello world • hello_world • INFO
   test_app2/lib/main2.dart:1:6 • Hello world • hello_world • INFO
+
+2 issues found.
 ''',
     );
     expect(process.exitCode, 1);
@@ -81,7 +88,11 @@ void main() {
       );
 
       expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
-      expect(process.stdout, 'No issues found!\n');
+      expect(process.stdout, '''
+Analyzing...
+
+No issues found!
+''');
       expect(process.exitCode, 0);
     });
 
@@ -97,7 +108,11 @@ void main() {
       );
 
       expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
-      expect(process.stdout, 'No issues found!\n');
+      expect(process.stdout, '''
+Analyzing...
+
+No issues found!
+''');
       expect(process.exitCode, 0);
     });
 
@@ -124,39 +139,90 @@ void main() {
         );
 
         expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
-        expect(process.stdout, 'No issues found!\n');
+        expect(process.stdout, '''
+Analyzing...
+
+No issues found!
+''');
         expect(process.exitCode, 0);
       },
     );
 
-    test(
-      'found lints',
-      () async {
-        final plugin = createPlugin(name: 'test_lint', main: oyPluginSource);
+    for (final format in OutputFormatEnum.values.map((e) => e.name)) {
+      test(
+        'found lints format: $format',
+        () async {
+          final plugin = createPlugin(name: 'test_lint', main: oyPluginSource);
 
-        final app = createLintUsage(
-          name: 'test_app',
-          source: {
-            'lib/main.dart': 'void fn() {}',
-            'lib/another.dart': 'void fail() {}',
-          },
-          plugins: {'test_lint': plugin.uri},
-        );
+          final app = createLintUsage(
+            name: 'test_app',
+            source: {
+              'lib/main.dart': 'void fn() {}',
+              'lib/another.dart': 'void fail() {}',
+            },
+            plugins: {'test_lint': plugin.uri},
+          );
 
-        final process = await Process.run(
-          'dart',
-          [customLintBinPath],
-          workingDirectory: app.path,
-        );
+          final process = await Process.run(
+            'dart',
+            [
+              customLintBinPath,
+              '--format',
+              format,
+            ],
+            workingDirectory: app.path,
+          );
 
-        expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
-        expect(process.stdout, '''
+          expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
+
+          if (format == 'json') {
+            final dir = Directory(app.path).resolveSymbolicLinksSync();
+            final json = jsonEncode({
+              'version': 1,
+              'diagnostics': [
+                {
+                  'code': 'oy',
+                  'severity': 'INFO',
+                  'type': 'LINT',
+                  'location': {
+                    'file': '$dir/lib/another.dart',
+                    'range': {
+                      'start': {'offset': 5, 'line': 1, 'column': 6},
+                      'end': {'offset': 9, 'line': 1, 'column': 10},
+                    },
+                  },
+                  'problemMessage': 'Oy',
+                },
+                {
+                  'code': 'oy',
+                  'severity': 'INFO',
+                  'type': 'LINT',
+                  'location': {
+                    'file': '$dir/lib/main.dart',
+                    'range': {
+                      'start': {'offset': 5, 'line': 1, 'column': 6},
+                      'end': {'offset': 7, 'line': 1, 'column': 8},
+                    },
+                  },
+                  'problemMessage': 'Oy',
+                }
+              ],
+            });
+            expect(process.stdout, 'Analyzing...\n\n$json\n');
+          } else {
+            expect(process.stdout, '''
+Analyzing...
+
   lib/another.dart:1:6 • Oy • oy • INFO
   lib/main.dart:1:6 • Oy • oy • INFO
+
+2 issues found.
 ''');
-        expect(process.exitCode, 1);
-      },
-    );
+          }
+          expect(process.exitCode, 1);
+        },
+      );
+    }
 
     test(
       'missing package_config.json',
@@ -233,7 +299,7 @@ void main() {
           extraPackageConfig: {'dep': workspace.dir('dep').uri},
         );
 
-        final app2 = createLintUsage(
+        createLintUsage(
           // Add the second project inside the first one, such that
           // analyzing the first project analyzes both projects
           parent: app,
@@ -259,28 +325,200 @@ void main() {
             '''
 The request analysis.setContextRoots failed with the following error:
 RequestErrorCode.PLUGIN_ERROR
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+Exception: Failed to run "pub get" in the client project:
+Resolving dependencies...
 
-Package dep:
-- Hosted with version constraint: any
-  Resolved with ${workspace.dir('dep').path}/
-  Used by plugin "test_lint" at "../test_lint" in the project "test_app" at "."
-- Hosted with version constraint: any
-  Resolved with ${workspace.dir('dep2').path}/
-  Used by plugin "test_lint" at "../test_lint" in the project "test_app2" at "test_app2"
-
-$conflictExplanation
-You could run the following commands to try fixing this:
-
-cd ${app.path}
-dart pub upgrade dep
-cd ${app2.path}
-dart pub upgrade dep
+Because every version of test_lint from path depends on dep any which doesn't exist (could not find package dep at https://pub.dev), test_lint from path is forbidden.
+So, because custom_lint_client depends on test_lint from path, version solving failed.
 ''',
           ),
         );
         expect(process.exitCode, completion(1));
       },
     );
+  });
+
+  group('Watch mode', () {
+    group('[q] quits', () {
+      test('with exit code 0 when no lints', () async {
+        final workspace = createTemporaryDirectory();
+
+        final process = await TestProcess.start(
+          'dart',
+          [
+            customLintBinPath,
+            '--watch',
+          ],
+          workingDirectory: workspace.path,
+        );
+
+        expect(await process.stdout.next, 'Analyzing...');
+        await process.stdout.skip(1);
+        expect(await process.stdout.next, 'No issues found!');
+
+        await process.stdout.skip(3);
+        expect(await process.stdout.next, 'q: Quit');
+
+        process.stdin.write('q');
+
+        await expectLater(process.stdout.rest, emitsThrough(emitsDone));
+        await process.shouldExit(0);
+      });
+
+      test('with exit code 1 when there are lints', () async {
+        final workspace = createTemporaryDirectory();
+
+        final plugin = createPlugin(
+          name: 'test_lint',
+          main: createPluginSource([
+            TestLintRule(
+              code: 'hello_world',
+              message: 'Hello world',
+            ),
+          ]),
+        );
+
+        createLintUsage(
+          parent: workspace,
+          source: {'lib/main.dart': 'void fn() {}'},
+          plugins: {'test_lint': plugin.uri},
+          name: 'test_app',
+        );
+
+        final process = await TestProcess.start(
+          'dart',
+          [
+            customLintBinPath,
+            '--watch',
+          ],
+          workingDirectory: workspace.path,
+        );
+
+        expect(
+          await process.stdout.next,
+          startsWith('The Dart VM service is listening on'),
+        );
+        expect(
+          await process.stdout.next,
+          startsWith('The Dart DevTools debugger and profiler is available at'),
+        );
+        expect(await process.stdout.next, 'Analyzing...');
+        await process.stdout.skip(1);
+        expect(
+          await process.stdout.next,
+          '  test_app/lib/main.dart:1:6 • Hello world • hello_world • INFO',
+        );
+        await process.stdout.skip(1);
+        expect(await process.stdout.next, '1 issue found.');
+
+        await process.stdout.skip(3);
+        expect(await process.stdout.next, 'q: Quit');
+
+        process.stdin.write('q');
+
+        await expectLater(process.stdout.rest, emitsThrough(emitsDone));
+        await process.shouldExit(1);
+      });
+    });
+
+    group('[r] reloads', () {
+      test('with no lints', () async {
+        final workspace = createTemporaryDirectory();
+
+        final process = await TestProcess.start(
+          'dart',
+          [
+            customLintBinPath,
+            '--watch',
+          ],
+          workingDirectory: workspace.path,
+        );
+
+        expect(await process.stdout.next, 'Analyzing...');
+        await process.stdout.skip(1);
+        expect(await process.stdout.next, 'No issues found!');
+
+        await process.stdout.skip(3);
+        expect(await process.stdout.next, 'q: Quit');
+
+        process.stdin.write('r');
+
+        // Skip empty lines
+        await process.stdout.skip(2);
+        expect(await process.stdout.next, 'Manual re-lint...');
+        await process.stdout.skip(1);
+        expect(await process.stdout.next, 'No issues found!');
+
+        process.stdin.write('q');
+
+        await process.shouldExit(0);
+      });
+
+      test('with lints', () async {
+        final workspace = createTemporaryDirectory();
+
+        final plugin = createPlugin(
+          name: 'test_lint',
+          main: createPluginSource([
+            TestLintRule(
+              code: 'hello_world',
+              message: 'Hello world',
+            ),
+          ]),
+        );
+
+        createLintUsage(
+          parent: workspace,
+          source: {'lib/main.dart': 'void fn() {}'},
+          plugins: {'test_lint': plugin.uri},
+          name: 'test_app',
+        );
+
+        final process = await TestProcess.start(
+          'dart',
+          [
+            customLintBinPath,
+            '--watch',
+          ],
+          workingDirectory: workspace.path,
+        );
+
+        expect(
+          await process.stdout.next,
+          startsWith('The Dart VM service is listening on'),
+        );
+        expect(
+          await process.stdout.next,
+          startsWith('The Dart DevTools debugger and profiler is available at'),
+        );
+        expect(await process.stdout.next, 'Analyzing...');
+        await process.stdout.skip(1);
+        expect(
+          await process.stdout.next,
+          '  test_app/lib/main.dart:1:6 • Hello world • hello_world • INFO',
+        );
+        await process.stdout.skip(1);
+        expect(await process.stdout.next, '1 issue found.');
+        await process.stdout.skip(3);
+        expect(await process.stdout.next, 'q: Quit');
+
+        process.stdin.write('r');
+
+        // Skip empty lines
+        await process.stdout.skip(2);
+        expect(await process.stdout.next, 'Manual re-lint...');
+        await process.stdout.skip(1);
+        expect(
+          await process.stdout.next,
+          '  test_app/lib/main.dart:1:6 • Hello world • hello_world • INFO',
+        );
+        await process.stdout.skip(1);
+        expect(await process.stdout.next, '1 issue found.');
+
+        process.stdin.write('q');
+
+        await process.shouldExit(1);
+      });
+    });
   });
 }

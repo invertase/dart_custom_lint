@@ -1,9 +1,8 @@
 name: custom_lint_example_app
-version: 0.0.1
 publish_to: none
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=2.16.0 <4.0.0'
 
 dependencies:
   riverpod: ^2.0.0

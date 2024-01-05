@@ -1,14 +1,17 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint/src/package_utils.dart';
 import 'package:custom_lint/src/workspace.dart';
+import 'package:file/memory.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:test/fake.dart';
 import 'package:test/test.dart';
 
 const conflictExplanation =
@@ -18,6 +21,23 @@ const conflictExplanation =
     "Since there's a single process for all plugins, if 2 plugins try to use "
     'different versions for a dependency, the process cannot be reasonably started. '
     'Please make sure all packages have the same version.';
+
+/// Shorthand for calling [CustomLintWorkspace.fromContextRoots] from
+/// a list of path.
+Future<CustomLintWorkspace> fromContextRootsFromPaths(
+  List<String> paths, {
+  required Directory workingDirectory,
+}) {
+  return CustomLintWorkspace.fromContextRoots(
+    paths.map((path) {
+      return ContextRoot(
+        p.isAbsolute(path) ? path : p.join(workingDirectory.path, path),
+        [],
+      );
+    }).toList(),
+    workingDirectory: workingDirectory,
+  );
+}
 
 extension on Dependency {
   Map<String, Object?> toPackageJson({
@@ -35,6 +55,15 @@ extension on Dependency {
   Object? toJson() {
     final that = this;
     if (that is HostedDependency) {
+      if (that.hosted != null) {
+        return {
+          'hosted': {
+            'name': that.hosted!.name,
+            'url': that.hosted!.url.toString(),
+          },
+          'version': that.version.toString(),
+        };
+      }
       return that.version.toString();
     } else if (that is GitDependency) {
       return {
@@ -56,6 +85,44 @@ extension on Dependency {
       throw ArgumentError.value(that, 'dependency', 'Unknown dependency');
     }
   }
+}
+
+void mockProcess(RunProcess mock) {
+  final previousRunProcess = runProcess;
+  addTearDown(() => runProcess = previousRunProcess);
+  runProcess = mock;
+}
+
+Queue<({String executable, List<String> args})> spyProcess() {
+  final result = Queue<({String executable, List<String> args})>();
+
+  final previousRunProcess = runProcess;
+  addTearDown(() => runProcess = previousRunProcess);
+  runProcess = (
+    executable,
+    arguments, {
+    environment,
+    includeParentEnvironment = true,
+    runInShell = false,
+    stderrEncoding,
+    stdoutEncoding,
+    workingDirectory,
+  }) {
+    result.add((executable: executable, args: arguments));
+
+    return previousRunProcess(
+      executable,
+      arguments,
+      environment: environment,
+      includeParentEnvironment: includeParentEnvironment,
+      runInShell: runInShell,
+      stderrEncoding: stderrEncoding,
+      stdoutEncoding: stdoutEncoding,
+      workingDirectory: workingDirectory,
+    );
+  };
+
+  return result;
 }
 
 extension on Pubspec {
@@ -215,12 +282,13 @@ Future<Directory> createWorkspace(
   final dir = createTemporaryDirectory(local: local);
 
   String packagePathOf(Dependency dependency, String name) {
-    if (dependency is HostedDependency) {
-      return p.join(dir.path, name);
-    } else if (dependency is PathDependency) {
-      return dependency.path;
-    } else {
-      throw UnsupportedError('Unknown dependency ${dependency.runtimeType}.');
+    switch (dependency) {
+      case PathDependency():
+        return p.isAbsolute(dependency.path)
+            ? dependency.path
+            : p.normalize(p.join('..', dependency.path));
+      case _:
+        return p.join(dir.path, name);
     }
   }
 
@@ -241,16 +309,25 @@ Future<Directory> createWorkspace(
               : [
                   for (final dependency
                       in pubspecEntry.value.dependencies.entries)
-                    dependency.value.toPackageJson(
-                      name: dependency.key,
-                      rootUri: packagePathOf(dependency.value, dependency.key),
-                    ),
+                    if (!pubspecEntry.value.dependencyOverrides.keys.contains(
+                      dependency.key,
+                    ))
+                      dependency.value.toPackageJson(
+                        name: dependency.key,
+                        rootUri:
+                            packagePathOf(dependency.value, dependency.key),
+                      ),
                   for (final dependency
                       in pubspecEntry.value.devDependencies.entries)
-                    dependency.value.toPackageJson(
-                      name: dependency.key,
-                      rootUri: packagePathOf(dependency.value, dependency.key),
-                    ),
+                    if (!pubspecEntry.value.dependencyOverrides.keys
+                            .contains(dependency.key) &&
+                        !pubspecEntry.value.dependencies.keys
+                            .contains(dependency.key))
+                      dependency.value.toPackageJson(
+                        name: dependency.key,
+                        rootUri:
+                            packagePathOf(dependency.value, dependency.key),
+                      ),
                   for (final dependency
                       in pubspecEntry.value.dependencyOverrides.entries)
                     dependency.value.toPackageJson(
@@ -560,7 +637,1671 @@ void main() {
   });
 
   group(CustomLintWorkspace, () {
+    group('computePuspecOverrides', () {
+      test('Do not generate a pubspec_overrides if none specified', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspecOverride(), null);
+      });
+
+      test('Merges dependendency_overrides', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        workingDir.dir('a').pubspecOverrides.writeAsStringSync('''
+dependency_overrides:
+  package: ">=1.1.0 <1.9.0"
+''');
+
+        workingDir.dir('b').pubspecOverrides.writeAsStringSync('''
+dependency_overrides:
+  package: ">=1.0.0 <1.6.0"
+''');
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspecOverride(), '''
+dependency_overrides:
+  package: ">=1.1.0 <1.6.0"
+''');
+      });
+
+      test('Throws on incompatible constraints', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        workingDir.dir('a').pubspecOverrides.writeAsStringSync('''
+dependency_overrides:
+  package: ">=1.1.0 <1.2.0"
+''');
+
+        workingDir.dir('b').pubspecOverrides.writeAsStringSync('''
+dependency_overrides:
+  package: ">=1.3.0"
+''');
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.computePubspecOverride,
+          throwsA(
+            isA<IncompatibleDependencyConstraintsException>()
+                .having((e) => e.toString(), 'toString', '''
+The package "package" has incompatible version constraints in the project:
+- ">=1.1.0 <1.2.0"
+  from "a" at "./a/pubspec_overrides.yaml".
+- ">=1.3.0"
+  from "b" at "./b/pubspec_overrides.yaml".
+'''),
+          ),
+        );
+      });
+    });
+
+    group('resolvePluginHost', () {
+      test('Does not write pubspec_overrides if none present', () async {
+        final workingDir = await createSimpleWorkspace([
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        final tempDir = createTemporaryDirectory();
+        await workspace.resolvePluginHost(tempDir);
+
+        expect(tempDir.pubspec.existsSync(), true);
+        expect(tempDir.pubspecOverrides.existsSync(), false);
+      });
+
+      test('writes pubspecs & pubspec_overrides', () async {
+        final workingDir = await createSimpleWorkspace([
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+        ]);
+
+        workingDir.dir('a').pubspecOverrides.writeAsStringSync('''
+dependency_overrides:
+  plugin1:
+    path: "../plugin1"
+''');
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        final tempDir = createTemporaryDirectory();
+        await workspace.resolvePluginHost(tempDir);
+
+        expect(tempDir.pubspec.readAsStringSync(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dev_dependencies:
+  plugin1:
+    path: "${workingDir.dir('plugin1').path}"
+''');
+        expect(tempDir.pubspecOverrides.readAsStringSync(), '''
+dependency_overrides:
+  plugin1:
+    path: "${workingDir.dir('plugin1').path}"
+''');
+      });
+
+      test('supports out of date package_config.json', () async {
+        final workingDir = await createSimpleWorkspace([
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+        ]);
+
+        // Offline resolution will fail because "custom_lint_builder" is not
+        // present in the package_config.json naturally
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        final tempDir = createTemporaryDirectory();
+        await workspace.resolvePluginHost(tempDir);
+
+        final packageConfigJson = jsonDecode(
+          tempDir.packageConfig.readAsStringSync(),
+        ) as Map<String, dynamic>;
+
+        expect(packageConfigJson['generator'], 'pub');
+      });
+
+      test('runs offline if possible', () async {
+        final workingDir =
+            await createSimpleWorkspace(withPackageConfig: false, [
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        // Override a's package_config to include custom_lint_builder
+        // as createSimpleWorkspace doesn't resolve transitive dependencies.
+        final aPackageConfig = PackageConfig([
+          Package(
+            'custom_lint_builder',
+            workingDir.dir('custom_lint_builder').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+          Package(
+            'plugin1',
+            workingDir.dir('plugin1').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+          Package(
+            'a',
+            workingDir.dir('a').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+        ]);
+
+        workingDir
+            .dir('a') //
+            .packageConfig
+            .writeAsStringSync(
+              jsonEncode(PackageConfig.toJson(aPackageConfig)),
+            );
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        final tempDir = createTemporaryDirectory();
+        await runWithoutInternet(() => workspace.resolvePluginHost(tempDir));
+
+        final packageConfigJson = jsonDecode(
+          tempDir.packageConfig.readAsStringSync(),
+        ) as Map<String, dynamic>;
+
+        expect(packageConfigJson['generator'], 'custom_lint');
+      });
+
+      test('queries pub.dev if fails to run offline', () async {
+        final workingDir =
+            await createSimpleWorkspace(withPackageConfig: false, [
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+          Pubspec(
+            'b',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            // Same path but have it manually resolved differently in package_config,
+            // to have offline resolution fail.
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+        ]);
+
+        final aPackageConfig = PackageConfig([
+          Package(
+            'custom_lint_builder',
+            workingDir.dir('custom_lint_builder').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+          Package(
+            'plugin1',
+            workingDir.dir('plugin1').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+          Package(
+            'a',
+            workingDir.dir('a').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+        ]);
+        workingDir
+            .dir('a') //
+            .packageConfig
+            .writeAsStringSync(
+              jsonEncode(PackageConfig.toJson(aPackageConfig)),
+            );
+        final bPackageConfig = PackageConfig([
+          Package(
+            'custom_lint_builder',
+            workingDir.dir('custom_lint_builder').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+          Package(
+            'plugin1',
+            workingDir.dir('plugin12').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+          Package(
+            'b',
+            workingDir.dir('b').uri,
+            languageVersion: LanguageVersion.parse('3.0'),
+          ),
+        ]);
+        workingDir
+            .dir('b') //
+            .packageConfig
+            .writeAsStringSync(
+              jsonEncode(PackageConfig.toJson(bPackageConfig)),
+            );
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        final tempDir = createTemporaryDirectory();
+        await workspace.resolvePluginHost(tempDir);
+
+        final packageConfigJson = jsonDecode(
+          tempDir.packageConfig.readAsStringSync(),
+        ) as Map<String, dynamic>;
+
+        expect(packageConfigJson['generator'], 'pub');
+      });
+    });
+
+    group('runPubGet', () {
+      test('throws if pub get fails', () async {
+        final workingDir = await createSimpleWorkspace([
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        await expectLater(
+          // Pub get will fail due to missing SDK constraints.
+          () => workspace.runPubGet(workingDir.dir('a')),
+          throwsA(
+            isA<Exception>().having(
+              (e) => e.toString(),
+              'toString',
+              contains('Failed to run "pub get" in the client project:\n'),
+            ),
+          ),
+        );
+      });
+
+      test('resolves if pub get succeeds', () async {
+        final workingDir = await createSimpleWorkspace([
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+        ]);
+
+        final processes = spyProcess();
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        expect(processes, isEmpty);
+
+        await expectLater(
+          workspace.runPubGet(workingDir.dir('a')),
+          completes,
+        );
+
+        expect(
+          processes.removeFirst(),
+          (executable: 'dart', args: const ['pub', 'get']),
+        );
+        expect(processes, isEmpty);
+      });
+
+      test('uses fluter pub get if isUsingFlutter is true',
+          timeout: const Timeout.factor(2), () async {
+        final workingDir = await createSimpleWorkspace([
+          'flutter',
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {
+              'plugin1': PathDependency('../plugin1'),
+              'flutter': PathDependency('../flutter'),
+            },
+          ),
+        ]);
+
+        final processes = spyProcess();
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        expect(processes, isEmpty);
+
+        await expectLater(
+          workspace.runPubGet(workingDir.dir('a')),
+          completes,
+        );
+
+        expect(
+          processes.removeFirst(),
+          (executable: 'flutter', args: const ['pub', 'get']),
+        );
+        expect(processes, isEmpty);
+      });
+    });
+
+    group('isUsingFlutter', () {
+      test('returns true if flutter is found in any project in the workspace',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          'flutter',
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {
+              'plugin1': HostedDependency(),
+              'flutter': SdkDependency('flutter'),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.isUsingFlutter, true);
+      });
+
+      test(
+          'returns false if flutter is not found in any project in the workspace',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          'flutter',
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.isUsingFlutter, false);
+      });
+    });
+
+    group('computePubspec', () {
+      test(
+          'If an environment constraint is not specified in a given project, it is considered as "any"',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {
+              'sdk': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+            },
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            environment: {},
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+
+dev_dependencies:
+  plugin1: any
+''');
+      });
+
+      test('Specifies environment such that it is compatible with all packages',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {
+              'sdk': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+            },
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            environment: {
+              'sdk': VersionConstraint.parse('>=2.0.0 <2.19.0'),
+            },
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ">=2.12.0 <2.19.0"
+
+dev_dependencies:
+  plugin1: any
+''');
+      });
+
+      test('Throws if there is no compatible environment', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {
+              'sdk': VersionConstraint.parse('>=2.12.0 <2.15.0'),
+            },
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+          Pubspec(
+            'b',
+            environment: {
+              'sdk': VersionConstraint.parse('>=2.16.0 <2.19.0'),
+            },
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.computePubspec,
+          throwsA(
+            isA<IncompatibleDependencyConstraintsException>()
+                .having((e) => e.toString(), 'toString', '''
+The environment "sdk" has incompatible version constraints in the project:
+- ">=2.12.0 <2.15.0"
+  from "a" at "./a/pubspec.yaml".
+- ">=2.16.0 <2.19.0"
+  from "b" at "./b/pubspec.yaml".
+'''),
+          ),
+        );
+      });
+
+      test(
+          'if a package has for SDK >2<3 and another has >3<4, '
+          'they should be considered compatible', () {
+        // This is due to the SDK overriding <3 to <4
+      });
+
+      test(
+          'If a dependency is used with version numbers, '
+          'use a version range compatible with all packages', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('>=1.0.0 <1.5.0'),
+              ),
+            },
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.3.0'),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1: ">=1.3.0 <1.5.0"
+''');
+      });
+
+      test('Throws if no valid version range is found', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('>=2.12.0 <2.15.0'),
+              ),
+            },
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('>=2.16.0 <2.19.0'),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.computePubspec,
+          throwsA(
+            isA<IncompatibleDependencyConstraintsException>()
+                .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- ">=2.12.0 <2.15.0"
+  from "a" at "./a/pubspec.yaml".
+- ">=2.16.0 <2.19.0"
+  from "b" at "./b/pubspec.yaml".
+'''),
+          ),
+        );
+      });
+
+      test(
+          'Version conflicts in dev_dependencies are ignored if a valid dependency_overrides is present.',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('>=2.12.0 <2.15.0'),
+              ),
+            },
+            dependencyOverrides: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('>=2.16.0 <2.19.0'),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1: any
+
+dependency_overrides:
+  plugin1: "^1.0.0"
+''');
+      });
+
+      test(
+          'dev_dependencies with a dependency_override are still listed, '
+          'but with an any version', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^0.0.0'),
+              ),
+            },
+            dependencyOverrides: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1: any
+
+dependency_overrides:
+  plugin1: "^1.0.0"
+''');
+      });
+
+      test(
+          'If a workspace has no dev_dependencies, no "dev_dependencies" should not be present in the pubspec.yaml',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'a',
+            dependencyOverrides: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dependency_overrides:
+  plugin1: "^1.0.0"
+''');
+      });
+
+      test(
+          'If a workspace has no dependency_overrides, it should not be present in the pubspec.yaml',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1: "^1.0.0"
+''');
+      });
+
+      test(
+          'Throws if a package uses different dependency type (path vs version vs ...)',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': HostedDependency()},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.computePubspec,
+          throwsA(
+            isA<IncompatibleDependencyConstraintsException>()
+                .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- "../plugin1"
+  from "a" at "./a/pubspec.yaml".
+- any
+  from "b" at "./b/pubspec.yaml".
+'''),
+          ),
+        );
+      });
+
+      test('Throws if a dependency uses two different paths', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': PathDependency('../plugin12')},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.computePubspec,
+          throwsA(
+            isA<IncompatibleDependencyConstraintsException>()
+                .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- "../plugin1"
+  from "a" at "./a/pubspec.yaml".
+- "../plugin12"
+  from "b" at "./b/pubspec.yaml".
+'''),
+          ),
+        );
+      });
+
+      test('supports sdk dependencies', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': SdkDependency('flutter')},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': SdkDependency('flutter')},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.computePubspec(),
+          '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1:
+    sdk: flutter
+''',
+        );
+      });
+
+      test('throws on incompatible sdk dependencies', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': SdkDependency('dart')},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': SdkDependency('flutter')},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(
+          workspace.computePubspec,
+          throwsA(
+            isA<IncompatibleDependencyConstraintsException>()
+                .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- sdk: dart
+  from "a" at "./a/pubspec.yaml".
+- sdk: flutter
+  from "b" at "./b/pubspec.yaml".
+'''),
+          ),
+        );
+      });
+
+      test('Supports two different paths if both resolve to the same directory',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {'plugin1': PathDependency('./../plugin1')},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1:
+    path: "${workingDir.dir('plugin1').path}"
+''');
+      });
+
+      group('Supports git projects', () {
+        test('with no ref', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1:
+    git:
+      url: https://google.com
+''');
+        });
+
+        test('with no path', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1:
+    git:
+      url: https://google.com
+      ref: master
+''');
+        });
+
+        test('and all its parameters', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1:
+    git:
+      url: https://google.com
+      ref: master
+      path: "/packages/plugin1"
+''');
+        });
+      });
+
+      group('Throws if hosted version dependencies', () {
+        test('have different declaredName', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': HostedDependency(
+                  hosted: HostedDetails(
+                    'google',
+                    Uri.parse('https://google.com'),
+                  ),
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': HostedDependency(
+                  hosted: HostedDetails(
+                    'google2',
+                    Uri.parse('https://google.com'),
+                  ),
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(
+            workspace.computePubspec,
+            throwsA(
+              isA<IncompatibleDependencyConstraintsException>()
+                  .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- any
+  from "a" at "./a/pubspec.yaml".
+- any
+  from "b" at "./b/pubspec.yaml".
+'''),
+            ),
+          );
+        });
+
+        test('have different host urls', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': HostedDependency(
+                  hosted: HostedDetails(
+                    'https://google.com',
+                    Uri.parse('https://google.com'),
+                  ),
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': HostedDependency(
+                  hosted: HostedDetails(
+                    'https://google.com',
+                    Uri.parse('https://google2.com'),
+                  ),
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(
+            workspace.computePubspec,
+            throwsA(
+              isA<IncompatibleDependencyConstraintsException>()
+                  .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- any
+  from "a" at "./a/pubspec.yaml".
+- any
+  from "b" at "./b/pubspec.yaml".
+'''),
+            ),
+          );
+        });
+      });
+
+      group('Throws if git dependencies', () {
+        test('have different url', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google2.com'),
+                  ref: 'master',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(
+            workspace.computePubspec,
+            throwsA(
+              isA<IncompatibleDependencyConstraintsException>()
+                  .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- git: https://google.com
+  from "a" at "./a/pubspec.yaml".
+- git: https://google2.com
+  from "b" at "./b/pubspec.yaml".
+'''),
+            ),
+          );
+        });
+
+        test('have different path', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                  path: '/packages/plugin2',
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(
+            workspace.computePubspec,
+            throwsA(
+              isA<IncompatibleDependencyConstraintsException>()
+                  .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- git: https://google.com
+  from "a" at "./a/pubspec.yaml".
+- git: https://google.com
+  from "b" at "./b/pubspec.yaml".
+'''),
+            ),
+          );
+        });
+
+        test('have different ref', () async {
+          final workingDir = await createSimpleWorkspace([
+            Pubspec(
+              'plugin1',
+              dependencies: {'custom_lint_builder': HostedDependency()},
+            ),
+            Pubspec(
+              'a',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'master',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+            Pubspec(
+              'b',
+              devDependencies: {
+                'plugin1': GitDependency(
+                  Uri.parse('https://google.com'),
+                  ref: 'dev',
+                  path: '/packages/plugin1',
+                ),
+              },
+            ),
+          ]);
+
+          final workspace = await fromContextRootsFromPaths(
+            ['a', 'b'],
+            workingDirectory: workingDir,
+          );
+
+          expect(
+            workspace.computePubspec,
+            throwsA(
+              isA<IncompatibleDependencyConstraintsException>()
+                  .having((e) => e.toString(), 'toString', '''
+The package "plugin1" has incompatible version constraints in the project:
+- git: https://google.com
+  from "a" at "./a/pubspec.yaml".
+- git: https://google.com
+  from "b" at "./b/pubspec.yaml".
+'''),
+            ),
+          );
+        });
+      });
+
+      test(
+          'The generated pubspec must contains only plugins and dependency_overrides',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          'dep',
+          'override',
+          'dev_dep',
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            dependencies: {
+              'dep': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+              'dev_dep': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+            dependencyOverrides: {
+              'override': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1: "^1.0.0"
+
+dependency_overrides:
+  override: "^1.0.0"
+''');
+      });
+
+      test(
+          'if a dependency is used as "dev_dependencies" in all packages using it, '
+          'it stays a "dev_dependencies"', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'plugin2',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+              'plugin2': HostedDependency(
+                version: VersionConstraint.parse('^1.2.0'),
+              ),
+            },
+          ),
+          Pubspec(
+            'b',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1: ">=1.0.0 <2.0.0"
+  plugin2: "^1.2.0"
+''');
+      });
+
+      test(
+          'If a plugin is sometimes a dev_dependency and sometimes a dependency_overrides, '
+          'ignore constraints specified by dev_dependencies', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+          ),
+          Pubspec(
+            'b',
+            dependencyOverrides: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^2.0.0'),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dev_dependencies:
+  plugin1: any
+
+dependency_overrides:
+  plugin1: "^2.0.0"
+''');
+      });
+    });
+
     group(CustomLintWorkspace.fromPaths, () {
+      test('decode CustomLintProject.pubspecOverrides', () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'with_override',
+            devDependencies: {'plugin': HostedDependency()},
+          ),
+          Pubspec(
+            'no_override',
+            devDependencies: {'plugin': HostedDependency()},
+          ),
+        ]);
+
+        workingDir.dir('with_override').pubspecOverrides.writeAsStringSync('''
+dependency_overrides:
+  plugin: any
+''');
+
+        final workspace = await fromContextRootsFromPaths(
+          ['with_override', 'no_override'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.projects, hasLength(2));
+
+        expect(workspace.projects.first.pubspec.name, 'with_override');
+        expect(workspace.projects[1].pubspec.name, 'no_override');
+
+        expect(
+          workspace.projects.first.pubspecOverrides,
+          {
+            'plugin': isA<HostedDependency>()
+                .having((e) => e.hosted, 'hosted', null)
+                .having((e) => e.version, 'version', VersionConstraint.any),
+          },
+        );
+        expect(workspace.projects[1].pubspecOverrides, isNull);
+      });
+
       test('Handles relative paths', () async {
         final workspace = await createSimpleWorkspace(['package']);
 
@@ -1260,7 +3001,7 @@ void main() {
       });
     });
 
-    group('createPluginHostDirectory', () {
+    group('resolvePackageConfigOffline', () {
       test(
           'should create a package_config.json with no package duplicates if a dependency is used by multiple plugins',
           () async {
@@ -1305,8 +3046,10 @@ void main() {
           workingDirectory: workspace,
         );
 
-        final pluginHostDirectory =
-            await customLintWorkspace.createPluginHostDirectory();
+        final pluginHostDirectory = createTemporaryDirectory();
+        await customLintWorkspace.resolvePackageConfigOffline(
+          pluginHostDirectory,
+        );
         final packageConfig = parsePackageConfigSync(pluginHostDirectory);
 
         expect(packageConfig.packages, hasLength(4));
@@ -1392,9 +3135,9 @@ void main() {
           workingDirectory: workspace,
         );
 
-        final pluginHostDirectory =
-            await customLintWorkspace.createPluginHostDirectory();
-        final packageConfig = parsePackageConfigSync(pluginHostDirectory);
+        final tempDir = createTemporaryDirectory();
+        await customLintWorkspace.resolvePackageConfigOffline(tempDir);
+        final packageConfig = parsePackageConfigSync(tempDir);
 
         expect(packageConfig.packages, hasLength(5));
         expect(
@@ -1463,10 +3206,10 @@ void main() {
           workingDirectory: workspace,
         );
 
-        expect(
-          await customLintWorkspace.createPluginHostDirectory(),
-          isA<Directory>().having((e) => e.existsSync(), 'exists()', true),
-        );
+        final tempDir = createTemporaryDirectory();
+        await customLintWorkspace.resolvePackageConfigOffline(tempDir);
+
+        expect(tempDir.packageConfig.existsSync(), true);
       });
 
       test(
@@ -1517,10 +3260,10 @@ void main() {
           workingDirectory: workspace,
         );
 
-        expect(
-          await customLintWorkspace.createPluginHostDirectory(),
-          isA<Directory>().having((e) => e.existsSync(), 'exists()', true),
-        );
+        final tempDir = createTemporaryDirectory();
+        await customLintWorkspace.resolvePackageConfigOffline(tempDir);
+
+        expect(tempDir.packageConfig.existsSync(), true);
       });
 
       test(
@@ -1577,7 +3320,9 @@ void main() {
         );
 
         await expectLater(
-          customLintWorkspace.createPluginHostDirectory(),
+          customLintWorkspace.resolvePackageConfigOffline(
+            createTemporaryDirectory(),
+          ),
           completes,
         );
       });
@@ -1644,8 +3389,11 @@ void main() {
           workingDirectory: workspace,
         );
 
+        final fs = MemoryFileSystem.test();
+        final dir = fs.directory(workspace.path)..createSync(recursive: true);
+
         await expectLater(
-          customLintWorkspace.createPluginHostDirectory(),
+          customLintWorkspace.resolvePackageConfigOffline(dir),
           completes,
         );
       });
@@ -1715,15 +3463,16 @@ void main() {
           (project) => project.pubspec.name == 'app2',
         );
 
+        final tempDir = createTemporaryDirectory();
         await expectLater(
-          customLintWorkspace.createPluginHostDirectory(),
+          customLintWorkspace.resolvePackageConfigOffline(tempDir),
           throwsA(
-            isA<PackageVersionConflictError>().having(
+            isA<PackageVersionConflictException>().having(
               (error) => error.toString(),
               'toString()',
               equals(
                 '''
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+PackageVersionConflictException – Some dependencies with conflicting versions were identified:
 
 Package transitive_dep:
 - Hosted with version constraint: ^1.0.0
@@ -1745,6 +3494,8 @@ dart pub upgrade transitive_dep
             ),
           ),
         );
+
+        expect(tempDir.packageConfig.existsSync(), isFalse);
       });
 
       test(
@@ -1805,14 +3556,16 @@ dart pub upgrade transitive_dep
         );
 
         await expectLater(
-          customLintWorkspace.createPluginHostDirectory(),
+          customLintWorkspace.resolvePackageConfigOffline(
+            createTemporaryDirectory(),
+          ),
           throwsA(
-            isA<PackageVersionConflictError>().having(
+            isA<PackageVersionConflictException>().having(
               (error) => error.toString(),
               'toString()',
               equals(
                 '''
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+PackageVersionConflictException – Some dependencies with conflicting versions were identified:
 
 Package transitive_dep:
 - Hosted with version constraint: ^1.0.0
@@ -1921,14 +3674,16 @@ dart pub upgrade transitive_dep
         );
 
         await expectLater(
-          customLintWorkspace.createPluginHostDirectory(),
+          customLintWorkspace.resolvePackageConfigOffline(
+            createTemporaryDirectory(),
+          ),
           throwsA(
-            isA<PackageVersionConflictError>().having(
+            isA<PackageVersionConflictException>().having(
               (error) => error.toString(),
               'toString()',
               equals(
                 '''
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+PackageVersionConflictException – Some dependencies with conflicting versions were identified:
 
 Plugin dep:
 - Hosted with version constraint: 1.0.0
@@ -2019,14 +3774,16 @@ dart pub upgrade dep second_dep
         );
 
         await expectLater(
-          customLintWorkspace.createPluginHostDirectory(),
+          customLintWorkspace.resolvePackageConfigOffline(
+            createTemporaryDirectory(),
+          ),
           throwsA(
-            isA<PackageVersionConflictError>().having(
+            isA<PackageVersionConflictException>().having(
               (error) => error.toString(),
               'toString()',
               equals(
                 '''
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+PackageVersionConflictException – Some dependencies with conflicting versions were identified:
 
 Plugin dep:
 - Hosted with version constraint: ^1.0.0
@@ -2105,14 +3862,16 @@ dart pub upgrade dep
         );
 
         await expectLater(
-          customLintWorkspace.createPluginHostDirectory(),
+          customLintWorkspace.resolvePackageConfigOffline(
+            createTemporaryDirectory(),
+          ),
           throwsA(
-            isA<PackageVersionConflictError>().having(
+            isA<PackageVersionConflictException>().having(
               (error) => error.toString(),
               'toString()',
               equals(
                 '''
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+PackageVersionConflictException – Some dependencies with conflicting versions were identified:
 
 Plugin dep:
 - Hosted with version constraint: ^1.0.0
@@ -2186,14 +3945,16 @@ dart pub upgrade dep
         );
 
         await expectLater(
-          customLintWorkspace.createPluginHostDirectory(),
+          customLintWorkspace.resolvePackageConfigOffline(
+            createTemporaryDirectory(),
+          ),
           throwsA(
-            isA<PackageVersionConflictError>().having(
+            isA<PackageVersionConflictException>().having(
               (error) => error.toString(),
               'toString()',
               equals(
                 '''
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+PackageVersionConflictException – Some dependencies with conflicting versions were identified:
 
 Plugin dep:
 - Hosted with version constraint: 1.0.0
@@ -2272,14 +4033,16 @@ dart pub upgrade dep
         );
 
         await expectLater(
-          customLintWorkspace.createPluginHostDirectory(),
+          customLintWorkspace.resolvePackageConfigOffline(
+            createTemporaryDirectory(),
+          ),
           throwsA(
-            isA<PackageVersionConflictError>().having(
+            isA<PackageVersionConflictException>().having(
               (error) => error.toString(),
               'toString()',
               equals(
                 '''
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+PackageVersionConflictException – Some dependencies with conflicting versions were identified:
 
 Plugin dep:
 - Hosted with version constraint: 1.0.1
@@ -2357,14 +4120,16 @@ flutter pub upgrade dep
         );
 
         await expectLater(
-          customLintWorkspace.createPluginHostDirectory(),
+          customLintWorkspace.resolvePackageConfigOffline(
+            createTemporaryDirectory(),
+          ),
           throwsA(
-            isA<PackageVersionConflictError>().having(
+            isA<PackageVersionConflictException>().having(
               (error) => error.toString(),
               'toString()',
               equals(
                 '''
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+PackageVersionConflictException – Some dependencies with conflicting versions were identified:
 
 Plugin dep:
 - From git url ssh://git@github.com/rrousselGit/freezed.git
@@ -2443,14 +4208,16 @@ dart pub upgrade dep
         );
 
         await expectLater(
-          customLintWorkspace.createPluginHostDirectory(),
+          customLintWorkspace.resolvePackageConfigOffline(
+            createTemporaryDirectory(),
+          ),
           throwsA(
-            isA<PackageVersionConflictError>().having(
+            isA<PackageVersionConflictException>().having(
               (error) => error.toString(),
               'toString()',
               equals(
                 '''
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+PackageVersionConflictException – Some dependencies with conflicting versions were identified:
 
 Plugin dep:
 - From git url ssh://git@github.com/rrousselGit/freezed.git path packages/freezed
@@ -2529,14 +4296,16 @@ dart pub upgrade dep
         );
 
         await expectLater(
-          customLintWorkspace.createPluginHostDirectory(),
+          customLintWorkspace.resolvePackageConfigOffline(
+            createTemporaryDirectory(),
+          ),
           throwsA(
-            isA<PackageVersionConflictError>().having(
+            isA<PackageVersionConflictException>().having(
               (error) => error.toString(),
               'toString()',
               equals(
                 '''
-PackageVersionConflictError – Some dependencies with conflicting versions were identified:
+PackageVersionConflictException – Some dependencies with conflicting versions were identified:
 
 Plugin dep:
 - From git url ssh://git@github.com/rrousselGit/freezed.git ref 123
@@ -2562,3 +4331,17 @@ dart pub upgrade dep
     });
   });
 }
+
+Future<void> runWithoutInternet(FutureOr<void> Function() cb) async {
+  return IOOverrides.runZoned(
+    cb,
+    socketConnect: (p0, p1, {sourceAddress, sourcePort = 0, timeout}) =>
+        throw Exception('No internet'),
+    socketStartConnect: (p0, p1, {sourceAddress, sourcePort = 0}) =>
+        throw Exception('No internet'),
+    serverSocketBind: (p0, p1, {backlog = 0, shared = false, v6Only = false}) =>
+        throw Exception('No internet'),
+  );
+}
+
+class FakeIOOveride extends Fake implements IOOverrides {}
