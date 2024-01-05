@@ -2501,7 +2501,7 @@ dependency_overrides:
       );
 
       test(
-          'throws PackageConfigNotFoundError if package has a pubspec but no .dart_tool/package_config.json',
+          'throws PackageConfigParseError if package has a pubspec but no .dart_tool/package_config.json',
           () async {
         final workspace = await createSimpleWorkspace(['package']);
         workspace.dir('package', '.dart_tool').deleteSync(recursive: true);
@@ -2511,7 +2511,7 @@ dependency_overrides:
             [p.join(workspace.path, 'package')],
             workingDirectory: workspace,
           ),
-          throwsA(isA<PackageConfigNotFoundError>()),
+          throwsA(isA<PackageConfigParseError>()),
         );
       });
 

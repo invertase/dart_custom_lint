@@ -170,13 +170,11 @@ Future<PackageConfig> parsePackageConfig(Directory directory) async {
 Directory? tryFindProjectDirectory(
   Directory directory, {
   Directory? original,
-  bool missingPackageConfigOkay = false,
 }) {
   try {
     return findProjectDirectory(
       directory,
       original: original,
-      missingPackageConfigOkay: missingPackageConfigOkay,
     );
   } on FileSystemException {
     return null;
@@ -185,27 +183,21 @@ Directory? tryFindProjectDirectory(
 
 /// Finds the project directory associated with an analysis context root
 ///
-/// This is a folder that contains both a `pubspec.yaml` and a `.dart_tool/package_config.json` file.
+/// This is a folder that contains a `pubspec.yaml` file.
 /// It is either alongside the analysis_options.yaml file, or in a parent directory.
 Directory findProjectDirectory(
   Directory directory, {
   Directory? original,
-  bool missingPackageConfigOkay = false,
 }) {
-  final packageConfigFile = directory.packageConfig.existsSync();
   final pubspecFile = directory.pubspec.existsSync();
-  if (packageConfigFile && pubspecFile) {
+  if (pubspecFile) {
     return directory;
   }
-  if (pubspecFile) {
-    if (missingPackageConfigOkay) {
-      return directory;
-    }
-    throw PackageConfigNotFoundError._(directory.path);
-  }
+
   if (directory.parent.uri == directory.uri) {
     throw FindProjectError._(original?.path ?? directory.path);
   }
+
   return findProjectDirectory(directory.parent, original: directory);
 }
 
@@ -215,22 +207,6 @@ class FindProjectError extends FileSystemException {
   /// An error that represents the folder [path] where the search for the pubspec started.
   FindProjectError._(String path)
       : super('Failed to find dart project at $path:\n', path);
-
-  @override
-  String toString() => message;
-}
-
-/// No .dart_tool/package_config.json file was found for a plugin.
-@internal
-class PackageConfigNotFoundError extends FileSystemException {
-  /// The [path] where the pubspec.yaml file was found, but missing a package_config.json
-  PackageConfigNotFoundError._(String path)
-      : super(
-          'Failed to find .dart_tool/package_config.json at $path.\n'
-          'Make sure to run `pub get` first.\n'
-          'If "$path" is in your PUB_CACHE dir, run `dart pub cache repair`',
-          path,
-        );
 
   @override
   String toString() => message;
