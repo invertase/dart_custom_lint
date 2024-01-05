@@ -3832,8 +3832,8 @@ dart pub upgrade dep
             'app2',
             devDependencies: {
               'dep': HostedDependency(
-                version: VersionConstraint.parse('>=3.0.0 <4.0.0'),
-              )
+                version: VersionConstraint.parse('>=2.0.0 <3.0.0'),
+              ),
             },
           ),
         ]);
@@ -3877,7 +3877,7 @@ Plugin dep:
 - Hosted with version constraint: ^1.0.0
   Resolved with ${app.plugins.single.package.root.path}
   Used by project "app" at "app"
-- Hosted with version constraint: >=3.0.0 <4.0.0
+- Hosted with version constraint: >=2.0.0 <3.0.0
   Resolved with ${app2.plugins.single.package.root.path}
   Used by project "app2" at "app2"
 
