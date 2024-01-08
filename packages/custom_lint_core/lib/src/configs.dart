@@ -21,7 +21,7 @@ class CustomLintConfigs {
   @internal
   factory CustomLintConfigs.parse(
     File? analysisOptionsFile,
-    PackageConfig? packageConfig,
+    PackageConfig packageConfig,
   ) {
     if (analysisOptionsFile == null || !analysisOptionsFile.exists) {
       return CustomLintConfigs.empty;

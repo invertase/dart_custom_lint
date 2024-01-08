@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/error/listener.dart';
+// ignore: implementation_imports
+import 'package:custom_lint/src/package_utils.dart';
 import 'package:custom_lint_core/custom_lint_core.dart';
-import 'package:package_config/package_config.dart';
+
 import 'package:test/test.dart';
 
 import 'assist_test.dart';
@@ -57,7 +59,7 @@ class MyLintRule extends DartLintRule {
 void main() async {
   const onByDefault = TestLintRule(enabledByDefault: true);
   const offByDefault = TestLintRule(enabledByDefault: false);
-  final packageConfig = await findPackageConfig(Directory.current);
+  final packageConfig = await parsePackageConfig(Directory.current);
 
   test('LintRule.testRun', () async {
     const assist = MyLintRule();

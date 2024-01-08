@@ -2,6 +2,8 @@ import 'dart:io' as io;
 
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+// ignore: implementation_imports
+import 'package:custom_lint/src/package_utils.dart';
 import 'package:custom_lint_core/custom_lint_core.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
@@ -65,7 +67,7 @@ void main() async {
   late File includeFile;
   late CustomLintConfigs includeConfig;
 
-  final packageConfig = await findPackageConfig(io.Directory.current);
+  final packageConfig = await parsePackageConfig(io.Directory.current);
 
   const testPackageName = 'test_package_with_config';
   setUp(() {
