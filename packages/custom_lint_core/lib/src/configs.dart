@@ -21,7 +21,7 @@ class CustomLintConfigs {
   @internal
   factory CustomLintConfigs.parse(
     File? analysisOptionsFile,
-    PackageConfig? packageConfig,
+    PackageConfig packageConfig,
   ) {
     if (analysisOptionsFile == null || !analysisOptionsFile.exists) {
       return CustomLintConfigs.empty;
@@ -43,7 +43,7 @@ class CustomLintConfigs {
       String? includeAbsolutePath;
 
       if (includeUri.scheme == 'package') {
-        final packageUri = packageConfig?.resolve(includeUri);
+        final packageUri = packageConfig.resolve(includeUri);
         includeAbsolutePath = packageUri?.toFilePath();
       } else {
         includeAbsolutePath = normalize(
