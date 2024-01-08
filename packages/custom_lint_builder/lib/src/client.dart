@@ -236,7 +236,7 @@ class _CustomLintAnalysisConfigs {
 
   factory _CustomLintAnalysisConfigs.from(
     Pubspec pubspecForContext,
-    PackageConfig packageConfig,
+    PackageConfig? packageConfig,
     AnalysisContext analysisContext,
     CustomLintPluginClient client,
   ) {
