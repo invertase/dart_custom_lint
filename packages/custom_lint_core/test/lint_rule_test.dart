@@ -4,7 +4,7 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/error/listener.dart';
 // ignore: implementation_imports
-import 'package:custom_lint/src/package_utils.dart';
+import 'package:custom_lint/src/package_utils.dart' show parsePackageConfig;
 import 'package:custom_lint_core/custom_lint_core.dart';
 
 import 'package:test/test.dart';

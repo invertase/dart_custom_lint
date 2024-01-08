@@ -3,7 +3,7 @@ import 'dart:io' as io;
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 // ignore: implementation_imports
-import 'package:custom_lint/src/package_utils.dart';
+import 'package:custom_lint/src/package_utils.dart' show parsePackageConfig;
 import 'package:custom_lint_core/custom_lint_core.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
@@ -208,9 +208,6 @@ include: package:$testPackageName/analysis_options.yaml
       ''');
 
       final tempProjectDir = await createTempProject(dir.path, testPackageName);
-      if (packageConfig == null) {
-        throw Exception('Package config is not loaded');
-      }
 
       final patchedPackageConfig = patchPackageConfig(
         packageConfig,
@@ -231,10 +228,6 @@ include: package:$testPackageName/$notExistingFileName
       final dir = createDir();
 
       final tempProjectDir = await createTempProject(dir.path, testPackageName);
-
-      if (packageConfig == null) {
-        throw Exception('Package config is not loaded');
-      }
       final patchedPackageConfig = patchPackageConfig(
         packageConfig,
         testPackageName,
@@ -252,12 +245,8 @@ include: package:$testPackageName/$notExistingFileName
 include: package:$notExistingPackage/analysis_options.yaml
       ''');
       final dir = createDir();
-
       final tempProjectDir = await createTempProject(dir.path, testPackageName);
 
-      if (packageConfig == null) {
-        throw Exception('Package config is not loaded');
-      }
       final patchedPackageConfig = patchPackageConfig(
         packageConfig,
         testPackageName,
