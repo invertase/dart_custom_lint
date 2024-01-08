@@ -331,10 +331,9 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     this._channel,
     this._client, {
     required super.resourceProvider,
-  });
+  }) : _packageConfig = parsePackageConfigSync(io.Directory.current);
 
-  PackageConfig? _packageConfig;
-
+  final PackageConfig? _packageConfig;
   final CustomLintClientChannel _channel;
   final CustomLintPluginClient _client;
   final _contextCollection = BehaviorSubject<AnalysisContextCollection>();
@@ -382,8 +381,6 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
             io.Directory(analysisContext.contextRoot.root.path),
           ),
       };
-
-      _packageConfig ??= parsePackageConfigSync(io.Directory.current);
 
       // Running before updating the configs as the config parsing depends
       // on this operation.
