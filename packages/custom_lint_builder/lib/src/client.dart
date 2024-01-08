@@ -236,12 +236,13 @@ class _CustomLintAnalysisConfigs {
 
   factory _CustomLintAnalysisConfigs.from(
     Pubspec pubspecForContext,
+    PackageConfig packageConfig,
     AnalysisContext analysisContext,
     CustomLintPluginClient client,
   ) {
     final configs = CustomLintConfigs.parse(
       analysisContext.contextRoot.optionsFile,
-      client._analyzerPlugin._packageConfig,
+      packageConfig,
     );
 
     final activePluginsForContext = Map.fromEntries(
@@ -333,7 +334,6 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     required super.resourceProvider,
   });
 
-  PackageConfig? _packageConfig;
   final CustomLintClientChannel _channel;
   final CustomLintPluginClient _client;
   final _contextCollection = BehaviorSubject<AnalysisContextCollection>();
@@ -382,8 +382,6 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
           ),
       };
 
-      _packageConfig = await parsePackageConfig(io.Directory.current);
-
       // Running before updating the configs as the config parsing depends
       // on this operation.
       await _client._updateActivePluginList(contextCollection, pubspecs);
@@ -392,6 +390,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         for (final pubspecEntry in pubspecs.entries)
           pubspecEntry.key: _CustomLintAnalysisConfigs.from(
             await pubspecEntry.value,
+            await parsePackageConfig(io.Directory.current),
             pubspecEntry.key,
             _client,
           ),
