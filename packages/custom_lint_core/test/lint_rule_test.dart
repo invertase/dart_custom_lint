@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_core/custom_lint_core.dart';
+import 'package:package_config/package_config.dart';
 import 'package:test/test.dart';
 
 import 'assist_test.dart';
@@ -51,9 +54,10 @@ class MyLintRule extends DartLintRule {
   }
 }
 
-void main() {
+void main() async {
   const onByDefault = TestLintRule(enabledByDefault: true);
   const offByDefault = TestLintRule(enabledByDefault: false);
+  final packageConfig = await findPackageConfig(Directory.current);
 
   test('LintRule.testRun', () async {
     const assist = MyLintRule();
@@ -107,7 +111,8 @@ custom_lint:
   rules:
   - test_lint
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptionFile);
+      final configs =
+          CustomLintConfigs.parse(analysisOptionFile, packageConfig);
 
       expect(onByDefault.isEnabled(configs), true);
       expect(offByDefault.isEnabled(configs), true);
@@ -119,7 +124,8 @@ custom_lint:
   rules:
   - test_lint: false
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptionFile);
+      final configs =
+          CustomLintConfigs.parse(analysisOptionFile, packageConfig);
 
       expect(onByDefault.isEnabled(configs), false);
       expect(offByDefault.isEnabled(configs), false);

@@ -1,10 +1,7 @@
-import 'dart:io';
-
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:collection/collection.dart';
-// ignore: implementation_imports
-import 'package:custom_lint/src/package_utils.dart';
 import 'package:meta/meta.dart';
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
@@ -22,7 +19,10 @@ class CustomLintConfigs {
 
   /// Decode a [CustomLintConfigs] from a file.
   @internal
-  factory CustomLintConfigs.parse(File? analysisOptionsFile) {
+  factory CustomLintConfigs.parse(
+    File? analysisOptionsFile,
+    PackageConfig? packageConfig,
+  ) {
     if (analysisOptionsFile == null || !analysisOptionsFile.exists) {
       return CustomLintConfigs.empty;
     }
@@ -43,9 +43,7 @@ class CustomLintConfigs {
       String? includeAbsolutePath;
 
       if (includeUri.scheme == 'package') {
-        final packageConfig = parsePackageConfigSync(Directory.current);
-        final packageUri = packageConfig.resolve(includeUri);
-
+        final packageUri = packageConfig?.resolve(includeUri);
         includeAbsolutePath = packageUri?.toFilePath();
       } else {
         includeAbsolutePath = normalize(
@@ -59,6 +57,7 @@ class CustomLintConfigs {
       if (includeAbsolutePath != null) {
         includedOptions = CustomLintConfigs.parse(
           analysisOptionsFile.provider.getFile(includeAbsolutePath),
+          packageConfig,
         );
       }
     }

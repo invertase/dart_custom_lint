@@ -39,15 +39,11 @@ custom_lint:
   return dir.path;
 }
 
-Future<void> patchPackageConfig(
+PackageConfig patchPackageConfig(
+  PackageConfig currentPackageConfig,
   String packageName,
   String packagePath,
-) async {
-  final currentPackageConfig = await findPackageConfig(io.Directory.current);
-  if (currentPackageConfig == null) {
-    throw Exception('Could not find package config');
-  }
-
+) {
   final patchedPackages = currentPackageConfig.packages.toList()
     ..add(
       Package(
@@ -62,19 +58,15 @@ Future<void> patchPackageConfig(
     extraData: currentPackageConfig.extraData,
   );
 
-  await savePackageConfig(
-    patchedPackageConfig,
-    io.Directory.current,
-  );
-
-  addTearDown(
-    () => savePackageConfig(currentPackageConfig, io.Directory.current),
-  );
+  return patchedPackageConfig;
 }
 
-void main() {
+void main() async {
   late File includeFile;
   late CustomLintConfigs includeConfig;
+
+  final packageConfig = await findPackageConfig(io.Directory.current);
+
   const testPackageName = 'test_package_with_config';
   setUp(() {
     includeFile = createAnalysisOptions(
@@ -89,7 +81,7 @@ custom_lint:
 ''',
     );
 
-    includeConfig = CustomLintConfigs.parse(includeFile);
+    includeConfig = CustomLintConfigs.parse(includeFile, packageConfig);
   });
 
   test('Empty config', () {
@@ -99,13 +91,14 @@ custom_lint:
 
   group('parse', () {
     test('if file is null, defaults to empty', () {
-      final configs = CustomLintConfigs.parse(null);
+      final configs = CustomLintConfigs.parse(null, packageConfig);
       expect(configs, same(CustomLintConfigs.empty));
     });
 
     test('if file does not exist, defaults to empty ', () {
       final configs = CustomLintConfigs.parse(
         PhysicalResourceProvider.INSTANCE.getFile('/this-does-no-exist'),
+        packageConfig,
       );
       expect(configs, same(CustomLintConfigs.empty));
     });
@@ -117,7 +110,7 @@ linter:
   rules:
     public_member_api_docs: false
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = CustomLintConfigs.parse(analysisOptions, packageConfig);
 
       expect(configs, includeConfig);
     });
@@ -129,7 +122,7 @@ linter:
   rules:
     public_member_api_docs: false
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = CustomLintConfigs.parse(analysisOptions, packageConfig);
 
       expect(configs, includeConfig);
     });
@@ -143,7 +136,7 @@ linter:
 
 custom_lint:
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = CustomLintConfigs.parse(analysisOptions, packageConfig);
 
       expect(configs, includeConfig);
     });
@@ -154,7 +147,7 @@ custom_lint:
   rules: 
   - a
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = CustomLintConfigs.parse(analysisOptions, packageConfig);
 
       expect(
         configs.rules,
@@ -179,7 +172,7 @@ linter:
 custom_lint:
   enable_all_lint_rules: false
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = CustomLintConfigs.parse(analysisOptions, packageConfig);
 
       expect(configs.enableAllLintRules, false);
       expect(configs.rules, includeConfig.rules);
@@ -198,7 +191,7 @@ custom_lint:
   rules:
   - a
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = CustomLintConfigs.parse(analysisOptions, packageConfig);
 
       expect(configs.enableAllLintRules, false);
       expect(configs.rules, {
@@ -213,8 +206,16 @@ include: package:$testPackageName/analysis_options.yaml
       ''');
 
       final tempProjectDir = await createTempProject(dir.path, testPackageName);
-      await patchPackageConfig(testPackageName, tempProjectDir);
-      final configs = CustomLintConfigs.parse(file);
+      if (packageConfig == null) {
+        throw Exception('Package config is not loaded');
+      }
+
+      final patchedPackageConfig = patchPackageConfig(
+        packageConfig,
+        testPackageName,
+        tempProjectDir,
+      );
+      final configs = CustomLintConfigs.parse(file, patchedPackageConfig);
 
       expect(configs.rules.containsKey('from_package'), true);
     });
@@ -228,8 +229,16 @@ include: package:$testPackageName/$notExistingFileName
       final dir = createDir();
 
       final tempProjectDir = await createTempProject(dir.path, testPackageName);
-      await patchPackageConfig(testPackageName, tempProjectDir);
-      final configs = CustomLintConfigs.parse(file);
+
+      if (packageConfig == null) {
+        throw Exception('Package config is not loaded');
+      }
+      final patchedPackageConfig = patchPackageConfig(
+        packageConfig,
+        testPackageName,
+        tempProjectDir,
+      );
+      final configs = CustomLintConfigs.parse(file, patchedPackageConfig);
 
       expect(configs, same(CustomLintConfigs.empty));
     });
@@ -243,8 +252,16 @@ include: package:$notExistingPackage/analysis_options.yaml
       final dir = createDir();
 
       final tempProjectDir = await createTempProject(dir.path, testPackageName);
-      await patchPackageConfig(testPackageName, tempProjectDir);
-      final configs = CustomLintConfigs.parse(file);
+
+      if (packageConfig == null) {
+        throw Exception('Package config is not loaded');
+      }
+      final patchedPackageConfig = patchPackageConfig(
+        packageConfig,
+        testPackageName,
+        tempProjectDir,
+      );
+      final configs = CustomLintConfigs.parse(file, patchedPackageConfig);
 
       expect(configs, same(CustomLintConfigs.empty));
     });
@@ -265,7 +282,7 @@ custom_lint:
     foo: 21
   - d
 ''');
-      final configs = CustomLintConfigs.parse(analysisOptions);
+      final configs = CustomLintConfigs.parse(analysisOptions, packageConfig);
 
       expect(configs.enableAllLintRules, true);
       expect(configs.rules, {
@@ -282,11 +299,14 @@ custom_lint:
     group('Handles errors', () {
       test('Defaults to empty if yaml fails to parse', () {
         final configs = CustomLintConfigs.parse(
-          createAnalysisOptions('''
+          createAnalysisOptions(
+            '''
 foo:
     bar:
   baz:
-'''),
+''',
+          ),
+          packageConfig,
         );
         expect(configs, CustomLintConfigs.empty);
       });

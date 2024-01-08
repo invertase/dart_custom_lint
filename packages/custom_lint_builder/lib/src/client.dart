@@ -37,6 +37,7 @@ import 'package:custom_lint_core/src/resolver.dart';
 import 'package:glob/glob.dart';
 import 'package:hotreloader/hotreloader.dart';
 import 'package:meta/meta.dart';
+import 'package:package_config/package_config.dart' show PackageConfig;
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:rxdart/subjects.dart';
@@ -238,8 +239,10 @@ class _CustomLintAnalysisConfigs {
     AnalysisContext analysisContext,
     CustomLintPluginClient client,
   ) {
-    final configs =
-        CustomLintConfigs.parse(analysisContext.contextRoot.optionsFile);
+    final configs = CustomLintConfigs.parse(
+      analysisContext.contextRoot.optionsFile,
+      client._analyzerPlugin._packageConfig,
+    );
 
     final activePluginsForContext = Map.fromEntries(
       client._channel.registeredPlugins.entries.where(
@@ -330,6 +333,8 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     required super.resourceProvider,
   });
 
+  PackageConfig? _packageConfig;
+
   final CustomLintClientChannel _channel;
   final CustomLintPluginClient _client;
   final _contextCollection = BehaviorSubject<AnalysisContextCollection>();
@@ -377,6 +382,8 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
             io.Directory(analysisContext.contextRoot.root.path),
           ),
       };
+
+      _packageConfig ??= parsePackageConfigSync(io.Directory.current);
 
       // Running before updating the configs as the config parsing depends
       // on this operation.
