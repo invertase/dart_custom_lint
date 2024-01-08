@@ -43,7 +43,7 @@ class CustomLintConfigs {
       String? includeAbsolutePath;
 
       if (includeUri.scheme == 'package') {
-        final packageUri = packageConfig?.resolve(includeUri);
+        final packageUri = packageConfig.resolve(includeUri);
         includeAbsolutePath = packageUri?.toFilePath();
       } else {
         includeAbsolutePath = normalize(
