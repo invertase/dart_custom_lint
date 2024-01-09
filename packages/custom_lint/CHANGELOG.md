@@ -1,4 +1,4 @@
-## Unreleased fix
+## 0.5.8 - 2024-01-09
 
 - `// ignore` comments now correctly respect indentation when they are inserted (thanks to @PiotrRogulski)
 
