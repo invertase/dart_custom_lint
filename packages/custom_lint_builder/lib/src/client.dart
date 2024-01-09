@@ -37,6 +37,7 @@ import 'package:custom_lint_core/src/resolver.dart';
 import 'package:glob/glob.dart';
 import 'package:hotreloader/hotreloader.dart';
 import 'package:meta/meta.dart';
+import 'package:package_config/package_config.dart' show PackageConfig;
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:rxdart/subjects.dart';
@@ -235,11 +236,14 @@ class _CustomLintAnalysisConfigs {
 
   factory _CustomLintAnalysisConfigs.from(
     Pubspec pubspecForContext,
+    PackageConfig packageConfig,
     AnalysisContext analysisContext,
     CustomLintPluginClient client,
   ) {
-    final configs =
-        CustomLintConfigs.parse(analysisContext.contextRoot.optionsFile);
+    final configs = CustomLintConfigs.parse(
+      analysisContext.contextRoot.optionsFile,
+      packageConfig,
+    );
 
     final activePluginsForContext = Map.fromEntries(
       client._channel.registeredPlugins.entries.where(
@@ -386,6 +390,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         for (final pubspecEntry in pubspecs.entries)
           pubspecEntry.key: _CustomLintAnalysisConfigs.from(
             await pubspecEntry.value,
+            await parsePackageConfig(io.Directory.current),
             pubspecEntry.key,
             _client,
           ),
