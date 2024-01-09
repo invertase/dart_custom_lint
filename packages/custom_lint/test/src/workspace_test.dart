@@ -276,7 +276,6 @@ Future<Directory> createSimpleWorkspace(
 Future<Directory> createWorkspace(
   Map<String, Pubspec> pubspecs, {
   bool withPackageConfig = true,
-  bool withNestedAnalysisOptions = false,
   bool local = false,
 }) async {
   final dir = createTemporaryDirectory(local: local);
@@ -2479,14 +2478,11 @@ dependency_overrides:
         () async {
           final workspace = await createSimpleWorkspace(['package']);
 
-          final analysisFile = File(
-            p.join(workspace.path, 'package', 'analysis_options.yaml'),
-          );
+          final analysisFile = workspace.dir('package').analysisOptions;
           analysisFile.createSync();
           analysisFile.writeAsStringSync(analysisOptionsWithCustomLintEnabled);
-          final nestedAnalysisFile = File(
-            p.join(workspace.path, 'package', 'test', 'analysis_options.yaml'),
-          );
+          final nestedAnalysisFile =
+              workspace.dir('package', 'test').analysisOptions;
           nestedAnalysisFile.createSync(recursive: true);
           nestedAnalysisFile
               .writeAsStringSync(analysisOptionsWithCustomLintEnabled);

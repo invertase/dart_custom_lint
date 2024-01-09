@@ -278,8 +278,10 @@ Analyzing...
       'dependency conflict',
       () async {
         // Create two packages with the same name but different paths
-        final workspace =
-            await createSimpleWorkspace(['dep', 'dep'], local: true);
+        final workspace = await createSimpleWorkspace(
+          ['dep', 'dep'],
+          local: true,
+        );
 
         final plugin = createPlugin(
           parent: workspace,

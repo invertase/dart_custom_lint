@@ -189,8 +189,7 @@ Directory findProjectDirectory(
   Directory directory, {
   Directory? original,
 }) {
-  final pubspecFile = directory.pubspec.existsSync();
-  if (pubspecFile) {
+  if (directory.pubspec.existsSync()) {
     return directory;
   }
 
