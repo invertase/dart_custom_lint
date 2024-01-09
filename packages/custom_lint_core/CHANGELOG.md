@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.5.8 - 2024-01-09
 
 Added an optional `customPath` to the various `ChangeReporter` methods (thanks to @laurentschall)
 
