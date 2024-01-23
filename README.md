@@ -245,7 +245,7 @@ When using this command, you will need a VM service URI provided by custom_lint.
 
 There are two possible ways to obtain one:
 
-- if you started your plugin using `custom_lint --watch`, it should be visible
+- if you started your plugin using `dart run --observe custom_lint --watch`, it should be visible
   in the console output.
 - if your plugin is started by your IDE, you can open the `custom_lint.log` file
   that custom_lint created next to the `pubspec.yaml` of your analyzed projects.
