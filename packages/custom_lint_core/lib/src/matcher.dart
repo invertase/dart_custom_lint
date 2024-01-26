@@ -6,19 +6,29 @@ import 'package:matcher/matcher.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 
-/// Expects that a [List<PrioririzedSourceChange>] matches with a serialized snapshots.
+/// Expects that a [List<PrioritizedSourceChange>] matches with a serialized snapshots.
 ///
 /// This effectively encode the list of changes, remove file paths from the result,
 /// and compare this output with the content of a file.
 @visibleForTesting
-Matcher matcherNormalizedPrioritizedSourceChangeSnapshot(String filePath) {
-  return _MatcherNormalizedPrioritizedSourceChangeSnapshot(filePath);
+Matcher matcherNormalizedPrioritizedSourceChangeSnapshot(
+  String filePath, {
+  JsonEncoder? encoder,
+}) {
+  return _MatcherNormalizedPrioritizedSourceChangeSnapshot(
+    filePath,
+    encoder: encoder,
+  );
 }
 
 class _MatcherNormalizedPrioritizedSourceChangeSnapshot extends Matcher {
-  _MatcherNormalizedPrioritizedSourceChangeSnapshot(this.path);
+  _MatcherNormalizedPrioritizedSourceChangeSnapshot(
+    this.path, {
+    JsonEncoder? encoder,
+  }) : encoder = encoder ?? const JsonEncoder();
 
   final String path;
+  final JsonEncoder encoder;
 
   static final Object _mismatchedValueKey = Object();
   static final Object _expectedKey = Object();
