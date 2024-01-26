@@ -126,7 +126,12 @@ class CustomLintServer {
     required bool reload,
   }) =>
       _runner.run(() async {
-        final clientChannel = await _clientChannel.safeFirst;
+        final clientChannel = await _clientChannel
+            // Waiting for the client channel to be set
+            .whereNotNull()
+            .firstOrNull;
+
+        // The connection was closed before a response was received
         if (clientChannel == null) return;
 
         await clientChannel.sendCustomLintRequest(
