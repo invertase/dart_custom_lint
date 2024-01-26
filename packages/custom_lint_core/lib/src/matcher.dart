@@ -56,7 +56,7 @@ class _MatcherNormalizedPrioritizedSourceChangeSnapshot extends Matcher {
       }
     }
 
-    final actual = jsonEncode(json);
+    final actual = encoder.convert(json);
     final expected = file.readAsStringSync();
 
     if (actual != expected) {
