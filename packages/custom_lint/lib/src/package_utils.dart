@@ -176,7 +176,7 @@ Directory? tryFindProjectDirectory(
       directory,
       original: original,
     );
-  } on FileSystemException {
+  } catch (_) {
     return null;
   }
 }
