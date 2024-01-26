@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.5.9 - 2024-01-26
 
 - `matcherNormalizedPrioritizedSourceChangeSnapshot` now optionally allows specifying a `JsonEncoder`.
 
