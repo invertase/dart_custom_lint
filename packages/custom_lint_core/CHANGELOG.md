@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.5.10 - 2024-01-26
 
 - Fix a bug with `matcherNormalizedPrioritizedSourceChangeSnapshot`
 

@@ -1,3 +1,7 @@
+## 0.5.10 - 2024-01-26
+
+- `custom_lint_core` upgraded to `0.5.10`
+
 ## 0.5.9 - 2024-01-26
 
 - `custom_lint_core` upgraded to `0.5.9`
