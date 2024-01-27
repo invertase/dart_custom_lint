@@ -231,6 +231,7 @@ void writeSimplePackageConfig(
 Future<Directory> createSimpleWorkspace(
   List<Object> projectEntry, {
   bool withPackageConfig = true,
+  bool local = false,
 }) async {
   /// The number of time we've created a package with a given name.
   final packageCount = <String, int>{};
@@ -249,7 +250,7 @@ Future<Directory> createSimpleWorkspace(
     return folderName;
   }
 
-  return createWorkspace(withPackageConfig: withPackageConfig, {
+  return createWorkspace(local: local, withPackageConfig: withPackageConfig, {
     for (final projectEntry in projectEntry)
       if (projectEntry is Pubspec)
         getFolderName(projectEntry.name): projectEntry
@@ -275,8 +276,9 @@ Future<Directory> createSimpleWorkspace(
 Future<Directory> createWorkspace(
   Map<String, Pubspec> pubspecs, {
   bool withPackageConfig = true,
+  bool local = false,
 }) async {
-  final dir = createTemporaryDirectory();
+  final dir = createTemporaryDirectory(local: local);
 
   String packagePathOf(Dependency dependency, String name) {
     switch (dependency) {
@@ -339,10 +341,16 @@ Future<Directory> createWorkspace(
   return dir;
 }
 
-Directory createTemporaryDirectory() {
-  final dir = Directory.current //
-      .dir('.dart_tool')
-      .createTempSync('custom_lint_test');
+Directory createTemporaryDirectory({bool local = false}) {
+  final Directory dir;
+  if (local) {
+    // The cli_process_test needs it to be local in order for the relative paths to match
+    dir =
+        Directory.current.dir('.dart_tool').createTempSync('custom_lint_test');
+  } else {
+    // Others need global directory in order to not pick up this project's package_config.json
+    dir = Directory.systemTemp.createTempSync('custom_lint_test');
+  }
   addTearDown(() => dir.deleteSync(recursive: true));
 
   // Watches process kill to delete the temporary directory.
@@ -2453,22 +2461,43 @@ dependency_overrides:
     });
 
     group('fromContextRoots', () {
-      test('throws MissingPubspecError if package does not contain a pubspec',
-          () async {
-        final workspace = await createSimpleWorkspace([]);
-        workspace.dir('package').createSync(recursive: true);
-
-        expect(
-          () => fromContextRootsFromPaths(
-            [p.join(workspace.path, 'package')],
-            workingDirectory: workspace,
-          ),
-          throwsA(isA<PubspecParseError>()),
+      /// Shorthand for calling [CustomLintWorkspace.fromContextRoots] from
+      /// a list of path.
+      Future<CustomLintWorkspace> fromContextRootsFromPaths(
+        List<String> paths, {
+        required Directory workingDirectory,
+      }) {
+        return CustomLintWorkspace.fromContextRoots(
+          paths.map((path) => ContextRoot(path, [])).toList(),
+          workingDirectory: workingDirectory,
         );
-      });
+      }
 
       test(
-          'throws MissingPackageConfigError if package has a pubspec but no .dart_tool/package_config.json',
+        'finds pubspecs above analysis options file if there exists one',
+        () async {
+          final workspace = await createSimpleWorkspace(['package']);
+
+          final analysisFile = workspace.dir('package').analysisOptions;
+          analysisFile.createSync();
+          analysisFile.writeAsStringSync(analysisOptionsWithCustomLintEnabled);
+          final nestedAnalysisFile =
+              workspace.dir('package', 'test').analysisOptions;
+          nestedAnalysisFile.createSync(recursive: true);
+          nestedAnalysisFile
+              .writeAsStringSync(analysisOptionsWithCustomLintEnabled);
+
+          final customLintWorkspace = await CustomLintWorkspace.fromPaths(
+            [p.join(workspace.path, 'package')],
+            workingDirectory: workspace,
+          );
+          // Expect one context root for the workspace and one for the test folder
+          expect(customLintWorkspace.contextRoots.length, equals(2));
+        },
+      );
+
+      test(
+          'throws PackageConfigParseError if package has a pubspec but no .dart_tool/package_config.json',
           () async {
         final workspace = await createSimpleWorkspace(['package']);
         workspace.dir('package', '.dart_tool').deleteSync(recursive: true);
@@ -2479,6 +2508,41 @@ dependency_overrides:
             workingDirectory: workspace,
           ),
           throwsA(isA<PackageConfigParseError>()),
+        );
+      });
+
+      test(
+          'throws PackageConfigParseError if package has a malformed .dart_tool/package_config.json',
+          () async {
+        final workspace = await createSimpleWorkspace(['package']);
+        workspace
+            .dir('package', '.dart_tool')
+            .file('package_config.json')
+            .writeAsStringSync('malformed');
+
+        expect(
+          () => fromContextRootsFromPaths(
+            [p.join(workspace.path, 'package')],
+            workingDirectory: workspace,
+          ),
+          throwsA(isA<PackageConfigParseError>()),
+        );
+      });
+
+      test('throws PubspecParseError if package has a malformed pubspec.yaml',
+          () async {
+        final workspace = await createSimpleWorkspace(['package']);
+        workspace
+            .dir('package')
+            .file('pubspec.yaml')
+            .writeAsStringSync('malformed');
+
+        expect(
+          () => fromContextRootsFromPaths(
+            [p.join(workspace.path, 'package')],
+            workingDirectory: workspace,
+          ),
+          throwsA(isA<PubspecParseError>()),
         );
       });
 

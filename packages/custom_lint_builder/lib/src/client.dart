@@ -375,12 +375,17 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
       // Otherwise tests may miss the first hot reload.
       await _client._hotReloader;
 
-      final pubspecs = {
-        for (final analysisContext in contextCollection.contexts)
-          analysisContext: parsePubspec(
-            io.Directory(analysisContext.contextRoot.root.path),
-          ),
-      };
+      final pubspecs = <AnalysisContext, Future<Pubspec>>{};
+
+      for (final context in contextCollection.contexts) {
+        final pubspec = tryFindProjectDirectory(
+          io.Directory(context.contextRoot.root.path),
+        );
+
+        if (pubspec != null) {
+          pubspecs[context] = parsePubspec(pubspec);
+        }
+      }
 
       // Running before updating the configs as the config parsing depends
       // on this operation.

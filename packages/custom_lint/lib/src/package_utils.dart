@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -155,8 +156,57 @@ Future<PackageConfig?> tryParsePackageConfig(Directory directory) async {
 /// does not exists.
 Future<PackageConfig> parsePackageConfig(Directory directory) async {
   final packageConfigFile = directory.packageConfig;
+
   return PackageConfig.parseBytes(
     await packageConfigFile.readAsBytes(),
     packageConfigFile.uri,
   );
+}
+
+/// Finds the project directory associated with an analysis context root, or null if it is not found
+///
+/// This is a folder that contains both a `pubspec.yaml` and a `.dart_tool/package_config.json` file.
+/// It is either alongside the analysis_options.yaml file, or in a parent directory.
+Directory? tryFindProjectDirectory(
+  Directory directory, {
+  Directory? original,
+}) {
+  try {
+    return findProjectDirectory(
+      directory,
+      original: original,
+    );
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Finds the project directory associated with an analysis context root
+///
+/// This is a folder that contains a `pubspec.yaml` file.
+/// It is either alongside the analysis_options.yaml file, or in a parent directory.
+Directory findProjectDirectory(
+  Directory directory, {
+  Directory? original,
+}) {
+  if (directory.pubspec.existsSync()) {
+    return directory;
+  }
+
+  if (directory.parent.uri == directory.uri) {
+    throw FindProjectError._(original?.path ?? directory.path);
+  }
+
+  return findProjectDirectory(directory.parent, original: directory);
+}
+
+/// No pubspec.yaml file was found for a plugin.
+@internal
+class FindProjectError extends FileSystemException {
+  /// An error that represents the folder [path] where the search for the pubspec started.
+  FindProjectError._(String path)
+      : super('Failed to find dart project at $path:\n', path);
+
+  @override
+  String toString() => message;
 }

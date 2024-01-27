@@ -325,6 +325,6 @@ class CustomLintRequestFailure implements Exception {
 
   @override
   String toString() {
-    return 'A request throw the exception:$message\n$stackTrace';
+    return 'A request threw the exception:$message\n$stackTrace';
   }
 }

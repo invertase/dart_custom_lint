@@ -1,3 +1,7 @@
+## Unreleased minor
+
+- Added support for `analysis_options.yaml` that are nt at the root of the project (thanks to @mrgnhnt96)
+
 ## 0.5.8 - 2024-01-09
 
 - `// ignore` comments now correctly respect indentation when they are inserted (thanks to @PiotrRogulski)
