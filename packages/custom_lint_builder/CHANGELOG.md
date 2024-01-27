@@ -1,3 +1,7 @@
+## 0.5.11 - 2024-01-27
+
+- Added support for `analysis_options.yaml` that are nt at the root of the project (thanks to @mrgnhnt96)
+
 ## 0.5.10 - 2024-01-26
 
 - `custom_lint_core` upgraded to `0.5.10`
