@@ -1,3 +1,7 @@
+## 0.5.11 - 2024-01-27
+
+- `custom_lint` upgraded to `0.5.11`
+
 ## 0.5.10 - 2024-01-26
 
 - Fix a bug with `matcherNormalizedPrioritizedSourceChangeSnapshot`

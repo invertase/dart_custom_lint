@@ -1,4 +1,4 @@
-## Unreleased minor
+## 0.5.11 - 2024-01-27
 
 - Added support for `analysis_options.yaml` that are nt at the root of the project (thanks to @mrgnhnt96)
 
