@@ -12,7 +12,7 @@ import 'matchers.dart';
 import 'mock_fs.dart';
 import 'run_plugin.dart';
 
-final lintRuleWithFilesToAnalayze = createPluginSource([
+final lintRuleWithFilesToAnalyze = createPluginSource([
   TestLintRule(
     code: 'hello_world',
     message: 'Hello world',
@@ -27,7 +27,7 @@ void main() {
   test('List warnings for all files combined', () async {
     final plugin = createPlugin(
       name: 'test_lint',
-      main: lintRuleWithFilesToAnalayze,
+      main: lintRuleWithFilesToAnalyze,
     );
 
     final app = createLintUsage(
@@ -318,7 +318,7 @@ if (node.name.lexeme == "fail") {
       name: 'test_app',
     );
 
-    await runWithIOOverride((out, err) async {
+    await runWithIOOverride(currentDirectory: app, (out, err) async {
       final runner = await startRunnerForApp(
         app,
         // Ignoring errors as we are handling them later

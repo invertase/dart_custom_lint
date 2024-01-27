@@ -136,6 +136,14 @@ class _MockFs extends IOOverrides {
   Directory getCurrentDirectory() => _directory;
 
   @override
+  FileSystemEntityType fseGetTypeSync(String path, bool followLinks) {
+    return Zone.current.parent!.run(() {
+      // Workaround to https://github.com/dart-lang/sdk/issues/54741
+      return FileSystemEntity.typeSync(path, followLinks: followLinks);
+    });
+  }
+
+  @override
   void setCurrentDirectory(String path) {
     _directory = Directory(path);
   }
