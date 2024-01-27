@@ -1,3 +1,11 @@
+## 0.5.10 - 2024-01-26
+
+- `custom_lint_core` upgraded to `0.5.10`
+
+## 0.5.9 - 2024-01-26
+
+- `custom_lint_core` upgraded to `0.5.9`
+
 ## 0.5.8 - 2024-01-09
 
 - `// ignore` comments now correctly respect indentation when they are inserted (thanks to @PiotrRogulski)

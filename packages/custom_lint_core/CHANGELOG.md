@@ -1,3 +1,11 @@
+## 0.5.10 - 2024-01-26
+
+- Fix a bug with `matcherNormalizedPrioritizedSourceChangeSnapshot`
+
+## 0.5.9 - 2024-01-26
+
+- `matcherNormalizedPrioritizedSourceChangeSnapshot` now optionally allows specifying a `JsonEncoder`.
+
 ## 0.5.8 - 2024-01-09
 
 Added an optional `customPath` to the various `ChangeReporter` methods (thanks to @laurentschall)

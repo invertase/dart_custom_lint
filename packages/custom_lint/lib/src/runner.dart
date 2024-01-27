@@ -1,16 +1,12 @@
 import 'dart:async';
 
-import 'package:analyzer/file_system/overlay_file_system.dart';
-import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:cli_util/cli_util.dart';
 
-import 'analyzer_utils/analyzer_utils.dart';
 import 'server_isolate_channel.dart';
 import 'v2/custom_lint_analyzer_plugin.dart';
 import 'workspace.dart';
 
-const _pluginName = 'custom_lint';
 const _analyzerPluginProtocolVersion = '1.0.0-alpha.0';
 
 /// A runner for programmatically interacting with a plugin.
@@ -29,10 +25,6 @@ class CustomLintRunner {
 
   var _closed = false;
 
-  late final _resourceProvider = OverlayResourceProvider(
-    PhysicalResourceProvider.INSTANCE,
-  );
-
   late final _sdkPath = getSdkPath();
 
   /// Starts the plugin and sends the necessary requests for initializing it.
@@ -43,7 +35,7 @@ class CustomLintRunner {
 
     await channel.sendRequest(
       PluginVersionCheckParams(
-        _resourceProvider.getByteStorePath(_pluginName),
+        '',
         _sdkPath,
         _analyzerPluginProtocolVersion,
       ),
