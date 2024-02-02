@@ -26,7 +26,9 @@
   - [Enabling/disabling and configuring lints](#enablingdisabling-and-configuring-lints)
   - [Obtaining the list of lints in the CI](#obtaining-the-list-of-lints-in-the-ci)
   - [Using the Dart debugger](#using-the-dart-debugger)
-  - [Testing your plugins using expect\_lint](#testing-your-plugins-using-expect_lint)
+  - [Testing your plugins](#testing-your-plugins)
+    - [Testing lints](#testing-lints)
+    - [Testing quick fixes and assists](#testing-quick-fixes-and-assists)
 
 ## Tutorial
 
@@ -58,7 +60,7 @@ That includes:
   Updating the source code of a linter plugin will dynamically restart it,
   without having to restart your IDE/analyzer server.
 - Built-in support for `// ignore:` and `// ignore_for_file:`.
-- Built-in testing mechanism using `// expect_lint`. See [Testing your plugins using expect_lint](#testing-your-plugins-using-expect_lint)
+- Built-in testing mechanism using `// expect_lint`. See [Testing your plugins](#testing-your-plugins)
 - Support for `print(...)` and exceptions:
   If your plugin somehow throws or print debug messages, custom_lint
   will generate a log file with the messages/errors.
@@ -261,12 +263,14 @@ What you'll want is the first URI. In this example, that is `http://127.0.0.1:60
 You can then pass this to your IDE, which should now be able to attach to the
 plugin.
 
-### Testing your plugins using expect_lint
+### Testing your plugins
+
+#### Testing lints
 
 Custom_lint comes with an official testing mechanism for asserting that your
 plugins correctly work.
 
-Testing your plugins is straightforward: Simply write a file that should contain
+Testing lints is straightforward: Simply write a file that should contain
 lints from your plugin (such as the example folder). Then, using a syntax
 similar to `// ignore`, write a `// expect_lint: code` in the line before
 your lint:
@@ -286,6 +290,12 @@ When doing this, there are two possible cases:
 This allows testing your plugins by simply running `custom_lint` on your test/example folder.
 Then, if any expected lint is missing, the command will fail. But if your plugin correctly
 emits the lint, the command will succeed.
+
+#### Testing quick fixes and assists
+
+Testing quick fixes and assists is also possible with regular tests by combining them with
+`pkg:analyzer` to manually execute the assists or fixes. An example can be found in the
+[Riverpod repository](https://github.com/rrousselGit/riverpod/tree/master/packages/riverpod_lint_flutter_test/test/assists).
 
 ---
 
