@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.5.12 - 2024-02-02
 
 - Added `encodePrioritizedSourceChanges`, to enable writing a `List<PrioritizedSourceChanges>` to a file
 - `matcherNormalizedPrioritizedSourceChangeSnapshot` now optionally
