@@ -29,11 +29,12 @@ void main() {
     final assist = MyAssist('MyAssist');
     final assist2 = MyAssist('Another');
 
-    final file = writeToTemporaryFile('''
+    const fileSource = '''
 void main() {
   print('Hello world');
 }
-''');
+''';
+    final file = writeToTemporaryFile(fileSource);
     final result = await resolveFile2(path: file.path);
     result as ResolvedUnitResult;
 
@@ -42,20 +43,36 @@ void main() {
 
     expect(
       await changes,
-      matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot.json'),
+      matcherNormalizedPrioritizedSourceChangeSnapshot(
+        'snapshot.json',
+        source: fileSource,
+      ),
     );
     expect(
       await changes,
-      isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json')),
+      isNot(
+        matcherNormalizedPrioritizedSourceChangeSnapshot(
+          'snapshot2.json',
+          source: fileSource,
+        ),
+      ),
     );
 
     expect(
       await changes2,
-      isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot.json')),
+      isNot(
+        matcherNormalizedPrioritizedSourceChangeSnapshot(
+          'snapshot.json',
+          source: fileSource,
+        ),
+      ),
     );
     expect(
       await changes2,
-      matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json'),
+      matcherNormalizedPrioritizedSourceChangeSnapshot(
+        'snapshot2.json',
+        source: fileSource,
+      ),
     );
   });
 
@@ -107,31 +124,48 @@ void main() {
     final assist = MyAssist('MyAssist');
     final assist2 = MyAssist('Another');
 
-    final file = writeToTemporaryFile('''
+    const fileSource = '''
 void main() {
   print('Hello world');
 }
-''');
+''';
+    final file = writeToTemporaryFile(fileSource);
 
     final changes = assist.testAnalyzeAndRun(file, SourceRange.EMPTY);
     final changes2 = assist2.testAnalyzeAndRun(file, SourceRange.EMPTY);
 
     expect(
       await changes,
-      matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot.json'),
+      matcherNormalizedPrioritizedSourceChangeSnapshot(
+        'snapshot.json',
+        source: fileSource,
+      ),
     );
     expect(
       await changes,
-      isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json')),
+      isNot(
+        matcherNormalizedPrioritizedSourceChangeSnapshot(
+          'snapshot2.json',
+          source: fileSource,
+        ),
+      ),
     );
 
     expect(
       await changes2,
-      isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot.json')),
+      isNot(
+        matcherNormalizedPrioritizedSourceChangeSnapshot(
+          'snapshot.json',
+          source: fileSource,
+        ),
+      ),
     );
     expect(
       await changes2,
-      matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json'),
+      matcherNormalizedPrioritizedSourceChangeSnapshot(
+        'snapshot2.json',
+        source: fileSource,
+      ),
     );
   });
 }
@@ -149,12 +183,12 @@ class MyAssist extends DartAssist {
     SourceRange target,
   ) {
     context.registry.addMethodInvocation((node) {
-      final changebuilder = reporter.createChangeBuilder(
+      final changeBuilder = reporter.createChangeBuilder(
         message: name,
         priority: 1,
       );
 
-      changebuilder.addGenericFileEdit((builder) {
+      changeBuilder.addGenericFileEdit((builder) {
         builder.addSimpleInsertion(node.offset, 'Hello');
       });
     });
@@ -175,12 +209,12 @@ class MyCustomAssist extends DartAssist {
     SourceRange target,
   ) {
     context.registry.addMethodInvocation((node) {
-      final changebuilder = reporter.createChangeBuilder(
+      final changeBuilder = reporter.createChangeBuilder(
         message: name,
         priority: 1,
       );
 
-      changebuilder.addGenericFileEdit(
+      changeBuilder.addGenericFileEdit(
         (builder) {
           builder.addSimpleInsertion(node.offset, 'Custom 2023');
         },
