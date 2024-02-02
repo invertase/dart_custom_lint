@@ -16,11 +16,12 @@ void main() {
     final fix = MyFix('MyAssist');
     final fix2 = MyFix('Another');
 
-    final file = writeToTemporaryFile('''
+    const fileSource = '''
 void main() {
   print('Hello world');
 }
-''');
+''';
+    final file = writeToTemporaryFile(fileSource);
     final result = await resolveFile2(path: file.path);
     result as ResolvedUnitResult;
 
@@ -31,42 +32,67 @@ void main() {
 
     expect(
       await changes,
-      matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot.json'),
+      matcherNormalizedPrioritizedSourceChangeSnapshot(
+        'snapshot.json',
+        source: fileSource,
+      ),
     );
     expect(
       await changes,
-      isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json')),
+      isNot(
+        matcherNormalizedPrioritizedSourceChangeSnapshot(
+          'snapshot2.json',
+          source: fileSource,
+        ),
+      ),
     );
 
     expect(
       await changes2,
-      isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot.json')),
+      isNot(
+        matcherNormalizedPrioritizedSourceChangeSnapshot(
+          'snapshot.json',
+          source: fileSource,
+        ),
+      ),
     );
     expect(
       await changes2,
-      matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json'),
+      matcherNormalizedPrioritizedSourceChangeSnapshot(
+        'snapshot2.json',
+        source: fileSource,
+      ),
     );
   });
 
   test('Fix.testAnalyzeRun', () async {
     final fix = MyFix('MyAssist');
 
-    final file = writeToTemporaryFile('''
+    const fileSource = '''
 void main() {
   print('Hello world');
 }
-''');
+''';
+    final file = writeToTemporaryFile(fileSource);
     final errors = await const MyLintRule().testAnalyzeAndRun(file);
 
     final changes = fix.testAnalyzeAndRun(file, errors.single, errors);
 
     expect(
       await changes,
-      matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot.json'),
+      matcherNormalizedPrioritizedSourceChangeSnapshot(
+        'snapshot.json',
+        source: fileSource,
+      ),
     );
     expect(
       await changes,
-      isNot(matcherNormalizedPrioritizedSourceChangeSnapshot('snapshot2.json')),
+      isNot(
+        matcherNormalizedPrioritizedSourceChangeSnapshot(
+          'snapshot2.json',
+          source: fileSource,
+        ),
+      ),
     );
   });
 }
@@ -85,12 +111,12 @@ class MyFix extends DartFix {
     List<AnalysisError> others,
   ) {
     context.registry.addMethodInvocation((node) {
-      final changebuilder = reporter.createChangeBuilder(
+      final changeBuilder = reporter.createChangeBuilder(
         message: name,
         priority: 1,
       );
 
-      changebuilder.addGenericFileEdit((builder) {
+      changeBuilder.addGenericFileEdit((builder) {
         builder.addSimpleInsertion(node.offset, 'Hello');
       });
     });

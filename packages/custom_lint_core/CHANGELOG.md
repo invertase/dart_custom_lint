@@ -1,3 +1,10 @@
+## Unreleased patch
+
+- Added `encodePrioritizedSourceChanges`, to enable writing a `List<PrioritizedSourceChanges>` to a file
+- `matcherNormalizedPrioritizedSourceChangeSnapshot` now optionally
+  takes a `String source`. This enables saving to the disk the expected
+  result.
+
 ## 0.5.11 - 2024-01-27
 
 - `custom_lint` upgraded to `0.5.11`

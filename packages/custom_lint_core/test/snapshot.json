@@ -1,1 +1,26 @@
-[{"priority":1,"change":{"message":"MyAssist","edits":[{"fileStamp":0,"edits":[{"offset":16,"length":0,"replacement":"Hello"}]}],"linkedEditGroups":[]}}]
+[
+  {
+    "result": "void main() {\n  Helloprint('Hello world');\n}\n",
+    "changes": [
+      {
+        "priority": 1,
+        "change": {
+          "message": "MyAssist",
+          "edits": [
+            {
+              "fileStamp": 0,
+              "edits": [
+                {
+                  "offset": 16,
+                  "length": 0,
+                  "replacement": "Hello"
+                }
+              ]
+            }
+          ],
+          "linkedEditGroups": []
+        }
+      }
+    ]
+  }
+]
