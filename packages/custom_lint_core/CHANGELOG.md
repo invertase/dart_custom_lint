@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.5.14 - 2024-02-03
 
 - Improved formatting when specifying `source` on `encodePrioritizedSourceChanges`/`matcherNormalizedPrioritizedSourceChangeSnapshot`
 
