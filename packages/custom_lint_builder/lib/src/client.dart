@@ -16,6 +16,8 @@ import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:analyzer/source/source_range.dart';
 import 'package:analyzer_plugin/plugin/plugin.dart' as analyzer_plugin;
+import 'package:analyzer_plugin/protocol/protocol_common.dart'
+    as analyzer_plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart'
     as analyzer_plugin;
 import 'package:analyzer_plugin/starter.dart' as analyzer_plugin;
@@ -40,6 +42,7 @@ import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart' show PackageConfig;
 import 'package:path/path.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:rxdart/subjects.dart';
 
 import '../custom_lint_builder.dart';
@@ -94,6 +97,7 @@ class CustomLintPluginClient {
   CustomLintPluginClient(
     this._channel, {
     required this.includeBuiltInLints,
+    required this.fix,
   }) {
     _analyzerPlugin = _ClientAnalyzerPlugin(
       _channel,
@@ -107,8 +111,13 @@ class CustomLintPluginClient {
     _channelInputSub = _channel.input.listen(_handleCustomLintRequest);
   }
 
-  /// Whether
+  /// Whether to include lints automatically by custom_lint.
+  /// This includes:
+  /// - Errors at the top of the file when a lint threw
   final bool includeBuiltInLints;
+
+  /// Whether to attempt fixing analysis issues before reporting them.
+  final bool fix;
   late final StreamSubscription<void> _channelInputSub;
   late final Future<HotReloader?> _hotReloader;
   final CustomLintClientChannel _channel;
@@ -255,9 +264,15 @@ class _CustomLintAnalysisConfigs {
     );
 
     final rules = _lintRulesForContext(activePluginsForContext, configs);
-    final fixes = _fixesForRules(rules);
-    final assists =
-        _assistsForContext(activePluginsForContext, configs, client);
+    final fixes = _fixesForRules(
+      rules,
+      includeBuiltInLints: client.includeBuiltInLints,
+    );
+    final assists = _assistsForContext(
+      activePluginsForContext,
+      configs,
+      client,
+    );
 
     return _CustomLintAnalysisConfigs(
       configs,
@@ -279,12 +294,15 @@ class _CustomLintAnalysisConfigs {
         .toList();
   }
 
-  static Map<LintCode, List<Fix>> _fixesForRules(List<LintRule> rules) {
+  static Map<LintCode, List<Fix>> _fixesForRules(
+    List<LintRule> rules, {
+    required bool includeBuiltInLints,
+  }) {
     return {
       for (final rule in rules)
         rule.code: [
           ...rule.getFixes(),
-          IgnoreCode(),
+          if (includeBuiltInLints) IgnoreCode(),
         ],
     };
   }
@@ -712,6 +730,11 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     required AnalysisContext analysisContext,
     required String path,
   }) async {
+    // The list of already fixed codes, to avoid trying to re-fix a lint
+    // that should've been fixed before.
+    final fixedCodes =
+        (Zone.current[#_fixedCodes] as Set<String>?) ?? <String>{};
+
     if (!analysisContext.contextRoot.isAnalyzed(path)) {
       return;
     }
@@ -767,15 +790,16 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         analysisContext.createResolverForFile(resourceProvider.getFile(path));
     if (resolver == null) return;
 
-    final lints = <AnalysisError>[];
+    final lintsBeforeExpectLint = <AnalysisError>[];
     final reporterBeforeExpectLint = ErrorReporter(
       // TODO assert that a LintRule only emits lints with a code matching LintRule.code
       // TODO asserts lintRules can only emit lints in the analyzed file
-      _AnalysisErrorListenerDelegate((lint) {
-        final ignoreForLine = parseIgnoreForLine(lint.offset, resolver);
+      _AnalysisErrorListenerDelegate((analysisError) async {
+        final ignoreForLine =
+            parseIgnoreForLine(analysisError.offset, resolver);
 
-        if (!ignoreForLine.isIgnored(lint.errorCode.name)) {
-          lints.add(lint);
+        if (!ignoreForLine.isIgnored(analysisError.errorCode.name)) {
+          lintsBeforeExpectLint.add(analysisError);
         }
       }),
       resolver.source,
@@ -830,7 +854,87 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         isNonNullableByDefault: false,
       );
 
-      ExpectLint(lints).run(resolver, analyzerPluginReporter);
+      ExpectLint(lintsBeforeExpectLint).run(resolver, analyzerPluginReporter);
+
+      Stream<
+          ({
+            AnalysisError analysisError,
+            Iterable<analyzer_plugin.SourceEdit> edits,
+          })> computeFixes() async* {
+        if (!_client.fix) return;
+
+        for (final analysisError in allAnalysisErrors) {
+          if (fixedCodes.contains(analysisError.errorCode.name)) continue;
+
+          final fixesForLint = await _handlesFixesForError(
+            analysisError,
+            allAnalysisErrors.toSet(),
+            configs,
+            resolver,
+            analyzer_plugin.EditGetFixesParams(path, analysisError.offset),
+          );
+
+          // If no fix was found or multiple fixes were found, we don't apply any fix.
+          if (fixesForLint == null || fixesForLint.fixes.length != 1) continue;
+
+          yield (
+            analysisError: analysisError,
+            edits:
+                fixesForLint.fixes.single.change.edits.expand((e) => e.edits),
+          );
+        }
+      }
+
+      final allFixes = await computeFixes().toList();
+
+      // If some fixes were found, apply them then recompute lints.
+      if (allFixes case [final firsFix, ...]) {
+        final source = resolver.source.contents.data;
+        final firstFixCode = firsFix.analysisError.errorCode;
+        final didApplyAllFixes =
+            allFixes.every((e) => e.analysisError.errorCode == firstFixCode);
+
+        try {
+          // Apply fixes from top to bottom
+          allFixes.sort(
+            (a, b) => b.analysisError.offset - a.analysisError.offset,
+          );
+
+          final editedSource = analyzer_plugin.SourceEdit.applySequence(
+            source,
+            // We apply fixes only once at a time, to avoid conflicts.
+            // To do so, we take the first fixed lint code, and apply fixes
+            // only for that code.
+            allFixes
+                .where((e) => e.analysisError.errorCode == firstFixCode)
+                .expand((e) => e.edits),
+          );
+
+          if (didApplyAllFixes) {
+            // Apply fixes to the file
+            io.File(path).writeAsStringSync(editedSource);
+          }
+
+          // Update in-memory file content before re-running analysis.
+          resourceProvider.setOverlay(
+            path,
+            content: editedSource,
+            modificationStamp: DateTime.now().millisecondsSinceEpoch,
+          );
+
+          // Re-run analysis to recompute lints
+          return runZoned(
+            () => contentChanged([path]),
+            zoneValues: {
+              // We update the list of fixed codes to avoid re-fixing the same lint
+              #_fixedCodes: {...fixedCodes, firstFixCode.name},
+            },
+          );
+        } catch (e) {
+          // Something failed. We report the original lints
+          io.stderr.writeln('Failed to apply fixes for $path.\n$e');
+        }
+      }
 
       final key =
           _AnalysisErrorsKey(filePath: path, analysisContext: analysisContext);
@@ -838,7 +942,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         // Combining lints before/after applying expect_error
         // This is to enable fixes to access both
         ...allAnalysisErrors,
-        ...lints,
+        ...lintsBeforeExpectLint,
       };
 
       _channel.sendEvent(

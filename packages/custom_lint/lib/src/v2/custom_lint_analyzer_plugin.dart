@@ -28,6 +28,7 @@ class CustomLintServer {
     required this.includeBuiltInLints,
     required this.delegate,
     required this.workingDirectory,
+    required this.fix,
   });
 
   /// Start the server while also capturing prints and errors.
@@ -38,6 +39,7 @@ class CustomLintServer {
     required SendPort sendPort,
     required bool watchMode,
     required bool includeBuiltInLints,
+    required bool fix,
     required CustomLintDelegate delegate,
     required Directory workingDirectory,
   }) {
@@ -48,6 +50,7 @@ class CustomLintServer {
       () {
         server = CustomLintServer._(
           watchMode: watchMode,
+          fix: fix,
           includeBuiltInLints: includeBuiltInLints,
           delegate: delegate,
           workingDirectory: workingDirectory,
@@ -95,6 +98,10 @@ class CustomLintServer {
 
   /// Whether plugins should be started in watch mode
   final bool watchMode;
+
+  /// If enabled, attempt to fix all issues found before reporting them.
+  /// Can only be enabled in the CLI.
+  final bool fix;
 
   /// Whether plugins should include lints used for debugging.
   final bool includeBuiltInLints;

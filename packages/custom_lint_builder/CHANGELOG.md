@@ -1,3 +1,8 @@
+## Unreleased patch
+
+- Bumped minimum Dart SDK to 3.0.0
+- Added support for `--fix`
+
 ## 0.5.14 - 2024-02-03
 
 - `custom_lint_core` upgraded to `0.5.14`

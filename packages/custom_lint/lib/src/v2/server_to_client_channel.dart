@@ -209,6 +209,7 @@ void main(List<String> args) async {
   runSocket(
     port: port,
     host: host,
+    fix: ${_server.fix},
     includeBuiltInLints: ${_server.includeBuiltInLints},
     {$plugins},
   );

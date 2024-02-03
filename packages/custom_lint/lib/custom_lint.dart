@@ -40,6 +40,7 @@ Future<void> customLint({
   bool fatalInfos = true,
   bool fatalWarnings = true,
   OutputFormatEnum format = OutputFormatEnum.plain,
+  bool fix = false,
 }) async {
   // Reset the code
   exitCode = 0;
@@ -53,6 +54,7 @@ Future<void> customLint({
       fatalInfos: fatalInfos,
       fatalWarnings: fatalWarnings,
       format: format,
+      fix: fix,
     );
   } catch (_) {
     exitCode = 1;
@@ -68,10 +70,12 @@ Future<void> _runServer(
   required bool fatalInfos,
   required bool fatalWarnings,
   required OutputFormatEnum format,
+  required bool fix,
 }) async {
   final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
     watchMode: watchMode,
+    fix: fix,
     workingDirectory: workingDirectory,
     // In the CLI, only show user defined lints. Errors & logs will be
     // rendered separately

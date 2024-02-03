@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Bumped minimum Dart SDK to 3.0.0
+
 ## 0.5.14 - 2024-02-03
 
 - Improved formatting when specifying `source` on `encodePrioritizedSourceChanges`/`matcherNormalizedPrioritizedSourceChangeSnapshot`
