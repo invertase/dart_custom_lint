@@ -33,7 +33,7 @@ void main() {
     expect(
       await changes,
       matcherNormalizedPrioritizedSourceChangeSnapshot(
-        'snapshot.json',
+        'snapshot.snap',
         source: fileSource,
       ),
     );
@@ -41,7 +41,7 @@ void main() {
       await changes,
       isNot(
         matcherNormalizedPrioritizedSourceChangeSnapshot(
-          'snapshot2.json',
+          'snapshot2.snap',
           source: fileSource,
         ),
       ),
@@ -51,7 +51,7 @@ void main() {
       await changes2,
       isNot(
         matcherNormalizedPrioritizedSourceChangeSnapshot(
-          'snapshot.json',
+          'snapshot.snap',
           source: fileSource,
         ),
       ),
@@ -59,7 +59,7 @@ void main() {
     expect(
       await changes2,
       matcherNormalizedPrioritizedSourceChangeSnapshot(
-        'snapshot2.json',
+        'snapshot2.snap',
         source: fileSource,
       ),
     );
@@ -81,7 +81,7 @@ void main() {
     expect(
       await changes,
       matcherNormalizedPrioritizedSourceChangeSnapshot(
-        'snapshot.json',
+        'snapshot.snap',
         source: fileSource,
       ),
     );
@@ -89,7 +89,7 @@ void main() {
       await changes,
       isNot(
         matcherNormalizedPrioritizedSourceChangeSnapshot(
-          'snapshot2.json',
+          'snapshot2.snap',
           source: fileSource,
         ),
       ),

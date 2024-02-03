@@ -18,17 +18,54 @@ String encodePrioritizedSourceChanges(
   JsonEncoder? encoder,
   String? source,
 }) {
-  String? output;
   if (source != null) {
-    output = SourceEdit.applySequence(
-      source,
-      changes
-          .expand((element) => element.change.edits)
-          .expand((element) => element.edits),
-    );
+    final buffer = StringBuffer();
+
+    for (final prioritizedSourceChange in changes) {
+      buffer.writeln('Message: `${prioritizedSourceChange.change.message}`');
+
+      final output = SourceEdit.applySequence(
+        source,
+        prioritizedSourceChange.change.edits.expand((element) => element.edits),
+      );
+
+      // Get the offset of the first changed character between output and source.
+      var firstDiffOffset = 0;
+      for (; firstDiffOffset < source.length; firstDiffOffset++) {
+        if (source[firstDiffOffset] != output[firstDiffOffset]) {
+          break;
+        }
+      }
+
+      // Get the last changed character offset between output and source.
+      var endSourceOffset = source.length - 1;
+      var endOutputOffset = output.length - 1;
+      for (;
+          endOutputOffset > firstDiffOffset &&
+              endSourceOffset > firstDiffOffset;
+          endOutputOffset--, endSourceOffset--) {
+        if (source[endSourceOffset] != output[endOutputOffset]) {
+          break;
+        }
+      }
+
+      buffer.writeln('<<<< start: $firstDiffOffset -- end: $endSourceOffset');
+      if (firstDiffOffset != endSourceOffset) {
+        buffer.writeln(source.substring(firstDiffOffset, endSourceOffset));
+      }
+
+      buffer.writeln('==== start: $firstDiffOffset -- end: $endOutputOffset');
+      if (firstDiffOffset != endOutputOffset) {
+        buffer.writeln(output.substring(firstDiffOffset, endOutputOffset));
+      }
+
+      buffer.writeln('>>>>');
+    }
+
+    return buffer.toString();
   }
 
-  var json = changes.map((e) => e.toJson()).toList();
+  final json = changes.map((e) => e.toJson()).toList();
   // Remove all "file" references from the json.
   for (final change in json) {
     final changeMap = change['change']! as Map<String, Object?>;
@@ -36,12 +73,6 @@ String encodePrioritizedSourceChanges(
     for (final edit in edits.cast<Map<String, Object?>>()) {
       edit.remove('file');
     }
-  }
-
-  if (output != null) {
-    json = [
-      {'result': output, 'changes': json},
-    ];
   }
 
   encoder ??= const JsonEncoder.withIndent('  ');
