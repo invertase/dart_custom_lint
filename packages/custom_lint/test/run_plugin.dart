@@ -49,6 +49,7 @@ Future<ManualRunner> startRunnerForApp(
   bool ignoreErrors = false,
   bool includeBuiltInLints = true,
   bool watchMode = false,
+  bool fix = false,
 }) async {
   final zone = Zone.current;
   final channel = ServerIsolateChannel();
@@ -56,6 +57,7 @@ Future<ManualRunner> startRunnerForApp(
   final customLintServer = await CustomLintServer.start(
     sendPort: channel.receivePort.sendPort,
     workingDirectory: directory,
+    fix: fix,
     delegate: CommandCustomLintDelegate(),
     includeBuiltInLints: includeBuiltInLints,
     watchMode: watchMode,

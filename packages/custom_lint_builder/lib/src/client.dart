@@ -553,8 +553,8 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
       return analyzer_plugin.EditGetFixesResult([]);
     }
 
-    final analysisErrorFixes = await Future.wait([
-      for (final error in errorsAtOffset)
+    final allAnalysisErrorFixes = await Future.wait([
+      for (final error in analysisErrorsForContext)
         _handlesFixesForError(
           error,
           analysisErrorsForContext,
@@ -564,9 +564,75 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         ),
     ]);
 
-    return analyzer_plugin.EditGetFixesResult(
-      analysisErrorFixes.whereNotNull().toList(),
-    );
+    final analysisErrorFixesForOffset = allAnalysisErrorFixes
+        .whereNotNull()
+        .where(
+          (fix) =>
+              parameters.offset >= fix.error.location.offset &&
+              parameters.offset <=
+                  fix.error.location.offset + fix.error.location.length,
+        )
+        .toList();
+
+    final fixAll = <String, analyzer_plugin.AnalysisErrorFixes?>{};
+    for (final fix in allAnalysisErrorFixes) {
+      if (fix == null) continue;
+
+      final errorCode = fix.error.code;
+      fixAll.putIfAbsent(errorCode, () {
+        final fixesWithCode = allAnalysisErrorFixes
+            .whereNotNull()
+            .where((fix) => fix.error.code == errorCode)
+            // Ignoring "ignore" fixes
+            .map((e) {
+              final fixesExcludingIgnores = e.fixes
+                  .where(
+                    (fix) =>
+                        fix.change.id != IgnoreCode.ignoreForFileCode &&
+                        fix.change.id != IgnoreCode.ignoreForLineCode,
+                  )
+                  .toList();
+
+              return (fixes: fixesExcludingIgnores, error: e.error);
+            })
+            // TODO share fix filter logic with the "--fix" flag
+            // Only counting fixes with a single solution.
+            .where((e) => e.fixes.length == 1)
+            .sorted(
+              (a, b) => b.error.location.offset - a.error.location.offset,
+            );
+
+        // Don't show fix-all if there's no good fix.
+        if (fixesWithCode.isEmpty) return null;
+
+        final priority = fixesWithCode
+                .expand((e) => e.fixes)
+                .map((e) => e.priority - 1)
+                .firstOrNull ??
+            0;
+
+        return analyzer_plugin.AnalysisErrorFixes(
+          fix.error,
+          fixes: [
+            analyzer_plugin.PrioritizedSourceChange(
+              priority,
+              analyzer_plugin.SourceChange(
+                'Fix all "$errorCode"',
+                edits: fixesWithCode
+                    .expand((e) => e.fixes)
+                    .expand((e) => e.change.edits)
+                    .toList(),
+              ),
+            ),
+          ],
+        );
+      });
+    }
+
+    return analyzer_plugin.EditGetFixesResult([
+      ...analysisErrorFixesForOffset,
+      ...fixAll.values.whereNotNull(),
+    ]);
   }
 
   Future<analyzer_plugin.AnalysisErrorFixes?> _handlesFixesForError(
@@ -730,11 +796,6 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     required AnalysisContext analysisContext,
     required String path,
   }) async {
-    // The list of already fixed codes, to avoid trying to re-fix a lint
-    // that should've been fixed before.
-    final fixedCodes =
-        (Zone.current[#_fixedCodes] as Set<String>?) ?? <String>{};
-
     if (!analysisContext.contextRoot.isAnalyzed(path)) {
       return;
     }
@@ -856,84 +917,9 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
       ExpectLint(lintsBeforeExpectLint).run(resolver, analyzerPluginReporter);
 
-      Stream<
-          ({
-            AnalysisError analysisError,
-            Iterable<analyzer_plugin.SourceEdit> edits,
-          })> computeFixes() async* {
-        if (!_client.fix) return;
-
-        for (final analysisError in allAnalysisErrors) {
-          if (fixedCodes.contains(analysisError.errorCode.name)) continue;
-
-          final fixesForLint = await _handlesFixesForError(
-            analysisError,
-            allAnalysisErrors.toSet(),
-            configs,
-            resolver,
-            analyzer_plugin.EditGetFixesParams(path, analysisError.offset),
-          );
-
-          // If no fix was found or multiple fixes were found, we don't apply any fix.
-          if (fixesForLint == null || fixesForLint.fixes.length != 1) continue;
-
-          yield (
-            analysisError: analysisError,
-            edits:
-                fixesForLint.fixes.single.change.edits.expand((e) => e.edits),
-          );
-        }
-      }
-
-      final allFixes = await computeFixes().toList();
-
-      // If some fixes were found, apply them then recompute lints.
-      if (allFixes case [final firsFix, ...]) {
-        final source = resolver.source.contents.data;
-        final firstFixCode = firsFix.analysisError.errorCode;
-        final didApplyAllFixes =
-            allFixes.every((e) => e.analysisError.errorCode == firstFixCode);
-
-        try {
-          // Apply fixes from top to bottom
-          allFixes.sort(
-            (a, b) => b.analysisError.offset - a.analysisError.offset,
-          );
-
-          final editedSource = analyzer_plugin.SourceEdit.applySequence(
-            source,
-            // We apply fixes only once at a time, to avoid conflicts.
-            // To do so, we take the first fixed lint code, and apply fixes
-            // only for that code.
-            allFixes
-                .where((e) => e.analysisError.errorCode == firstFixCode)
-                .expand((e) => e.edits),
-          );
-
-          if (didApplyAllFixes) {
-            // Apply fixes to the file
-            io.File(path).writeAsStringSync(editedSource);
-          }
-
-          // Update in-memory file content before re-running analysis.
-          resourceProvider.setOverlay(
-            path,
-            content: editedSource,
-            modificationStamp: DateTime.now().millisecondsSinceEpoch,
-          );
-
-          // Re-run analysis to recompute lints
-          return runZoned(
-            () => contentChanged([path]),
-            zoneValues: {
-              // We update the list of fixed codes to avoid re-fixing the same lint
-              #_fixedCodes: {...fixedCodes, firstFixCode.name},
-            },
-          );
-        } catch (e) {
-          // Something failed. We report the original lints
-          io.stderr.writeln('Failed to apply fixes for $path.\n$e');
-        }
+      if (await _applyFixes(allAnalysisErrors, resolver, configs, path: path)) {
+        // Applying fixes re-runs analysis, so lints should've already been sent.
+        return;
       }
 
       final key =
@@ -958,6 +944,112 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         ),
       );
     });
+  }
+
+  Future<bool> _applyFixes(
+    List<AnalysisError> allAnalysisErrors,
+    CustomLintResolver resolver,
+    _CustomLintAnalysisConfigs configs, {
+    required String path,
+  }) async {
+    // The list of already fixed codes, to avoid trying to re-fix a lint
+    // that should've been fixed before.
+    final fixedCodes =
+        (Zone.current[#_fixedCodes] as Set<String>?) ?? <String>{};
+
+    final allFixes = await _computeFixes(
+      allAnalysisErrors,
+      resolver,
+      configs,
+      fixedCodes,
+      path: path,
+    ).toList();
+
+    if (allFixes.isEmpty) return false;
+
+    final source = resolver.source.contents.data;
+    final firstFixCode = allFixes.first.analysisError.errorCode;
+    final didApplyAllFixes =
+        allFixes.every((e) => e.analysisError.errorCode == firstFixCode);
+
+    try {
+      // Apply fixes from top to bottom.
+      allFixes.sort(
+        (a, b) => b.analysisError.offset - a.analysisError.offset,
+      );
+
+      final editedSource = analyzer_plugin.SourceEdit.applySequence(
+        source,
+        // We apply fixes only once at a time, to avoid conflicts.
+        // To do so, we take the first fixed lint code, and apply fixes
+        // only for that code.
+        allFixes
+            .where((e) => e.analysisError.errorCode == firstFixCode)
+            .expand((e) => e.edits),
+      );
+
+      if (didApplyAllFixes) {
+        // Apply fixes to the file
+        io.File(path).writeAsStringSync(editedSource);
+      }
+
+      // Update in-memory file content before re-running analysis.
+      resourceProvider.setOverlay(
+        path,
+        content: editedSource,
+        modificationStamp: DateTime.now().millisecondsSinceEpoch,
+      );
+
+      // Re-run analysis to recompute lints
+      return runZoned(
+        () async {
+          await contentChanged([path]);
+          return true;
+        },
+        zoneValues: {
+          // We update the list of fixed codes to avoid re-fixing the same lint
+          #_fixedCodes: {...fixedCodes, firstFixCode.name},
+        },
+      );
+    } catch (e) {
+      // Something failed. We report the original lints
+      io.stderr.writeln('Failed to apply fixes for $path.\n$e');
+      return false;
+    }
+  }
+
+  Stream<
+      ({
+        AnalysisError analysisError,
+        Iterable<analyzer_plugin.SourceEdit> edits,
+      })> _computeFixes(
+    List<AnalysisError> allAnalysisErrors,
+    CustomLintResolver resolver,
+    _CustomLintAnalysisConfigs configs,
+    Set<String> fixedCodes, {
+    required String path,
+  }) async* {
+    if (!_client.fix) return;
+
+    for (final analysisError in allAnalysisErrors) {
+      if (fixedCodes.contains(analysisError.errorCode.name)) continue;
+
+      final fixesForLint = await _handlesFixesForError(
+        analysisError,
+        allAnalysisErrors.toSet(),
+        configs,
+        resolver,
+        analyzer_plugin.EditGetFixesParams(path, analysisError.offset),
+      );
+
+      // If no fix was found or multiple fixes were found, we don't apply any fix.
+      if (fixesForLint == null || fixesForLint.fixes.length != 1) continue;
+
+      yield (
+        analysisError: analysisError,
+        edits: fixesForLint.fixes.single.change.edits.expand((e) => e.edits),
+      );
+    }
   }
 
   /// Queue an operation to be awaited by [_awaitAnalysisDone]

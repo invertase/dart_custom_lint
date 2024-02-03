@@ -19,6 +19,7 @@ abstract class ChangeReporter {
   ChangeBuilder createChangeBuilder({
     required String message,
     required int priority,
+    String? id,
   });
 }
 
@@ -36,11 +37,13 @@ class ChangeReporterImpl implements ChangeReporter {
   ChangeBuilder createChangeBuilder({
     required String message,
     required int priority,
+    String? id,
   }) {
     final changeBuilderImpl = _ChangeBuilderImpl(
       message,
       analysisSession: _analysisSession,
       priority: priority,
+      id: id,
       path: _resolver.path,
     );
     _changeBuilders.add(changeBuilderImpl);
@@ -108,6 +111,7 @@ class _ChangeBuilderImpl implements ChangeBuilder {
     this._message, {
     required this.path,
     required this.priority,
+    required this.id,
     required AnalysisSession analysisSession,
   }) : _innerChangeBuilder =
             analyzer_plugin.ChangeBuilder(session: analysisSession);
@@ -115,6 +119,7 @@ class _ChangeBuilderImpl implements ChangeBuilder {
   final String _message;
   final int priority;
   final String path;
+  final String? id;
   final analyzer_plugin.ChangeBuilder _innerChangeBuilder;
   final _operations = <Future<void>>[];
 
@@ -163,7 +168,9 @@ class _ChangeBuilderImpl implements ChangeBuilder {
 
     return PrioritizedSourceChange(
       priority,
-      _innerChangeBuilder.sourceChange..message = _message,
+      _innerChangeBuilder.sourceChange
+        ..id = id
+        ..message = _message,
     );
   }
 }

@@ -112,7 +112,7 @@ class _MakeProviderFinalFix extends DartFix {
         message: 'Make provider final',
         // This represents how high-low should this quick-fix show-up in the list
         // of quick-fixes.
-        priority: 1,
+        priority: 10,
       );
 
       // Our edit will consist of editing a Dart file, so we invoke "addDartFileEdit".
