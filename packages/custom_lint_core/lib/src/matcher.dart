@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
+import 'package:analyzer/source/line_info.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:matcher/matcher.dart';
@@ -19,6 +21,8 @@ String encodePrioritizedSourceChanges(
   String? source,
 }) {
   if (source != null) {
+    final sourceLineInfo = LineInfo.fromContent(source);
+
     final buffer = StringBuffer();
 
     for (final prioritizedSourceChange in changes) {
@@ -28,6 +32,8 @@ String encodePrioritizedSourceChanges(
         source,
         prioritizedSourceChange.change.edits.expand((element) => element.edits),
       );
+
+      final outputLineInfo = LineInfo.fromContent(output);
 
       // Get the offset of the first changed character between output and source.
       var firstDiffOffset = 0;
@@ -49,17 +55,58 @@ String encodePrioritizedSourceChanges(
         }
       }
 
-      buffer.writeln('<<<< start: $firstDiffOffset -- end: $endSourceOffset');
-      if (firstDiffOffset != endSourceOffset) {
-        buffer.writeln(source.substring(firstDiffOffset, endSourceOffset));
+      final firstChangedLine =
+          sourceLineInfo.getLocation(firstDiffOffset).lineNumber - 1;
+
+      void writeDiff({
+        required String file,
+        required LineInfo lineInfo,
+        required int endOffset,
+        required String token,
+        required int leadingCount,
+        required int trailingCount,
+      }) {
+        final lastChangedLine = lineInfo.getLocation(endOffset).lineNumber - 1;
+        final endLine =
+            min(lastChangedLine + trailingCount, lineInfo.lineCount - 1);
+        for (var line = max(0, firstChangedLine - leadingCount);
+            line <= endLine;
+            line++) {
+          final changed = line >= firstChangedLine && line <= lastChangedLine;
+          if (changed) buffer.write(token);
+
+          final endOfSource = !(line + 1 < lineInfo.lineCount);
+
+          buffer.write(
+            file.substring(
+              lineInfo.getOffsetOfLine(line),
+              endOfSource ? null : lineInfo.getOffsetOfLine(line + 1) - 1,
+            ),
+          );
+          if (!endOfSource) buffer.writeln();
+        }
       }
 
-      buffer.writeln('==== start: $firstDiffOffset -- end: $endOutputOffset');
-      if (firstDiffOffset != endOutputOffset) {
-        buffer.writeln(output.substring(firstDiffOffset, endOutputOffset));
-      }
+      buffer.writeln('=== diff (starting at line ${firstChangedLine + 1})');
+      writeDiff(
+        file: source,
+        lineInfo: sourceLineInfo,
+        endOffset: endSourceOffset,
+        leadingCount: 2,
+        trailingCount: 0,
+        token: '- ',
+      );
 
-      buffer.writeln('>>>>');
+      writeDiff(
+        file: output,
+        lineInfo: outputLineInfo,
+        endOffset: endOutputOffset,
+        leadingCount: 0,
+        trailingCount: 2,
+        token: '+ ',
+      );
+
+      buffer.writeln('===');
     }
 
     return buffer.toString();
