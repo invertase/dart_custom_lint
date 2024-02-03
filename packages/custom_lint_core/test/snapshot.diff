@@ -1,0 +1,7 @@
+Message: `MyAssist`
+=== diff (starting at line 2)
+void main() {
+-   print('Hello world');
++   Helloprint('Hello world');
+}
+===
