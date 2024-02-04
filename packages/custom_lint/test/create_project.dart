@@ -263,19 +263,19 @@ String createPackageConfig({
           'name': plugin.key,
           'rootUri': plugin.value.toString(),
           'packageUri': 'lib/',
-          'languageVersion': '2.17',
+          'languageVersion': '3.0',
         },
       <String, String>{
         'name': name,
         'rootUri': '../',
         'packageUri': 'lib/',
-        'languageVersion': '2.17',
+        'languageVersion': '3.0',
       },
       <String, String>{
         'name': 'custom_lint',
         'rootUri': 'file://${PeerProjectMeta.current.customLintPath}',
         'packageUri': 'lib/',
-        'languageVersion': '2.17',
+        'languageVersion': '3.0',
       },
       // Custom lint builder is always a transitive dev dependency if it is used,
       // so it will be in the package config
@@ -283,7 +283,7 @@ String createPackageConfig({
         'name': 'custom_lint_builder',
         'rootUri': 'file://${PeerProjectMeta.current.customLintBuilderPath}',
         'packageUri': 'lib/',
-        'languageVersion': '2.17',
+        'languageVersion': '3.0',
       },
       // Custom lint core is always a transitive dev dependency if it is used,
       // so it will be in the package config
@@ -291,7 +291,7 @@ String createPackageConfig({
         'name': 'custom_lint_core',
         'rootUri': 'file://${PeerProjectMeta.current.customLintCorePath}',
         'packageUri': 'lib/',
-        'languageVersion': '2.17',
+        'languageVersion': '3.0',
       },
     ],
   });

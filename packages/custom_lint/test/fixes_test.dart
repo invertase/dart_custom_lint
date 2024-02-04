@@ -14,7 +14,7 @@ final pluginWithFixSource = createPluginSource([
 ]);
 
 void main() {
-  test('Handles fixes`', () async {
+  test('Handles fixes', () async {
     final plugin = createPlugin(name: 'test_lint', main: pluginWithFixSource);
 
     final app = createLintUsage(
