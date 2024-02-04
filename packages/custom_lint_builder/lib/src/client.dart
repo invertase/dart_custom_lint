@@ -1058,7 +1058,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         analyzer_plugin.EditGetFixesParams(path, analysisError.offset),
       );
 
-      if (fixesForLint == null || fixesForLint.canBatchFix(resolver.path)) {
+      if (fixesForLint == null || !fixesForLint.canBatchFix(resolver.path)) {
         continue;
       }
 

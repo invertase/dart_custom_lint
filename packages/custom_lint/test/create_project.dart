@@ -42,6 +42,58 @@ class TestLintRule {
   final String ruleMembers;
   final List<TestLintFix> fixes;
   final ErrorSeverity errorSeverity;
+
+  void run(StringBuffer buffer) {
+    final fixesCode = fixes.isEmpty
+        ? ''
+        : '''
+@override
+List<Fix> getFixes() => [${fixes.map((e) => '${e.name}()').join(',')}];
+''';
+
+    for (final fix in fixes) {
+      fix.write(buffer, this);
+    }
+
+    buffer.write('''
+class $code extends DartLintRule {
+  $code()
+    : super(
+        code: LintCode(name: '$code',
+        problemMessage: '$message',
+        errorSeverity: ErrorSeverity.${errorSeverity.displayName.toUpperCase()}),
+      );
+
+$fixesCode
+$ruleMembers
+''');
+
+    if (startUp.isNotEmpty) {
+      buffer.write('''
+  @override
+  Future<void> startUp(
+    CustomLintResolver resolver,
+    CustomLintContext context,
+  ) async {
+    $startUp
+  }
+''');
+    }
+
+    buffer.write(
+      '''
+  @override
+  void run(CustomLintResolver resolver, ErrorReporter reporter, CustomLintContext context) {
+    $onRun
+    context.registry.addFunctionDeclaration((node) {
+      $onVariable
+      reporter.reportErrorForToken(code, node.name);
+    });
+  }
+}
+''',
+    );
+  }
 }
 
 class TestLintFix {
@@ -105,55 +157,7 @@ class _Plugin extends PluginBase {
   buffer.write(']; }');
 
   for (final rule in rules) {
-    final fixes = rule.fixes.isEmpty
-        ? ''
-        : '''
-@override
-List<Fix> getFixes() => [${rule.fixes.map((e) => '${e.name}()').join(',')}];
-''';
-
-    for (final fix in rule.fixes) {
-      fix.write(buffer, rule);
-    }
-
-    buffer.write('''
-class ${rule.code} extends DartLintRule {
-  ${rule.code}()
-    : super(
-        code: LintCode(name: '${rule.code}',
-        problemMessage: '${rule.message}',
-        errorSeverity: ErrorSeverity.${rule.errorSeverity.displayName.toUpperCase()}),
-      );
-
-$fixes
-${rule.ruleMembers}
-''');
-
-    if (rule.startUp.isNotEmpty) {
-      buffer.write('''
-  @override
-  Future<void> startUp(
-    CustomLintResolver resolver,
-    CustomLintContext context,
-  ) async {
-    ${rule.startUp}
-  }
-''');
-    }
-
-    buffer.write(
-      '''
-  @override
-  void run(CustomLintResolver resolver, ErrorReporter reporter, CustomLintContext context) {
-    ${rule.onRun}
-    context.registry.addFunctionDeclaration((node) {
-      ${rule.onVariable}
-      reporter.reportErrorForToken(code, node.name);
-    });
-  }
-}
-''',
-    );
+    rule.run(buffer);
   }
 
   return buffer.toString();
