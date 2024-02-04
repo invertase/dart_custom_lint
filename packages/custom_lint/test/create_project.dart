@@ -88,14 +88,16 @@ class ${fix.name} extends DartFix {
     AnalysisError analysisError,
     List<AnalysisError> others,
   ) {
-    context.registry.addVariableDeclarationList((node) {
+    context.registry.addFunctionDeclaration((node) {
       if (!analysisError.sourceRange.intersects(node.sourceRange)) return;
 
       final changeBuilder = reporter.createChangeBuilder(
         priority: 1,
         message: 'Fix ${rule.code}',
       );
-      changeBuilder.addDartFileEdit((builder) {});
+      changeBuilder.addDartFileEdit((builder) {
+        builder.addSimpleReplacement(node.name.sourceRange, '\${node.name}fixed');
+      });
     });
   }
 }

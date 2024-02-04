@@ -16,7 +16,7 @@ import 'package:path/path.dart';
 /// If [source] is specified, the changes will be applied on the source,
 /// and the result will be inserted in the json output.
 String encodePrioritizedSourceChanges(
-  List<PrioritizedSourceChange> changes, {
+  Iterable<PrioritizedSourceChange> changes, {
   JsonEncoder? encoder,
   String? source,
 }) {
@@ -27,6 +27,10 @@ String encodePrioritizedSourceChanges(
 
     for (final prioritizedSourceChange in changes) {
       buffer.writeln('Message: `${prioritizedSourceChange.change.message}`');
+      buffer.writeln('Priority: ${prioritizedSourceChange.priority}');
+      if (prioritizedSourceChange.change.id != null) {
+        buffer.writeln('Id: `${prioritizedSourceChange.change.id}`');
+      }
 
       final output = SourceEdit.applySequence(
         source,
@@ -87,7 +91,7 @@ String encodePrioritizedSourceChanges(
         }
       }
 
-      buffer.writeln('=== diff (starting at line ${firstChangedLine + 1})');
+      buffer.writeln('Diff (starting at line ${firstChangedLine + 1}):');
       writeDiff(
         file: source,
         lineInfo: sourceLineInfo,
@@ -106,7 +110,7 @@ String encodePrioritizedSourceChanges(
         token: '+ ',
       );
 
-      buffer.writeln('===');
+      buffer.writeln('\n');
     }
 
     return buffer.toString();
@@ -162,7 +166,7 @@ class _MatcherNormalizedPrioritizedSourceChangeSnapshot extends Matcher {
 
   @override
   bool matches(
-    covariant List<PrioritizedSourceChange> object,
+    covariant Iterable<PrioritizedSourceChange> object,
     Map<Object?, Object?> matchState,
   ) {
     final file = isRelative(path)

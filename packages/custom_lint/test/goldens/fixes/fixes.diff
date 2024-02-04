@@ -1,0 +1,40 @@
+Message: `Fix hello_world`
+Priority: 1
+Diff (starting at line 1):
+- void fn() {}
++ void fnfixed() {}
+
+void fn2() {}
+
+
+Message: `Fix all "hello_world"`
+Priority: 0
+Diff (starting at line 1):
+- void fn() {}
+- 
+- void fn2() {}
++ void fnfixed() {}
++ 
++ void fn2fixed() {}
+
+
+Message: `Fix hello_world`
+Priority: 1
+Diff (starting at line 3):
+void fn() {}
+
+- void fn2() {}
++ void fn2fixed() {}
+
+
+Message: `Fix all "hello_world"`
+Priority: 0
+Diff (starting at line 1):
+- void fn() {}
+- 
+- void fn2() {}
++ void fnfixed() {}
++ 
++ void fn2fixed() {}
+
+

@@ -1,11 +1,18 @@
-import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'dart:io';
+
+import 'package:custom_lint/src/package_utils.dart';
 import 'package:path/path.dart';
 import 'package:test/test.dart';
 
 import 'create_project.dart';
+import 'goldens.dart';
 import 'run_plugin.dart';
 
-final pluginWithFixSource = createPluginSource([
+final fixlessPlugin = createPluginSource([
+  TestLintRule(code: 'hello_world', message: 'Hello world'),
+]);
+
+final fixedPlugin = createPluginSource([
   TestLintRule(
     code: 'hello_world',
     message: 'Hello world',
@@ -14,14 +21,17 @@ final pluginWithFixSource = createPluginSource([
 ]);
 
 void main() {
-  test('Handles fixes', () async {
-    final plugin = createPlugin(name: 'test_lint', main: pluginWithFixSource);
+  test('Can emit fixes', () async {
+    final plugin = createPlugin(name: 'test_lint', main: fixedPlugin);
 
+    const mainSource = '''
+void fn() {}
+
+void fn2() {}
+''';
     final app = createLintUsage(
       source: {
-        'lib/main.dart': '''
-void fn() {}
-''',
+        'lib/main.dart': mainSource,
       },
       plugins: {'test_lint': plugin.uri},
       name: 'test_app',
@@ -29,45 +39,105 @@ void fn() {}
     final mainPath = join(app.path, 'lib', 'main.dart');
 
     final runner = await startRunnerForApp(app);
+    await runner.channel.lints.first;
 
-    expect(
-      await runner.channel.lints.first,
-      isA<AnalysisErrorsParams>()
-          .having((e) => e.file, 'file', mainPath)
-          .having((e) => e.errors.single.location.offset, 'offset', 5)
-          .having((e) => e.errors.single.location.length, 'length', 2),
-    );
+    final fixes = runner.getFixes(mainPath, 6);
+    final fixes2 = runner.getFixes(mainPath, 20);
 
-    final fixesBeforeOffset = runner.getFixes(mainPath, 4);
-    final fixesAtStartOffset = runner.getFixes(mainPath, 5);
-    final fixesAtMiddleOffset = runner.getFixes(mainPath, 6);
-    final fixesAtEndOffset = runner.getFixes(mainPath, 7);
-    final fixesAfterOffset = runner.getFixes(mainPath, 8);
-
-    expect(
-      await Future.wait([fixesAfterOffset, fixesBeforeOffset]),
-      everyElement(
-        isA<EditGetFixesResult>().having((e) => e.fixes, 'fixes', isEmpty),
+    saveGoldensFixes(
+      [await fixes, await fixes2]
+          .expand((e) => e.fixes)
+          .expand((e) => e.fixes)
+          .where(
+            (e) =>
+                e.change.id != 'ignore_for_file' &&
+                e.change.id != 'ignore_for_line',
+          ),
+      source: mainSource,
+      file: Directory.current.file(
+        'test',
+        'goldens',
+        'fixes',
+        'fixes.diff',
       ),
     );
+  });
 
-    expect(
-      await Future.wait([
-        fixesAtStartOffset,
-        fixesAtMiddleOffset,
-        fixesAtEndOffset,
-      ]),
-      everyElement(
-        isA<EditGetFixesResult>().having((e) => e.fixes, 'fixes', hasLength(1)),
+  test('Can add new ignores', () async {
+    final plugin = createPlugin(name: 'test_lint', main: fixlessPlugin);
+
+    const mainSource = '''
+void fn() {}
+
+void fn2() {}
+
+  void fn3() {}
+''';
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': mainSource,
+      },
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+    final mainPath = join(app.path, 'lib', 'main.dart');
+
+    final runner = await startRunnerForApp(app);
+    await runner.channel.lints.first;
+
+    final fixes = runner.getFixes(mainPath, 6);
+    final fixes2 = runner.getFixes(mainPath, 20);
+    final fixes3 = runner.getFixes(mainPath, 37);
+
+    saveGoldensFixes(
+      [await fixes, await fixes2, await fixes3]
+          .expand((e) => e.fixes)
+          .expand((e) => e.fixes),
+      source: mainSource,
+      file: Directory.current.file(
+        'test',
+        'goldens',
+        'fixes',
+        'add_ignore.diff',
       ),
     );
+  });
 
-    expect(runner.channel.lints, emitsDone);
+  test('Can update existing ignores', () async {
+    final plugin = createPlugin(name: 'test_lint', main: fixlessPlugin);
 
-    // Closing so that previous error matchers relying on stream
-    // closing can complete
-    await runner.close();
+    const mainSource = '''
+// ignore: hello_world
+void fn() {}
 
-    expect(plugin.log.existsSync(), false);
+// ignore_for_file: foo
+// ignore: foo
+void fn2() {}
+''';
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': mainSource,
+      },
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+    final mainPath = join(app.path, 'lib', 'main.dart');
+
+    final runner = await startRunnerForApp(app);
+    await runner.channel.lints.first;
+
+    final fixes = runner.getFixes(mainPath, 30);
+    final fixes2 = runner.getFixes(mainPath, 84);
+
+    saveGoldensFixes(
+      [await fixes, await fixes2].expand((e) => e.fixes).expand((e) => e.fixes),
+      source: mainSource,
+      file: Directory.current.file(
+        'test',
+        'goldens',
+        'fixes',
+        'update_ignore.diff',
+      ),
+    );
   });
 }

@@ -1,6 +1,7 @@
 ## Unreleased patch
 
 - Bumped minimum Dart SDK to 3.0.0
+- goldens with diffs now include the priority and ID.
 
 ## 0.5.14 - 2024-02-03
 
