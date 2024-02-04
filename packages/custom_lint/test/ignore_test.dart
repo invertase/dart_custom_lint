@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint/src/package_utils.dart';
@@ -61,9 +63,10 @@ void fn2() {}
       unorderedEquals(['Ignore "foo" for line', 'Ignore "foo" for file']),
     );
 
-    // saveGoldensFixes(fixes);
-
-    expectMatchesGoldenFixes(fixes);
+    expectMatchesGoldenFixes(
+      fixes.expand((e) => e.fixes),
+      file: Directory.current.file('test', 'goldens', 'ignore_quick_fix.json'),
+    );
   });
 
   test('Emits indented ignore quick-fix', () async {

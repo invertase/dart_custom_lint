@@ -1,0 +1,34 @@
+Message: `Fix hello_world`
+Priority: 1
+Diff for file `lib/main.dart:1`:
+```
+- void fn() {}
++ void fnfixedfixed() {}
+
+void fn2() {}
+```
+Diff for file `lib/src/hello_world.dart:1`:
+```
+- void fn() {}
++ void fnfixedfixed() {}
+
+void fn2() {}
+```
+---
+Message: `Fix hello_world`
+Priority: 1
+Diff for file `lib/main.dart:3`:
+```
+void fn() {}
+
+- void fn2() {}
++ void fn2fixedfixed() {}
+```
+Diff for file `lib/src/hello_world.dart:3`:
+```
+void fn() {}
+
+- void fn2() {}
++ void fn2fixedfixed() {}
+```
+---

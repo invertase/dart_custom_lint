@@ -40,6 +40,11 @@ Future<void> entrypoint([List<String> args = const []]) async {
       negatable: false,
     )
     ..addFlag(
+      'fix',
+      help: 'Apply all possible fixes to the lint issues found.',
+      negatable: false,
+    )
+    ..addFlag(
       'help',
       abbr: 'h',
       negatable: false,
@@ -55,6 +60,7 @@ Future<void> entrypoint([List<String> args = const []]) async {
   }
 
   final watchMode = result['watch'] as bool;
+  final fix = result['fix'] as bool;
   final fatalInfos = result['fatal-infos'] as bool;
   final fatalWarnings = result['fatal-warnings'] as bool;
   final format = result['format'] as String;
@@ -64,6 +70,7 @@ Future<void> entrypoint([List<String> args = const []]) async {
     watchMode: watchMode,
     fatalInfos: fatalInfos,
     fatalWarnings: fatalWarnings,
+    fix: fix,
     format: OutputFormatEnum.fromName(format),
   );
 }

@@ -1,0 +1,12 @@
+Message: `Fix hello_world`
+Priority: 1
+---
+Message: `Fix all "hello_world"`
+Priority: 0
+---
+Message: `Fix hello_world`
+Priority: 1
+---
+Message: `Fix all "hello_world"`
+Priority: 0
+---

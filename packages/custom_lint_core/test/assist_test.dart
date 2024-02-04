@@ -10,14 +10,14 @@ import 'package:custom_lint_core/src/change_reporter.dart';
 import 'package:custom_lint_core/src/lint_rule.dart';
 import 'package:custom_lint_core/src/matcher.dart';
 import 'package:custom_lint_core/src/resolver.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 File writeToTemporaryFile(String content) {
   final tempDir = io.Directory.systemTemp.createTempSync();
   addTearDown(() => tempDir.deleteSync(recursive: true));
 
-  final file = io.File(join(tempDir.path, 'file.dart'))
+  final file = io.File(p.join(tempDir.path, 'file.dart'))
     ..createSync(recursive: true)
     ..writeAsStringSync(content);
 
@@ -45,7 +45,8 @@ void main() {
       await changes,
       matcherNormalizedPrioritizedSourceChangeSnapshot(
         'snapshot.diff',
-        source: fileSource,
+        sources: {'**/*': fileSource},
+        relativePath: file.parent.path,
       ),
     );
     expect(
@@ -53,7 +54,8 @@ void main() {
       isNot(
         matcherNormalizedPrioritizedSourceChangeSnapshot(
           'snapshot2.diff',
-          source: fileSource,
+          sources: {'**/*': fileSource},
+          relativePath: file.parent.path,
         ),
       ),
     );
@@ -63,7 +65,8 @@ void main() {
       isNot(
         matcherNormalizedPrioritizedSourceChangeSnapshot(
           'snapshot.diff',
-          source: fileSource,
+          sources: {'**/*': fileSource},
+          relativePath: file.parent.path,
         ),
       ),
     );
@@ -71,7 +74,8 @@ void main() {
       await changes2,
       matcherNormalizedPrioritizedSourceChangeSnapshot(
         'snapshot2.diff',
-        source: fileSource,
+        sources: {'**/*': fileSource},
+        relativePath: file.parent.path,
       ),
     );
   });
@@ -138,7 +142,8 @@ void main() {
       await changes,
       matcherNormalizedPrioritizedSourceChangeSnapshot(
         'snapshot.diff',
-        source: fileSource,
+        sources: {'**/*': fileSource},
+        relativePath: file.parent.path,
       ),
     );
     expect(
@@ -146,7 +151,8 @@ void main() {
       isNot(
         matcherNormalizedPrioritizedSourceChangeSnapshot(
           'snapshot2.diff',
-          source: fileSource,
+          sources: {'**/*': fileSource},
+          relativePath: file.parent.path,
         ),
       ),
     );
@@ -156,7 +162,8 @@ void main() {
       isNot(
         matcherNormalizedPrioritizedSourceChangeSnapshot(
           'snapshot.diff',
-          source: fileSource,
+          sources: {'**/*': fileSource},
+          relativePath: file.parent.path,
         ),
       ),
     );
@@ -164,7 +171,8 @@ void main() {
       await changes2,
       matcherNormalizedPrioritizedSourceChangeSnapshot(
         'snapshot2.diff',
-        source: fileSource,
+        sources: {'**/*': fileSource},
+        relativePath: file.parent.path,
       ),
     );
   });
