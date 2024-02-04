@@ -259,7 +259,7 @@ Future<Directory> createSimpleWorkspace(
           p.basename(projectEntry),
           version: Version(1, 0, 0),
           environment: {
-            'sdk': VersionConstraint.parse('>=2.17.0 <4.0.0'),
+            'sdk': VersionConstraint.parse('>=3.0.0 <4.0.0'),
           },
         )
       else
