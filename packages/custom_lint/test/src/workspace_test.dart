@@ -1168,7 +1168,7 @@ dependency_overrides:
 
     group('computePubspec', () {
       test(
-          'If an environment constraint is not specified in a given project, it is considered as "any"',
+          'If an environment constraint is not specified in a given project, it is considered as "^3.0.0"',
           () async {
         final workingDir = await createSimpleWorkspace([
           Pubspec(
@@ -1177,9 +1177,7 @@ dependency_overrides:
           ),
           Pubspec(
             'a',
-            environment: {
-              'sdk': VersionConstraint.parse('>=2.12.0 <3.0.0'),
-            },
+            environment: {'sdk': VersionConstraint.any},
             devDependencies: {'plugin1': HostedDependency()},
           ),
           Pubspec(
@@ -1201,7 +1199,7 @@ version: 0.0.1
 publish_to: 'none'
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dev_dependencies:
   plugin1: any
@@ -1218,14 +1216,14 @@ dev_dependencies:
           Pubspec(
             'a',
             environment: {
-              'sdk': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+              'sdk': VersionConstraint.parse('>=3.12.0 <4.0.0'),
             },
             devDependencies: {'plugin1': HostedDependency()},
           ),
           Pubspec(
             'b',
             environment: {
-              'sdk': VersionConstraint.parse('>=2.0.0 <2.19.0'),
+              'sdk': VersionConstraint.parse('>=3.0.0 <3.19.0'),
             },
             devDependencies: {'plugin1': HostedDependency()},
           ),
@@ -1243,7 +1241,7 @@ version: 0.0.1
 publish_to: 'none'
 
 environment:
-  sdk: ">=2.12.0 <2.19.0"
+  sdk: ">=3.12.0 <3.19.0"
 
 dev_dependencies:
   plugin1: any

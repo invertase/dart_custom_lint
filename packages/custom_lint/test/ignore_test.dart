@@ -63,8 +63,6 @@ void fn2() {}
       unorderedEquals(['Ignore "foo" for line', 'Ignore "foo" for file']),
     );
 
-    // saveGoldensFixes(fixes);
-
     expectMatchesGoldenFixes(
       fixes.expand((e) => e.fixes),
       file: Directory.current.file('test', 'goldens', 'ignore_quick_fix.json'),
