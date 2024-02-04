@@ -616,10 +616,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
               .toList();
 
           return (fixes: fixesExcludingIgnores, error: e.error);
-        })
-            // TODO share fix filter logic with the "--fix" flag
-            // Only counting fixes with a single solution.
-            .sorted(
+        }).sorted(
           (a, b) => b.error.location.offset - a.error.location.offset,
         );
 
