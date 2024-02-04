@@ -48,7 +48,8 @@ String encodePrioritizedSourceChanges(
 
       final files = prioritizedSourceChange.change.edits
           .map((e) => p.normalize(p.relative(e.file, from: relativePath)))
-          .toSet();
+          .toSet()
+          .sortedBy<String>((a) => a);
 
       for (final file in files) {
         final source = sources.entries
