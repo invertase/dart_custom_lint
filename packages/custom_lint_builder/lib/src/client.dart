@@ -93,13 +93,8 @@ Future<bool> _isVmServiceEnabled() async {
 
 extension on analyzer_plugin.AnalysisErrorFixes {
   bool canBatchFix(String filePath) {
-    final fixesExcludingIgnores = fixes
-        .where(
-          (fix) =>
-              fix.change.id != IgnoreCode.ignoreForFileCode &&
-              fix.change.id != IgnoreCode.ignoreForLineCode,
-        )
-        .toList();
+    final fixesExcludingIgnores =
+        fixes.where((change) => !change.isIgnoreChange).toList();
 
     return fixesExcludingIgnores.length == 1 &&
         fixesExcludingIgnores.single.canBatchFix(filePath);
@@ -109,6 +104,11 @@ extension on analyzer_plugin.AnalysisErrorFixes {
 extension on analyzer_plugin.PrioritizedSourceChange {
   bool canBatchFix(String filePath) {
     return change.edits.every((element) => element.file == filePath);
+  }
+
+  bool get isIgnoreChange {
+    return change.id == IgnoreCode.ignoreForFileCode ||
+        change.id == IgnoreCode.ignoreForLineCode;
   }
 }
 
@@ -380,7 +380,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   var _customLintConfigsForAnalysisContexts =
       <AnalysisContext, _CustomLintAnalysisConfigs>{};
   final _analysisErrorsForAnalysisContexts =
-      <_AnalysisErrorsKey, Set<AnalysisError>>{};
+      <_AnalysisErrorsKey, Iterable<AnalysisError>>{};
 
   @override
   List<String> get fileGlobsToAnalyze => ['*'];
@@ -607,13 +607,8 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
             .where((e) => e.canBatchFix(parameters.file))
             // Ignoring "ignore" fixes
             .map((e) {
-          final fixesExcludingIgnores = e.fixes
-              .where(
-                (fix) =>
-                    fix.change.id != IgnoreCode.ignoreForFileCode &&
-                    fix.change.id != IgnoreCode.ignoreForLineCode,
-              )
-              .toList();
+          final fixesExcludingIgnores =
+              e.fixes.where((change) => !change.isIgnoreChange).toList();
 
           return (fixes: fixesExcludingIgnores, error: e.error);
         }).sorted(
@@ -655,7 +650,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
   Future<analyzer_plugin.AnalysisErrorFixes?> _handlesFixesForError(
     AnalysisError analysisError,
-    Set<AnalysisError> allErrors,
+    Iterable<AnalysisError> allErrors,
     _CustomLintAnalysisConfigs configs,
     CustomLintResolver resolver,
     analyzer_plugin.EditGetFixesParams parameters,
@@ -940,14 +935,11 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         return;
       }
 
-      final key =
-          _AnalysisErrorsKey(filePath: path, analysisContext: analysisContext);
-      _analysisErrorsForAnalysisContexts[key] = {
-        // Combining lints before/after applying expect_error
-        // This is to enable fixes to access both
-        ...allAnalysisErrors,
-        ...lintsBeforeExpectLint,
-      };
+      final key = _AnalysisErrorsKey(
+        filePath: path,
+        analysisContext: analysisContext,
+      );
+      _analysisErrorsForAnalysisContexts[key] = allAnalysisErrors;
 
       _channel.sendEvent(
         CustomLintEvent.analyzerPluginNotification(
