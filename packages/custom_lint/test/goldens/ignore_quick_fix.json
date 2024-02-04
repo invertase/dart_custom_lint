@@ -1,0 +1,82 @@
+[
+  {
+    "priority": 1,
+    "change": {
+      "message": "Ignore \"hello_world\" for line",
+      "edits": [
+        {
+          "fileStamp": 0,
+          "edits": [
+            {
+              "offset": 0,
+              "length": 0,
+              "replacement": "// ignore: hello_world\n"
+            }
+          ]
+        }
+      ],
+      "linkedEditGroups": [],
+      "id": "ignore_for_line"
+    }
+  },
+  {
+    "priority": 0,
+    "change": {
+      "message": "Ignore \"hello_world\" for file",
+      "edits": [
+        {
+          "fileStamp": 0,
+          "edits": [
+            {
+              "offset": 0,
+              "length": 0,
+              "replacement": "// ignore_for_file: hello_world\n"
+            }
+          ]
+        }
+      ],
+      "linkedEditGroups": [],
+      "id": "ignore_for_file"
+    }
+  },
+  {
+    "priority": 1,
+    "change": {
+      "message": "Ignore \"foo\" for line",
+      "edits": [
+        {
+          "fileStamp": 0,
+          "edits": [
+            {
+              "offset": 0,
+              "length": 0,
+              "replacement": "// ignore: foo\n"
+            }
+          ]
+        }
+      ],
+      "linkedEditGroups": [],
+      "id": "ignore_for_line"
+    }
+  },
+  {
+    "priority": 0,
+    "change": {
+      "message": "Ignore \"foo\" for file",
+      "edits": [
+        {
+          "fileStamp": 0,
+          "edits": [
+            {
+              "offset": 0,
+              "length": 0,
+              "replacement": "// ignore_for_file: foo\n"
+            }
+          ]
+        }
+      ],
+      "linkedEditGroups": [],
+      "id": "ignore_for_file"
+    }
+  }
+]
