@@ -58,6 +58,7 @@ Future<void> runSocket(
   Map<String, CreatePluginMain> pluginMains, {
   required int port,
   required String host,
+  required bool fix,
   required bool includeBuiltInLints,
 }) async {
   late Future<CustomLintPluginClient> client;
@@ -77,6 +78,7 @@ Future<void> runSocket(
 
       return CustomLintPluginClient(
         includeBuiltInLints: includeBuiltInLints,
+        fix: fix,
         _SocketCustomLintClientChannel(
           socketChannel,
           registeredPlugins,

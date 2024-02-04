@@ -1,7 +1,10 @@
 Message: `Another`
-=== diff (starting at line 2)
+Priority: 1
+Diff for file `file.dart:2`:
+```
 void main() {
 -   print('Hello world');
 +   Helloprint('Hello world');
 }
-===
+```
+---

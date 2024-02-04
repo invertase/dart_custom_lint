@@ -521,4 +521,131 @@ So, because custom_lint_client depends on test_lint from path, version solving f
       });
     });
   });
+
+  group('--fix', () {
+    final fixedPlugin = createPluginSource([
+      TestLintRule(
+        code: 'oy',
+        message: 'Oy',
+        onVariable: 'if (node.name.toString().endsWith("fixed")) return;',
+        fixes: [TestLintFix(name: 'OyFix')],
+      ),
+    ]);
+
+    test('Applies possible fixes and return remaining lints', () async {
+      final fixedPlugin = createPluginSource([
+        TestLintRule(
+          code: 'oy',
+          message: 'Oy',
+          onVariable: 'if (node.name.toString().endsWith("fixed")) return;',
+          fixes: [TestLintFix(name: 'OyFix')],
+        ),
+      ]);
+
+      final plugin = createPlugin(name: 'test_lint', main: fixedPlugin);
+      final plugin2 = createPlugin(
+        name: 'test_lint2',
+        main: helloWordPluginSource,
+      );
+
+      final app = createLintUsage(
+        name: 'test_app',
+        source: {'lib/main.dart': 'void fn() {}'},
+        plugins: {
+          'test_lint': plugin.uri,
+          'test_lint2': plugin2.uri,
+        },
+      );
+
+      final process = await Process.run(
+        'dart',
+        [customLintBinPath, '--fix'],
+        workingDirectory: app.path,
+      );
+
+      expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
+
+      expect(
+        app.file('lib', 'main.dart').readAsStringSync(),
+        'void fnfixed() {}',
+      );
+
+      expect(process.stdout, '''
+Analyzing...
+
+  lib/main.dart:1:6 • Hello world • hello_world • INFO
+
+1 issue found.
+''');
+      expect(process.exitCode, 1);
+    });
+
+    test('Can fix all lints', () async {
+      final plugin = createPlugin(name: 'test_lint', main: fixedPlugin);
+
+      final app = createLintUsage(
+        name: 'test_app',
+        source: {'lib/main.dart': 'void fn() {}'},
+        plugins: {'test_lint': plugin.uri},
+      );
+
+      final process = await Process.run(
+        'dart',
+        [customLintBinPath, '--fix'],
+        workingDirectory: app.path,
+      );
+
+      expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
+
+      expect(
+        app.file('lib', 'main.dart').readAsStringSync(),
+        'void fnfixed() {}',
+      );
+
+      expect(process.stdout, '''
+Analyzing...
+
+No issues found!
+''');
+      expect(process.exitCode, 0);
+    });
+
+    test(
+        'Does not attempt at fixing the same lints again if a fix did not work',
+        () async {
+      final uselessFix = createPluginSource([
+        TestLintRule(
+          code: 'oy',
+          message: 'Oy',
+          onVariable: 'if (node.name.toString().endsWith("fixed")) return;',
+          fixes: [TestLintFix(name: 'OyFix', nodeVisitor: '')],
+        ),
+      ]);
+
+      final plugin = createPlugin(name: 'test_lint', main: uselessFix);
+
+      final app = createLintUsage(
+        name: 'test_app',
+        source: {'lib/main.dart': 'void fn() {}'},
+        plugins: {'test_lint': plugin.uri},
+      );
+
+      final process = await Process.run(
+        'dart',
+        [customLintBinPath, '--fix'],
+        workingDirectory: app.path,
+      );
+
+      expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
+
+      expect(process.stdout, '''
+Analyzing...
+
+  lib/main.dart:1:6 • Oy • oy • INFO
+
+1 issue found.
+''');
+      expect(process.exitCode, 1);
+    });
+  });
 }

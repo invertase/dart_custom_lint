@@ -13,9 +13,12 @@ void start(Iterable<String> _, SendPort sendPort) {
   CustomLintServer.start(
     sendPort: sendPort,
     includeBuiltInLints: true,
+    // The IDE client should write to files, as what's visible in the editor
+    // may not be the same as what's on disk.
+    fix: false,
     // "start" may be run by `dart analyze`, in which case we don't want to
     // enable watch mode. There's no way to detect this, but this only matters
-    // in the CI. So we disble watch mode if we detect that we're in CI.
+    // in the CI. So we disable watch mode if we detect that we're in CI.
     // TODO enable hot-restart only if running plugin from source (excluding pub cache)
     watchMode: !isInCI,
     delegate: AnalyzerPluginCustomLintDelegate(),

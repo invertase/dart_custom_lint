@@ -562,7 +562,7 @@ publish_to: 'none'
           .toList();
 
       final constraintCompatibleWithAllProjects = projectMeta.fold(
-        VersionConstraint.any,
+        VersionConstraint.parse('^3.0.0'),
         (acc, constraint) => acc.intersect(constraint.constraint),
       );
 

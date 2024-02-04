@@ -42,12 +42,98 @@ class TestLintRule {
   final String ruleMembers;
   final List<TestLintFix> fixes;
   final ErrorSeverity errorSeverity;
+
+  void run(StringBuffer buffer) {
+    final fixesCode = fixes.isEmpty
+        ? ''
+        : '''
+@override
+List<Fix> getFixes() => [${fixes.map((e) => '${e.name}()').join(',')}];
+''';
+
+    for (final fix in fixes) {
+      fix.write(buffer, this);
+    }
+
+    buffer.write('''
+class $code extends DartLintRule {
+  $code()
+    : super(
+        code: LintCode(name: '$code',
+        problemMessage: '$message',
+        errorSeverity: ErrorSeverity.${errorSeverity.displayName.toUpperCase()}),
+      );
+
+$fixesCode
+$ruleMembers
+''');
+
+    if (startUp.isNotEmpty) {
+      buffer.write('''
+  @override
+  Future<void> startUp(
+    CustomLintResolver resolver,
+    CustomLintContext context,
+  ) async {
+    $startUp
+  }
+''');
+    }
+
+    buffer.write(
+      '''
+  @override
+  void run(CustomLintResolver resolver, ErrorReporter reporter, CustomLintContext context) {
+    $onRun
+    context.registry.addFunctionDeclaration((node) {
+      $onVariable
+      reporter.reportErrorForToken(code, node.name);
+    });
+  }
+}
+''',
+    );
+  }
 }
 
 class TestLintFix {
-  TestLintFix({required this.name});
+  TestLintFix({
+    required this.name,
+    this.nodeVisitor,
+  });
 
   final String name;
+  final String? nodeVisitor;
+
+  void write(StringBuffer buffer, TestLintRule rule) {
+    buffer.write('''
+class $name extends DartFix {
+  @override
+  void run(
+    CustomLintResolver resolver,
+    ChangeReporter reporter,
+    CustomLintContext context,
+    AnalysisError analysisError,
+    List<AnalysisError> others,
+  ) {
+    context.registry.addFunctionDeclaration((node) {
+      if (!analysisError.sourceRange.intersects(node.sourceRange)) return;
+
+      final changeBuilder = reporter.createChangeBuilder(
+        priority: 1,
+        message: 'Fix ${rule.code}',
+      );
+
+      ${nodeVisitor ?? r'''
+      changeBuilder.addDartFileEdit((builder) {
+        builder.addSimpleReplacement(node.name.sourceRange, '${node.name}fixed');
+      });
+'''}
+    });
+  }
+}
+''');
+  }
 }
 
 String createPluginSource(List<TestLintRule> rules) {
@@ -57,6 +143,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/error/error.dart';
+import 'package:path/path.dart' as p;
 
 PluginBase createPlugin() => _Plugin();
 
@@ -70,76 +157,7 @@ class _Plugin extends PluginBase {
   buffer.write(']; }');
 
   for (final rule in rules) {
-    final fixes = rule.fixes.isEmpty
-        ? ''
-        : '''
-@override
-List<Fix> getFixes() => [${rule.fixes.map((e) => '${e.name}()').join(',')}];
-''';
-
-    for (final fix in rule.fixes) {
-      buffer.write('''
-class ${fix.name} extends DartFix {
-  @override
-  void run(
-    CustomLintResolver resolver,
-    ChangeReporter reporter,
-    CustomLintContext context,
-    AnalysisError analysisError,
-    List<AnalysisError> others,
-  ) {
-    context.registry.addVariableDeclarationList((node) {
-      if (!analysisError.sourceRange.intersects(node.sourceRange)) return;
-
-      final changeBuilder = reporter.createChangeBuilder(
-        priority: 1,
-        message: 'Fix ${rule.code}',
-      );
-      changeBuilder.addDartFileEdit((builder) {});
-    });
-  }
-}
-''');
-    }
-
-    buffer.write('''
-class ${rule.code} extends DartLintRule {
-  ${rule.code}()
-    : super(
-        code: LintCode(name: '${rule.code}',
-        problemMessage: '${rule.message}',
-        errorSeverity: ErrorSeverity.${rule.errorSeverity.displayName.toUpperCase()}),
-      );
-
-$fixes
-${rule.ruleMembers}
-''');
-
-    if (rule.startUp.isNotEmpty) {
-      buffer.write('''
-  @override
-  Future<void> startUp(
-    CustomLintResolver resolver,
-    CustomLintContext context,
-  ) async {
-    ${rule.startUp}
-  }
-''');
-    }
-
-    buffer.write(
-      '''
-  @override
-  void run(CustomLintResolver resolver, ErrorReporter reporter, CustomLintContext context) {
-    ${rule.onRun}
-    context.registry.addFunctionDeclaration((node) {
-      ${rule.onVariable}
-      reporter.reportErrorForToken(code, node.name);
-    });
-  }
-}
-''',
-    );
+    rule.run(buffer);
   }
 
   return buffer.toString();
@@ -173,7 +191,7 @@ version: 0.0.1
 publish_to: none
 
 environment:
-  sdk: ">=2.17.0 <4.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   analyzer: any
@@ -221,7 +239,7 @@ version: 0.0.1
 publish_to: none
 
 environment:
-  sdk: ">=2.17.0 <4.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   analyzer: any
@@ -263,19 +281,19 @@ String createPackageConfig({
           'name': plugin.key,
           'rootUri': plugin.value.toString(),
           'packageUri': 'lib/',
-          'languageVersion': '2.17',
+          'languageVersion': '3.0',
         },
       <String, String>{
         'name': name,
         'rootUri': '../',
         'packageUri': 'lib/',
-        'languageVersion': '2.17',
+        'languageVersion': '3.0',
       },
       <String, String>{
         'name': 'custom_lint',
         'rootUri': 'file://${PeerProjectMeta.current.customLintPath}',
         'packageUri': 'lib/',
-        'languageVersion': '2.17',
+        'languageVersion': '3.0',
       },
       // Custom lint builder is always a transitive dev dependency if it is used,
       // so it will be in the package config
@@ -283,7 +301,7 @@ String createPackageConfig({
         'name': 'custom_lint_builder',
         'rootUri': 'file://${PeerProjectMeta.current.customLintBuilderPath}',
         'packageUri': 'lib/',
-        'languageVersion': '2.17',
+        'languageVersion': '3.0',
       },
       // Custom lint core is always a transitive dev dependency if it is used,
       // so it will be in the package config
@@ -291,7 +309,7 @@ String createPackageConfig({
         'name': 'custom_lint_core',
         'rootUri': 'file://${PeerProjectMeta.current.customLintCorePath}',
         'packageUri': 'lib/',
-        'languageVersion': '2.17',
+        'languageVersion': '3.0',
       },
     ],
   });
