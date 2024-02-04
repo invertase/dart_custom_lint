@@ -147,7 +147,7 @@ String _encodePrioritizedSourceChanges(
           }
         }
 
-        buffer.writeln('Diff for file `$file:${firstChangedLine + 1})`:');
+        buffer.writeln('Diff for file `$file:${firstChangedLine + 1}`:');
         buffer.writeln('```');
         writeDiff(
           file: source,

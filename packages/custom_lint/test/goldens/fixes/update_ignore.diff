@@ -1,7 +1,7 @@
 Message: `Ignore "hello_world" for line`
 Priority: 1
 Id: `ignore_for_line`
-Diff for file `lib/main.dart:5)`:
+Diff for file `lib/main.dart:5`:
 ```
 
 // ignore_for_file: foo
@@ -13,7 +13,7 @@ void fn2() {}
 Message: `Ignore "hello_world" for file`
 Priority: 0
 Id: `ignore_for_file`
-Diff for file `lib/main.dart:4)`:
+Diff for file `lib/main.dart:4`:
 ```
 void fn() {}
 

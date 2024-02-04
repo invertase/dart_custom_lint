@@ -1,6 +1,6 @@
 Message: `Fix hello_world`
 Priority: 1
-Diff for file `lib/main.dart:1)`:
+Diff for file `lib/main.dart:1`:
 ```
 - void fn() {}
 + void fnfixed() {}
@@ -10,7 +10,7 @@ void fn2() {}
 ---
 Message: `Fix all "hello_world"`
 Priority: 0
-Diff for file `lib/main.dart:1)`:
+Diff for file `lib/main.dart:1`:
 ```
 - void fn() {}
 - 

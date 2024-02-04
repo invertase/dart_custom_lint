@@ -127,7 +127,7 @@ String encodePrioritizedSourceChanges(
           }
         }
 
-        buffer.writeln('Diff for file `$file:${firstChangedLine + 1})`:');
+        buffer.writeln('Diff for file `$file:${firstChangedLine + 1}`:');
         buffer.writeln('```');
         writeDiff(
           file: source,
@@ -180,11 +180,13 @@ Matcher matcherNormalizedPrioritizedSourceChangeSnapshot(
   String filePath, {
   JsonEncoder? encoder,
   Map<String, String>? sources,
+  String? relativePath,
 }) {
   return _MatcherNormalizedPrioritizedSourceChangeSnapshot(
     filePath,
     encoder: encoder,
     sources: sources,
+    relativePath: relativePath,
   );
 }
 
@@ -193,11 +195,13 @@ class _MatcherNormalizedPrioritizedSourceChangeSnapshot extends Matcher {
     this.path, {
     this.encoder,
     this.sources,
+    this.relativePath,
   });
 
   final String path;
   final JsonEncoder? encoder;
   final Map<String, String>? sources;
+  final String? relativePath;
 
   static final Object _mismatchedValueKey = Object();
   static final Object _expectedKey = Object();
@@ -219,6 +223,7 @@ class _MatcherNormalizedPrioritizedSourceChangeSnapshot extends Matcher {
       object,
       encoder: encoder,
       sources: sources,
+      relativePath: relativePath,
     );
 
     final expected = file.readAsStringSync();
