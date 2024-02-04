@@ -34,7 +34,7 @@ void main() {
       await changes,
       matcherNormalizedPrioritizedSourceChangeSnapshot(
         'snapshot.diff',
-        source: fileSource,
+        sources: {'**/*': fileSource},
       ),
     );
     expect(
@@ -42,7 +42,7 @@ void main() {
       isNot(
         matcherNormalizedPrioritizedSourceChangeSnapshot(
           'snapshot2.diff',
-          source: fileSource,
+          sources: {'**/*': fileSource},
         ),
       ),
     );
@@ -52,7 +52,7 @@ void main() {
       isNot(
         matcherNormalizedPrioritizedSourceChangeSnapshot(
           'snapshot.diff',
-          source: fileSource,
+          sources: {'**/*': fileSource},
         ),
       ),
     );
@@ -60,7 +60,7 @@ void main() {
       await changes2,
       matcherNormalizedPrioritizedSourceChangeSnapshot(
         'snapshot2.diff',
-        source: fileSource,
+        sources: {'**/*': fileSource},
       ),
     );
   });
@@ -82,7 +82,7 @@ void main() {
       await changes,
       matcherNormalizedPrioritizedSourceChangeSnapshot(
         'snapshot.diff',
-        source: fileSource,
+        sources: {'**/*': fileSource},
       ),
     );
     expect(
@@ -90,7 +90,7 @@ void main() {
       isNot(
         matcherNormalizedPrioritizedSourceChangeSnapshot(
           'snapshot2.diff',
-          source: fileSource,
+          sources: {'**/*': fileSource},
         ),
       ),
     );

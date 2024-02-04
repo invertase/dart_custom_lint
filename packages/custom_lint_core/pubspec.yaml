@@ -13,6 +13,7 @@ dependencies:
   # Using tight constraints as custom_lint_builder communicate with each-other
   # using a specific contract
   custom_lint: 0.5.11
+  glob: ^2.1.2
   matcher: ^0.12.0
   meta: ^1.7.0
   package_config: ^2.1.0

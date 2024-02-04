@@ -91,6 +91,27 @@ Future<bool> _isVmServiceEnabled() async {
   return serviceInfo.serverUri != null;
 }
 
+extension on analyzer_plugin.AnalysisErrorFixes {
+  bool canBatchFix(String filePath) {
+    final fixesExcludingIgnores = fixes
+        .where(
+          (fix) =>
+              fix.change.id != IgnoreCode.ignoreForFileCode &&
+              fix.change.id != IgnoreCode.ignoreForLineCode,
+        )
+        .toList();
+
+    return fixesExcludingIgnores.length == 1 &&
+        fixesExcludingIgnores.single.canBatchFix(filePath);
+  }
+}
+
+extension on analyzer_plugin.PrioritizedSourceChange {
+  bool canBatchFix(String filePath) {
+    return change.edits.every((element) => element.file == filePath);
+  }
+}
+
 /// The custom_lint client
 class CustomLintPluginClient {
   /// The custom_lint client
@@ -583,24 +604,24 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         final fixesWithCode = allAnalysisErrorFixes
             .whereNotNull()
             .where((fix) => fix.error.code == errorCode)
+            .where((e) => e.canBatchFix(parameters.file))
             // Ignoring "ignore" fixes
             .map((e) {
-              final fixesExcludingIgnores = e.fixes
-                  .where(
-                    (fix) =>
-                        fix.change.id != IgnoreCode.ignoreForFileCode &&
-                        fix.change.id != IgnoreCode.ignoreForLineCode,
-                  )
-                  .toList();
+          final fixesExcludingIgnores = e.fixes
+              .where(
+                (fix) =>
+                    fix.change.id != IgnoreCode.ignoreForFileCode &&
+                    fix.change.id != IgnoreCode.ignoreForLineCode,
+              )
+              .toList();
 
-              return (fixes: fixesExcludingIgnores, error: e.error);
-            })
+          return (fixes: fixesExcludingIgnores, error: e.error);
+        })
             // TODO share fix filter logic with the "--fix" flag
             // Only counting fixes with a single solution.
-            .where((e) => e.fixes.length == 1)
             .sorted(
-              (a, b) => b.error.location.offset - a.error.location.offset,
-            );
+          (a, b) => b.error.location.offset - a.error.location.offset,
+        );
 
         // Don't show fix-all if there's no good fix.
         if (fixesWithCode.isEmpty) return null;
@@ -1042,8 +1063,9 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         analyzer_plugin.EditGetFixesParams(path, analysisError.offset),
       );
 
-      // If no fix was found or multiple fixes were found, we don't apply any fix.
-      if (fixesForLint == null || fixesForLint.fixes.length != 1) continue;
+      if (fixesForLint == null || fixesForLint.canBatchFix(resolver.path)) {
+        continue;
+      }
 
       yield (
         analysisError: analysisError,

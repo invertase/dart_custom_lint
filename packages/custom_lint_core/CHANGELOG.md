@@ -1,7 +1,10 @@
-## Unreleased patch
+## Unreleased minor
 
 - Bumped minimum Dart SDK to 3.0.0
-- goldens with diffs now include the priority and ID.
+- goldens with diffs now include the priority, ID, selection and file path.
+- **breaking**: `encodePrioritizedSourceChanges`/`matcherNormalizedPrioritizedSourceChangeSnapshot`'s `source`
+  parameter now takes a `Map<String, String>? sources` instead of `String? source`.
+  This enables goldens to handle fixes that emit to a different file.
 
 ## 0.5.14 - 2024-02-03
 

@@ -45,9 +45,43 @@ class TestLintRule {
 }
 
 class TestLintFix {
-  TestLintFix({required this.name});
+  TestLintFix({
+    required this.name,
+    this.nodeVisitor,
+  });
 
   final String name;
+  final String? nodeVisitor;
+
+  void write(StringBuffer buffer, TestLintRule rule) {
+    buffer.write('''
+class $name extends DartFix {
+  @override
+  void run(
+    CustomLintResolver resolver,
+    ChangeReporter reporter,
+    CustomLintContext context,
+    AnalysisError analysisError,
+    List<AnalysisError> others,
+  ) {
+    context.registry.addFunctionDeclaration((node) {
+      if (!analysisError.sourceRange.intersects(node.sourceRange)) return;
+
+      final changeBuilder = reporter.createChangeBuilder(
+        priority: 1,
+        message: 'Fix ${rule.code}',
+      );
+
+      ${nodeVisitor ?? r'''
+      changeBuilder.addDartFileEdit((builder) {
+        builder.addSimpleReplacement(node.name.sourceRange, '${node.name}fixed');
+      });
+'''}
+    });
+  }
+}
+''');
+  }
 }
 
 String createPluginSource(List<TestLintRule> rules) {
@@ -57,6 +91,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/error/error.dart';
+import 'package:path/path.dart' as p;
 
 PluginBase createPlugin() => _Plugin();
 
@@ -78,30 +113,7 @@ List<Fix> getFixes() => [${rule.fixes.map((e) => '${e.name}()').join(',')}];
 ''';
 
     for (final fix in rule.fixes) {
-      buffer.write('''
-class ${fix.name} extends DartFix {
-  @override
-  void run(
-    CustomLintResolver resolver,
-    ChangeReporter reporter,
-    CustomLintContext context,
-    AnalysisError analysisError,
-    List<AnalysisError> others,
-  ) {
-    context.registry.addFunctionDeclaration((node) {
-      if (!analysisError.sourceRange.intersects(node.sourceRange)) return;
-
-      final changeBuilder = reporter.createChangeBuilder(
-        priority: 1,
-        message: 'Fix ${rule.code}',
-      );
-      changeBuilder.addDartFileEdit((builder) {
-        builder.addSimpleReplacement(node.name.sourceRange, '\${node.name}fixed');
-      });
-    });
-  }
-}
-''');
+      fix.write(buffer, rule);
     }
 
     buffer.write('''
