@@ -44,7 +44,7 @@ void fn2() {}
     final fixes = runner.getFixes(mainPath, 6);
     final fixes2 = runner.getFixes(mainPath, 20);
 
-    saveGoldensFixes(
+    expectMatchesGoldenFixes(
       [await fixes, await fixes2]
           .expand((e) => e.fixes)
           .expand((e) => e.fixes)
@@ -89,7 +89,7 @@ void fn2() {}
     final fixes2 = runner.getFixes(mainPath, 20);
     final fixes3 = runner.getFixes(mainPath, 37);
 
-    saveGoldensFixes(
+    expectMatchesGoldenFixes(
       [await fixes, await fixes2, await fixes3]
           .expand((e) => e.fixes)
           .expand((e) => e.fixes),
@@ -129,7 +129,7 @@ void fn2() {}
     final fixes = runner.getFixes(mainPath, 30);
     final fixes2 = runner.getFixes(mainPath, 84);
 
-    saveGoldensFixes(
+    expectMatchesGoldenFixes(
       [await fixes, await fixes2].expand((e) => e.fixes).expand((e) => e.fixes),
       source: mainSource,
       file: Directory.current.file(

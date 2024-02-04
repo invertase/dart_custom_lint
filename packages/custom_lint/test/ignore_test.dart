@@ -63,7 +63,7 @@ void fn2() {}
 
     // saveGoldensFixes(fixes);
 
-    expectMatchesGoldenFixes(fixes);
+    expectMatchesGoldenFixes(fixes.expand((e) => e.fixes));
   });
 
   test('Emits indented ignore quick-fix', () async {

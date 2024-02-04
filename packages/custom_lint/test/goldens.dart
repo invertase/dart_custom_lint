@@ -25,15 +25,12 @@ void saveGoldensFixes(
 }
 
 void expectMatchesGoldenFixes(
-  Iterable<AnalysisErrorFixes> fixes, {
+  Iterable<PrioritizedSourceChange> fixes, {
   File? file,
   String? source,
 }) {
   expect(
-    _encodePrioritizedSourceChanges(
-      fixes.map((e) => e.fixes).expand((e) => e),
-      source: source,
-    ),
+    _encodePrioritizedSourceChanges(fixes, source: source),
     (file ?? _fixesGoldenFile).readAsStringSync(),
   );
 }
