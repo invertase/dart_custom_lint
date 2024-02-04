@@ -104,17 +104,55 @@ void fn2() {}
     );
   });
 
+  test('Fix-all is not present if a lint only has a single issue', () async {
+    final plugin = createPlugin(name: 'test_lint', main: fixedPlugin);
+
+    const mainSource = '''
+void fn() {}
+''';
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': mainSource,
+      },
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+    final mainPath = p.join(app.path, 'lib', 'main.dart');
+
+    final runner = await startRunnerForApp(app);
+    await runner.channel.lints.first;
+
+    final fixes = await runner.getFixes(mainPath, 6);
+
+    saveGoldensFixes(
+      fixes.fixes.expand((e) => e.fixes).where(
+            (e) =>
+                e.change.id != 'ignore_for_file' &&
+                e.change.id != 'ignore_for_line',
+          ),
+      sources: ({'**/*': mainSource}, relativePath: app.path),
+      file: Directory.current.file(
+        'test',
+        'goldens',
+        'fixes',
+        'single_fix.diff',
+      ),
+    );
+  });
+
   test('Fix-all does not apply to silenced lints', () async {
     final plugin = createPlugin(name: 'test_lint', main: fixedPlugin);
 
     const mainSource = '''
 void fn() {}
 
-// ignore: hello_world
 void fn2() {}
 
-// expect_lint: hello_world
+// ignore: hello_world
 void fn3() {}
+
+// expect_lint: hello_world
+void fn4() {}
 ''';
     final app = createLintUsage(
       source: {

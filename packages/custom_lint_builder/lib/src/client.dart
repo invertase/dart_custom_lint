@@ -601,9 +601,15 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
       final errorCode = fix.error.code;
       fixAll.putIfAbsent(errorCode, () {
-        final fixesWithCode = allAnalysisErrorFixes
+        final analysisErrorsWithCode = allAnalysisErrorFixes
             .whereNotNull()
             .where((fix) => fix.error.code == errorCode)
+            .toList();
+
+        // Don't show "fix-all" unless at least two errors have the same code.
+        if (analysisErrorsWithCode.length < 2) return null;
+
+        final fixesWithCode = analysisErrorsWithCode
             .where((e) => e.canBatchFix(parameters.file))
             // Ignoring "ignore" fixes
             .map((e) {

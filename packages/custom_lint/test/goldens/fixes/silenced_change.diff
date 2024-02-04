@@ -5,7 +5,7 @@ Diff for file `lib/main.dart:1)`:
 - void fn() {}
 + void fnfixed() {}
 
-// ignore: hello_world
+void fn2() {}
 ```
 ---
 Message: `Fix all "hello_world"`
@@ -13,7 +13,11 @@ Priority: 0
 Diff for file `lib/main.dart:1)`:
 ```
 - void fn() {}
+- 
+- void fn2() {}
 + void fnfixed() {}
++ 
++ void fn2fixed() {}
 
 // ignore: hello_world
 ```
