@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.6.0 - 2024-02-04
 
 - Added support for `--fix`
 
