@@ -124,7 +124,7 @@ void fn() {}
 
     final fixes = await runner.getFixes(mainPath, 6);
 
-    saveGoldensFixes(
+    expectMatchesGoldenFixes(
       fixes.fixes.expand((e) => e.fixes).where(
             (e) =>
                 e.change.id != 'ignore_for_file' &&
