@@ -63,7 +63,7 @@ class CliLogger implements Logger {
 
     final progress = ansi.useAnsi
         ? AnsiProgress(ansi, message)
-        : SimpleProgress(this, message);
+        : _SimpleProgress(this, message);
     _currentProgress = progress;
     return progress;
   }
@@ -71,4 +71,18 @@ class CliLogger implements Logger {
   @override
   @Deprecated('This method will be removed in the future')
   void flush() {}
+}
+
+class _SimpleProgress extends Progress {
+  _SimpleProgress(this.logger, String message) : super(message) {
+    logger.stderr('$message...');
+  }
+
+  final Logger logger;
+
+  @override
+  void cancel() {}
+
+  @override
+  void finish({String? message, bool showTiming = false}) {}
 }

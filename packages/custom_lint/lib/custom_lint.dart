@@ -95,7 +95,11 @@ Future<void> _runServer(
 
       await runner.initialize;
 
-      final log = CliLogger();
+      final ansi = switch (format) {
+        OutputFormatEnum.json => Ansi(false),
+        _ => null,
+      };
+      final log = CliLogger(ansi: ansi);
       final progress = log.progress('Analyzing');
 
       await _runPlugins(
