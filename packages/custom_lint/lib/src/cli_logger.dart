@@ -2,21 +2,13 @@ import 'dart:io' as io;
 
 import 'package:cli_util/cli_logging.dart';
 
-import 'output/output_format.dart';
-
 /// Temporary copy of [StandardLogger] from `cli_util` package with a fix
 /// for https://github.com/dart-lang/cli_util/pull/87
 /// which replaces print with stdout.writeln.
 class CliLogger implements Logger {
   /// Creates a cli logger with ANSI support
   /// that writes messages and progress [io.stdout].
-  CliLogger({
-    required OutputFormatEnum format,
-    Ansi? ansi,
-  })  : _format = format,
-        ansi = ansi ?? Ansi(io.stdout.supportsAnsiEscapes);
-
-  final OutputFormatEnum _format;
+  CliLogger({Ansi? ansi}) : ansi = ansi ?? Ansi(io.stdout.supportsAnsiEscapes);
 
   @override
   Ansi ansi;
@@ -69,31 +61,14 @@ class CliLogger implements Logger {
   Progress progress(String message) {
     _cancelProgress();
 
-    final progress = _buildProgress(message);
-    _currentProgress = progress;
-    return progress;
-  }
-
-  Progress _buildProgress(String message) {
-    if (_format == OutputFormatEnum.json) {
-      return _QuietProgress();
-    }
-    return ansi.useAnsi
+    final progress = ansi.useAnsi
         ? AnsiProgress(ansi, message)
         : SimpleProgress(this, message);
+    _currentProgress = progress;
+    return progress;
   }
 
   @override
   @Deprecated('This method will be removed in the future')
   void flush() {}
-}
-
-class _QuietProgress extends Progress {
-  _QuietProgress() : super('');
-
-  @override
-  void cancel() {}
-
-  @override
-  void finish({String? message, bool showTiming = false}) {}
 }
