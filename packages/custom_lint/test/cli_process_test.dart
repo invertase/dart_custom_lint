@@ -208,7 +208,7 @@ No issues found!
                 }
               ],
             });
-            expect(process.stdout, 'Analyzing...\n\n$json\n');
+            expect(process.stdout, '\n$json\n');
           } else {
             expect(process.stdout, '''
 Analyzing...

@@ -154,7 +154,6 @@ void main() {
 
           if (format == 'json') {
             expect(process.stdout, '''
-Analyzing...
 
 {"version":1,"diagnostics":[]}
 ''');
@@ -202,14 +201,21 @@ No issues found!
           final err = process.stderr.map(utf8.decode);
 
           expect(err, emitsDone);
-          expect(
-            out.join(),
-            completion(
-              allOf(
-                startsWith('Analyzing...'),
-                format == 'json'
-                    ? endsWith('${jsonLints(app.resolveSymbolicLinksSync())}\n')
-                    : endsWith('''
+
+          if (format == 'json') {
+            expect(
+              out.join(),
+              completion(
+                equals('\n${jsonLints(app.resolveSymbolicLinksSync())}\n'),
+              ),
+            );
+          } else {
+            expect(
+              out.join(),
+              completion(
+                allOf(
+                  startsWith('Analyzing...'),
+                  endsWith('''
   lib/another.dart:1:6 • Hello world • hello_world • INFO
   lib/another.dart:1:6 • Oy • oy • INFO
   lib/main.dart:1:6 • Hello world • hello_world • INFO
@@ -217,9 +223,10 @@ No issues found!
 
 4 issues found.
 '''),
+                ),
               ),
-            ),
-          );
+            );
+          }
           expect(await process.exitCode, 1);
         });
       });
