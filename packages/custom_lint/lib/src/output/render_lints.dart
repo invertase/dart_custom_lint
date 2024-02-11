@@ -71,9 +71,6 @@ void renderLints(
   // Finish progress and display duration (only when ANSI is supported)
   progress?.finish(showTiming: true);
 
-  // Separate progress from results
-  log.stdout('');
-
   outputFormat.render(
     errors: errors,
     log: log,

@@ -154,7 +154,6 @@ void main() {
 
           if (format == 'json') {
             expect(process.stdout, '''
-
 {"version":1,"diagnostics":[]}
 ''');
           } else {
@@ -206,7 +205,7 @@ No issues found!
             expect(
               out.join(),
               completion(
-                equals('\n${jsonLints(app.resolveSymbolicLinksSync())}\n'),
+                equals('${jsonLints(app.resolveSymbolicLinksSync())}\n'),
               ),
             );
           } else {
