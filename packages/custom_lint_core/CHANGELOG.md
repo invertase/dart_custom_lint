@@ -1,3 +1,7 @@
+## 0.6.1 - 2024-02-14
+
+- Exported `NodeLintRegistry`
+
 ## 0.6.0 - 2024-02-04
 
 - Bumped minimum Dart SDK to 3.0.0
