@@ -221,7 +221,10 @@ abstract class TypeChecker {
   ///
   /// This only takes into account the *extends* hierarchy. If you wish
   /// to check mixins and interfaces, use [isAssignableFromType].
-  bool isSuperTypeOf(DartType staticType) => isSuperOf(staticType.element!);
+  bool isSuperTypeOf(DartType staticType) {
+    final element = staticType.element;
+    return element != null && isSuperOf(element);
+  }
 }
 
 // Checks a static type against another static type;
