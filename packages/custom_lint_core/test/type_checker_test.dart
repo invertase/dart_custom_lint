@@ -36,10 +36,8 @@ void main() {
 
   test('Can call isSuperTypeOf in DartTypes with no element', () async {
     final file = writeToTemporaryFile(r'''
-class A {
-  void fn((int, String) record) {
-    final first = record.$1;
-  }
+void fn((int, String) record) {
+  final first = record.$1;
 }
 ''');
 
@@ -48,14 +46,19 @@ class A {
 
     const checker = TypeChecker.fromName('record');
 
+    PropertyAccess? propertyAccessNode;
+
     unit.unit.accept(
       _PropertyAccessVisitor((node) {
-        expect(node.realTarget.staticType!.element, isNull);
-        expect(
-          checker.isExactlyType(node.realTarget.staticType!),
-          isFalse,
-        );
+        propertyAccessNode = node;
       }),
+    );
+
+    expect(propertyAccessNode, isNotNull);
+    expect(propertyAccessNode!.realTarget.staticType!.element, isNull);
+    expect(
+      checker.isExactlyType(propertyAccessNode!.realTarget.staticType!),
+      isFalse,
     );
   });
 
