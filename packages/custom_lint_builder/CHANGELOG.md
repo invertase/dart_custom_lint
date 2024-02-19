@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Upgrade analyzer to support 6.4.0
+
 ## 0.6.1 - 2024-02-14
 
 - `custom_lint_core` upgraded to `0.6.1`
