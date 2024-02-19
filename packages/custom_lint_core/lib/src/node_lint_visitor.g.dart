@@ -1238,7 +1238,6 @@ class _Subscription<T> {
 }
 
 /// The container to register visitors for separate AST node types.
-@internal
 class NodeLintRegistry {
   /// The container to register visitors for separate AST node types.
   @internal

@@ -102,6 +102,12 @@ class _StdoutOverride implements Stdout {
   void writeln([Object? object = '']) {
     _controller.add('$object\n');
   }
+
+  @override
+  String get lineTerminator => _stdout.lineTerminator;
+
+  @override
+  set lineTerminator(String value) => _stdout.lineTerminator = value;
 }
 
 /// Used to override file I/O with an in-memory file system for testing.

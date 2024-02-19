@@ -1,3 +1,12 @@
+## Unreleased patch
+
+- Upgrade analyzer to support 6.4.0
+- Fix null exception when using `TypeChecker.isSuperTypeOf` (thanks to @charlescyt)
+
+## 0.6.1 - 2024-02-14
+
+- `custom_lint_core` upgraded to `0.6.1`
+
 ## 0.6.0 - 2024-02-04
 
 - Bumped minimum Dart SDK to 3.0.0
