@@ -46,18 +46,16 @@ void fn((int, String) record) {
 
     const checker = TypeChecker.fromName('record');
 
-    PropertyAccess? propertyAccessNode;
-
+    late final PropertyAccess propertyAccessNode;
     unit.unit.accept(
       _PropertyAccessVisitor((node) {
         propertyAccessNode = node;
       }),
     );
 
-    expect(propertyAccessNode, isNotNull);
-    expect(propertyAccessNode!.realTarget.staticType!.element, isNull);
+    expect(propertyAccessNode.realTarget.staticType!.element, isNull);
     expect(
-      checker.isExactlyType(propertyAccessNode!.realTarget.staticType!),
+      checker.isExactlyType(propertyAccessNode.realTarget.staticType!),
       isFalse,
     );
   });
