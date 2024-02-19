@@ -34,6 +34,32 @@ void main() {
     );
   });
 
+  test('Can call isSuperTypeOf in DartTypes with no element', () async {
+    final file = writeToTemporaryFile(r'''
+void fn((int, String) record) {
+  final first = record.$1;
+}
+''');
+
+    final unit = await resolveFile2(path: file.path);
+    unit as ResolvedUnitResult;
+
+    const checker = TypeChecker.fromName('record');
+
+    late final PropertyAccess propertyAccessNode;
+    unit.unit.accept(
+      _PropertyAccessVisitor((node) {
+        propertyAccessNode = node;
+      }),
+    );
+
+    expect(propertyAccessNode.realTarget.staticType!.element, isNull);
+    expect(
+      checker.isExactlyType(propertyAccessNode.realTarget.staticType!),
+      isFalse,
+    );
+  });
+
   group('TypeChecker.fromPackage', () {
     test('matches a type from a package', () async {
       final tempDir = Directory.systemTemp.createTempSync();
@@ -107,5 +133,17 @@ class _MethodInvocationVisitor extends RecursiveAstVisitor<void> {
   void visitMethodInvocation(MethodInvocation node) {
     onMethodInvocation(node);
     super.visitMethodInvocation(node);
+  }
+}
+
+class _PropertyAccessVisitor extends RecursiveAstVisitor<void> {
+  _PropertyAccessVisitor(this.onPropertyAccess);
+
+  final void Function(PropertyAccess node) onPropertyAccess;
+
+  @override
+  void visitPropertyAccess(PropertyAccess node) {
+    onPropertyAccess(node);
+    super.visitPropertyAccess(node);
   }
 }
