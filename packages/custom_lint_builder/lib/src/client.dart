@@ -866,8 +866,8 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
       return;
     }
 
-    final resolver =
-        analysisContext.createResolverForFile(resourceProvider.getFile(path));
+    final file = resourceProvider.getFile(path);
+    final resolver = analysisContext.createResolverForFile(file);
     if (resolver == null) return;
 
     final lintsBeforeExpectLint = <AnalysisError>[];
@@ -954,7 +954,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
             CustomAnalyzerConverter().convertAnalysisErrors(
               allAnalysisErrors,
               lineInfo: resolver.lineInfo,
-              options: analysisContext.analysisOptions,
+              options: analysisContext.getAnalysisOptionsForFile(file),
             ),
           ).toNotification(),
         ),
