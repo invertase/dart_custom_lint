@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.6.2 - 2024-02-19
 
 - `custom_lint --format json` no-longer outputs non-JSON logs (thanks to @kzrnm)
 - Upgrade analyzer to support 6.4.0
