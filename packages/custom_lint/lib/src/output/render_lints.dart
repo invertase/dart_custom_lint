@@ -13,11 +13,11 @@ import 'output_format.dart';
 void renderLints(
   List<AnalysisErrorsParams> lints, {
   required Logger log,
-  required Progress progress,
   required Directory workingDirectory,
   required bool fatalInfos,
   required bool fatalWarnings,
   required OutputFormatEnum format,
+  Progress? progress,
 }) {
   final OutputFormat outputFormat;
   switch (format) {
@@ -69,10 +69,7 @@ void renderLints(
   });
 
   // Finish progress and display duration (only when ANSI is supported)
-  progress.finish(showTiming: true);
-
-  // Separate progress from results
-  log.stdout('');
+  progress?.finish(showTiming: true);
 
   outputFormat.render(
     errors: errors,
