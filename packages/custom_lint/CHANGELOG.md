@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Fixed Unimplemented error when running `pub get`.
+
 ## 0.6.2 - 2024-02-19
 
 - `custom_lint --format json` no-longer outputs non-JSON logs (thanks to @kzrnm)

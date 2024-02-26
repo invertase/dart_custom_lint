@@ -142,10 +142,9 @@ class SocketCustomLintServerToClientChannel {
   /// Updates the context roots on the client
   Future<AnalysisSetContextRootsResult> setContextRoots(
     AnalysisSetContextRootsParams contextRoots,
-  ) {
+  ) async {
     _contextRoots = contextRoots;
-    // TODO: implement setContextRoots
-    throw UnimplementedError();
+    return AnalysisSetContextRootsResult();
   }
 
   /// Encapsulates all the logic for initializing the process,
