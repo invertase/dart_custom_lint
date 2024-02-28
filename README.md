@@ -128,7 +128,7 @@ To create a custom lint, you will need two things:
         // "node" exposes metadata about the variable declaration. We could
         // check "node" to show the lint only in some conditions.
 
-        // This line tells custom_lint to render a waring at the location of "node".
+        // This line tells custom_lint to render a warning at the location of "node".
         // And the warning shown will use our `code` variable defined above as description.
         reporter.reportErrorForNode(code, node);
       });
