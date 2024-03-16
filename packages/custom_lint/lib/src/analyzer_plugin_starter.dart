@@ -20,7 +20,7 @@ void start(Iterable<String> _, SendPort sendPort) {
     // enable watch mode. There's no way to detect this, but this only matters
     // in the CI. So we disable watch mode if we detect that we're in CI.
     // TODO enable hot-restart only if running plugin from source (excluding pub cache)
-    watchMode: !isInCI,
+    watchMode: isInCI ? false : null,
     delegate: AnalyzerPluginCustomLintDelegate(),
     workingDirectory: Directory.current,
   );

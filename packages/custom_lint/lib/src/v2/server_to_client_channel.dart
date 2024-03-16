@@ -106,23 +106,13 @@ class SocketCustomLintServerToClientChannel {
   }
 
   /// Initializes and waits for the client to start
-  Future<void> init() async {
-    _processFuture = _startProcess();
+  Future<void> init({required bool debug}) async {
+    _processFuture = _startProcess(debug: debug);
     final process = await _processFuture;
     // No process started, likely because no plugin were detected. We can stop here.
     if (process == null) return;
 
-    var out = process.stdout.map(utf8.decode);
-    // Let's not log the VM service prints unless in watch mode
-    if (!_server.watchMode) {
-      out = out.skipWhile(
-        (element) =>
-            element.startsWith('The Dart VM service is listening on') ||
-            element.startsWith(
-              'The Dart DevTools debugger and profiler is available at:',
-            ),
-      );
-    }
+    final out = process.stdout.map(utf8.decode);
 
     out.listen((event) => _server.handlePrint(event, isClientMessage: true));
     process.stderr
@@ -151,7 +141,9 @@ class SocketCustomLintServerToClientChannel {
   /// without setting up the connection.
   ///
   /// Will throw if the process fails to start.
-  Future<Process?> _startProcess() async {
+  Future<Process?> _startProcess({
+    required bool debug,
+  }) async {
     final tempDir = _tempDirectory =
         Directory.systemTemp.createTempSync('custom_lint_client');
 
@@ -163,7 +155,7 @@ class SocketCustomLintServerToClientChannel {
         final process = await Process.start(
           Platform.resolvedExecutable,
           [
-            if (_server.watchMode) '--enable-vm-service=0',
+            if (_server.watchMode ?? debug) '--enable-vm-service=0',
             join('lib', 'custom_lint_client.dart'),
             _serverSocket.address.host,
             _serverSocket.port.toString(),
