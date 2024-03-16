@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_constants.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
@@ -9,6 +10,9 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
 import 'package:async/async.dart';
+import 'package:custom_lint_core/custom_lint_core.dart';
+import 'package:package_config/package_config.dart';
+import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
@@ -37,7 +41,7 @@ class CustomLintServer {
   /// errors and prints continue to be captured.
   static Future<CustomLintServer> start({
     required SendPort sendPort,
-    required bool watchMode,
+    required bool? watchMode,
     required bool includeBuiltInLints,
     required bool fix,
     required CustomLintDelegate delegate,
@@ -97,7 +101,7 @@ class CustomLintServer {
   late final AnalyzerPluginClientChannel _analyzerPluginClientChannel;
 
   /// Whether plugins should be started in watch mode
-  final bool watchMode;
+  final bool? watchMode;
 
   /// If enabled, attempt to fix all issues found before reporting them.
   /// Can only be enabled in the CLI.
@@ -368,7 +372,26 @@ class CustomLintServer {
     _clientChannelEventsSubscription = clientChannel.events.listen(
       _handleEvent,
     );
-    await clientChannel.init();
+
+    final configs = await Future.wait(
+      parameters.roots.map(
+        (e) async {
+          final packageConfig = await findPackageConfig(Directory(e.root));
+          if (packageConfig == null) return null;
+
+          return CustomLintConfigs.parse(
+            PhysicalResourceProvider.INSTANCE.getFile(
+              p.join(e.root, 'analysis_options.yaml'),
+            ),
+            packageConfig,
+          );
+        },
+      ),
+    );
+
+    await clientChannel.init(
+      debug: configs.any((e) => e != null && e.debug),
+    );
   }
 
   Future<void> _handleEvent(CustomLintEvent event) => _runner.run(() async {

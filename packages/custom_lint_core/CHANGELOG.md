@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Parses `debug`/`config` flags
+
 ## 0.6.2 - 2024-02-19
 
 - Fix null exception when using `TypeChecker.isSuperTypeOf` (thanks to @charlescyt)

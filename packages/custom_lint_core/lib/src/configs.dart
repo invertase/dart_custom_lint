@@ -14,11 +14,12 @@ class CustomLintConfigs {
   @internal
   const CustomLintConfigs({
     required this.enableAllLintRules,
+    required this.verbose,
+    required this.debug,
     required this.rules,
   });
 
   /// Decode a [CustomLintConfigs] from a file.
-  @internal
   factory CustomLintConfigs.parse(
     File? analysisOptionsFile,
     PackageConfig packageConfig,
@@ -67,9 +68,15 @@ class CustomLintConfigs {
 
     final rules = <String, LintOptions>{...includedOptions.rules};
     final enableAllLintRulesYaml = customLint['enable_all_lint_rules'];
-    final enableAllLintRules = enableAllLintRulesYaml is bool?
-        ? enableAllLintRulesYaml ?? includedOptions.enableAllLintRules
-        : null;
+    final enableAllLintRules = enableAllLintRulesYaml is bool
+        ? enableAllLintRulesYaml
+        : includedOptions.enableAllLintRules;
+
+    final debugYaml = customLint['debug'];
+    final debug = debugYaml is bool ? debugYaml : includedOptions.debug;
+
+    final verboseYaml = customLint['verbose'];
+    final verbose = verboseYaml is bool ? verboseYaml : includedOptions.verbose;
 
     final rulesYaml = customLint['rules'] as Object?;
 
@@ -103,6 +110,8 @@ class CustomLintConfigs {
 
     return CustomLintConfigs(
       enableAllLintRules: enableAllLintRules,
+      verbose: verbose,
+      debug: debug,
       rules: UnmodifiableMapView(rules),
     );
   }
@@ -111,6 +120,8 @@ class CustomLintConfigs {
   @internal
   static const empty = CustomLintConfigs(
     enableAllLintRules: null,
+    verbose: false,
+    debug: false,
     rules: {},
   );
 
@@ -130,15 +141,25 @@ class CustomLintConfigs {
   /// along with extra per-lint configuration.
   final Map<String, LintOptions> rules;
 
+  /// Whether to enable verbose logging.
+  final bool verbose;
+
+  /// Whether enable hot-reload and log the VM-service URI.
+  final bool debug;
+
   @override
   bool operator ==(Object other) =>
       other is CustomLintConfigs &&
       other.enableAllLintRules == enableAllLintRules &&
+      other.verbose == verbose &&
+      other.debug == debug &&
       const MapEquality<String, LintOptions>().equals(other.rules, rules);
 
   @override
   int get hashCode => Object.hash(
         enableAllLintRules,
+        verbose,
+        debug,
         const MapEquality<String, LintOptions>().hash(rules),
       );
 }
