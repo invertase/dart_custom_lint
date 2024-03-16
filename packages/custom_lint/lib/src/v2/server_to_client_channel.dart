@@ -248,7 +248,12 @@ void main(List<String> args) async {
   Future<CustomLintResponse> sendCustomLintRequest(
     CustomLintRequest request,
   ) async {
-    final matchingResponse = _responses.firstWhere((e) => e.id == request.id);
+    final matchingResponse = _responses.firstWhere(
+      (e) => e.id == request.id,
+      orElse: () => throw StateError(
+        'No response for request $request',
+      ),
+    );
 
     await _channel.sendJson(request.toJson());
 
