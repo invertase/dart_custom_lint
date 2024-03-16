@@ -25,8 +25,6 @@ import 'package:collection/collection.dart';
 // ignore: implementation_imports
 import 'package:custom_lint/src/async_operation.dart';
 // ignore: implementation_imports
-import 'package:custom_lint/src/package_utils.dart';
-// ignore: implementation_imports
 import 'package:custom_lint/src/v2/protocol.dart';
 // ignore: implementation_imports
 import 'package:custom_lint_core/src/change_reporter.dart';

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:custom_lint/src/output/output_format.dart';
-import 'package:custom_lint/src/package_utils.dart';
+import 'package:custom_lint_core/custom_lint_core.dart';
 import 'package:test/test.dart';
 import 'package:test_process/test_process.dart';
 

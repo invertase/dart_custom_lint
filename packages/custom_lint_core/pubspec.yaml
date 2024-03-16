@@ -10,9 +10,6 @@ dependencies:
   analyzer: ">=5.12.0 <7.0.0"
   analyzer_plugin: ^0.11.0
   collection: ^1.16.0
-  # Using tight constraints as custom_lint_builder communicate with each-other
-  # using a specific contract
-  custom_lint: 0.6.2
   glob: ^2.1.2
   matcher: ^0.12.0
   meta: ^1.7.0

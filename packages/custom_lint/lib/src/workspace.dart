@@ -9,6 +9,7 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart'
     as analyzer_plugin;
 import 'package:async/async.dart';
 import 'package:collection/collection.dart';
+import 'package:custom_lint_core/custom_lint_core.dart';
 import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
@@ -16,8 +17,6 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:yaml/yaml.dart';
-
-import 'package_utils.dart';
 
 /// Compute the constraint for a dependency which matches with all the constraints
 /// used in the workspace.

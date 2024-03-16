@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:custom_lint/src/package_utils.dart';
+import 'package:custom_lint_core/custom_lint_core.dart';
 import 'package:test/test.dart';
 
 import 'cli_process_test.dart';

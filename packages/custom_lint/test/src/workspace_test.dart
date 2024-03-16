@@ -4,8 +4,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-import 'package:custom_lint/src/package_utils.dart';
 import 'package:custom_lint/src/workspace.dart';
+import 'package:custom_lint_core/custom_lint_core.dart';
 import 'package:file/memory.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
