@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:custom_lint/src/package_utils.dart';
+import 'package:custom_lint_core/custom_lint_core.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

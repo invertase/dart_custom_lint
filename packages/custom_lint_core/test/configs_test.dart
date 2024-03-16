@@ -2,8 +2,6 @@ import 'dart:io' as io;
 
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
-// ignore: implementation_imports
-import 'package:custom_lint/src/package_utils.dart' show parsePackageConfig;
 import 'package:custom_lint_core/custom_lint_core.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart';
