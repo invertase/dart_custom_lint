@@ -1,3 +1,8 @@
+## 0.6.3 - 2024-03-16
+
+- `custom_lint` upgraded to `0.6.3`
+- `custom_lint_core` upgraded to `0.6.3`
+
 ## 0.6.2 - 2024-02-19
 
 - Upgrade analyzer to support 6.4.0

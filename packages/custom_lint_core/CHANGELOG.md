@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.6.3 - 2024-03-16
 
 - Parses `debug`/`config` flags
 
