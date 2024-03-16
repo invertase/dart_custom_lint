@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.6.3 - 2024-03-16
 
 - Fixed Unimplemented error when running `pub get`.
 - Hot-reload and debug mode is now disabled by default.
