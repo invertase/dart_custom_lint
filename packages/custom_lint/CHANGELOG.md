@@ -1,3 +1,7 @@
+## 0.6.4 - 2024-03-16
+
+- Improve error message to attempt debugging a certain bug
+
 ## 0.6.3 - 2024-03-16
 
 - Fixed Unimplemented error when running `pub get`.
