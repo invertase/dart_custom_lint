@@ -95,6 +95,9 @@ To create a custom lint, you will need two things:
 - create a `lib/<my_package_name>.dart` file in your project with the following:
 
   ```dart
+  import 'package:analyzer/error/listener.dart';
+  import 'package:custom_lint_builder/custom_lint_builder.dart';
+  
   // This is the entrypoint of our custom linter
   PluginBase createPlugin() => _ExampleLinter();
 
