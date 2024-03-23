@@ -93,8 +93,9 @@ void mockProcess(RunProcess mock) {
   runProcess = mock;
 }
 
-Queue<({String executable, List<String> args})> spyProcess() {
-  final result = Queue<({String executable, List<String> args})>();
+Queue<({String executable, List<String> args, bool runInShell})> spyProcess() {
+  final result =
+      Queue<({String executable, List<String> args, bool runInShell})>();
 
   final previousRunProcess = runProcess;
   addTearDown(() => runProcess = previousRunProcess);
@@ -108,7 +109,8 @@ Queue<({String executable, List<String> args})> spyProcess() {
     stdoutEncoding,
     workingDirectory,
   }) {
-    result.add((executable: executable, args: arguments));
+    result
+        .add((executable: executable, args: arguments, runInShell: runInShell));
 
     return previousRunProcess(
       executable,
@@ -813,12 +815,12 @@ environment:
 
 dev_dependencies:
   plugin1:
-    path: "${workingDir.dir('plugin1').path}"
+    path: "${p.posix.prettyUri(workingDir.dir('plugin1').path)}"
 ''');
         expect(tempDir.pubspecOverrides.readAsStringSync(), '''
 dependency_overrides:
   plugin1:
-    path: "${workingDir.dir('plugin1').path}"
+    path: "${p.posix.prettyUri(workingDir.dir('plugin1').path)}"
 ''');
       });
 
@@ -1109,6 +1111,37 @@ dependency_overrides:
           (executable: 'flutter', args: const ['pub', 'get']),
         );
         expect(processes, isEmpty);
+      });
+
+      test('only spawns a shell when running in Windows', () async {
+        final workingDir = await createSimpleWorkspace([
+          'custom_lint_builder',
+          Pubspec(
+            'plugin1',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
+            devDependencies: {'plugin1': PathDependency('../plugin1')},
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        final processes = spyProcess();
+
+        platformIsWindows = true;
+        await workspace.runPubGet(workingDir.dir('a'));
+        expect(processes.last.runInShell, true);
+
+        platformIsWindows = false;
+        await workspace.runPubGet(workingDir.dir('a'));
+        expect(processes.last.runInShell, false);
       });
     });
 
@@ -1718,7 +1751,7 @@ publish_to: 'none'
 
 dev_dependencies:
   plugin1:
-    path: "${workingDir.dir('plugin1').path}"
+    path: "${p.posix.prettyUri(workingDir.dir('plugin1').path)}"
 ''');
       });
 
