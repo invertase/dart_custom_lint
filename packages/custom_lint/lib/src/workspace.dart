@@ -114,7 +114,9 @@ String _buildDependencyConstraint(
     case HostedDependency():
       return ' ${sharedConstraint.getDisplayString()}';
     case PathDependency():
-      return '\n    path: "${sharedConstraint.path}"';
+      // Use appropriate path separators across platforms
+      final path = posix.prettyUri(sharedConstraint.path);
+      return '\n    path: "$path"';
     case SdkDependency():
       return '\n    sdk: ${sharedConstraint.sdk}';
     case GitDependency():
@@ -390,6 +392,9 @@ typedef RunProcess = Future<ProcessResult> Function(
 /// A mockable way to run processes.
 @visibleForTesting
 RunProcess runProcess = Process.run;
+
+@visibleForTesting
+bool platformIsWindows = Platform.isWindows;
 
 /// An error thrown when [CustomLintPlugin._visitSelfAndTransitiveDependencies] tries to iterate over
 /// the dependencies of a package, but the package cannot be found in
@@ -830,13 +835,11 @@ publish_to: 'none'
   Future<void> runPubGet(Directory tempDir) async {
     final command = isUsingFlutter ? 'flutter' : 'dart';
 
-    final result = await runProcess(
-      command,
-      const ['pub', 'get'],
-      stdoutEncoding: utf8,
-      stderrEncoding: utf8,
-      workingDirectory: tempDir.path,
-    );
+    final result = await runProcess(command, const ['pub', 'get'],
+        stdoutEncoding: utf8,
+        stderrEncoding: utf8,
+        workingDirectory: tempDir.path,
+        runInShell: platformIsWindows);
     if (result.exitCode != 0) {
       throw Exception(
         'Failed to run "pub get" in the client project:\n'
