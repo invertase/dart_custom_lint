@@ -1067,7 +1067,7 @@ dependency_overrides:
 
         expect(
           processes.removeFirst(),
-          (executable: 'dart', args: const ['pub', 'get']),
+          (executable: 'dart', args: const ['pub', 'get'], runInShell: false),
         );
         expect(processes, isEmpty);
       });
@@ -1108,7 +1108,11 @@ dependency_overrides:
 
         expect(
           processes.removeFirst(),
-          (executable: 'flutter', args: const ['pub', 'get']),
+          (
+            executable: 'flutter',
+            args: const ['pub', 'get'],
+            runInShell: false
+          ),
         );
         expect(processes, isEmpty);
       });
@@ -2523,7 +2527,7 @@ dependency_overrides:
             workingDirectory: workspace,
           );
           // Expect one context root for the workspace and one for the test folder
-          expect(customLintWorkspace.contextRoots.length, equals(2));
+          expect(customLintWorkspace.contextRoots, hasLength(2));
         },
       );
 
