@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, deprecated_member_use
 
 part of 'node_lint_visitor.dart';
 

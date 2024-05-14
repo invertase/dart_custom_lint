@@ -49,7 +49,7 @@ class MyLintRule extends DartLintRule {
     CustomLintContext context,
   ) {
     context.registry.addMethodInvocation((node) {
-      reporter.reportErrorForNode(code, node.methodName);
+      reporter.atNode(node.methodName, code);
     });
   }
 }
@@ -100,7 +100,7 @@ void main() {
   });
 
   group('LintRule.isEnabled', () {
-    test('defaults to checking "enabedByDefault"', () {
+    test('defaults to checking "enabledByDefault"', () {
       expect(onByDefault.isEnabled(CustomLintConfigs.empty), true);
       expect(offByDefault.isEnabled(CustomLintConfigs.empty), false);
     });

@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Support analyzer 6.5.0
+
 ## 0.6.4 - 2024-03-16
 
 - Improve error message to attempt debugging a certain bug
