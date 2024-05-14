@@ -881,7 +881,6 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         }
       }),
       resolver.source,
-      isNonNullableByDefault: false,
     );
 
     // TODO: cancel pending analysis if a new analysis is requested on the same file
@@ -929,7 +928,6 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         // TODO asserts lintRules can only emit lints in the analyzed file
         _AnalysisErrorListenerDelegate(allAnalysisErrors.add),
         resolver.source,
-        isNonNullableByDefault: false,
       );
 
       ExpectLint(lintsBeforeExpectLint).run(resolver, analyzerPluginReporter);
@@ -1182,10 +1180,10 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     final endOffset =
         resolver.lineInfo.lineStarts.elementAtOrNull(1) ?? startOffset;
 
-    reporter.reportErrorForOffset(
-      code,
-      startOffset,
-      endOffset - startOffset,
+    reporter.atOffset(
+      errorCode: code,
+      offset: startOffset,
+      length: endOffset - startOffset,
     );
   }
 

@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Support analyzer 6.5.0
+
 ## 0.6.4 - 2024-03-16
 
 - `custom_lint` upgraded to `0.6.4`
