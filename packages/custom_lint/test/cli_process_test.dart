@@ -238,21 +238,10 @@ Analyzing...
           plugins: {'test_lint': plugin.uri},
         );
 
-        // Create a child context root
-        final innerContextRoot = createLintUsage(
-          name: 'test_project_inner',
-          source: {
-            'lib/main.dart': 'void fn() {}',
-            'lib/another.dart': 'void fail() {}',
-          },
-          parent: app,
-        );
-
         // create error during initialization because of missing package_config.json
-        final packageConfig = innerContextRoot.packageConfig;
+        final packageConfig = app.packageConfig;
         // Potentially resolve the file system link, temp folders are links on macOs into /private/var
-        final missingPackageConfig =
-            await innerContextRoot.resolveSymbolicLinks();
+        final missingPackageConfig = await app.resolveSymbolicLinks();
         packageConfig.deleteSync();
 
         final process = await Process.run(
