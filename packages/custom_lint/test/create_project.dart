@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/error/error.dart';
+import 'package:analyzer/error/error.dart' hide LintCode;
 import 'package:path/path.dart';
 import 'package:test/scaffolding.dart';
 
@@ -142,7 +142,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/error/listener.dart';
-import 'package:analyzer/error/error.dart';
+import 'package:analyzer/error/error.dart' hide LintCode;
 import 'package:path/path.dart' as p;
 
 PluginBase createPlugin() => _Plugin();
