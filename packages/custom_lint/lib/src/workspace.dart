@@ -478,7 +478,7 @@ class CustomLintWorkspace {
           if (analyzerMap is! YamlMap) return null;
           return analyzerMap['plugins'];
         })
-        .nonNulls
+        .whereNotNull()
         .firstOrNull;
 
     if (enabledPlugins is! YamlList) return false;
