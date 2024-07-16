@@ -171,7 +171,6 @@ abstract class DartLintRule extends LintRule {
     final reporter = ErrorReporter(
       listener,
       result.libraryElement.source,
-      isNonNullableByDefault: false,
     );
 
     await startUp(resolver, context);

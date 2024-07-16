@@ -68,7 +68,7 @@ class PreferFinalProviders extends DartLintRule {
       }
 
       // This emits our lint warning at the location of the variable.
-      reporter.reportErrorForElement(code, element);
+      reporter.atElement(element, code);
     });
   }
 

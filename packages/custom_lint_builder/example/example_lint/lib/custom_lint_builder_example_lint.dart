@@ -68,7 +68,7 @@ class PreferFinalProviders extends DartLintRule {
       }
 
       // This emits our lint warning at the location of the variable.
-      reporter.reportErrorForElement(code, element);
+      reporter.atElement(element, code);
     });
   }
 
@@ -110,7 +110,7 @@ class _MakeProviderFinalFix extends DartFix {
       // We define one edit, giving it a message which will show-up in the IDE.
       final changeBuilder = reporter.createChangeBuilder(
         message: 'Make provider final',
-        // This represents how high-low should this qick-fix show-up in the list
+        // This represents how high-low should this quick-fix show-up in the list
         // of quick-fixes.
         priority: 1,
       );
@@ -124,7 +124,7 @@ class _MakeProviderFinalFix extends DartFix {
           // Replace "var x = ..." into "final x = ...""
 
           // Using "builder", we can emit changes to a file.
-          // In this case, addSimpleReplacement is used to overrite a selection
+          // In this case, addSimpleReplacement is used to overwrite a selection
           // with a new content.
           builder.addSimpleReplacement(
             SourceRange(nodeKeyword.offset, nodeKeyword.length),
