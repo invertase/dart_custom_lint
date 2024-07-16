@@ -22,7 +22,7 @@ dependencies:
   package_config: ^2.1.0
   path: ^1.8.0
   pubspec_parse: ^1.2.0
-  rxdart: ^0.27.7
+  rxdart: ^0.28.0
 
 dev_dependencies:
   test: ^1.22.2
