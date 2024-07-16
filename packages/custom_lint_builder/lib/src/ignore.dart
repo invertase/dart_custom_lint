@@ -91,7 +91,7 @@ final _ignoreForFileRegex =
 
 /// Searches for `// ignore_for_file:` in a given file.
 List<IgnoreMetadata> parseIgnoreForFile(String source) {
-  final ignoreForFiles = _ignoreForFileRegex.allMatches(source).whereNotNull();
+  final ignoreForFiles = _ignoreForFileRegex.allMatches(source).nonNulls;
 
   return ignoreForFiles
       .map((e) => IgnoreMetadata._parse(e, startOffset: 0))

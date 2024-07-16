@@ -466,7 +466,7 @@ class CustomLintWorkspace {
     );
 
     return fromContextRoots(
-      contextRootsWithCustomLint.whereNotNull().toList(),
+      contextRootsWithCustomLint.nonNulls.toList(),
       workingDirectory: workingDirectory,
     );
   }
@@ -478,7 +478,7 @@ class CustomLintWorkspace {
           if (analyzerMap is! YamlMap) return null;
           return analyzerMap['plugins'];
         })
-        .whereNotNull()
+        .nonNulls
         .firstOrNull;
 
     if (enabledPlugins is! YamlList) return false;
@@ -563,7 +563,7 @@ publish_to: 'none'
             return (project: project, constraint: constraint);
           })
           // TODO what if some projects specify SDK/Flutter but some don't?
-          .whereNotNull()
+          .nonNulls
           .toList();
 
       final constraintCompatibleWithAllProjects = projectMeta.fold(
@@ -606,7 +606,7 @@ publish_to: 'none'
                 if (dependency == null) return null;
                 return (project: project, dependency: dependency);
               })
-              .whereNotNull()
+              .nonNulls
               .toList(),
           dependencyOverrides: projects
               .map((project) {
@@ -614,7 +614,7 @@ publish_to: 'none'
                 if (dependency == null) return null;
                 return (project: project, dependency: dependency);
               })
-              .whereNotNull()
+              .nonNulls
               .toList(),
         ),
     };
@@ -704,7 +704,7 @@ publish_to: 'none'
               if (dependency == null) return null;
               return (project: project, dependency: dependency);
             })
-            .whereNotNull()
+            .nonNulls
             .toList(),
     };
 
@@ -1039,7 +1039,7 @@ class CustomLintProject {
     );
 
     return CustomLintProject._(
-      plugins: plugins.whereNotNull().toList(),
+      plugins: plugins.nonNulls.toList(),
       directory: projectDirectory,
       analysisDirectory: directory,
       packageConfig: projectPackageConfig,

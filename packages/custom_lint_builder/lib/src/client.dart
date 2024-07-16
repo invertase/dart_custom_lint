@@ -583,8 +583,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         ),
     ]);
 
-    final analysisErrorFixesForOffset = allAnalysisErrorFixes
-        .whereNotNull()
+    final analysisErrorFixesForOffset = allAnalysisErrorFixes.nonNulls
         .where(
           (fix) =>
               parameters.offset >= fix.error.location.offset &&
@@ -599,8 +598,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
       final errorCode = fix.error.code;
       fixAll.putIfAbsent(errorCode, () {
-        final analysisErrorsWithCode = allAnalysisErrorFixes
-            .whereNotNull()
+        final analysisErrorsWithCode = allAnalysisErrorFixes.nonNulls
             .where((fix) => fix.error.code == errorCode)
             .toList();
 
@@ -648,7 +646,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
     return analyzer_plugin.EditGetFixesResult([
       ...analysisErrorFixesForOffset,
-      ...fixAll.values.whereNotNull(),
+      ...fixAll.values.nonNulls,
     ]);
   }
 
