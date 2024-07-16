@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/error/error.dart';
+import 'package:analyzer/error/error.dart' hide LintCode;
 import 'package:custom_lint/src/output/output_format.dart';
 import 'package:test/test.dart';
 
@@ -472,7 +472,7 @@ Bad state: fail
     final plugin = createPlugin(
       name: 'test_lint',
       main: '''
-import 'package:analyzer/error/error.dart';
+import 'package:analyzer/error/error.dart' hide LintCode;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 

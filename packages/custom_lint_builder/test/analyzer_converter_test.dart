@@ -1,4 +1,4 @@
-import 'package:analyzer/error/error.dart';
+import 'package:analyzer/error/error.dart' hide LintCode;
 import 'package:analyzer/file_system/memory_file_system.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:custom_lint_builder/src/custom_analyzer_converter.dart';

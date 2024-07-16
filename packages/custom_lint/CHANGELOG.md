@@ -1,3 +1,7 @@
+## Unreleased fix
+
+- Fix compilation error when using latest analyzer
+
 ## 0.6.4 - 2024-03-16
 
 - Improve error message to attempt debugging a certain bug
