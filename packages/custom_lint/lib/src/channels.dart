@@ -10,22 +10,24 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
 
+import '../log.dart';
+
 /// An interface for interacting with analyzer_plugin
 abstract class AnalyzerPluginClientChannel {
   /// The list of messages sent by analyzer_plugin.
   Stream<Object?> get messages;
 
   /// Sends a JSON object to the analyzer_plugin server
-  Future<void> sendJson(Map<String, Object?> json);
+  void sendJson(Map<String, Object?> json);
 
   /// Sends a [Response] to the analyzer_plugin server.
-  Future<void> sendResponse({
+  void sendResponse({
     ResponseResult? data,
     RequestError? error,
     required String requestID,
     required int requestTime,
-  }) async {
-    await sendJson(
+  }) {
+    sendJson(
       Response(
         requestID,
         requestTime,
@@ -53,10 +55,14 @@ class JsonSendPortChannel extends AnalyzerPluginClientChannel {
   final ReceivePort _receivePort;
 
   @override
-  late final Stream<Object?> messages = _receivePort.asBroadcastStream();
+  late final Stream<Object?> messages = _receivePort.map((e) {
+    log('Msg $e');
+    return e;
+  }).asBroadcastStream();
 
   @override
-  Future<void> sendJson(Map<String, Object?> json) async {
+  void sendJson(Map<String, Object?> json) {
+    log('Sendjson $json');
     _sendPort.send(json);
   }
 
@@ -85,6 +91,7 @@ class JsonSocketChannel extends AnalyzerPluginClientChannel {
 
   /// Send a message while having the first 4 bytes of the message be the length of the message.
   void _sendWithLength(Socket socket, List<int> data) {
+    log('_sendWithLength');
     final length = data.length;
     final buffer = Uint8List(_lengthBytes + length);
     final byteData = ByteData.view(buffer.buffer);
@@ -138,6 +145,7 @@ class JsonSocketChannel extends AnalyzerPluginClientChannel {
 
   @override
   Future<void> sendJson(Map<String, Object?> json) async {
+    log('sendJson');
     final socket = await _socket;
 
     _sendWithLength(

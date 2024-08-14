@@ -17,6 +17,7 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../log.dart';
 import '../async_operation.dart';
 import '../channels.dart';
 import '../plugin_delegate.dart';
@@ -79,13 +80,17 @@ class CustomLintServer {
     return asyncRunZonedGuarded(
       () => body(),
       (err, stack) {
+        log('Uncaught error $err $stack');
         server().handleUncaughtError(err, stack);
       },
       zoneSpecification: ZoneSpecification(
-        print: (self, parent, zone, line) => server().handlePrint(
-          line,
-          isClientMessage: false,
-        ),
+        print: (self, parent, zone, line) {
+          log('Print $line');
+          server().handlePrint(
+            line,
+            isClientMessage: false,
+          );
+        },
       ),
     );
   }
@@ -159,13 +164,20 @@ class CustomLintServer {
       ResponseResult? data,
       RequestError? error,
     }) async {
-      await _analyzerPluginClientChannel.sendResponse(
-        requestID: request.id,
-        requestTime: requestTime,
-        data: data,
-        error: error,
-      );
+      log('Send ${data?.toJson()}');
+      try {
+        _analyzerPluginClientChannel.sendResponse(
+          requestID: request.id,
+          requestTime: requestTime,
+          data: data,
+          error: error,
+        );
+      } finally {
+        log('did Send ${data?.toJson()}');
+      }
     }
+
+    log('Handle request ${request.toJson()}');
 
     try {
       final result = await request.when<FutureOr<ResponseResult?>>(
@@ -186,7 +198,7 @@ class CustomLintServer {
 
             final response =
                 await clientChannel.sendAnalyzerPluginRequest(request);
-            await _analyzerPluginClientChannel.sendJson(response.toJson());
+            _analyzerPluginClientChannel.sendJson(response.toJson());
             return null;
           });
         },
@@ -215,6 +227,8 @@ class CustomLintServer {
         allContextRoots:
             await _contextRoots.safeFirst.then((value) => value.roots),
       );
+    } finally {
+      log('Did handle request ${request.toJson()} completed');
     }
   }
 
@@ -222,7 +236,8 @@ class CustomLintServer {
   /// Logging the error and notifying the analyzer server
   Future<void> handleUncaughtError(Object error, StackTrace stackTrace) =>
       _runner.run(() async {
-        await _analyzerPluginClientChannel.sendJson(
+        log('Errror $error $stackTrace');
+        _analyzerPluginClientChannel.sendJson(
           PluginErrorParams(false, error.toString(), stackTrace.toString())
               .toNotification()
               .toJson(),
@@ -246,7 +261,7 @@ class CustomLintServer {
           allContextRoots: contextRoots,
         );
 
-        await _analyzerPluginClientChannel.sendJson(
+        _analyzerPluginClientChannel.sendJson(
           PluginErrorParams(true, 'Failed to start plugins', '')
               .toNotification()
               .toJson(),
@@ -344,6 +359,8 @@ class CustomLintServer {
   Future<void> _maybeSpawnCustomLintPlugin(
     AnalysisSetContextRootsParams parameters,
   ) async {
+    log('spawn ${parameters.roots.map((e) => '  ${e.root}\n').join()}');
+
     // "setContextRoots" is always called after "pluginVersionCheck", so we can
     // safely assume that the version check parameters are set.
 
@@ -397,13 +414,12 @@ class CustomLintServer {
   Future<void> _handleEvent(CustomLintEvent event) => _runner.run(() async {
         await event.map(
           analyzerPluginNotification: (event) async {
-            await _analyzerPluginClientChannel
-                .sendJson(event.notification.toJson());
+            _analyzerPluginClientChannel.sendJson(event.notification.toJson());
 
             final notification = event.notification;
             if (notification.event == PLUGIN_NOTIFICATION_ERROR) {
               final error = PluginErrorParams.fromNotification(notification);
-              await _analyzerPluginClientChannel
+              _analyzerPluginClientChannel
                   .sendJson(error.toNotification().toJson());
               delegate.pluginError(
                 this,
@@ -415,7 +431,7 @@ class CustomLintServer {
             }
           },
           error: (event) async {
-            await _analyzerPluginClientChannel.sendJson(
+            _analyzerPluginClientChannel.sendJson(
               PluginErrorParams(false, event.message, event.stackTrace)
                   .toNotification()
                   .toJson(),
