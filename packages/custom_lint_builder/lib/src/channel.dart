@@ -3,26 +3,26 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, tight versioning with custom_lint
 import 'package:custom_lint/src/async_operation.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, tight versioning with custom_lint
 import 'package:custom_lint/src/channels.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, tight versioning with custom_lint
 import 'package:custom_lint/src/v2/protocol.dart';
 import 'package:custom_lint_core/custom_lint_core.dart';
 
 import 'client.dart';
 
-/// Converts a Stream/Sink into a Sendport/ReceivePort equivalent
+/// Converts a Stream/Sink into a SendPort/ReceivePort equivalent
 class StreamToSentPortAdapter {
-  /// Converts a Stream/Sink into a Sendport/ReceivePort equivalent
+  /// Converts a Stream/Sink into a SendPort/ReceivePort equivalent
   StreamToSentPortAdapter(
     Stream<Map<String, Object?>> input,
     void Function(Map<String, Object?> output) output, {
     required void Function() onDone,
   }) {
     final Stream<Object?> outputStream = _outputReceivePort.asBroadcastStream();
-    final inputSendport =
+    final inputSendPort =
         outputStream.where((e) => e is SendPort).cast<SendPort>().safeFirst;
 
     final sub = outputStream
@@ -32,11 +32,11 @@ class StreamToSentPortAdapter {
 
     input.listen(
       (e) {
-        inputSendport.then((value) => value.send(e));
+        unawaited(inputSendPort.then((value) => value.send(e)));
       },
       onDone: () {
         _outputReceivePort.close();
-        sub.cancel();
+        unawaited(sub.cancel());
         onDone();
       },
     );
@@ -173,6 +173,6 @@ class _SocketCustomLintClientChannel extends CustomLintClientChannel {
 
   @override
   void _sendJson(Map<String, Object?> json) {
-    socket.sendJson(json);
+    unawaited(socket.sendJson(json));
   }
 }

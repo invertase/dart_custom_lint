@@ -1,4 +1,4 @@
 @Deprecated('Import `package:custom_lint/custom_lint.dart` instead')
-library basic_runner;
+library;
 
 export 'custom_lint.dart';

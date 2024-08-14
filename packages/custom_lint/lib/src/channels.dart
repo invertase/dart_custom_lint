@@ -6,7 +6,7 @@ import 'dart:typed_data';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, not exported
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
 
@@ -138,7 +138,6 @@ class JsonSocketChannel extends AnalyzerPluginClientChannel {
 
   @override
   Future<void> sendJson(Map<String, Object?> json) async {
-    // ignore: close_sinks
     final socket = await _socket;
 
     _sendWithLength(

@@ -49,7 +49,7 @@ class MyLintRule extends DartLintRule {
     CustomLintContext context,
   ) {
     context.registry.addMethodInvocation((node) {
-      reporter.reportErrorForNode(code, node.methodName);
+      reporter.atNode(node.methodName, code);
     });
   }
 }

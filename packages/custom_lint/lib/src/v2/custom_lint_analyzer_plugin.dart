@@ -6,7 +6,7 @@ import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_constants.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, not exported
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
 import 'package:async/async.dart';

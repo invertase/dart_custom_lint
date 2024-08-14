@@ -11,7 +11,6 @@ import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
-import 'package:test/fake.dart';
 import 'package:test/test.dart';
 
 const conflictExplanation =
@@ -87,12 +86,6 @@ extension on Dependency {
   }
 }
 
-void mockProcess(RunProcess mock) {
-  final previousRunProcess = runProcess;
-  addTearDown(() => runProcess = previousRunProcess);
-  runProcess = mock;
-}
-
 Queue<({String executable, List<String> args, bool runInShell})> spyProcess() {
   final result =
       Queue<({String executable, List<String> args, bool runInShell})>();
@@ -108,7 +101,7 @@ Queue<({String executable, List<String> args, bool runInShell})> spyProcess() {
     stderrEncoding,
     stdoutEncoding,
     workingDirectory,
-  }) {
+  }) async {
     result
         .add((executable: executable, args: arguments, runInShell: runInShell));
 
@@ -360,7 +353,7 @@ Directory createTemporaryDirectory({bool local = false}) {
   subscription = ProcessSignal.sigint.watch().listen((_) {
     dir.deleteSync(recursive: true);
     // Let the process exit normally.
-    subscription.cancel();
+    unawaited(subscription.cancel());
   });
 
   return dir;
@@ -2497,7 +2490,7 @@ dependency_overrides:
       Future<CustomLintWorkspace> fromContextRootsFromPaths(
         List<String> paths, {
         required Directory workingDirectory,
-      }) {
+      }) async {
         return CustomLintWorkspace.fromContextRoots(
           paths.map((path) => ContextRoot(path, [])).toList(),
           workingDirectory: workingDirectory,
@@ -4370,5 +4363,3 @@ Future<void> runWithoutInternet(FutureOr<void> Function() cb) async {
         throw Exception('No internet'),
   );
 }
-
-class FakeIOOveride extends Fake implements IOOverrides {}

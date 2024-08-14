@@ -23,7 +23,6 @@ void renderLints(
   switch (format) {
     case OutputFormatEnum.json:
       outputFormat = JsonOutputFormat();
-      break;
     case OutputFormatEnum.plain:
     default:
       outputFormat = DefaultOutputFormat();

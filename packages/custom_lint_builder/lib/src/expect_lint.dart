@@ -70,11 +70,11 @@ class ExpectLint {
 
     // Some expect_lint clauses where not respected
     for (final unfulfilledExpectedLint in unfulfilledExpectedLints) {
-      reporter.reportErrorForOffset(
-        _code,
-        unfulfilledExpectedLint.offset,
-        unfulfilledExpectedLint.code.length,
-        [unfulfilledExpectedLint.code],
+      reporter.atOffset(
+        errorCode: _code,
+        offset: unfulfilledExpectedLint.offset,
+        length: unfulfilledExpectedLint.code.length,
+        arguments: [unfulfilledExpectedLint.code],
       );
     }
   }

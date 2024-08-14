@@ -121,90 +121,77 @@ extension RequestX on Request {
           final params = AnalysisGetNavigationParams.fromRequest(this);
           return handleAnalysisGetNavigation(params);
         }
-        break;
 
       case ANALYSIS_REQUEST_HANDLE_WATCH_EVENTS:
         if (handleAnalysisHandleWatchEvents != null) {
           final params = AnalysisHandleWatchEventsParams.fromRequest(this);
           return handleAnalysisHandleWatchEvents(params);
         }
-        break;
 
       case ANALYSIS_REQUEST_SET_CONTEXT_ROOTS:
         if (handleAnalysisSetContextRoots != null) {
           final params = AnalysisSetContextRootsParams.fromRequest(this);
           return handleAnalysisSetContextRoots(params);
         }
-        break;
 
       case ANALYSIS_REQUEST_SET_PRIORITY_FILES:
         if (handleAnalysisSetPriorityFiles != null) {
           final params = AnalysisSetPriorityFilesParams.fromRequest(this);
           return handleAnalysisSetPriorityFiles(params);
         }
-        break;
 
       case ANALYSIS_REQUEST_SET_SUBSCRIPTIONS:
         if (handleAnalysisSetSubscriptions != null) {
           final params = AnalysisSetSubscriptionsParams.fromRequest(this);
           return handleAnalysisSetSubscriptions(params);
         }
-        break;
 
       case ANALYSIS_REQUEST_UPDATE_CONTENT:
         if (handleAnalysisUpdateContent != null) {
           final params = AnalysisUpdateContentParams.fromRequest(this);
           return handleAnalysisUpdateContent(params);
         }
-        break;
 
       case COMPLETION_REQUEST_GET_SUGGESTIONS:
         if (handleCompletionGetSuggestions != null) {
           final params = CompletionGetSuggestionsParams.fromRequest(this);
           return handleCompletionGetSuggestions(params);
         }
-        break;
 
       case EDIT_REQUEST_GET_ASSISTS:
         if (handleEditGetAssists != null) {
           final params = EditGetAssistsParams.fromRequest(this);
           return handleEditGetAssists(params);
         }
-        break;
 
       case EDIT_REQUEST_GET_AVAILABLE_REFACTORINGS:
         final params = EditGetAvailableRefactoringsParams.fromRequest(this);
         if (handleEditGetAvailableRefactorings != null) {
           return handleEditGetAvailableRefactorings(params);
         }
-        break;
 
       case EDIT_REQUEST_GET_FIXES:
         if (handleEditGetFixes != null) {
           final params = EditGetFixesParams.fromRequest(this);
           return handleEditGetFixes(params);
         }
-        break;
 
       case EDIT_REQUEST_GET_REFACTORING:
         if (handleEditGetRefactoring != null) {
           final params = EditGetRefactoringParams.fromRequest(this);
           return handleEditGetRefactoring(params);
         }
-        break;
 
       case PLUGIN_REQUEST_SHUTDOWN:
         if (handlePluginShutdown != null) {
           return handlePluginShutdown();
         }
-        break;
 
       case PLUGIN_REQUEST_VERSION_CHECK:
         final params = PluginVersionCheckParams.fromRequest(this);
         if (handlePluginVersionCheck != null) {
           return handlePluginVersionCheck(params);
         }
-        break;
     }
 
     return orElse();

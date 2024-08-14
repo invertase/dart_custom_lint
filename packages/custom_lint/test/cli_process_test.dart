@@ -1,4 +1,6 @@
 @Timeout.factor(2)
+library;
+
 import 'dart:convert';
 import 'dart:io';
 

@@ -6,7 +6,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:analyzer/dart/element/element.dart' as analyzer;
+import 'package:analyzer/source/line_info.dart' as analyzer;
 import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/source/source_range.dart' as analyzer;
 import 'package:analyzer/diagnostic/diagnostic.dart' as analyzer;
 import 'package:analyzer/error/error.dart' as analyzer;
 import 'package:analyzer/source/error_processor.dart' as analyzer;
@@ -23,8 +25,11 @@ class CustomAnalyzerConverter {
   /// error defined by the plugin API. If a [lineInfo] is provided then the
   /// error's location will have a start line and start column. If a [severity]
   /// is provided, then it will override the severity defined by the error.
-  plugin.AnalysisError convertAnalysisError(analyzer.AnalysisError error,
-      {analyzer.LineInfo? lineInfo, analyzer.ErrorSeverity? severity}) {
+  plugin.AnalysisError convertAnalysisError(
+    analyzer.AnalysisError error, {
+    analyzer.LineInfo? lineInfo,
+    analyzer.ErrorSeverity? severity,
+  }) {
     var errorCode = error.errorCode;
     severity ??= errorCode.errorSeverity;
     var offset = error.offset;
@@ -241,7 +246,7 @@ class CustomAnalyzerConverter {
   String? _getAliasedTypeString(analyzer.Element element) {
     if (element is analyzer.TypeAliasElement) {
       var aliasedType = element.aliasedType;
-      return aliasedType.getDisplayString(withNullability: false);
+      return aliasedType.getDisplayString();
     }
     return null;
   }
@@ -284,7 +289,7 @@ class CustomAnalyzerConverter {
           closeOptionalString = ']';
         }
       }
-      parameter.appendToWithoutDelimiters(buffer, withNullability: false);
+      parameter.appendToWithoutDelimiters(buffer);
     }
     buffer.write(closeOptionalString);
     buffer.write(')');
@@ -298,14 +303,14 @@ class CustomAnalyzerConverter {
       if (element.kind == analyzer.ElementKind.SETTER) {
         return null;
       }
-      return element.returnType.getDisplayString(withNullability: false);
+      return element.returnType.getDisplayString();
     } else if (element is analyzer.VariableElement) {
-      return element.type.getDisplayString(withNullability: false);
+      return element.type.getDisplayString();
     } else if (element is analyzer.TypeAliasElement) {
       var aliasedType = element.aliasedType;
       if (aliasedType is FunctionType) {
         var returnType = aliasedType.returnType;
-        return returnType.getDisplayString(withNullability: false);
+        return returnType.getDisplayString();
       }
     }
     return null;

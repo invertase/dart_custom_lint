@@ -895,6 +895,7 @@ class PubspecCache {
       _cache[directory] = () => pubspec;
       return pubspec;
     } catch (e) {
+      // Indirect rethrow of an error. We can't use rethrow here.
       // ignore: only_throw_errors, use_rethrow_when_possible
       _cache[directory] = () => throw e;
 
@@ -991,7 +992,7 @@ class CustomLintProject {
     final directory = Directory(contextRoot.root);
     final projectDirectory = findProjectDirectory(directory);
     final projectPubspec = await parsePubspec(projectDirectory).catchError(
-        // ignore: avoid_types_on_closure_parameters
+        // ignore: avoid_types_on_closure_parameters, false positive
         (Object err, StackTrace stack) {
       throw PubspecParseError._(
         directory.path,
@@ -1001,7 +1002,7 @@ class CustomLintProject {
     });
     final pubspecOverrides = await tryParsePubspecOverrides(projectDirectory);
     final projectPackageConfig = await parsePackageConfig(projectDirectory)
-        // ignore: avoid_types_on_closure_parameters
+        // ignore: avoid_types_on_closure_parameters, false positive
         .catchError((Object err, StackTrace stack) {
       throw PackageConfigParseError._(
         directory.path,
@@ -1272,7 +1273,7 @@ abstract class PubspecDependency {
   PubspecDependency? intersect(PubspecDependency dependency) {
     if (!isCompatibleWith(dependency)) return null;
 
-    // ignore: avoid_returning_this
+    // ignore: avoid_returning_this, conditionally returns non-this.
     return this;
   }
 }

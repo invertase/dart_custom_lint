@@ -81,7 +81,7 @@ void main() {
   });
 
   // Extract the name of the changed file and makes the test failing if the internal structure is not the expected one
-  String _extractFileName(PrioritizedSourceChange change) {
+  String extractFileName(PrioritizedSourceChange change) {
     final map = change.toJson();
 
     expect(map.containsKey('change'), true);
@@ -117,8 +117,8 @@ void main() {
     final change1 = changeList1[0];
     final change2 = changeList2[0];
 
-    final file1 = _extractFileName(change1);
-    final file2 = _extractFileName(change2);
+    final file1 = extractFileName(change1);
+    final file2 = extractFileName(change2);
 
     expect(file1, 'custom_1.txt');
     expect(file2, 'custom_2.txt');

@@ -1,7 +1,7 @@
 import 'package:analyzer/file_system/file_system.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, not exported
 import 'package:analyzer/src/dart/analysis/byte_store.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, not exported
 import 'package:analyzer/src/dart/analysis/file_byte_store.dart';
 
 /// Adds [createByteStore].

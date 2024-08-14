@@ -130,16 +130,18 @@ class _ChangeBuilderImpl implements ChangeBuilder {
     String? customPath,
   }) {
     _operations.add(
-      importPrefixGenerator == null
-          ? _innerChangeBuilder.addDartFileEdit(
-              customPath ?? path,
-              buildFileEdit,
-            )
-          : _innerChangeBuilder.addDartFileEdit(
-              customPath ?? path,
-              buildFileEdit,
-              importPrefixGenerator: importPrefixGenerator,
-            ),
+      Future(() async {
+        return importPrefixGenerator == null
+            ? _innerChangeBuilder.addDartFileEdit(
+                customPath ?? path,
+                buildFileEdit,
+              )
+            : _innerChangeBuilder.addDartFileEdit(
+                customPath ?? path,
+                buildFileEdit,
+                importPrefixGenerator: importPrefixGenerator,
+              );
+      }),
     );
   }
 
@@ -149,7 +151,12 @@ class _ChangeBuilderImpl implements ChangeBuilder {
     String? customPath,
   }) {
     _operations.add(
-      _innerChangeBuilder.addGenericFileEdit(customPath ?? path, buildFileEdit),
+      Future(
+        () async => _innerChangeBuilder.addGenericFileEdit(
+          customPath ?? path,
+          buildFileEdit,
+        ),
+      ),
     );
   }
 
@@ -159,7 +166,12 @@ class _ChangeBuilderImpl implements ChangeBuilder {
     String? customPath,
   ) {
     _operations.add(
-      _innerChangeBuilder.addYamlFileEdit(customPath ?? path, buildFileEdit),
+      Future(
+        () async => _innerChangeBuilder.addYamlFileEdit(
+          customPath ?? path,
+          buildFileEdit,
+        ),
+      ),
     );
   }
 
