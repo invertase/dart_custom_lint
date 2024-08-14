@@ -1,0 +1,21 @@
+# melos_managed_dependency_overrides: custom_lint
+dependency_overrides:
+  # custom_lint:
+  #   path: /Users/remirousselet/dev/dart_custom_lint/packages/custom_lint
+  # custom_lint_core:
+  #   path: /Users/remirousselet/dev/dart_custom_lint/packages/custom_lint_core
+  custom_lint:
+    git:
+      url: https://github.com/invertase/dart_custom_lint/
+      ref: upgrade
+      path: packages/custom_lint
+  custom_lint_core:
+    git:
+      url: https://github.com/invertase/dart_custom_lint/
+      ref: upgrade
+      path: packages/custom_lint_core
+  custom_lint_builder:
+    git:
+      url: https://github.com/invertase/dart_custom_lint/
+      ref: upgrade
+      path: packages/custom_lint_builder
