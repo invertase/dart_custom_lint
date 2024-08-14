@@ -3,8 +3,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/context_locator.dart';
-import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart'
     as analyzer_plugin;
 import 'package:async/async.dart';
@@ -428,24 +427,19 @@ class CustomLintWorkspace {
     List<String> paths, {
     required Directory workingDirectory,
   }) async {
-    final contextLocator = ContextLocator(
-      resourceProvider: PhysicalResourceProvider.INSTANCE,
-    );
-    final allContextRoots = contextLocator.locateRoots(
-      includedPaths: paths.map((e) => join(workingDirectory.path, e)).toList(),
-    );
+    final collection = AnalysisContextCollection(includedPaths: paths);
 
     final contextRootsWithCustomLint = await Future.wait(
-      allContextRoots.map((contextRoot) async {
+      collection.contexts.map((context) async {
         final projectDir = tryFindProjectDirectory(
-          Directory(contextRoot.root.path),
+          Directory(context.contextRoot.root.path),
         );
         if (projectDir == null) return null;
 
         final pubspec = await tryParsePubspec(projectDir);
         if (pubspec == null) return null;
 
-        final optionFile = contextRoot.optionsFile;
+        final optionFile = context.contextRoot.optionsFile;
         if (optionFile == null) {
           return null;
         }
@@ -458,9 +452,9 @@ class CustomLintWorkspace {
 
         // TODO test
         return analyzer_plugin.ContextRoot(
-          contextRoot.root.path,
-          contextRoot.excluded.map((e) => e.path).toList(),
-          optionsFile: contextRoot.optionsFile?.path,
+          context.contextRoot.root.path,
+          context.contextRoot.excluded.map((e) => e.path).toList(),
+          optionsFile: context.contextRoot.optionsFile?.path,
         );
       }),
     );
