@@ -8,6 +8,23 @@ environment:
 
 dependencies:
   custom_lint: 0.6.4
+
+dependency_overrides:
+  custom_lint:
+    git:
+      url: https://github.com/invertase/dart_custom_lint/
+      ref: upgrade
+      path: packages/custom_lint
+  custom_lint_core:
+    git:
+      url: https://github.com/invertase/dart_custom_lint/
+      ref: upgrade
+      path: packages/custom_lint_core
+  custom_lint_builder:
+    git:
+      url: https://github.com/invertase/dart_custom_lint/
+      ref: upgrade
+      path: packages/custom_lint_builder
 # TODO: If you want to contribute to custom_lint, add a pubspec_overrides.yaml file
 # in this folder, containing the following:
 # dependency_overrides:
