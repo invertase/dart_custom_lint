@@ -17,7 +17,6 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../log.dart';
 import '../async_operation.dart';
 import '../channels.dart';
 import '../plugin_delegate.dart';
@@ -80,12 +79,10 @@ class CustomLintServer {
     return asyncRunZonedGuarded(
       () => body(),
       (err, stack) {
-        log('Uncaught error $err $stack');
         server().handleUncaughtError(err, stack);
       },
       zoneSpecification: ZoneSpecification(
         print: (self, parent, zone, line) {
-          log('Print $line');
           server().handlePrint(
             line,
             isClientMessage: false,
@@ -164,20 +161,13 @@ class CustomLintServer {
       ResponseResult? data,
       RequestError? error,
     }) async {
-      log('Send ${data?.toJson()}');
-      try {
-        _analyzerPluginClientChannel.sendResponse(
-          requestID: request.id,
-          requestTime: requestTime,
-          data: data,
-          error: error,
-        );
-      } finally {
-        log('did Send ${data?.toJson()}');
-      }
+      _analyzerPluginClientChannel.sendResponse(
+        requestID: request.id,
+        requestTime: requestTime,
+        data: data,
+        error: error,
+      );
     }
-
-    log('Handle request ${request.toJson()}');
 
     try {
       final result = await request.when<FutureOr<ResponseResult?>>(
@@ -227,8 +217,6 @@ class CustomLintServer {
         allContextRoots:
             await _contextRoots.safeFirst.then((value) => value.roots),
       );
-    } finally {
-      log('Did handle request ${request.toJson()} completed');
     }
   }
 
@@ -236,7 +224,6 @@ class CustomLintServer {
   /// Logging the error and notifying the analyzer server
   Future<void> handleUncaughtError(Object error, StackTrace stackTrace) =>
       _runner.run(() async {
-        log('Errror $error $stackTrace');
         _analyzerPluginClientChannel.sendJson(
           PluginErrorParams(false, error.toString(), stackTrace.toString())
               .toNotification()
@@ -359,8 +346,6 @@ class CustomLintServer {
   Future<void> _maybeSpawnCustomLintPlugin(
     AnalysisSetContextRootsParams parameters,
   ) async {
-    log('spawn ${parameters.roots.map((e) => '  ${e.root}\n').join()}');
-
     // "setContextRoots" is always called after "pluginVersionCheck", so we can
     // safely assume that the version check parameters are set.
 
