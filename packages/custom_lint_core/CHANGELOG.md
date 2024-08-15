@@ -1,4 +1,4 @@
-## Unreleased 0.7.0-dev.0
+## 0.6.5 - 2024-08-15
 
 - Upgraded to analyzer ^6.6.0.
   This is a quick fix to unblock the stable Flutter channel.
