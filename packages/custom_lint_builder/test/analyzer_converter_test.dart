@@ -1,5 +1,6 @@
 import 'package:analyzer/error/error.dart' hide LintCode;
 import 'package:analyzer/file_system/memory_file_system.dart';
+import 'package:analyzer/source/file_source.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:custom_lint_builder/src/custom_analyzer_converter.dart';
 import 'package:test/test.dart';
@@ -7,12 +8,18 @@ import 'package:test/test.dart';
 void main() {
   test('Converts LintCode', () {
     final resourceProvider = MemoryResourceProvider();
-    final source = resourceProvider
-        .newFile('/home/user/project/lib/main.dart', 'void main() {}')
-        .createSource();
-    final source2 = resourceProvider
-        .newFile('/home/user/project/lib/main2.dart', 'void main2() {}')
-        .createSource();
+    final source = FileSource(
+      resourceProvider.newFile(
+        '/home/user/project/lib/main.dart',
+        'void main() {}',
+      ),
+    );
+    final source2 = FileSource(
+      resourceProvider.newFile(
+        '/home/user/project/lib/main2.dart',
+        'void main2() {}',
+      ),
+    );
 
     final another = AnalysisError.tmp(
       source: source,

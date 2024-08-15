@@ -62,7 +62,7 @@ Future<R> asyncRunZonedGuarded<R>(
     runZonedGuarded(
       () => Future(body).then(
         completer.complete,
-        // ignore: avoid_types_on_closure_parameters
+        // ignore: avoid_types_on_closure_parameters, false positive
         onError: (Object error, StackTrace stack) {
           // Make sure the initial error is also reported.
           onError(error, stack);

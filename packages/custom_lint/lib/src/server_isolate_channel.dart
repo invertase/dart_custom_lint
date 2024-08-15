@@ -4,7 +4,7 @@ import 'dart:isolate';
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_constants.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, not exported
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show RequestParams;
 import 'package:async/async.dart';

@@ -1,3 +1,10 @@
+## Unreleased 0.7.0-dev.0
+
+- Upgraded to analyzer ^6.6.0.
+  This is a quick fix to unblock the stable Flutter channel.
+  A more robust fix will come later.
+- Fixed a bug where isSuperTypeOf throws if the element is null (thanks to @charlescyt)
+
 ## 0.6.3 - 2024-03-16
 
 - Parses `debug`/`config` flags

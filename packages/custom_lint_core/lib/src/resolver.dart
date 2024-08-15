@@ -1,8 +1,7 @@
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/source/line_info.dart';
-// ignore: implementation_imports
-import 'package:analyzer/src/generated/source.dart' show Source;
+import 'package:analyzer/source/source.dart';
 import 'package:meta/meta.dart';
 
 /// A class used to interact with files and possibly emit lints of out it.

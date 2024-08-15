@@ -7,10 +7,10 @@ import 'plugin_delegate.dart';
 import 'v2/custom_lint_analyzer_plugin.dart';
 
 /// Connects custom_lint to the analyzer server using the analyzer_plugin protocol
-void start(Iterable<String> _, SendPort sendPort) {
+Future<void> start(Iterable<String> _, SendPort sendPort) async {
   final isInCI = ci.isCI;
 
-  CustomLintServer.start(
+  await CustomLintServer.start(
     sendPort: sendPort,
     includeBuiltInLints: true,
     // The IDE client should write to files, as what's visible in the editor

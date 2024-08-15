@@ -95,6 +95,18 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
+  void visitAugmentedExpression(AugmentedExpression node) {
+    _runSubscriptions(node, _registry._forAugmentedExpression);
+    super.visitAugmentedExpression(node);
+  }
+
+  @override
+  void visitAugmentedInvocation(AugmentedInvocation node) {
+    _runSubscriptions(node, _registry._forAugmentedInvocation);
+    super.visitAugmentedInvocation(node);
+  }
+
+  @override
   void visitAwaitExpression(AwaitExpression node) {
     _runSubscriptions(node, _registry._forAwaitExpression);
     super.visitAwaitExpression(node);
@@ -395,9 +407,21 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
+  void visitExtensionOnClause(ExtensionOnClause node) {
+    _runSubscriptions(node, _registry._forExtensionOnClause);
+    super.visitExtensionOnClause(node);
+  }
+
+  @override
   void visitExtensionOverride(ExtensionOverride node) {
     _runSubscriptions(node, _registry._forExtensionOverride);
     super.visitExtensionOverride(node);
+  }
+
+  @override
+  void visitExtensionTypeDeclaration(ExtensionTypeDeclaration node) {
+    _runSubscriptions(node, _registry._forExtensionTypeDeclaration);
+    super.visitExtensionTypeDeclaration(node);
   }
 
   @override
@@ -743,6 +767,12 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
+  void visitMixinOnClause(MixinOnClause node) {
+    _runSubscriptions(node, _registry._forMixinOnClause);
+    super.visitMixinOnClause(node);
+  }
+
+  @override
   void visitNamedCompilationUnitMember(NamedCompilationUnitMember node) {
     _runSubscriptions(node, _registry._forNamedCompilationUnitMember);
     super.visitNamedCompilationUnitMember(node);
@@ -812,12 +842,6 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   void visitObjectPattern(ObjectPattern node) {
     _runSubscriptions(node, _registry._forObjectPattern);
     super.visitObjectPattern(node);
-  }
-
-  @override
-  void visitOnClause(OnClause node) {
-    _runSubscriptions(node, _registry._forOnClause);
-    super.visitOnClause(node);
   }
 
   @override
@@ -955,6 +979,18 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   void visitRelationalPattern(RelationalPattern node) {
     _runSubscriptions(node, _registry._forRelationalPattern);
     super.visitRelationalPattern(node);
+  }
+
+  @override
+  void visitRepresentationConstructorName(RepresentationConstructorName node) {
+    _runSubscriptions(node, _registry._forRepresentationConstructorName);
+    super.visitRepresentationConstructorName(node);
+  }
+
+  @override
+  void visitRepresentationDeclaration(RepresentationDeclaration node) {
+    _runSubscriptions(node, _registry._forRepresentationDeclaration);
+    super.visitRepresentationDeclaration(node);
   }
 
   @override
@@ -1238,6 +1274,7 @@ class _Subscription<T> {
 }
 
 /// The container to register visitors for separate AST node types.
+@internal
 class NodeLintRegistry {
   /// The container to register visitors for separate AST node types.
   @internal
@@ -1319,6 +1356,20 @@ class NodeLintRegistry {
   void addAugmentationImportDirective(
       String key, void Function(AugmentationImportDirective node) listener) {
     _forAugmentationImportDirective
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<AugmentedExpression>> _forAugmentedExpression = [];
+  void addAugmentedExpression(
+      String key, void Function(AugmentedExpression node) listener) {
+    _forAugmentedExpression
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<AugmentedInvocation>> _forAugmentedInvocation = [];
+  void addAugmentedInvocation(
+      String key, void Function(AugmentedInvocation node) listener) {
+    _forAugmentedInvocation
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
@@ -1656,10 +1707,25 @@ class NodeLintRegistry {
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
+  final List<_Subscription<ExtensionOnClause>> _forExtensionOnClause = [];
+  void addExtensionOnClause(
+      String key, void Function(ExtensionOnClause node) listener) {
+    _forExtensionOnClause
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
   final List<_Subscription<ExtensionOverride>> _forExtensionOverride = [];
   void addExtensionOverride(
       String key, void Function(ExtensionOverride node) listener) {
     _forExtensionOverride
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<ExtensionTypeDeclaration>>
+      _forExtensionTypeDeclaration = [];
+  void addExtensionTypeDeclaration(
+      String key, void Function(ExtensionTypeDeclaration node) listener) {
+    _forExtensionTypeDeclaration
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
@@ -2047,6 +2113,13 @@ class NodeLintRegistry {
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
+  final List<_Subscription<MixinOnClause>> _forMixinOnClause = [];
+  void addMixinOnClause(
+      String key, void Function(MixinOnClause node) listener) {
+    _forMixinOnClause
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
   final List<_Subscription<NamedCompilationUnitMember>>
       _forNamedCompilationUnitMember = [];
   void addNamedCompilationUnitMember(
@@ -2123,11 +2196,6 @@ class NodeLintRegistry {
       String key, void Function(ObjectPattern node) listener) {
     _forObjectPattern
         .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
-  final List<_Subscription<OnClause>> _forOnClause = [];
-  void addOnClause(String key, void Function(OnClause node) listener) {
-    _forOnClause.add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
   final List<_Subscription<ParenthesizedExpression>>
@@ -2287,6 +2355,22 @@ class NodeLintRegistry {
   void addRelationalPattern(
       String key, void Function(RelationalPattern node) listener) {
     _forRelationalPattern
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<RepresentationConstructorName>>
+      _forRepresentationConstructorName = [];
+  void addRepresentationConstructorName(
+      String key, void Function(RepresentationConstructorName node) listener) {
+    _forRepresentationConstructorName
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<RepresentationDeclaration>>
+      _forRepresentationDeclaration = [];
+  void addRepresentationDeclaration(
+      String key, void Function(RepresentationDeclaration node) listener) {
+    _forRepresentationDeclaration
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
@@ -2654,6 +2738,18 @@ class LintRuleNodeRegistry {
   }
 
   @preferInline
+  void addAugmentedExpression(
+      void Function(AugmentedExpression node) listener) {
+    nodeLintRegistry.addAugmentedExpression(name, listener);
+  }
+
+  @preferInline
+  void addAugmentedInvocation(
+      void Function(AugmentedInvocation node) listener) {
+    nodeLintRegistry.addAugmentedInvocation(name, listener);
+  }
+
+  @preferInline
   void addAwaitExpression(void Function(AwaitExpression node) listener) {
     nodeLintRegistry.addAwaitExpression(name, listener);
   }
@@ -2919,8 +3015,19 @@ class LintRuleNodeRegistry {
   }
 
   @preferInline
+  void addExtensionOnClause(void Function(ExtensionOnClause node) listener) {
+    nodeLintRegistry.addExtensionOnClause(name, listener);
+  }
+
+  @preferInline
   void addExtensionOverride(void Function(ExtensionOverride node) listener) {
     nodeLintRegistry.addExtensionOverride(name, listener);
+  }
+
+  @preferInline
+  void addExtensionTypeDeclaration(
+      void Function(ExtensionTypeDeclaration node) listener) {
+    nodeLintRegistry.addExtensionTypeDeclaration(name, listener);
   }
 
   @preferInline
@@ -3230,6 +3337,11 @@ class LintRuleNodeRegistry {
   }
 
   @preferInline
+  void addMixinOnClause(void Function(MixinOnClause node) listener) {
+    nodeLintRegistry.addMixinOnClause(name, listener);
+  }
+
+  @preferInline
   void addNamedCompilationUnitMember(
       void Function(NamedCompilationUnitMember node) listener) {
     nodeLintRegistry.addNamedCompilationUnitMember(name, listener);
@@ -3289,11 +3401,6 @@ class LintRuleNodeRegistry {
   @preferInline
   void addObjectPattern(void Function(ObjectPattern node) listener) {
     nodeLintRegistry.addObjectPattern(name, listener);
-  }
-
-  @preferInline
-  void addOnClause(void Function(OnClause node) listener) {
-    nodeLintRegistry.addOnClause(name, listener);
   }
 
   @preferInline
@@ -3414,6 +3521,18 @@ class LintRuleNodeRegistry {
   @preferInline
   void addRelationalPattern(void Function(RelationalPattern node) listener) {
     nodeLintRegistry.addRelationalPattern(name, listener);
+  }
+
+  @preferInline
+  void addRepresentationConstructorName(
+      void Function(RepresentationConstructorName node) listener) {
+    nodeLintRegistry.addRepresentationConstructorName(name, listener);
+  }
+
+  @preferInline
+  void addRepresentationDeclaration(
+      void Function(RepresentationDeclaration node) listener) {
+    nodeLintRegistry.addRepresentationDeclaration(name, listener);
   }
 
   @preferInline

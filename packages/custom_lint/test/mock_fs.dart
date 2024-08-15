@@ -23,11 +23,8 @@ Future<T> runWithIOOverride<T>(
       fs,
     );
   } finally {
-    // TODO figure out why awaiting the close causes tests to time-out if they fail
-    // ignore: unawaited_futures
-    fs.stderr.close();
-    // ignore: unawaited_futures
-    fs.stdout.close();
+    unawaited(fs.stderr.close());
+    unawaited(fs.stdout.close());
   }
 }
 
