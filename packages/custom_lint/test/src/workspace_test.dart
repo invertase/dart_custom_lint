@@ -1060,7 +1060,7 @@ dependency_overrides:
 
         expect(
           processes.removeFirst(),
-          (executable: 'dart', args: const ['pub', 'get']),
+          (executable: 'dart', args: const ['pub', 'get'], runInShell: false),
         );
         expect(processes, isEmpty);
       });
@@ -1101,7 +1101,11 @@ dependency_overrides:
 
         expect(
           processes.removeFirst(),
-          (executable: 'flutter', args: const ['pub', 'get']),
+          (
+            executable: 'flutter',
+            args: const ['pub', 'get'],
+            runInShell: false,
+          ),
         );
         expect(processes, isEmpty);
       });
