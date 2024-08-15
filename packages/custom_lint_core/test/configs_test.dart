@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 
 io.Directory createDir() {
   final tempDir = io.Directory.systemTemp.createTempSync();
-  addTearDown(() => tempDir.delete(recursive: true));
+  addTearDown(() async => tempDir.delete(recursive: true));
   return tempDir;
 }
 

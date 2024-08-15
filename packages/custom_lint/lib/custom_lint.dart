@@ -189,7 +189,6 @@ Future<void> _startWatchMode(
           fatalWarnings: fatalWarnings,
           format: format,
         );
-        break;
       case 'q':
         // Let's quit the command line
         return;

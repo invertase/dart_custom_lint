@@ -14,15 +14,13 @@ import '../custom_lint_core.dart';
 class LintCode extends ErrorCode {
   /// A class representing an [ErrorCode] for [LintRule]s.
   const LintCode({
-    required String name,
-    required String problemMessage,
+    required super.name,
+    required super.problemMessage,
     super.correctionMessage,
     String? uniqueName,
     this.url,
     this.errorSeverity = ErrorSeverity.INFO,
   }) : super(
-          problemMessage: problemMessage,
-          name: name,
           uniqueName: uniqueName ?? name,
         );
 

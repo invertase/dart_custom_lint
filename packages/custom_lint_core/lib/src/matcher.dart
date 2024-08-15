@@ -169,7 +169,7 @@ String encodePrioritizedSourceChanges(
   return encoder.convert(json);
 }
 
-/// Expects that a [List<PrioritizedSourceChange>] matches with a serialized snapshots.
+/// Expects that a [`List<PrioritizedSourceChange>`] matches with a serialized snapshots.
 ///
 /// This effectively encode the list of changes, remove file paths from the result,
 /// and compare this output with the content of a file.

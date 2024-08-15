@@ -77,6 +77,8 @@ class NodeLintRegistry {
 
     for (final visitorMethod
         in visitor.methods.where((e) => e.name.startsWith('visit'))) {
+      if (visitorMethod.hasDeprecated) continue;
+
       const start = 'visit'.length;
 
       buffer
@@ -136,6 +138,8 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
 ''');
 
     for (final visitorMethod in visitor.methods) {
+      if (visitorMethod.hasDeprecated) continue;
+
       buffer
         ..write('@override void ')
         ..write(visitorMethod.name)
@@ -165,6 +169,8 @@ class LintRuleNodeRegistry {
 
     for (final visitorMethod
         in visitor.methods.where((e) => e.name.startsWith('visit'))) {
+      if (visitorMethod.hasDeprecated) continue;
+
       const start = 'visit'.length;
 
       buffer

@@ -3,8 +3,6 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/context_locator.dart';
-import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart'
     as analyzer_plugin;
 import 'package:async/async.dart';
@@ -412,6 +410,25 @@ class UnresolvedTransitiveDependencyException implements Exception {
   }
 }
 
+String? _findOptionsForPubspec(String pubspecPath) {
+  final analysisOptions = File(join(pubspecPath, 'analysis_options.yaml'));
+  if (analysisOptions.existsSync()) return analysisOptions.path;
+
+  final parent = Directory(pubspecPath).parent;
+  if (parent.path == pubspecPath) return null;
+
+  return _findOptionsForPubspec(parent.path);
+}
+
+Iterable<String> _findRoots(String path) sync* {
+  final directory = Directory(path);
+
+  yield* directory.listSync(recursive: true).whereType<File>().where((file) {
+    final fileName = basename(file.path);
+    return fileName == 'pubspec.yaml' || fileName == 'analysis_options.yaml';
+  }).map((file) => file.parent.path);
+}
+
 /// The holder of metadatas related to the enabled plugins and analyzed projects.
 @internal
 class CustomLintWorkspace {
@@ -428,45 +445,49 @@ class CustomLintWorkspace {
     List<String> paths, {
     required Directory workingDirectory,
   }) async {
-    final contextLocator = ContextLocator(
-      resourceProvider: PhysicalResourceProvider.INSTANCE,
-    );
-    final allContextRoots = contextLocator.locateRoots(
-      includedPaths: paths.map((e) => join(workingDirectory.path, e)).toList(),
-    );
-
-    final contextRootsWithCustomLint = await Future.wait(
-      allContextRoots.map((contextRoot) async {
-        final projectDir = tryFindProjectDirectory(
-          Directory(contextRoot.root.path),
-        );
+    final distinctRoots = paths
+        .map((e) => normalize(absolute(e, workingDirectory.path)))
+        .expand(_findRoots)
+        .toSet();
+    final foundRoots = await Future.wait(
+      distinctRoots.map((rootPath) async {
+        final projectDir = tryFindProjectDirectory(Directory(rootPath));
         if (projectDir == null) return null;
 
         final pubspec = await tryParsePubspec(projectDir);
         if (pubspec == null) return null;
 
-        final optionFile = contextRoot.optionsFile;
-        if (optionFile == null) {
-          return null;
-        }
-        final options = File(optionFile.path);
+        final optionFile = _findOptionsForPubspec(rootPath);
+        if (optionFile == null) return null;
+
+        final options = File(optionFile);
 
         final pluginDefinition = await _isCustomLintEnabled(options);
         if (!pluginDefinition) {
           return null;
         }
 
-        // TODO test
-        return analyzer_plugin.ContextRoot(
-          contextRoot.root.path,
-          contextRoot.excluded.map((e) => e.path).toList(),
-          optionsFile: contextRoot.optionsFile?.path,
+        return (
+          rootPath,
+          optionsFile: optionFile,
         );
       }),
     );
 
     return fromContextRoots(
-      contextRootsWithCustomLint.nonNulls.toList(),
+      foundRoots.nonNulls
+          .map(
+            (e) => analyzer_plugin.ContextRoot(
+              e.$1,
+              [
+                for (final otherPath in foundRoots)
+                  if (otherPath != null && isWithin(e.$1, otherPath.$1))
+                    otherPath.$1,
+              ],
+              optionsFile: e.optionsFile,
+            ),
+          )
+          .toList(),
       workingDirectory: workingDirectory,
     );
   }
@@ -895,6 +916,7 @@ class PubspecCache {
       _cache[directory] = () => pubspec;
       return pubspec;
     } catch (e) {
+      // Indirect rethrow of an error. We can't use rethrow here.
       // ignore: only_throw_errors, use_rethrow_when_possible
       _cache[directory] = () => throw e;
 
@@ -991,7 +1013,7 @@ class CustomLintProject {
     final directory = Directory(contextRoot.root);
     final projectDirectory = findProjectDirectory(directory);
     final projectPubspec = await parsePubspec(projectDirectory).catchError(
-        // ignore: avoid_types_on_closure_parameters
+        // ignore: avoid_types_on_closure_parameters, false positive
         (Object err, StackTrace stack) {
       throw PubspecParseError._(
         directory.path,
@@ -1001,7 +1023,7 @@ class CustomLintProject {
     });
     final pubspecOverrides = await tryParsePubspecOverrides(projectDirectory);
     final projectPackageConfig = await parsePackageConfig(projectDirectory)
-        // ignore: avoid_types_on_closure_parameters
+        // ignore: avoid_types_on_closure_parameters, false positive
         .catchError((Object err, StackTrace stack) {
       throw PackageConfigParseError._(
         directory.path,
@@ -1272,7 +1294,7 @@ abstract class PubspecDependency {
   PubspecDependency? intersect(PubspecDependency dependency) {
     if (!isCompatibleWith(dependency)) return null;
 
-    // ignore: avoid_returning_this
+    // ignore: avoid_returning_this, conditionally returns non-this.
     return this;
   }
 }

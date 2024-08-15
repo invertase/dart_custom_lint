@@ -26,7 +26,7 @@ class ClientIsolateChannel implements PluginCommunicationChannel {
 
   @override
   void close() {
-    _subscription?.cancel();
+    unawaited(_subscription?.cancel());
     _subscription = null;
     _receivePort.close();
   }

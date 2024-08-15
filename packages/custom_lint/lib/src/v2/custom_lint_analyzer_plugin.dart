@@ -6,7 +6,7 @@ import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_constants.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, not exported
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
 import 'package:async/async.dart';
@@ -82,10 +82,12 @@ class CustomLintServer {
         server().handleUncaughtError(err, stack);
       },
       zoneSpecification: ZoneSpecification(
-        print: (self, parent, zone, line) => server().handlePrint(
-          line,
-          isClientMessage: false,
-        ),
+        print: (self, parent, zone, line) {
+          server().handlePrint(
+            line,
+            isClientMessage: false,
+          );
+        },
       ),
     );
   }
@@ -159,7 +161,7 @@ class CustomLintServer {
       ResponseResult? data,
       RequestError? error,
     }) async {
-      await _analyzerPluginClientChannel.sendResponse(
+      _analyzerPluginClientChannel.sendResponse(
         requestID: request.id,
         requestTime: requestTime,
         data: data,
@@ -186,7 +188,7 @@ class CustomLintServer {
 
             final response =
                 await clientChannel.sendAnalyzerPluginRequest(request);
-            await _analyzerPluginClientChannel.sendJson(response.toJson());
+            _analyzerPluginClientChannel.sendJson(response.toJson());
             return null;
           });
         },
@@ -222,7 +224,7 @@ class CustomLintServer {
   /// Logging the error and notifying the analyzer server
   Future<void> handleUncaughtError(Object error, StackTrace stackTrace) =>
       _runner.run(() async {
-        await _analyzerPluginClientChannel.sendJson(
+        _analyzerPluginClientChannel.sendJson(
           PluginErrorParams(false, error.toString(), stackTrace.toString())
               .toNotification()
               .toJson(),
@@ -246,7 +248,7 @@ class CustomLintServer {
           allContextRoots: contextRoots,
         );
 
-        await _analyzerPluginClientChannel.sendJson(
+        _analyzerPluginClientChannel.sendJson(
           PluginErrorParams(true, 'Failed to start plugins', '')
               .toNotification()
               .toJson(),
@@ -397,13 +399,12 @@ class CustomLintServer {
   Future<void> _handleEvent(CustomLintEvent event) => _runner.run(() async {
         await event.map(
           analyzerPluginNotification: (event) async {
-            await _analyzerPluginClientChannel
-                .sendJson(event.notification.toJson());
+            _analyzerPluginClientChannel.sendJson(event.notification.toJson());
 
             final notification = event.notification;
             if (notification.event == PLUGIN_NOTIFICATION_ERROR) {
               final error = PluginErrorParams.fromNotification(notification);
-              await _analyzerPluginClientChannel
+              _analyzerPluginClientChannel
                   .sendJson(error.toNotification().toJson());
               delegate.pluginError(
                 this,
@@ -415,7 +416,7 @@ class CustomLintServer {
             }
           },
           error: (event) async {
-            await _analyzerPluginClientChannel.sendJson(
+            _analyzerPluginClientChannel.sendJson(
               PluginErrorParams(false, event.message, event.stackTrace)
                   .toNotification()
                   .toJson(),

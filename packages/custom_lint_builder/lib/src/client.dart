@@ -1,4 +1,4 @@
-// ignore_for_file: invalid_use_of_internal_member
+// ignore_for_file: invalid_use_of_internal_member, using custom_lint_core utils
 
 import 'dart:async';
 import 'dart:developer' as dev;
@@ -13,6 +13,7 @@ import 'package:analyzer/error/error.dart' hide LintCode;
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:analyzer/source/file_source.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:analyzer/source/source_range.dart';
 import 'package:analyzer_plugin/plugin/plugin.dart' as analyzer_plugin;
@@ -22,17 +23,17 @@ import 'package:analyzer_plugin/protocol/protocol_generated.dart'
     as analyzer_plugin;
 import 'package:analyzer_plugin/starter.dart' as analyzer_plugin;
 import 'package:collection/collection.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, tight versioning
 import 'package:custom_lint/src/async_operation.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, tight versioning
 import 'package:custom_lint/src/v2/protocol.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, tight versioning
 import 'package:custom_lint_core/src/change_reporter.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, tight versioning
 import 'package:custom_lint_core/src/node_lint_visitor.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, tight versioning
 import 'package:custom_lint_core/src/plugin_base.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, tight versioning
 import 'package:custom_lint_core/src/resolver.dart';
 import 'package:glob/glob.dart';
 import 'package:hotreloader/hotreloader.dart';
@@ -55,11 +56,11 @@ extension AnalysisSessionUtils on AnalysisContext {
   @internal
   CustomLintResolverImpl? createResolverForFile(File file) {
     if (!file.exists) return null;
-    final source = file.createSource();
+    final source = FileSource(file);
     final lineInfo = LineInfo.fromContent(source.contents.data);
 
     return CustomLintResolverImpl(
-      () => safeGetResolvedUnitResult(file.path),
+      () async => safeGetResolvedUnitResult(file.path),
       lineInfo: lineInfo,
       source: source,
       path: file.path,
@@ -123,7 +124,7 @@ class CustomLintPluginClient {
       this,
       resourceProvider: PhysicalResourceProvider.INSTANCE,
     );
-    _hotReloader = _maybeStartHotLoad();
+    _hotReloader = Future(_maybeStartHotLoad);
     final starter = analyzer_plugin.ServerPluginStarter(_analyzerPlugin);
     starter.start(_channel.sendPort);
 
@@ -152,7 +153,6 @@ class CustomLintPluginClient {
           case HotReloadResult.Succeeded:
           case HotReloadResult.PartiallySucceeded:
             _analyzerPlugin.reAnalyze();
-            break;
           default:
         }
       },
@@ -389,10 +389,10 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   @override
   String get version => '1.0.0-alpha.0';
 
-  void reAnalyze() {
+  Future<void> reAnalyze() async {
     final contextCollection = _contextCollection.valueOrNull;
     if (contextCollection != null) {
-      afterNewContextCollection(contextCollection: contextCollection);
+      await afterNewContextCollection(contextCollection: contextCollection);
     }
   }
 
@@ -768,7 +768,6 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
           );
 
           _analysisErrorsForAnalysisContexts.remove(key);
-          break;
         default:
           // Ignore unhandled watch event types.
           break;
@@ -825,7 +824,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
     var ignoreForFiles = <IgnoreMetadata>[];
     if (path.endsWith('.dart')) {
-      final source = resourceProvider.getFile(path).createSource();
+      final source = FileSource(resourceProvider.getFile(path));
       if (!source.exists()) return;
       ignoreForFiles = parseIgnoreForFile(source.contents.data);
       // Lints are disabled for the entire file, so no point in executing lints
@@ -879,7 +878,6 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         }
       }),
       resolver.source,
-      isNonNullableByDefault: false,
     );
 
     // TODO: cancel pending analysis if a new analysis is requested on the same file
@@ -927,7 +925,6 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         // TODO asserts lintRules can only emit lints in the analyzed file
         _AnalysisErrorListenerDelegate(allAnalysisErrors.add),
         resolver.source,
-        isNonNullableByDefault: false,
       );
 
       ExpectLint(lintsBeforeExpectLint).run(resolver, analyzerPluginReporter);
@@ -1180,10 +1177,10 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     final endOffset =
         resolver.lineInfo.lineStarts.elementAtOrNull(1) ?? startOffset;
 
-    reporter.reportErrorForOffset(
-      code,
-      startOffset,
-      endOffset - startOffset,
+    reporter.atOffset(
+      errorCode: code,
+      offset: startOffset,
+      length: endOffset - startOffset,
     );
   }
 

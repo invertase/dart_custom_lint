@@ -5,7 +5,8 @@ export 'src/fixes.dart';
 export 'src/lint_codes.dart';
 export 'src/lint_rule.dart';
 export 'src/matcher.dart';
-export 'src/node_lint_visitor.dart' hide LintRegistry, LinterVisitor;
+export 'src/node_lint_visitor.dart'
+    hide LintRegistry, LinterVisitor, NodeLintRegistry;
 export 'src/package_utils.dart' hide FindProjectError;
 export 'src/plugin_base.dart' hide runPostRunCallbacks;
 export 'src/resolver.dart' hide CustomLintResolverImpl;

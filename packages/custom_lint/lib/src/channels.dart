@@ -6,7 +6,7 @@ import 'dart:typed_data';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
-// ignore: implementation_imports
+// ignore: implementation_imports, not exported
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
 
@@ -16,16 +16,16 @@ abstract class AnalyzerPluginClientChannel {
   Stream<Object?> get messages;
 
   /// Sends a JSON object to the analyzer_plugin server
-  Future<void> sendJson(Map<String, Object?> json);
+  void sendJson(Map<String, Object?> json);
 
   /// Sends a [Response] to the analyzer_plugin server.
-  Future<void> sendResponse({
+  void sendResponse({
     ResponseResult? data,
     RequestError? error,
     required String requestID,
     required int requestTime,
-  }) async {
-    await sendJson(
+  }) {
+    sendJson(
       Response(
         requestID,
         requestTime,
@@ -56,7 +56,7 @@ class JsonSendPortChannel extends AnalyzerPluginClientChannel {
   late final Stream<Object?> messages = _receivePort.asBroadcastStream();
 
   @override
-  Future<void> sendJson(Map<String, Object?> json) async {
+  void sendJson(Map<String, Object?> json) {
     _sendPort.send(json);
   }
 
@@ -138,7 +138,6 @@ class JsonSocketChannel extends AnalyzerPluginClientChannel {
 
   @override
   Future<void> sendJson(Map<String, Object?> json) async {
-    // ignore: close_sinks
     final socket = await _socket;
 
     _sendWithLength(

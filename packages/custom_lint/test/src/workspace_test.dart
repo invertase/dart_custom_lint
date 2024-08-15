@@ -11,7 +11,6 @@ import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
-import 'package:test/fake.dart';
 import 'package:test/test.dart';
 
 const conflictExplanation =
@@ -87,12 +86,6 @@ extension on Dependency {
   }
 }
 
-void mockProcess(RunProcess mock) {
-  final previousRunProcess = runProcess;
-  addTearDown(() => runProcess = previousRunProcess);
-  runProcess = mock;
-}
-
 Queue<({String executable, List<String> args, bool runInShell})> spyProcess() {
   final result =
       Queue<({String executable, List<String> args, bool runInShell})>();
@@ -108,7 +101,7 @@ Queue<({String executable, List<String> args, bool runInShell})> spyProcess() {
     stderrEncoding,
     stdoutEncoding,
     workingDirectory,
-  }) {
+  }) async {
     result
         .add((executable: executable, args: arguments, runInShell: runInShell));
 
@@ -360,7 +353,7 @@ Directory createTemporaryDirectory({bool local = false}) {
   subscription = ProcessSignal.sigint.watch().listen((_) {
     dir.deleteSync(recursive: true);
     // Let the process exit normally.
-    subscription.cancel();
+    unawaited(subscription.cancel());
   });
 
   return dir;
@@ -1067,7 +1060,7 @@ dependency_overrides:
 
         expect(
           processes.removeFirst(),
-          (executable: 'dart', args: const ['pub', 'get']),
+          (executable: 'dart', args: const ['pub', 'get'], runInShell: false),
         );
         expect(processes, isEmpty);
       });
@@ -1108,7 +1101,11 @@ dependency_overrides:
 
         expect(
           processes.removeFirst(),
-          (executable: 'flutter', args: const ['pub', 'get']),
+          (
+            executable: 'flutter',
+            args: const ['pub', 'get'],
+            runInShell: false,
+          ),
         );
         expect(processes, isEmpty);
       });
@@ -2376,26 +2373,30 @@ dependency_overrides:
         expect(customLintWorkspace.contextRoots, hasLength(2));
 
         expect(
-          customLintWorkspace.contextRoots.first.root,
-          workspace.dir('package').path,
-        );
-        expect(
-          customLintWorkspace.contextRoots.first.exclude,
-          [workspace.dir('package', 'subpackage').path],
-        );
-        expect(
-          customLintWorkspace.contextRoots.first.optionsFile,
-          workspace.dir('package').analysisOptions.path,
-        );
-
-        expect(
-          customLintWorkspace.contextRoots[1].root,
-          workspace.dir('package', 'subpackage').path,
-        );
-        expect(customLintWorkspace.contextRoots[1].exclude, isEmpty);
-        expect(
-          customLintWorkspace.contextRoots[1].optionsFile,
-          workspace.dir('package').analysisOptions.path,
+          customLintWorkspace.contextRoots,
+          unorderedMatches([
+            isA<ContextRoot>()
+                .having((e) => e.root, 'root', workspace.dir('package').path)
+                .having((e) => e.exclude, 'exclude', [
+              workspace.dir('package', 'subpackage').path,
+            ]).having(
+              (e) => e.optionsFile,
+              'optionsFile',
+              workspace.dir('package').analysisOptions.path,
+            ),
+            isA<ContextRoot>()
+                .having(
+                  (e) => e.root,
+                  'root',
+                  workspace.dir('package', 'subpackage').path,
+                )
+                .having((e) => e.exclude, 'exclude', isEmpty)
+                .having(
+                  (e) => e.optionsFile,
+                  'optionsFile',
+                  workspace.dir('package').analysisOptions.path,
+                ),
+          ]),
         );
       });
 
@@ -2497,7 +2498,7 @@ dependency_overrides:
       Future<CustomLintWorkspace> fromContextRootsFromPaths(
         List<String> paths, {
         required Directory workingDirectory,
-      }) {
+      }) async {
         return CustomLintWorkspace.fromContextRoots(
           paths.map((path) => ContextRoot(path, [])).toList(),
           workingDirectory: workingDirectory,
@@ -2523,7 +2524,7 @@ dependency_overrides:
             workingDirectory: workspace,
           );
           // Expect one context root for the workspace and one for the test folder
-          expect(customLintWorkspace.contextRoots.length, equals(2));
+          expect(customLintWorkspace.contextRoots, hasLength(2));
         },
       );
 
@@ -4370,5 +4371,3 @@ Future<void> runWithoutInternet(FutureOr<void> Function() cb) async {
         throw Exception('No internet'),
   );
 }
-
-class FakeIOOveride extends Fake implements IOOverrides {}
