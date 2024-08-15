@@ -2373,26 +2373,30 @@ dependency_overrides:
         expect(customLintWorkspace.contextRoots, hasLength(2));
 
         expect(
-          customLintWorkspace.contextRoots.first.root,
-          workspace.dir('package').path,
-        );
-        expect(
-          customLintWorkspace.contextRoots.first.exclude,
-          [workspace.dir('package', 'subpackage').path],
-        );
-        expect(
-          customLintWorkspace.contextRoots.first.optionsFile,
-          workspace.dir('package').analysisOptions.path,
-        );
-
-        expect(
-          customLintWorkspace.contextRoots[1].root,
-          workspace.dir('package', 'subpackage').path,
-        );
-        expect(customLintWorkspace.contextRoots[1].exclude, isEmpty);
-        expect(
-          customLintWorkspace.contextRoots[1].optionsFile,
-          workspace.dir('package').analysisOptions.path,
+          customLintWorkspace.contextRoots,
+          unorderedMatches([
+            isA<ContextRoot>()
+                .having((e) => e.root, 'root', workspace.dir('package').path)
+                .having((e) => e.exclude, 'exclude', [
+              workspace.dir('package', 'subpackage').path,
+            ]).having(
+              (e) => e.optionsFile,
+              'optionsFile',
+              workspace.dir('package').analysisOptions.path,
+            ),
+            isA<ContextRoot>()
+                .having(
+                  (e) => e.root,
+                  'root',
+                  workspace.dir('package', 'subpackage').path,
+                )
+                .having((e) => e.exclude, 'exclude', isEmpty)
+                .having(
+                  (e) => e.optionsFile,
+                  'optionsFile',
+                  workspace.dir('package').analysisOptions.path,
+                ),
+          ]),
         );
       });
 
@@ -2520,7 +2524,7 @@ dependency_overrides:
             workingDirectory: workspace,
           );
           // Expect one context root for the workspace and one for the test folder
-          expect(customLintWorkspace.contextRoots.length, equals(2));
+          expect(customLintWorkspace.contextRoots, hasLength(2));
         },
       );
 

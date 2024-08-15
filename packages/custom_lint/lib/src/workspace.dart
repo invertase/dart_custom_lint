@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart'
     as analyzer_plugin;
 import 'package:async/async.dart';
@@ -411,6 +410,25 @@ class UnresolvedTransitiveDependencyException implements Exception {
   }
 }
 
+String? _findOptionsForPubspec(String pubspecPath) {
+  final analysisOptions = File(join(pubspecPath, 'analysis_options.yaml'));
+  if (analysisOptions.existsSync()) return analysisOptions.path;
+
+  final parent = Directory(pubspecPath).parent;
+  if (parent.path == pubspecPath) return null;
+
+  return _findOptionsForPubspec(parent.path);
+}
+
+Iterable<String> _findRoots(String path) sync* {
+  final directory = Directory(path);
+
+  yield* directory.listSync(recursive: true).whereType<File>().where((file) {
+    final fileName = basename(file.path);
+    return fileName == 'pubspec.yaml' || fileName == 'analysis_options.yaml';
+  }).map((file) => file.parent.path);
+}
+
 /// The holder of metadatas related to the enabled plugins and analyzed projects.
 @internal
 class CustomLintWorkspace {
@@ -427,40 +445,49 @@ class CustomLintWorkspace {
     List<String> paths, {
     required Directory workingDirectory,
   }) async {
-    final collection = AnalysisContextCollection(includedPaths: paths);
-
-    final contextRootsWithCustomLint = await Future.wait(
-      collection.contexts.map((context) async {
-        final projectDir = tryFindProjectDirectory(
-          Directory(context.contextRoot.root.path),
-        );
+    final distinctRoots = paths
+        .map((e) => normalize(absolute(e, workingDirectory.path)))
+        .expand(_findRoots)
+        .toSet();
+    final foundRoots = await Future.wait(
+      distinctRoots.map((rootPath) async {
+        final projectDir = tryFindProjectDirectory(Directory(rootPath));
         if (projectDir == null) return null;
 
         final pubspec = await tryParsePubspec(projectDir);
         if (pubspec == null) return null;
 
-        final optionFile = context.contextRoot.optionsFile;
-        if (optionFile == null) {
-          return null;
-        }
-        final options = File(optionFile.path);
+        final optionFile = _findOptionsForPubspec(rootPath);
+        if (optionFile == null) return null;
+
+        final options = File(optionFile);
 
         final pluginDefinition = await _isCustomLintEnabled(options);
         if (!pluginDefinition) {
           return null;
         }
 
-        // TODO test
-        return analyzer_plugin.ContextRoot(
-          context.contextRoot.root.path,
-          context.contextRoot.excluded.map((e) => e.path).toList(),
-          optionsFile: context.contextRoot.optionsFile?.path,
+        return (
+          rootPath,
+          optionsFile: optionFile,
         );
       }),
     );
 
     return fromContextRoots(
-      contextRootsWithCustomLint.nonNulls.toList(),
+      foundRoots.nonNulls
+          .map(
+            (e) => analyzer_plugin.ContextRoot(
+              e.$1,
+              [
+                for (final otherPath in foundRoots)
+                  if (otherPath != null && isWithin(e.$1, otherPath.$1))
+                    otherPath.$1,
+              ],
+              optionsFile: e.optionsFile,
+            ),
+          )
+          .toList(),
       workingDirectory: workingDirectory,
     );
   }
