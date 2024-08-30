@@ -424,13 +424,13 @@ Iterable<String> _findRoots(String path) sync* {
   final directory = Directory(path);
 
   yield* directory.listSync(recursive: true).whereType<File>().where((file) {
-    // Skip the root of dependency caches.
-    if (file.path.contains('.dart_tool') || file.path.contains('.symlinks')) {
+    final fileName = basename(file.path);
+    if (fileName != 'pubspec.yaml' && fileName != 'analysis_options.yaml') {
       return false;
     }
-
-    final fileName = basename(file.path);
-    return fileName == 'pubspec.yaml' || fileName == 'analysis_options.yaml';
+    // Check if the project has a package_config.json file.
+    return File(join(file.parent.path, '.dart_tool/package_config.json'))
+        .existsSync();
   }).map((file) => file.parent.path);
 }
 
