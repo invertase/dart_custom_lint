@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:custom_lint/src/output/output_format.dart';
 import 'package:custom_lint_core/custom_lint_core.dart';
+import 'package:path/path.dart';
 import 'package:test/test.dart';
 import 'package:test_process/test_process.dart';
 
@@ -105,6 +106,47 @@ No issues found!
         'dart',
         [customLintBinPath],
         workingDirectory: dir.path,
+        stdoutEncoding: utf8,
+        stderrEncoding: utf8,
+      );
+
+      expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
+      expect(process.stdout, '''
+Analyzing...
+
+No issues found!
+''');
+      expect(process.exitCode, 0);
+    });
+
+    test(
+        'running on a workspace with dependencies without a package_config.json',
+        () {
+      final app = createLintUsage(name: 'test_app');
+      const testDepsName = 'test_deps';
+      const testDepsPubSpec = '''
+name: $testDepsName
+version: 0.0.1
+''';
+      createTmpFolder(
+        {
+          'pubspec.yaml': testDepsPubSpec,
+        },
+        testDepsName,
+        parent: Directory(join(app.path, '.dart_tool')),
+      );
+      createTmpFolder(
+        {
+          join('.symlinks', 'plugins', 'pubspec.yaml'): testDepsPubSpec,
+        },
+        'ios',
+        parent: app,
+      );
+
+      final process = Process.runSync(
+        'dart',
+        [customLintBinPath],
+        workingDirectory: app.path,
         stdoutEncoding: utf8,
         stderrEncoding: utf8,
       );

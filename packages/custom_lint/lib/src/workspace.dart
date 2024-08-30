@@ -429,8 +429,14 @@ Iterable<String> _findRoots(String path) sync* {
       return false;
     }
     // Check if the project has a package_config.json file.
-    return File(join(file.parent.path, '.dart_tool/package_config.json'))
-        .existsSync();
+    final isChildFromCache =
+        file.path.contains('.dart_tool') || file.path.contains('.symlinks');
+    if (isChildFromCache) {
+      return File(join(file.parent.path, '.dart_tool/package_config.json'))
+          .existsSync();
+    }
+
+    return true;
   }).map((file) => file.parent.path);
 }
 
