@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Fixed an error in the CLI when Flutter generates code under `.dart_tool/` or has dependencies on iOS libraries (thanks to @Kurogoma4D)
+
 ## 0.6.5 - 2024-08-15
 
 - Upgraded to analyzer ^6.6.0.
