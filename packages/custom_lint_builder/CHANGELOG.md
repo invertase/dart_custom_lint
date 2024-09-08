@@ -1,3 +1,7 @@
+## 0.6.7 - 2024-09-08
+
+- `custom_lint` upgraded to `0.6.7`
+
 ## 0.6.6 - 2024-09-08
 
 - `custom_lint` upgraded to `0.6.6`
