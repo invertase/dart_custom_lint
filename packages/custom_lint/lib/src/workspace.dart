@@ -749,83 +749,6 @@ publish_to: 'none'
     return buffer.toString();
   }
 
-  /// Generate a package_config.json combining all the dependencies from all
-  /// the contextRoots.
-  ///
-  /// This also changes relative paths into absolute paths.
-  Map<String, Package> _computeDependencies() {
-    final conflictingPackagesChecker = _ConflictingPackagesChecker();
-
-    // A cache object to avoid parsing the same pubspec multiple times,
-    // as two plugins might depend on the same package.
-    // We still want to visit the dependencies of the package multiple times,
-    // as the resolved package in the project's package_config.json might be different.
-    final pubspecCache = PubspecCache();
-    final visitedPackages = <String>{};
-
-    Iterable<Package> visitPluginsAndDependencies() sync* {
-      for (final project in projects) {
-        for (final plugin in project.plugins) {
-          final packages = plugin._visitSelfAndTransitiveDependencies(
-            pubspecCache,
-          );
-
-          for (final package in packages) {
-            conflictingPackagesChecker.addPluginPackage(
-              project,
-              plugin,
-              package,
-              workingDirectory: workingDirectory,
-            );
-
-            /// Only add a package in the package_config.json if it was not already added.
-            /// We do not care about version conflicts here and assume that the
-            /// previously added package is the correct one.
-            /// Version conflicts will be checked later with
-            /// [ConflictingPackagesChecker.throwErrorIfConflictingPackages].
-            if (visitedPackages.add(package.package.name)) {
-              yield package.package;
-            }
-          }
-        }
-      }
-    }
-
-    final result = <String, Package>{
-      for (final package in visitPluginsAndDependencies())
-        package.name: package,
-    };
-
-    // Check if there are conflicting packages.
-    // We do so after computing the result to avoid allocating a temporary
-    // list of packages, by visiting dependencies using an Iterable instead of List.
-    conflictingPackagesChecker.throwErrorIfConflictingPackages();
-
-    return result;
-  }
-
-  String _computePackageConfig(Map<String, Package> dependencies) {
-    return jsonEncode(<String, Object?>{
-      'configVersion': 2,
-      'generated': DateTime.now().toIso8601String(),
-      'generator': 'custom_lint',
-      'generatorVersion': '0.0.1',
-      'packages': <Object?>[
-        for (final dependency in dependencies.values)
-          {
-            'name': dependency.name,
-            // This is somehow enough to change relative paths into absolute ones.
-            // It seems that PackageConfig.parse already converts the paths into
-            // absolute ones.
-            'rootUri': dependency.root.toString(),
-            'packageUri': dependency.packageUriRoot.toString(),
-            'languageVersion': dependency.languageVersion.toString(),
-            'extraData': dependency.extraData.toString(),
-          },
-      ],
-    });
-  }
-
   /// First attempts at creating the plugin host locally. And if it fails,
   /// it will fallback to resolving packages using "pub get".
   Future<void> resolvePluginHost(
@@ -839,28 +762,7 @@ publish_to: 'none'
       tempDir.pubspecOverrides.writeAsStringSync(pubspecOverride);
     }
 
-    try {
-      await resolvePackageConfigOffline(tempDir);
-    } catch (_) {
-      await runPubGet(tempDir);
-    }
-  }
-
-  /// Attempts at creating the plugin host without having to run "pub get".
-  ///
-  /// This works by combining all the `package_config.json` of the various
-  /// plugins.
-  ///
-  /// May throw if failed to create the plugin host.
-  /// Will throw a [PackageVersionConflictException] if there are conflicting
-  /// versions of the same package.
-  Future<void> resolvePackageConfigOffline(Directory tempDir) async {
-    final dependencies = _computeDependencies();
-    final packageConfigContent = _computePackageConfig(dependencies);
-    final packageConfigFile = tempDir.packageConfig;
-
-    await packageConfigFile.create(recursive: true);
-    await packageConfigFile.writeAsString(packageConfigContent);
+    await runPubGet(tempDir);
   }
 
   /// Run "pub get" in the client project.

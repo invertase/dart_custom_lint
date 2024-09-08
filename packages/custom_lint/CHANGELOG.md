@@ -1,3 +1,8 @@
+## Unreleased patch
+
+- Removed offline package resolution for the analyzer plugin.
+  The logic seemed broken at times, so removing it should make custom_lint more stable.
+
 ## 0.6.6 - 2024-09-08
 
 - Fixed an error in the CLI when Flutter generates code under `.dart_tool/` or has dependencies on iOS libraries (thanks to @Kurogoma4D)
