@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.6.7 - 2024-09-08
 
 - Removed offline package resolution for the analyzer plugin.
   The logic seemed broken at times, so removing it should make custom_lint more stable.
