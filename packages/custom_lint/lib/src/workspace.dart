@@ -425,7 +425,17 @@ Iterable<String> _findRoots(String path) sync* {
 
   yield* directory.listSync(recursive: true).whereType<File>().where((file) {
     final fileName = basename(file.path);
-    return fileName == 'pubspec.yaml' || fileName == 'analysis_options.yaml';
+    if (fileName != 'pubspec.yaml' && fileName != 'analysis_options.yaml') {
+      return false;
+    }
+    // Check if the project has a package_config.json file.
+    final isChildFromCache =
+        file.uri.pathSegments.any((e) => e == '.dart_tool' || e == '.symlinks');
+    if (isChildFromCache) {
+      return file.parent.packageConfig.existsSync();
+    }
+
+    return true;
   }).map((file) => file.parent.path);
 }
 
