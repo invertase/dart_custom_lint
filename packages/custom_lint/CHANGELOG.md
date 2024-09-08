@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.6.6 - 2024-09-08
 
 - Fixed an error in the CLI when Flutter generates code under `.dart_tool/` or has dependencies on iOS libraries (thanks to @Kurogoma4D)
 
