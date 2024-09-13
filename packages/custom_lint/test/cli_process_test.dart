@@ -142,6 +142,20 @@ version: 0.0.1
         'ios',
         parent: app,
       );
+      createTmpFolder(
+        {
+          join(
+            'flutter',
+            'ephemeral',
+            '.plugin_symlinks',
+            'plugin_name',
+            'example',
+            'pubspec.yaml',
+          ): testDepsPubSpec,
+        },
+        'linux',
+        parent: app,
+      );
 
       final process = Process.runSync(
         'dart',
