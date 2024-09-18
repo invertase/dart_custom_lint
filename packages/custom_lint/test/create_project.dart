@@ -214,9 +214,10 @@ Directory createLintUsage({
   Map<String, Uri> plugins = const {},
   Map<String, String> source = const {},
   Map<String, Uri> extraPackageConfig = const {},
+  bool installAsDevDependency = true,
   required String name,
 }) {
-  final pluginDevDependencies = plugins.entries
+  final pluginDependencies = plugins.entries
       .map(
         (e) => '''
   ${e.key}:
@@ -244,11 +245,12 @@ environment:
 dependencies:
   analyzer: any
   analyzer_plugin: any
+${installAsDevDependency ? "" : pluginDependencies}
 
 dev_dependencies:
   custom_lint:
     path: ${PeerProjectMeta.current.customLintPath}
-$pluginDevDependencies
+${installAsDevDependency ? pluginDependencies : ""}
 ''',
     packageConfig: createPackageConfig(
       plugins: {...plugins, ...extraPackageConfig},

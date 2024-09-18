@@ -2609,6 +2609,59 @@ dependency_overrides:
         expect(customLintWorkspace.projects.first.pubspec.name, 'package');
       });
 
+      test('Supports plugins in regular dependencies', () async {
+        final workspace = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            version: Version(1, 0, 0),
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            version: Version(1, 0, 0),
+            dependencies: {
+              'plugin1': HostedDependency(),
+            },
+          ),
+        ]);
+        final customLintWorkspace = await fromContextRootsFromPaths(
+          [p.join(workspace.path, 'a')],
+          workingDirectory: workspace,
+        );
+        expect(
+          customLintWorkspace.uniquePluginNames,
+          {'plugin1'},
+        );
+      });
+
+      test('Supports plugins in regular and dev dependencies', () async {
+        final workspace = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            version: Version(1, 0, 0),
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            version: Version(1, 0, 0),
+            dependencies: {
+              'plugin1': HostedDependency(),
+            },
+            devDependencies: {
+              'plugin1': HostedDependency(),
+            },
+          ),
+        ]);
+        final customLintWorkspace = await fromContextRootsFromPaths(
+          [p.join(workspace.path, 'a')],
+          workingDirectory: workspace,
+        );
+        expect(
+          customLintWorkspace.uniquePluginNames,
+          {'plugin1'},
+        );
+      });
+
       test('Supports projects with shared plugins', () async {
         final workspace = await createSimpleWorkspace([
           Pubspec(
