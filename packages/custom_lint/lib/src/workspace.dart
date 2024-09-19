@@ -694,7 +694,7 @@ publish_to: 'none'
 
       final String constraint;
       if (allDependencies.dependencyOverrides.isNotEmpty) {
-        constraint = 'any';
+        constraint = ' any';
       } else {
         constraint = _buildDependencyConstraint(
           name,
@@ -714,18 +714,20 @@ publish_to: 'none'
       }
     }
 
+    void writeDependencyToBuffer(MapEntry<String, String> dependency) {
+      buffer.writeln('  ${dependency.key}:${dependency.value}');
+    }
+
     // Write the dependencies to the buffer.
     if (dependencyConstraints.dependencies.isNotEmpty) {
       buffer.writeln('\ndependencies:');
-      for (final dependency in dependencyConstraints.dependencies.entries) {
-        buffer.writeln('  ${dependency.key}: ${dependency.value}');
-      }
+      dependencyConstraints.dependencies.entries
+          .forEach(writeDependencyToBuffer);
     }
     if (dependencyConstraints.devDependencies.isNotEmpty) {
       buffer.writeln('\ndev_dependencies:');
-      for (final dependency in dependencyConstraints.devDependencies.entries) {
-        buffer.writeln('  ${dependency.key}: ${dependency.value}');
-      }
+      dependencyConstraints.devDependencies.entries
+          .forEach(writeDependencyToBuffer);
     }
 
     // Write the dependency_overrides to the buffer.
