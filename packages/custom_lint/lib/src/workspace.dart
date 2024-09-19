@@ -994,12 +994,11 @@ class CustomLintProject {
       );
     });
 
-    final dependencyMap = <String, Dependency>{
-      ...projectPubspec.dependencies,
-      ...projectPubspec.devDependencies,
-    };
     final plugins = await Future.wait(
-      dependencyMap.entries.map((e) async {
+      {
+        ...projectPubspec.dependencies,
+        ...projectPubspec.devDependencies,
+      }.entries.map((e) async {
         final packageWithName = projectPackageConfig.packages
             .firstWhereOrNull((p) => p.name == e.key);
         if (packageWithName == null) {
