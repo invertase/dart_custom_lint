@@ -623,14 +623,24 @@ publish_to: 'none'
   }
 
   void _writePubspecDependencies(StringBuffer buffer) {
-    final uniqueDependencyNames = projects.expand((e) sync* {
-      yield* e.pubspec.dependencies.keys;
-      yield* e.pubspec.devDependencies.keys;
-      yield* e.pubspec.dependencyOverrides.keys;
-    }).toSet();
+    // Collect all the dependencies for each package.
+    final uniqueDevDependencyNames =
+        projects.expand((e) => e.pubspec.devDependencies.keys).toSet();
+    final uniqueDependencyOverridesNames =
+        projects.expand((e) => e.pubspec.dependencyOverrides.keys).toSet();
+    // Note: Regular dependencies which are dev_dependencies in other projects are ignored.
+    final exclusivelyRegularDependencyNames = projects
+        .expand((e) => e.pubspec.dependencies.keys)
+        .whereNot(uniqueDevDependencyNames.contains)
+        .toSet();
 
+    // Collect all the dependencies for each package from all the projects.
     final dependenciesByName = {
-      for (final name in uniqueDependencyNames)
+      for (final name in {
+        ...uniqueDevDependencyNames,
+        ...uniqueDependencyOverridesNames,
+        ...exclusivelyRegularDependencyNames,
+      })
         name: (
           dependencies: projects
               .map((project) {
@@ -659,40 +669,69 @@ publish_to: 'none'
         ),
     };
 
-    // A flag for whether the "dependencies:" header has been written.
-    var didWriteDevDependenciesHeader = false;
-    // Write dev_dependencies
+    // Create a list of dependencies with constraints which will be written to the pubspec.yaml.
+    final dependenciesWithConstraints = (
+      dependencies: <String, String>{},
+      devDependencies: <String, String>{},
+    );
+
+    // Iterate over each plugin and compute their constraints.
     for (final name in uniquePluginNames) {
       final allDependencies = dependenciesByName[name];
       if (allDependencies == null) continue;
 
-      // // We don't write dev_dependencies which are sometimes prod dependencies,
-      // // as dev_dependencies, because then we'd be specifying the dependency twice.
-      if (
-          // allDependencies.dependencies.isNotEmpty ||
-          allDependencies.devDependencies.isEmpty) {
+      // Determine if this is a dev_dependency or a dependency.
+      // Note: Being that we ignore dependencies that are both dev_dependencies and dependencies,
+      // `devDependencies.isNotEmpty` and `dependencies.isNotEmpty` are mutually exclusive.
+      final bool isDevDependency;
+      if (allDependencies.devDependencies.isNotEmpty) {
+        isDevDependency = true;
+      } else if (allDependencies.dependencies.isNotEmpty) {
+        isDevDependency = false;
+      } else {
+        // A dependency that is only in dependencyOverrides is handled separately below.
         continue;
       }
 
-      if (!didWriteDevDependenciesHeader) {
-        didWriteDevDependenciesHeader = true;
-        buffer.writeln('\ndev_dependencies:');
+      final String constraint;
+      if (allDependencies.dependencyOverrides.isNotEmpty) {
+        constraint = 'any';
+      } else {
+        constraint = _buildDependencyConstraint(
+          name,
+          isDevDependency
+              ? allDependencies.devDependencies
+              : allDependencies.dependencies,
+          workingDirectory: workingDirectory,
+          fileName: 'pubspec.yaml',
+        );
       }
 
-      final constraint = allDependencies.dependencyOverrides.isNotEmpty
-          ? ' any'
-          : _buildDependencyConstraint(
-              name,
-              [
-                ...allDependencies.devDependencies,
-                ...allDependencies.dependencies
-              ],
-              workingDirectory: workingDirectory,
-              fileName: 'pubspec.yaml',
-            );
-      buffer.writeln('  $name:$constraint');
+      // Add the dependency to the appropriate dependency map.
+      if (isDevDependency) {
+        dependenciesWithConstraints.devDependencies[name] = constraint;
+      } else {
+        dependenciesWithConstraints.dependencies[name] = constraint;
+      }
     }
 
+    // Write the dependencies to the buffer.
+    if (dependenciesWithConstraints.dependencies.isNotEmpty) {
+      buffer.writeln('\ndependencies:');
+      for (final dependency
+          in dependenciesWithConstraints.dependencies.entries) {
+        buffer.writeln('  ${dependency.key}: ${dependency.value}');
+      }
+    }
+    if (dependenciesWithConstraints.devDependencies.isNotEmpty) {
+      buffer.writeln('\ndev_dependencies:');
+      for (final dependency
+          in dependenciesWithConstraints.devDependencies.entries) {
+        buffer.writeln('  ${dependency.key}: ${dependency.value}');
+      }
+    }
+
+    // Write the dependency_overrides to the buffer.
     _writeDependencyOverrides(
       buffer,
       dependencyOverrides: {
