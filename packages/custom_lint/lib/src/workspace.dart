@@ -624,25 +624,18 @@ publish_to: 'none'
 
   void _writePubspecDependencies(StringBuffer buffer) {
     // Collect all the dependencies for each package.
-    final uniqueDevDependencyNames =
-        projects.expand((e) => e.pubspec.devDependencies.keys).toSet();
-    final uniqueDependencyOverridesNames =
-        projects.expand((e) => e.pubspec.dependencyOverrides.keys).toSet();
-    // Note: dependencies which are `dependencies` AND `dev_dependencies` are ignored.
-    final exclusivelyRegularDependencyNames = projects
-        .expand((e) => e.pubspec.dependencies.keys)
-        .whereNot(uniqueDevDependencyNames.contains)
+    final uniqueDependencyNames = projects
+        .expand(
+          (e) => e.pubspec.devDependencies.keys
+              .followedBy(e.pubspec.dependencies.keys)
+              .followedBy(e.pubspec.dependencyOverrides.keys),
+        )
         .toSet();
 
-    // Collect all the dependencies for each package from all the projects.
     final dependenciesByName = {
-      for (final name in {
-        ...uniqueDevDependencyNames,
-        ...uniqueDependencyOverridesNames,
-        ...exclusivelyRegularDependencyNames,
-      })
+      for (final name in uniqueDependencyNames)
         name: (
-          dependencies: projects
+          regularDependencies: projects
               .map((project) {
                 final dependency = project.pubspec.dependencies[name];
                 if (dependency == null) return null;
@@ -667,7 +660,17 @@ publish_to: 'none'
               .nonNulls
               .toList(),
         ),
-    };
+    }.map(
+      (key, value) {
+        // Any dependency which is in both `dependencies` and `dev_dependencies` is treated as a regular dependency.
+        if (value.regularDependencies.isNotEmpty &&
+            value.devDependencies.isNotEmpty) {
+          value.regularDependencies.addAll(value.devDependencies);
+          value.devDependencies.clear();
+        }
+        return MapEntry(key, value);
+      },
+    );
 
     final dependencyConstraints = (
       dependencies: <String, String>{},
@@ -680,12 +683,12 @@ publish_to: 'none'
       if (allDependencies == null) continue;
 
       // Determine if this is a dev_dependency or a dependency.
-      // Note: We ignore dependencies that are in both `dev_dependencies` and `dependencies`,
-      // so `devDependencies.isNotEmpty` and `dependencies.isNotEmpty` are mutually exclusive.
+      // Note: Dependencies can't be in both `dependencies` and `dev_dependencies`.
+      // So these isNonEmpty checks mutually exclusive.
       final bool isDevDependency;
       if (allDependencies.devDependencies.isNotEmpty) {
         isDevDependency = true;
-      } else if (allDependencies.dependencies.isNotEmpty) {
+      } else if (allDependencies.regularDependencies.isNotEmpty) {
         isDevDependency = false;
       } else {
         // A dependency that is only in dependencyOverrides is handled separately below.
@@ -700,7 +703,7 @@ publish_to: 'none'
           name,
           isDevDependency
               ? allDependencies.devDependencies
-              : allDependencies.dependencies,
+              : allDependencies.regularDependencies,
           workingDirectory: workingDirectory,
           fileName: 'pubspec.yaml',
         );
