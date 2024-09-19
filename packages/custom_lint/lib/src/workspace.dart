@@ -624,6 +624,7 @@ publish_to: 'none'
 
   void _writePubspecDependencies(StringBuffer buffer) {
     final uniqueDependencyNames = projects.expand((e) sync* {
+      yield* e.pubspec.dependencies.keys;
       yield* e.pubspec.devDependencies.keys;
       yield* e.pubspec.dependencyOverrides.keys;
     }).toSet();
@@ -631,6 +632,14 @@ publish_to: 'none'
     final dependenciesByName = {
       for (final name in uniqueDependencyNames)
         name: (
+          dependencies: projects
+              .map((project) {
+                final dependency = project.pubspec.dependencies[name];
+                if (dependency == null) return null;
+                return (project: project, dependency: dependency);
+              })
+              .nonNulls
+              .toList(),
           devDependencies: projects
               .map((project) {
                 final dependency = project.pubspec.devDependencies[name];
@@ -674,7 +683,10 @@ publish_to: 'none'
           ? ' any'
           : _buildDependencyConstraint(
               name,
-              allDependencies.devDependencies,
+              [
+                ...allDependencies.devDependencies,
+                ...allDependencies.dependencies
+              ],
               workingDirectory: workingDirectory,
               fileName: 'pubspec.yaml',
             );
@@ -943,11 +955,6 @@ class CustomLintProject {
         errorStackTrace: stack,
       );
     });
-    projectPubspec.devDependencies.entries
-        .followedBy(projectPubspec.dependencies.entries)
-        .groupListsBy((element) => element.key)
-        .entries
-        .map((e) => e.value);
 
     final dependencyMap = <String, Dependency>{
       ...projectPubspec.dependencies,
