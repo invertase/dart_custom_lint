@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Fix CI
+
 ## 0.6.7 - 2024-09-08
 
 - Removed offline package resolution for the analyzer plugin.
