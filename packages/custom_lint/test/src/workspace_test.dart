@@ -796,63 +796,7 @@ dependency_overrides:
         expect(packageConfigJson['generator'], 'pub');
       });
 
-      test('runs offline if possible', () async {
-        final workingDir =
-            await createSimpleWorkspace(withPackageConfig: false, [
-          'custom_lint_builder',
-          Pubspec(
-            'plugin1',
-            dependencies: {'custom_lint_builder': HostedDependency()},
-          ),
-          Pubspec(
-            'a',
-            devDependencies: {'plugin1': HostedDependency()},
-          ),
-        ]);
-
-        // Override a's package_config to include custom_lint_builder
-        // as createSimpleWorkspace doesn't resolve transitive dependencies.
-        final aPackageConfig = PackageConfig([
-          Package(
-            'custom_lint_builder',
-            workingDir.dir('custom_lint_builder').uri,
-            languageVersion: LanguageVersion.parse('3.0'),
-          ),
-          Package(
-            'plugin1',
-            workingDir.dir('plugin1').uri,
-            languageVersion: LanguageVersion.parse('3.0'),
-          ),
-          Package(
-            'a',
-            workingDir.dir('a').uri,
-            languageVersion: LanguageVersion.parse('3.0'),
-          ),
-        ]);
-
-        workingDir
-            .dir('a') //
-            .packageConfig
-            .writeAsStringSync(
-              jsonEncode(PackageConfig.toJson(aPackageConfig)),
-            );
-
-        final workspace = await fromContextRootsFromPaths(
-          ['a'],
-          workingDirectory: workingDir,
-        );
-
-        final tempDir = createTemporaryDirectory();
-        await runWithoutInternet(() => workspace.resolvePluginHost(tempDir));
-
-        final packageConfigJson = jsonDecode(
-          tempDir.packageConfig.readAsStringSync(),
-        ) as Map<String, dynamic>;
-
-        expect(packageConfigJson['generator'], 'custom_lint');
-      });
-
-      test('queries pub.dev if fails to run offline', () async {
+      test('queries pub.dev', () async {
         final workingDir =
             await createSimpleWorkspace(withPackageConfig: false, [
           'custom_lint_builder',
