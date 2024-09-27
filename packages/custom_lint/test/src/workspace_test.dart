@@ -163,47 +163,6 @@ Future<Directory> createProject(
   return dir;
 }
 
-void writePackageConfig(Directory dir, [List<Package> packages = const []]) {
-  writeFile(
-    dir.packageConfig,
-    json.encode({
-      'configVersion': 2,
-      'packages': [
-        for (final package in packages)
-          {
-            'name': package.name,
-            'rootUri': package.root.toString(),
-            'packageUri': 'lib/',
-            'languageVersion': '2.12',
-          },
-      ],
-    }),
-  );
-}
-
-/// A simplified [writePackageConfig] which alleviates the need to specify
-/// a [Package] object.
-///
-/// This receives a map of package name and paths relative to [dir].
-void writeSimplePackageConfig(
-  Directory dir, [
-  Map<String, String> packages = const {},
-]) {
-  writePackageConfig(
-    dir,
-    [
-      for (final entry in packages.entries)
-        Package(
-          entry.key,
-          Uri.file(
-            // The Package class expects a trailing slash and absolute path.
-            '${p.normalize(p.join(dir.path, entry.value))}/',
-          ),
-        ),
-    ],
-  );
-}
-
 /// A simplified [createWorkspace] which alleviates the need to specify
 /// both the path and the pubspec.
 ///
@@ -213,7 +172,7 @@ void writeSimplePackageConfig(
 /// - If a [Pubspec] is passed, a project will be created in a folder at the root
 ///   of the workspace with the project name.
 ///   If two packages have the same name, the second one will be suffixed with
-///   an incrementing numnber. Such that we have `package`, `package2`, ...
+///   an incrementing number. Such that we have `package`, `package2`, ...
 Future<Directory> createSimpleWorkspace(
   List<Object> projectEntry, {
   bool withPackageConfig = true,
@@ -353,10 +312,6 @@ Directory createTemporaryDirectory({bool local = false}) {
 void writeFile(File file, String content) {
   file.createSync(recursive: true);
   file.writeAsStringSync(content);
-}
-
-void enableCustomLint(Directory directory) {
-  writeFile(directory.analysisOptions, analysisOptionsWithCustomLintEnabled);
 }
 
 const analysisOptionsWithCustomLintEnabled = '''

@@ -24,6 +24,7 @@ void renderLints(
     case OutputFormatEnum.json:
       outputFormat = JsonOutputFormat();
     case OutputFormatEnum.plain:
+    // ignore: unreachable_switch_default, disable for now as won't work on stable
     default:
       outputFormat = DefaultOutputFormat();
   }
