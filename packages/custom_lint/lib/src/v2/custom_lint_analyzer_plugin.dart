@@ -327,7 +327,7 @@ class CustomLintServer {
       serverVersion <= clientVersion,
       'custom_lint',
       clientVersion.toString(),
-      ['*.dart'],
+      ['*'],
       contactInfo: 'https://github.com/invertase/dart_custom_lint/issues',
     );
   }
