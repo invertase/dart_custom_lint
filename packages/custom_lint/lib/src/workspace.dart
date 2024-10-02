@@ -620,21 +620,18 @@ publish_to: 'none'
     final dependenciesByName = {
       for (final name in uniqueDependencyNames)
         name: (
-          regularDependencies: projects
+          dependencies: projects
               .map((project) {
                 final dependency = project.pubspec.dependencies[name];
-                if (dependency == null) return null;
-                return (project: project, dependency: dependency);
+                final devDependency = project.pubspec.devDependencies[name];
+                return [
+                  if (dependency != null)
+                    (project: project, dependency: dependency),
+                  if (devDependency != null)
+                    (project: project, dependency: devDependency),
+                ];
               })
-              .nonNulls
-              .toList(),
-          devDependencies: projects
-              .map((project) {
-                final dependency = project.pubspec.devDependencies[name];
-                if (dependency == null) return null;
-                return (project: project, dependency: dependency);
-              })
-              .nonNulls
+              .expand((e) => e)
               .toList(),
           dependencyOverrides: projects
               .map((project) {
@@ -645,77 +642,34 @@ publish_to: 'none'
               .nonNulls
               .toList(),
         ),
-    }.map(
-      (key, value) {
-        // Any dependency which is in both `dependencies` and `dev_dependencies` is treated as a regular dependency.
-        if (value.regularDependencies.isNotEmpty &&
-            value.devDependencies.isNotEmpty) {
-          value.regularDependencies.addAll(value.devDependencies);
-          value.devDependencies.clear();
-        }
-        return MapEntry(key, value);
-      },
-    );
+    };
 
-    final dependencyConstraints = (
-      dependencies: <String, String>{},
-      devDependencies: <String, String>{},
-    );
+    final dependencies = <String, String>{};
 
     // Iterate over each plugin and compute their constraints.
     for (final name in uniquePluginNames) {
       final allDependencies = dependenciesByName[name];
-      if (allDependencies == null) continue;
-
-      // Determine if this is a dev_dependency or a dependency.
-      // Note: Dependencies can't be in both `dependencies` and `dev_dependencies`.
-      // So these isNonEmpty checks mutually exclusive.
-      final bool isDevDependency;
-      if (allDependencies.devDependencies.isNotEmpty) {
-        isDevDependency = true;
-      } else if (allDependencies.regularDependencies.isNotEmpty) {
-        isDevDependency = false;
-      } else {
-        // A dependency that is only in dependencyOverrides is handled separately below.
+      if (allDependencies == null || allDependencies.dependencies.isEmpty) {
         continue;
       }
 
-      final String constraint;
-      if (allDependencies.dependencyOverrides.isNotEmpty) {
-        constraint = ' any';
-      } else {
-        constraint = _buildDependencyConstraint(
-          name,
-          isDevDependency
-              ? allDependencies.devDependencies
-              : allDependencies.regularDependencies,
-          workingDirectory: workingDirectory,
-          fileName: 'pubspec.yaml',
-        );
-      }
-
-      // Add the dependency to the appropriate dependency map.
-      if (isDevDependency) {
-        dependencyConstraints.devDependencies[name] = constraint;
-      } else {
-        dependencyConstraints.dependencies[name] = constraint;
-      }
-    }
-
-    void writeDependencyToBuffer(MapEntry<String, String> dependency) {
-      buffer.writeln('  ${dependency.key}:${dependency.value}');
+      final constraint = allDependencies.dependencyOverrides.isNotEmpty
+          ? ' any'
+          : _buildDependencyConstraint(
+              name,
+              allDependencies.dependencies,
+              workingDirectory: workingDirectory,
+              fileName: 'pubspec.yaml',
+            );
+      dependencies[name] = constraint;
     }
 
     // Write the dependencies to the buffer.
-    if (dependencyConstraints.dependencies.isNotEmpty) {
+    if (dependencies.isNotEmpty) {
       buffer.writeln('\ndependencies:');
-      dependencyConstraints.dependencies.entries
-          .forEach(writeDependencyToBuffer);
-    }
-    if (dependencyConstraints.devDependencies.isNotEmpty) {
-      buffer.writeln('\ndev_dependencies:');
-      dependencyConstraints.devDependencies.entries
-          .forEach(writeDependencyToBuffer);
+      for (final dependency in dependencies.entries) {
+        buffer.writeln('  ${dependency.key}:${dependency.value}');
+      }
     }
 
     // Write the dependency_overrides to the buffer.
