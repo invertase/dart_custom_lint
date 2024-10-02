@@ -2174,6 +2174,48 @@ dependency_overrides:
   plugin1: "^2.0.0"
 ''');
       });
+
+      test(
+          'If a plugin is a dev_dependency and a regular dependency, the constraint is the intersection of both',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+          ),
+          Pubspec(
+            'b',
+            dependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.5.0'),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dependencies:
+  plugin1: ">=1.5.0 <2.0.0"
+''');
+      });
     });
 
     group(CustomLintWorkspace.fromPaths, () {
