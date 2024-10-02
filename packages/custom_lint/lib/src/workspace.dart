@@ -609,13 +609,11 @@ publish_to: 'none'
 
   void _writePubspecDependencies(StringBuffer buffer) {
     // Collect all the dependencies for each package.
-    final uniqueDependencyNames = projects
-        .expand(
-          (e) => e.pubspec.devDependencies.keys
-              .followedBy(e.pubspec.dependencies.keys)
-              .followedBy(e.pubspec.dependencyOverrides.keys),
-        )
-        .toSet();
+    final uniqueDependencyNames = projects.expand((e) sync* {
+      yield* e.pubspec.dependencies.keys;
+      yield* e.pubspec.devDependencies.keys;
+      yield* e.pubspec.dependencyOverrides.keys;
+    }).toSet();
 
     final dependenciesByName = {
       for (final name in uniqueDependencyNames)
@@ -649,7 +647,9 @@ publish_to: 'none'
     // Iterate over each plugin and compute their constraints.
     for (final name in uniquePluginNames) {
       final allDependencies = dependenciesByName[name];
-      if (allDependencies == null || allDependencies.dependencies.isEmpty) {
+      if (allDependencies == null) continue;
+
+      if (allDependencies.dependencies.isEmpty) {
         continue;
       }
 
