@@ -1,3 +1,8 @@
+## Unreleased patch
+
+- Fix CI
+- Fix custom_lint not warning non-Dart files when necessary.
+
 ## 0.6.7 - 2024-09-08
 
 - Removed offline package resolution for the analyzer plugin.

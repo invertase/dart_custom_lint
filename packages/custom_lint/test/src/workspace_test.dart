@@ -163,47 +163,6 @@ Future<Directory> createProject(
   return dir;
 }
 
-void writePackageConfig(Directory dir, [List<Package> packages = const []]) {
-  writeFile(
-    dir.packageConfig,
-    json.encode({
-      'configVersion': 2,
-      'packages': [
-        for (final package in packages)
-          {
-            'name': package.name,
-            'rootUri': package.root.toString(),
-            'packageUri': 'lib/',
-            'languageVersion': '2.12',
-          },
-      ],
-    }),
-  );
-}
-
-/// A simplified [writePackageConfig] which alleviates the need to specify
-/// a [Package] object.
-///
-/// This receives a map of package name and paths relative to [dir].
-void writeSimplePackageConfig(
-  Directory dir, [
-  Map<String, String> packages = const {},
-]) {
-  writePackageConfig(
-    dir,
-    [
-      for (final entry in packages.entries)
-        Package(
-          entry.key,
-          Uri.file(
-            // The Package class expects a trailing slash and absolute path.
-            '${p.normalize(p.join(dir.path, entry.value))}/',
-          ),
-        ),
-    ],
-  );
-}
-
 /// A simplified [createWorkspace] which alleviates the need to specify
 /// both the path and the pubspec.
 ///
@@ -213,7 +172,7 @@ void writeSimplePackageConfig(
 /// - If a [Pubspec] is passed, a project will be created in a folder at the root
 ///   of the workspace with the project name.
 ///   If two packages have the same name, the second one will be suffixed with
-///   an incrementing numnber. Such that we have `package`, `package2`, ...
+///   an incrementing number. Such that we have `package`, `package2`, ...
 Future<Directory> createSimpleWorkspace(
   List<Object> projectEntry, {
   bool withPackageConfig = true,
@@ -353,10 +312,6 @@ Directory createTemporaryDirectory({bool local = false}) {
 void writeFile(File file, String content) {
   file.createSync(recursive: true);
   file.writeAsStringSync(content);
-}
-
-void enableCustomLint(Directory directory) {
-  writeFile(directory.analysisOptions, analysisOptionsWithCustomLintEnabled);
 }
 
 const analysisOptionsWithCustomLintEnabled = '''
@@ -841,63 +796,7 @@ dependency_overrides:
         expect(packageConfigJson['generator'], 'pub');
       });
 
-      test('runs offline if possible', () async {
-        final workingDir =
-            await createSimpleWorkspace(withPackageConfig: false, [
-          'custom_lint_builder',
-          Pubspec(
-            'plugin1',
-            dependencies: {'custom_lint_builder': HostedDependency()},
-          ),
-          Pubspec(
-            'a',
-            devDependencies: {'plugin1': HostedDependency()},
-          ),
-        ]);
-
-        // Override a's package_config to include custom_lint_builder
-        // as createSimpleWorkspace doesn't resolve transitive dependencies.
-        final aPackageConfig = PackageConfig([
-          Package(
-            'custom_lint_builder',
-            workingDir.dir('custom_lint_builder').uri,
-            languageVersion: LanguageVersion.parse('3.0'),
-          ),
-          Package(
-            'plugin1',
-            workingDir.dir('plugin1').uri,
-            languageVersion: LanguageVersion.parse('3.0'),
-          ),
-          Package(
-            'a',
-            workingDir.dir('a').uri,
-            languageVersion: LanguageVersion.parse('3.0'),
-          ),
-        ]);
-
-        workingDir
-            .dir('a') //
-            .packageConfig
-            .writeAsStringSync(
-              jsonEncode(PackageConfig.toJson(aPackageConfig)),
-            );
-
-        final workspace = await fromContextRootsFromPaths(
-          ['a'],
-          workingDirectory: workingDir,
-        );
-
-        final tempDir = createTemporaryDirectory();
-        await runWithoutInternet(() => workspace.resolvePluginHost(tempDir));
-
-        final packageConfigJson = jsonDecode(
-          tempDir.packageConfig.readAsStringSync(),
-        ) as Map<String, dynamic>;
-
-        expect(packageConfigJson['generator'], 'custom_lint');
-      });
-
-      test('queries pub.dev if fails to run offline', () async {
+      test('queries pub.dev', () async {
         final workingDir =
             await createSimpleWorkspace(withPackageConfig: false, [
           'custom_lint_builder',
