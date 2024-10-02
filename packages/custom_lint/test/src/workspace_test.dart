@@ -2403,8 +2403,9 @@ dependency_overrides:
           final analysisFile = workspace.dir('package').analysisOptions;
           analysisFile.createSync();
           analysisFile.writeAsStringSync(analysisOptionsWithCustomLintEnabled);
-          final nestedAnalysisFile =
-              workspace.dir('package', 'test').analysisOptions;
+          final testDir = workspace.dir('package', 'test');
+          testDir.packageConfig.createSync(recursive: true);
+          final nestedAnalysisFile = testDir.analysisOptions;
           nestedAnalysisFile.createSync(recursive: true);
           nestedAnalysisFile
               .writeAsStringSync(analysisOptionsWithCustomLintEnabled);
