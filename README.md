@@ -133,7 +133,7 @@ To create a custom lint, you will need two things:
 
         // This line tells custom_lint to render a warning at the location of "node".
         // And the warning shown will use our `code` variable defined above as description.
-        reporter.reportErrorForNode(code, node);
+        reporter.atNode(node, code);
       });
     }
   }
