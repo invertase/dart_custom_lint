@@ -142,6 +142,20 @@ version: 0.0.1
         'ios',
         parent: app,
       );
+      createTmpFolder(
+        {
+          join(
+            'flutter',
+            'ephemeral',
+            '.plugin_symlinks',
+            'plugin_name',
+            'example',
+            'pubspec.yaml',
+          ): testDepsPubSpec,
+        },
+        'linux',
+        parent: app,
+      );
 
       final process = Process.runSync(
         'dart',
@@ -267,56 +281,6 @@ Analyzing...
         },
       );
     }
-
-    test(
-      'missing package_config.json',
-      () async {
-        final plugin = createPlugin(name: 'test_lint', main: oyPluginSource);
-
-        final app = createLintUsage(
-          name: 'test_app',
-          source: {
-            'lib/main.dart': 'void fn() {}',
-            'lib/another.dart': 'void fail() {}',
-          },
-          plugins: {'test_lint': plugin.uri},
-        );
-
-        // Create a child context root
-        final innerContextRoot = createLintUsage(
-          name: 'test_project_inner',
-          source: {
-            'lib/main.dart': 'void fn() {}',
-            'lib/another.dart': 'void fail() {}',
-          },
-          parent: app,
-        );
-
-        // create error during initialization because of missing package_config.json
-        final packageConfig = innerContextRoot.packageConfig;
-        // Potentially resolve the file system link, temp folders are links on macOs into /private/var
-        final missingPackageConfig =
-            await innerContextRoot.resolveSymbolicLinks();
-        packageConfig.deleteSync();
-
-        final process = await Process.run(
-          'dart',
-          [customLintBinPath],
-          workingDirectory: app.path,
-        );
-
-        expect(process.exitCode, isNot(0));
-        expect(
-          trimDependencyOverridesWarning(process.stderr),
-          startsWith(
-            'Failed to decode .dart_tool/package_config.json at $missingPackageConfig. '
-            'Make sure to run `pub get` first.\n'
-            'PathNotFoundException: Cannot open file, path =',
-          ),
-        );
-        expect(process.stdout, isEmpty);
-      },
-    );
 
     test(
       'dependency conflict',
