@@ -413,14 +413,8 @@ Iterable<String> _findRoots(String path) sync* {
     if (fileName != 'pubspec.yaml' && fileName != 'analysis_options.yaml') {
       return false;
     }
-    // Check if the project has a package_config.json file.
-    final isChildFromCache =
-        file.uri.pathSegments.any((e) => e == '.dart_tool' || e == '.symlinks');
-    if (isChildFromCache) {
-      return file.parent.packageConfig.existsSync();
-    }
 
-    return true;
+    return file.parent.packageConfig.existsSync();
   }).map((file) => file.parent.path);
 }
 
