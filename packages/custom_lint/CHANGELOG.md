@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.6.8 - 2024-10-08
 
 - Fix CI
 - Fix custom_lint not warning non-Dart files when necessary.
