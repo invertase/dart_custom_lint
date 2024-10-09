@@ -1,3 +1,8 @@
+## 0.6.9 - 2024-10-09
+
+- `custom_lint` upgraded to `0.6.9`
+- `custom_lint_core` upgraded to `0.6.9`
+
 ## 0.6.8 - 2024-10-08
 
 - Fix CI
