@@ -2921,15 +2921,3 @@ dependency_overrides:
     });
   });
 }
-
-Future<void> runWithoutInternet(FutureOr<void> Function() cb) async {
-  return IOOverrides.runZoned(
-    cb,
-    socketConnect: (p0, p1, {sourceAddress, sourcePort = 0, timeout}) =>
-        throw Exception('No internet'),
-    socketStartConnect: (p0, p1, {sourceAddress, sourcePort = 0}) =>
-        throw Exception('No internet'),
-    serverSocketBind: (p0, p1, {backlog = 0, shared = false, v6Only = false}) =>
-        throw Exception('No internet'),
-  );
-}
