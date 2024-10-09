@@ -89,12 +89,6 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
-  void visitAugmentationImportDirective(AugmentationImportDirective node) {
-    _runSubscriptions(node, _registry._forAugmentationImportDirective);
-    super.visitAugmentationImportDirective(node);
-  }
-
-  @override
   void visitAugmentedExpression(AugmentedExpression node) {
     _runSubscriptions(node, _registry._forAugmentedExpression);
     super.visitAugmentedExpression(node);
@@ -683,12 +677,6 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
-  void visitLibraryAugmentationDirective(LibraryAugmentationDirective node) {
-    _runSubscriptions(node, _registry._forLibraryAugmentationDirective);
-    super.visitLibraryAugmentationDirective(node);
-  }
-
-  @override
   void visitLibraryDirective(LibraryDirective node) {
     _runSubscriptions(node, _registry._forLibraryDirective);
     super.visitLibraryDirective(node);
@@ -824,6 +812,12 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   void visitNullAssertPattern(NullAssertPattern node) {
     _runSubscriptions(node, _registry._forNullAssertPattern);
     super.visitNullAssertPattern(node);
+  }
+
+  @override
+  void visitNullAwareElement(NullAwareElement node) {
+    _runSubscriptions(node, _registry._forNullAwareElement);
+    super.visitNullAwareElement(node);
   }
 
   @override
@@ -1348,14 +1342,6 @@ class NodeLintRegistry {
   void addAssignmentExpression(
       String key, void Function(AssignmentExpression node) listener) {
     _forAssignmentExpression
-        .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
-  final List<_Subscription<AugmentationImportDirective>>
-      _forAugmentationImportDirective = [];
-  void addAugmentationImportDirective(
-      String key, void Function(AugmentationImportDirective node) listener) {
-    _forAugmentationImportDirective
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
@@ -2022,14 +2008,6 @@ class NodeLintRegistry {
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
-  final List<_Subscription<LibraryAugmentationDirective>>
-      _forLibraryAugmentationDirective = [];
-  void addLibraryAugmentationDirective(
-      String key, void Function(LibraryAugmentationDirective node) listener) {
-    _forLibraryAugmentationDirective
-        .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
   final List<_Subscription<LibraryDirective>> _forLibraryDirective = [];
   void addLibraryDirective(
       String key, void Function(LibraryDirective node) listener) {
@@ -2176,6 +2154,13 @@ class NodeLintRegistry {
   void addNullAssertPattern(
       String key, void Function(NullAssertPattern node) listener) {
     _forNullAssertPattern
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<NullAwareElement>> _forNullAwareElement = [];
+  void addNullAwareElement(
+      String key, void Function(NullAwareElement node) listener) {
+    _forNullAwareElement
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
@@ -2732,12 +2717,6 @@ class LintRuleNodeRegistry {
   }
 
   @preferInline
-  void addAugmentationImportDirective(
-      void Function(AugmentationImportDirective node) listener) {
-    nodeLintRegistry.addAugmentationImportDirective(name, listener);
-  }
-
-  @preferInline
   void addAugmentedExpression(
       void Function(AugmentedExpression node) listener) {
     nodeLintRegistry.addAugmentedExpression(name, listener);
@@ -3266,12 +3245,6 @@ class LintRuleNodeRegistry {
   }
 
   @preferInline
-  void addLibraryAugmentationDirective(
-      void Function(LibraryAugmentationDirective node) listener) {
-    nodeLintRegistry.addLibraryAugmentationDirective(name, listener);
-  }
-
-  @preferInline
   void addLibraryDirective(void Function(LibraryDirective node) listener) {
     nodeLintRegistry.addLibraryDirective(name, listener);
   }
@@ -3386,6 +3359,11 @@ class LintRuleNodeRegistry {
   @preferInline
   void addNullAssertPattern(void Function(NullAssertPattern node) listener) {
     nodeLintRegistry.addNullAssertPattern(name, listener);
+  }
+
+  @preferInline
+  void addNullAwareElement(void Function(NullAwareElement node) listener) {
+    nodeLintRegistry.addNullAwareElement(name, listener);
   }
 
   @preferInline
