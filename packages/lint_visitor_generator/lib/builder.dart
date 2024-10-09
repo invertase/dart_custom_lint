@@ -15,6 +15,7 @@ Builder lintVisitorGenerator(BuilderOptions options) {
 
 extension on LibraryElement {
   Element? findElementWithNameFromPackage(String name) {
+    // ignore: deprecated_member_use, skip upgrade for now.
     return library.importedLibraries
         .map((e) => e.exportNamespace.get(name))
         .firstWhereOrNull((element) => element != null);
