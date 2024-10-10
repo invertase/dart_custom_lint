@@ -1,7 +1,12 @@
-## Unreleased patch
+## 0.6.9 - 2024-10-09
+
+- `custom_lint_core` upgraded to `0.6.9`
+
+## 0.6.8 - 2024-10-08
 
 - Fix CI
 - Fix custom_lint not warning non-Dart files when necessary.
+- Custom_lint no-longer tries to analyze projects that lack a `.dart_tool/package_config.json`
 
 ## 0.6.7 - 2024-09-08
 
