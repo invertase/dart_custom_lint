@@ -612,19 +612,16 @@ publish_to: 'none'
     final dependenciesByName = {
       for (final name in uniqueDependencyNames)
         name: (
-          dependencies: projects
-              .map((project) {
-                final dependency = project.pubspec.dependencies[name];
-                final devDependency = project.pubspec.devDependencies[name];
-                return [
-                  if (dependency != null)
-                    (project: project, dependency: dependency),
-                  if (devDependency != null)
-                    (project: project, dependency: devDependency),
-                ];
-              })
-              .expand((e) => e)
-              .toList(),
+          dependencies: projects.expand((project) {
+            final dependency = project.pubspec.dependencies[name];
+            final devDependency = project.pubspec.devDependencies[name];
+            return [
+              if (dependency != null)
+                (project: project, dependency: dependency),
+              if (devDependency != null)
+                (project: project, dependency: devDependency),
+            ];
+          }).toList(),
           dependencyOverrides: projects
               .map((project) {
                 final dependency = project.pubspec.dependencyOverrides[name];
