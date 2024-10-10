@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.6.10 - 2024-10-10
 
 - Added support for `dart:io` imports when using `TypeChecker.fromPackage` (thanks to @oskar-zeinomahmalat-sonarsource)
 
