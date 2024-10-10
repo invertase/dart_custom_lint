@@ -602,7 +602,9 @@ publish_to: 'none'
   }
 
   void _writePubspecDependencies(StringBuffer buffer) {
+    // Collect all the dependencies for each package.
     final uniqueDependencyNames = projects.expand((e) sync* {
+      yield* e.pubspec.dependencies.keys;
       yield* e.pubspec.devDependencies.keys;
       yield* e.pubspec.dependencyOverrides.keys;
     }).toSet();
@@ -610,14 +612,16 @@ publish_to: 'none'
     final dependenciesByName = {
       for (final name in uniqueDependencyNames)
         name: (
-          devDependencies: projects
-              .map((project) {
-                final dependency = project.pubspec.devDependencies[name];
-                if (dependency == null) return null;
-                return (project: project, dependency: dependency);
-              })
-              .nonNulls
-              .toList(),
+          dependencies: projects.expand((project) {
+            final dependency = project.pubspec.dependencies[name];
+            final devDependency = project.pubspec.devDependencies[name];
+            return [
+              if (dependency != null)
+                (project: project, dependency: dependency),
+              if (devDependency != null)
+                (project: project, dependency: devDependency),
+            ];
+          }).toList(),
           dependencyOverrides: projects
               .map((project) {
                 final dependency = project.pubspec.dependencyOverrides[name];
@@ -629,37 +633,37 @@ publish_to: 'none'
         ),
     };
 
-    // A flag for whether the "dependencies:" header has been written.
-    var didWriteDevDependenciesHeader = false;
-    // Write dev_dependencies
+    final dependencies = <String, String>{};
+
+    // Iterate over each plugin and compute their constraints.
     for (final name in uniquePluginNames) {
       final allDependencies = dependenciesByName[name];
       if (allDependencies == null) continue;
 
-      // // We don't write dev_dependencies which are sometimes prod dependencies,
-      // // as dev_dependencies, because then we'd be specifying the dependency twice.
-      if (
-          // allDependencies.dependencies.isNotEmpty ||
-          allDependencies.devDependencies.isEmpty) {
+      if (allDependencies.dependencies.isEmpty) {
         continue;
-      }
-
-      if (!didWriteDevDependenciesHeader) {
-        didWriteDevDependenciesHeader = true;
-        buffer.writeln('\ndev_dependencies:');
       }
 
       final constraint = allDependencies.dependencyOverrides.isNotEmpty
           ? ' any'
           : _buildDependencyConstraint(
               name,
-              allDependencies.devDependencies,
+              allDependencies.dependencies,
               workingDirectory: workingDirectory,
               fileName: 'pubspec.yaml',
             );
-      buffer.writeln('  $name:$constraint');
+      dependencies[name] = constraint;
     }
 
+    // Write the dependencies to the buffer.
+    if (dependencies.isNotEmpty) {
+      buffer.writeln('\ndependencies:');
+      for (final dependency in dependencies.entries) {
+        buffer.writeln('  ${dependency.key}:${dependency.value}');
+      }
+    }
+
+    // Write the dependency_overrides to the buffer.
     _writeDependencyOverrides(
       buffer,
       dependencyOverrides: {
@@ -923,9 +927,11 @@ class CustomLintProject {
       );
     });
 
-    // TODO check that only dev_dependencies are checked
     final plugins = await Future.wait(
-      projectPubspec.devDependencies.entries.map((e) async {
+      {
+        ...projectPubspec.dependencies,
+        ...projectPubspec.devDependencies,
+      }.entries.map((e) async {
         final packageWithName = projectPackageConfig.packages
             .firstWhereOrNull((p) => p.name == e.key);
         if (packageWithName == null) {

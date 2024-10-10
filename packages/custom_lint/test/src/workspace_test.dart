@@ -752,7 +752,7 @@ publish_to: 'none'
 environment:
   sdk: ">=3.0.0 <4.0.0"
 
-dev_dependencies:
+dependencies:
   plugin1:
     path: "${p.posix.prettyUri(workingDir.dir('plugin1').path)}"
 ''');
@@ -1121,7 +1121,7 @@ publish_to: 'none'
 environment:
   sdk: ">=3.0.0 <4.0.0"
 
-dev_dependencies:
+dependencies:
   plugin1: any
 ''');
       });
@@ -1163,7 +1163,7 @@ publish_to: 'none'
 environment:
   sdk: ">=3.12.0 <3.19.0"
 
-dev_dependencies:
+dependencies:
   plugin1: any
 ''');
       });
@@ -1253,7 +1253,7 @@ description: A client for custom_lint
 version: 0.0.1
 publish_to: 'none'
 
-dev_dependencies:
+dependencies:
   plugin1: ">=1.3.0 <1.5.0"
 ''');
       });
@@ -1344,7 +1344,7 @@ description: A client for custom_lint
 version: 0.0.1
 publish_to: 'none'
 
-dev_dependencies:
+dependencies:
   plugin1: any
 
 dependency_overrides:
@@ -1386,7 +1386,7 @@ description: A client for custom_lint
 version: 0.0.1
 publish_to: 'none'
 
-dev_dependencies:
+dependencies:
   plugin1: any
 
 dependency_overrides:
@@ -1453,7 +1453,7 @@ description: A client for custom_lint
 version: 0.0.1
 publish_to: 'none'
 
-dev_dependencies:
+dependencies:
   plugin1: "^1.0.0"
 ''');
       });
@@ -1565,7 +1565,7 @@ description: A client for custom_lint
 version: 0.0.1
 publish_to: 'none'
 
-dev_dependencies:
+dependencies:
   plugin1:
     sdk: flutter
 ''',
@@ -1636,7 +1636,7 @@ description: A client for custom_lint
 version: 0.0.1
 publish_to: 'none'
 
-dev_dependencies:
+dependencies:
   plugin1:
     path: "${p.posix.prettyUri(workingDir.dir('plugin1').path)}"
 ''');
@@ -1678,7 +1678,7 @@ description: A client for custom_lint
 version: 0.0.1
 publish_to: 'none'
 
-dev_dependencies:
+dependencies:
   plugin1:
     git:
       url: https://google.com
@@ -1722,7 +1722,7 @@ description: A client for custom_lint
 version: 0.0.1
 publish_to: 'none'
 
-dev_dependencies:
+dependencies:
   plugin1:
     git:
       url: https://google.com
@@ -1769,7 +1769,7 @@ description: A client for custom_lint
 version: 0.0.1
 publish_to: 'none'
 
-dev_dependencies:
+dependencies:
   plugin1:
     git:
       url: https://google.com
@@ -2072,7 +2072,7 @@ description: A client for custom_lint
 version: 0.0.1
 publish_to: 'none'
 
-dev_dependencies:
+dependencies:
   plugin1: "^1.0.0"
 
 dependency_overrides:
@@ -2124,7 +2124,7 @@ description: A client for custom_lint
 version: 0.0.1
 publish_to: 'none'
 
-dev_dependencies:
+dependencies:
   plugin1: ">=1.0.0 <2.0.0"
   plugin2: "^1.2.0"
 ''');
@@ -2167,11 +2167,53 @@ description: A client for custom_lint
 version: 0.0.1
 publish_to: 'none'
 
-dev_dependencies:
+dependencies:
   plugin1: any
 
 dependency_overrides:
   plugin1: "^2.0.0"
+''');
+      });
+
+      test(
+          'If a plugin is a dev_dependency and a regular dependency, the constraint is the intersection of both',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            devDependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+          ),
+          Pubspec(
+            'b',
+            dependencies: {
+              'plugin1': HostedDependency(
+                version: VersionConstraint.parse('^1.5.0'),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a', 'b'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dependencies:
+  plugin1: ">=1.5.0 <2.0.0"
 ''');
       });
     });
@@ -2507,6 +2549,59 @@ dependency_overrides:
           p.join(workspace.path, 'package'),
         );
         expect(customLintWorkspace.projects.first.pubspec.name, 'package');
+      });
+
+      test('Supports plugins in regular dependencies', () async {
+        final workspace = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            version: Version(1, 0, 0),
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            version: Version(1, 0, 0),
+            dependencies: {
+              'plugin1': HostedDependency(),
+            },
+          ),
+        ]);
+        final customLintWorkspace = await fromContextRootsFromPaths(
+          [p.join(workspace.path, 'a')],
+          workingDirectory: workspace,
+        );
+        expect(
+          customLintWorkspace.uniquePluginNames,
+          {'plugin1'},
+        );
+      });
+
+      test('Supports plugins in regular and dev dependencies', () async {
+        final workspace = await createSimpleWorkspace([
+          Pubspec(
+            'plugin1',
+            version: Version(1, 0, 0),
+            dependencies: {'custom_lint_builder': HostedDependency()},
+          ),
+          Pubspec(
+            'a',
+            version: Version(1, 0, 0),
+            dependencies: {
+              'plugin1': HostedDependency(),
+            },
+            devDependencies: {
+              'plugin1': HostedDependency(),
+            },
+          ),
+        ]);
+        final customLintWorkspace = await fromContextRootsFromPaths(
+          [p.join(workspace.path, 'a')],
+          workingDirectory: workspace,
+        );
+        expect(
+          customLintWorkspace.uniquePluginNames,
+          {'plugin1'},
+        );
       });
 
       test('Supports projects with shared plugins', () async {

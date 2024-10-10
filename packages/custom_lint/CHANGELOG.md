@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Support installing custom_lint plugins in `dependencies:` instead of `dev_dependencies` (thanks to @dickermoshe).
+
 ## 0.6.9 - 2024-10-09
 
 - `custom_lint_core` upgraded to `0.6.9`
