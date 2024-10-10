@@ -1,3 +1,7 @@
+## 0.6.9 - 2024-10-09
+
+- Support analyzer 0.6.9
+
 ## 0.6.5 - 2024-08-15
 
 - Upgraded to analyzer ^6.6.0.
