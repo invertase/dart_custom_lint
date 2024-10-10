@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.6.10 - 2024-10-10
 
 - Support installing custom_lint plugins in `dependencies:` instead of `dev_dependencies` (thanks to @dickermoshe).
 
