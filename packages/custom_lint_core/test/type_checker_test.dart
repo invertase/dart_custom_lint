@@ -121,6 +121,62 @@ environment:
         false,
       );
     });
+
+    test('matches a type from a built-in dart: package', () async {
+      final file = writeToTemporaryFile('''
+import 'dart:io';
+
+int a;
+File? x;
+''');
+
+      final unit = await resolveFile2(path: file.path);
+      unit as ResolvedUnitResult;
+
+      const checker = TypeChecker.fromPackage('dart:core');
+      const checker2 = TypeChecker.fromPackage('dart:io');
+      const checker3 = TypeChecker.fromPackage('some_package');
+
+      expect(
+        checker.isExactlyType(
+          (unit.unit.declarations.first as TopLevelVariableDeclaration)
+              .variables
+              .type!
+              .type!,
+        ),
+        true,
+      );
+
+      expect(
+        checker.isExactlyType(
+          (unit.unit.declarations[1] as TopLevelVariableDeclaration)
+              .variables
+              .type!
+              .type!,
+        ),
+        false,
+      );
+
+      expect(
+        checker2.isExactlyType(
+          (unit.unit.declarations[1] as TopLevelVariableDeclaration)
+              .variables
+              .type!
+              .type!,
+        ),
+        true,
+      );
+
+      expect(
+        checker3.isExactlyType(
+          (unit.unit.declarations.first as TopLevelVariableDeclaration)
+              .variables
+              .type!
+              .type!,
+        ),
+        false,
+      );
+    });
   });
 }
 
