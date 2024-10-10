@@ -164,50 +164,54 @@ No issues found!
           expect(process.exitCode, 0);
         });
 
-        test('CLI lists warnings from all plugins and set exit code', () async {
-          final plugin =
-              createPlugin(name: 'test_lint', main: helloWordPluginSource);
-          final plugin2 =
-              createPlugin(name: 'test_lint2', main: oyPluginSource);
+        for (final installAsDevDependency in [false, true]) {
+          test(
+              'CLI lists warnings from all plugins and set exit code installAsDevDependency: $installAsDevDependency',
+              () async {
+            final plugin =
+                createPlugin(name: 'test_lint', main: helloWordPluginSource);
+            final plugin2 =
+                createPlugin(name: 'test_lint2', main: oyPluginSource);
 
-          final app = createLintUsage(
-            source: {
-              'lib/main.dart': 'void fn() {}',
-              'lib/another.dart': 'void fail() {}',
-            },
-            plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
-            name: 'test_app',
-          );
-
-          final process = await Process.start(
-            'dart',
-            [
-              customLintBinPath,
-              '--format',
-              format,
-            ],
-            workingDirectory: app.path,
-          );
-
-          final out = process.stdout.map(utf8.decode);
-          final err = process.stderr.map(utf8.decode);
-
-          expect(err, emitsDone);
-
-          if (format == 'json') {
-            expect(
-              out.join(),
-              completion(
-                equals('${jsonLints(app.resolveSymbolicLinksSync())}\n'),
-              ),
+            final app = createLintUsage(
+              source: {
+                'lib/main.dart': 'void fn() {}',
+                'lib/another.dart': 'void fail() {}',
+              },
+              plugins: {'test_lint': plugin.uri, 'test_lint2': plugin2.uri},
+              name: 'test_app',
+              installAsDevDependency: installAsDevDependency,
             );
-          } else {
-            expect(
-              out.join(),
-              completion(
-                allOf(
-                  startsWith('Analyzing...'),
-                  endsWith('''
+
+            final process = await Process.start(
+              'dart',
+              [
+                customLintBinPath,
+                '--format',
+                format,
+              ],
+              workingDirectory: app.path,
+            );
+
+            final out = process.stdout.map(utf8.decode);
+            final err = process.stderr.map(utf8.decode);
+
+            expect(err, emitsDone);
+
+            if (format == 'json') {
+              expect(
+                out.join(),
+                completion(
+                  equals('${jsonLints(app.resolveSymbolicLinksSync())}\n'),
+                ),
+              );
+            } else {
+              expect(
+                out.join(),
+                completion(
+                  allOf(
+                    startsWith('Analyzing...'),
+                    endsWith('''
   lib/another.dart:1:6 • Hello world • hello_world • INFO
   lib/another.dart:1:6 • Oy • oy • INFO
   lib/main.dart:1:6 • Hello world • hello_world • INFO
@@ -215,12 +219,13 @@ No issues found!
 
 4 issues found.
 '''),
+                  ),
                 ),
-              ),
-            );
-          }
-          expect(await process.exitCode, 1);
-        });
+              );
+            }
+            expect(await process.exitCode, 1);
+          });
+        }
       });
     }
   }
