@@ -251,9 +251,10 @@ class _PackageChecker extends TypeChecker {
   bool isExactly(Element element) {
     final elementLibraryIdentifier = element.library?.identifier;
     if (elementLibraryIdentifier == null) return false;
-    
+
     if (_packageName.startsWith('dart:')) {
-      return elementLibraryIdentifier == _packageName || elementLibraryIdentifier.startsWith('$_packageName/');
+      return elementLibraryIdentifier == _packageName ||
+          elementLibraryIdentifier.startsWith('$_packageName/');
     }
 
     return elementLibraryIdentifier.startsWith('package:$_packageName/');
