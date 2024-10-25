@@ -114,14 +114,16 @@ String _buildDependencyConstraint(
       if (hosted == null) {
         return ' ${sharedConstraint.getDisplayString()}';
       }
-      final result = StringBuffer('\n    hosted:');
+      final result = StringBuffer();
+      result.writeln();
+      result.writeln('    hosted:');
       if (hosted.declaredName != null) {
-        result.write('\n      name: ${hosted.declaredName}');
+        result.writeln('      name: ${hosted.declaredName}');
       }
       if (hosted.url != null) {
-        result.write('\n      url: ${hosted.url}');
+        result.writeln('      url: ${hosted.url}');
       }
-      result.write('\n    version: "${sharedConstraint.getDisplayString()}"');
+      result.writeln('    version: ${sharedConstraint.getDisplayString()}');
 
       return result.toString();
 
@@ -562,6 +564,7 @@ publish_to: 'none'
     _writeEnvironment(buffer);
     _writePubspecDependencies(buffer);
 
+    print('pubpsec:  $buffer');
     return buffer.toString();
   }
 
