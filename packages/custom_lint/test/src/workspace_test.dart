@@ -2215,6 +2215,46 @@ dependencies:
   plugin1: ">=1.5.0 <2.0.0"
 ''');
       });
+      test(
+          'If a dependency comes from a custom hosted source, the generated pubspec.yaml should contain the hosted source',
+          () async {
+        final workingDir = await createSimpleWorkspace([
+          Pubspec(
+            'a',
+            dependencies: {
+              'custom_lint_builder': HostedDependency(
+                hosted: HostedDetails(
+                  'custom_lint_builder',
+                  Uri.parse('https://custom.com'),
+                ),
+                version: Version(1, 0, 0),
+              ),
+            },
+          ),
+        ]);
+
+        final workspace = await fromContextRootsFromPaths(
+          ['a'],
+          workingDirectory: workingDir,
+        );
+
+        expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  custom_lint_builder:
+    hosted:
+      name: custom_lint_builder
+      url: https://custom.com
+    version: "1.0.0"
+''');
+      });
     });
 
     group(CustomLintWorkspace.fromPaths, () {
