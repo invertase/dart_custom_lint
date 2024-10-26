@@ -4,13 +4,13 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/source/source_range.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:custom_lint_visitor/custom_lint_visitor.dart';
 import 'package:meta/meta.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 
 import 'change_reporter.dart';
 import 'fixes.dart';
 import 'lint_rule.dart';
-import 'node_lint_visitor.dart';
 import 'plugin_base.dart';
 import 'resolver.dart';
 

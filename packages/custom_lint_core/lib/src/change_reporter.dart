@@ -21,13 +21,19 @@ abstract class ChangeReporter {
     required int priority,
     String? id,
   });
+
+  /// Waits for all [ChangeBuilder] to fully compute the source changes.
+  Future<List<PrioritizedSourceChange>> waitForCompletion();
 }
 
 /// The implementation of [ChangeReporter]
 @internal
 class ChangeReporterImpl implements ChangeReporter {
   /// The implementation of [ChangeReporter]
-  ChangeReporterImpl(this._analysisSession, this._resolver);
+  ChangeReporterImpl(
+    this._analysisSession,
+    this._resolver,
+  );
 
   final CustomLintResolver _resolver;
   final AnalysisSession _analysisSession;
@@ -51,11 +57,10 @@ class ChangeReporterImpl implements ChangeReporter {
     return changeBuilderImpl;
   }
 
-  /// Waits for all [ChangeBuilder] to fully compute the source changes.
-  @internal
+  @override
   Future<List<PrioritizedSourceChange>> waitForCompletion() async {
     return Future.wait(
-      _changeBuilders.map((e) => e._waitForCompletion()),
+      _changeBuilders.map((e) => e.waitForCompletion()),
     );
   }
 }
@@ -104,6 +109,9 @@ abstract class ChangeBuilder {
     void Function(YamlFileEditBuilder builder) buildFileEdit,
     String? customPath,
   );
+
+  /// Waits for all changes to be computed.
+  Future<PrioritizedSourceChange> waitForCompletion();
 }
 
 class _ChangeBuilderImpl implements ChangeBuilder {
@@ -175,7 +183,8 @@ class _ChangeBuilderImpl implements ChangeBuilder {
     );
   }
 
-  Future<PrioritizedSourceChange> _waitForCompletion() async {
+  @override
+  Future<PrioritizedSourceChange> waitForCompletion() async {
     await Future.wait(_operations);
 
     return PrioritizedSourceChange(

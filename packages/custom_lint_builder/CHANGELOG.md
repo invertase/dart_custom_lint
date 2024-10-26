@@ -1,3 +1,7 @@
+## Unreleased fix
+
+- `--fix` batch now share the same "CustomLintContext".
+
 ## 0.6.10 - 2024-10-10
 
 - `custom_lint` upgraded to `0.6.10`
