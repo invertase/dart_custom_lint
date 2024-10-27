@@ -658,7 +658,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         );
 
         final batchFix = fix.findBatchFix(context.path);
-        if (batchFix == null || toBatch.length <= 1) {
+        if (batchFix == null) {
           return (
             fix: fix,
             batchFixes: null,
@@ -1016,7 +1016,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     final context = await _fileContext(path);
     if (context == null) return false;
 
-    final allFixes = await _computeAllBatchFixes(
+    final allFixes = await _computeFistBatchFixes(
       allAnalysisErrors,
       context,
       fixedCodes,
@@ -1063,7 +1063,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     }
   }
 
-  Future<List<analyzer_plugin.AnalysisErrorFixes>> _computeAllBatchFixes(
+  Future<List<analyzer_plugin.AnalysisErrorFixes>> _computeFistBatchFixes(
     List<AnalysisError> allAnalysisErrors,
     _FileContext context,
     Set<String> fixedCodes, {
@@ -1071,15 +1071,13 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   }) async {
     if (!_client.fix) return [];
 
+    final codeToFix = allAnalysisErrors
+        .where((e) => !fixedCodes.contains(e.errorCode.name))
+        .firstOrNull;
+    if (codeToFix == null) return [];
+
     final errorsToFix = allAnalysisErrors
-        .map((e) => e.errorCode.name)
-        .toSet()
-        .map(
-          (code) => allAnalysisErrors
-              .where((error) => error.errorCode.name == code)
-              .firstOrNull,
-        )
-        .nonNulls
+        .where((e) => e.errorCode == codeToFix.errorCode)
         .toList();
 
     final fixes = await _computeFixes(
@@ -1088,7 +1086,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
       allAnalysisErrors,
     );
 
-    return fixes.map((e) => e?.batchFixes).nonNulls.toList();
+    return fixes.map((e) => e?.batchFixes ?? e?.fix).nonNulls.toList();
   }
 
   /// Queue an operation to be awaited by [_awaitAnalysisDone]
