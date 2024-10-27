@@ -58,6 +58,8 @@ final multiChangeFixPlugin = createPluginSource([
   ),
 ]);
 
+const ignoreId = '<<ignore>>';
+
 void main() {
   test('Can emit fixes', () async {
     final plugin = createPlugin(
@@ -89,11 +91,7 @@ void fn2() {}
       [await fixes, await fixes2]
           .expand((e) => e.fixes)
           .expand((e) => e.fixes)
-          .where(
-            (e) =>
-                e.change.id != 'ignore_for_file' &&
-                e.change.id != 'ignore_for_line',
-          ),
+          .where((e) => e.change.id != ignoreId),
       sources: ({'**/*': mainSource}, relativePath: app.path),
       file: Directory.current.file(
         'test',
@@ -125,11 +123,7 @@ void fn() {}
     final fixes = await runner.getFixes(mainPath, 6);
 
     expectMatchesGoldenFixes(
-      fixes.fixes.expand((e) => e.fixes).where(
-            (e) =>
-                e.change.id != 'ignore_for_file' &&
-                e.change.id != 'ignore_for_line',
-          ),
+      fixes.fixes.expand((e) => e.fixes).where((e) => e.change.id != ignoreId),
       sources: ({'**/*': mainSource}, relativePath: app.path),
       file: Directory.current.file(
         'test',
@@ -169,11 +163,7 @@ void fn4() {}
     final fixes = await runner.getFixes(mainPath, 6);
 
     expectMatchesGoldenFixes(
-      fixes.fixes.expand((e) => e.fixes).where(
-            (e) =>
-                e.change.id != 'ignore_for_file' &&
-                e.change.id != 'ignore_for_line',
-          ),
+      fixes.fixes.expand((e) => e.fixes).where((e) => e.change.id != ignoreId),
       sources: ({'**/*': mainSource}, relativePath: app.path),
       file: Directory.current.file(
         'test',
@@ -211,11 +201,7 @@ void fn2() {}
       [await fixes, await fixes2]
           .expand((e) => e.fixes)
           .expand((e) => e.fixes)
-          .where(
-            (e) =>
-                e.change.id != 'ignore_for_file' &&
-                e.change.id != 'ignore_for_line',
-          ),
+          .where((e) => e.change.id != ignoreId),
       sources: ({'**/*': mainSource}, relativePath: app.path),
       file: Directory.current.file(
         'test',
@@ -253,11 +239,7 @@ void fn2() {}
       [await fixes, await fixes2]
           .expand((e) => e.fixes)
           .expand((e) => e.fixes)
-          .where(
-            (e) =>
-                e.change.id != 'ignore_for_file' &&
-                e.change.id != 'ignore_for_line',
-          ),
+          .where((e) => e.change.id != ignoreId),
       sources: ({'**/*': mainSource}, relativePath: app.path),
       file: Directory.current.file(
         'test',

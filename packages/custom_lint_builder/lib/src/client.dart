@@ -658,7 +658,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         );
 
         final batchFix = fix.findBatchFix(context.path);
-        if (batchFix == null) {
+        if (batchFix == null || toBatch.length <= 1) {
           return (
             fix: fix,
             batchFixes: null,
@@ -672,7 +672,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
         final batchReporterBuilder = BatchChangeReporterBuilder(
           batchReporter.createChangeBuilder(
-            message: 'Fix all ${error.errorCode}',
+            message: 'Fix all "${error.errorCode}"',
             priority: batchFix.priority - 1,
           ),
         );
@@ -1071,17 +1071,19 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   }) async {
     if (!_client.fix) return [];
 
+    final errorsToFix = allAnalysisErrors
+        .map((e) => e.errorCode.name)
+        .toSet()
+        .map(
+          (code) => allAnalysisErrors
+              .where((error) => error.errorCode.name == code)
+              .firstOrNull,
+        )
+        .nonNulls
+        .toList();
+
     final fixes = await _computeFixes(
-      allAnalysisErrors
-          .map((e) => e.errorCode.name)
-          .toSet()
-          .map(
-            (code) => allAnalysisErrors
-                .where((error) => error.errorCode.name == code)
-                .firstOrNull,
-          )
-          .nonNulls
-          .toList(),
+      errorsToFix,
       context,
       allAnalysisErrors,
     );
