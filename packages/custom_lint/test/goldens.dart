@@ -55,9 +55,6 @@ String _encodePrioritizedSourceChanges(
     for (final prioritizedSourceChange in changes) {
       buffer.writeln('Message: `${prioritizedSourceChange.change.message}`');
       buffer.writeln('Priority: ${prioritizedSourceChange.priority}');
-      if (prioritizedSourceChange.change.id != null) {
-        buffer.writeln('Id: `${prioritizedSourceChange.change.id}`');
-      }
       if (prioritizedSourceChange.change.selection case final selection?) {
         buffer.writeln(
           'Selection: offset ${selection.offset} ; '

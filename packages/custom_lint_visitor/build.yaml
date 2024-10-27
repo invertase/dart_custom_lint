@@ -1,0 +1,12 @@
+targets:
+  $default:
+    builders:
+      lint_visitor_generator:
+        enabled: true
+        generate_for:
+          include:
+            - "**/node_lint_visitor.dart"
+      source_gen|combining_builder:
+        options:
+          ignore_for_file:
+            - "type=lint"

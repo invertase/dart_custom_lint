@@ -1,3 +1,9 @@
+## Unreleased 0.7.0
+
+- `custom_lint --fix` and the generated "Fix all <code>" assists
+  now correctly handle imports.
+- Now supports a broad number of analyzer version.
+
 ## 0.6.10 - 2024-10-10
 
 - Support installing custom_lint plugins in `dependencies:` instead of `dev_dependencies` (thanks to @dickermoshe).

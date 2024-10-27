@@ -9,7 +9,10 @@ import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/context_root.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
-import 'package:analyzer/error/error.dart' hide LintCode;
+import 'package:analyzer/error/error.dart'
+    hide
+        // ignore: undefined_hidden_name, Needed to support lower analyzer versions
+        LintCode;
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
@@ -30,11 +33,14 @@ import 'package:custom_lint/src/v2/protocol.dart';
 // ignore: implementation_imports, tight versioning
 import 'package:custom_lint_core/src/change_reporter.dart';
 // ignore: implementation_imports, tight versioning
-import 'package:custom_lint_core/src/node_lint_visitor.dart';
+import 'package:custom_lint_core/src/fixes.dart';
 // ignore: implementation_imports, tight versioning
 import 'package:custom_lint_core/src/plugin_base.dart';
 // ignore: implementation_imports, tight versioning
 import 'package:custom_lint_core/src/resolver.dart';
+// ignore: implementation_imports, tight versioning
+import 'package:custom_lint_core/src/runnable.dart';
+import 'package:custom_lint_visitor/custom_lint_visitor.dart';
 import 'package:glob/glob.dart';
 import 'package:hotreloader/hotreloader.dart';
 import 'package:meta/meta.dart';
@@ -91,23 +97,30 @@ Future<bool> _isVmServiceEnabled() async {
 }
 
 extension on analyzer_plugin.AnalysisErrorFixes {
-  bool canBatchFix(String filePath) {
-    final fixesExcludingIgnores =
-        fixes.where((change) => !change.isIgnoreChange).toList();
+  ({String id, int priority})? findBatchFix(String filePath) {
+    final fixToBatch = fixes
+        .where((change) => change.canBatchFix(filePath))
+        // Only a single fix at a time can be batched.
+        .singleOrNull;
+    if (fixToBatch == null) return null;
+    final id = fixToBatch.change.id;
+    if (id == null) return null;
 
-    return fixesExcludingIgnores.length == 1 &&
-        fixesExcludingIgnores.single.canBatchFix(filePath);
+    return (
+      id: id,
+      priority: fixToBatch.priority,
+    );
   }
 }
 
 extension on analyzer_plugin.PrioritizedSourceChange {
   bool canBatchFix(String filePath) {
-    return change.edits.every((element) => element.file == filePath);
+    return !isIgnoreChange &&
+        change.edits.every((element) => element.file == filePath);
   }
 
   bool get isIgnoreChange {
-    return change.id == IgnoreCode.ignoreForFileCode ||
-        change.id == IgnoreCode.ignoreForLineCode;
+    return change.id == IgnoreCode.ignoreId;
   }
 }
 
@@ -364,6 +377,26 @@ class _AnalysisErrorsKey {
   int get hashCode => Object.hash(filePath, analysisContext);
 }
 
+class _FileContext {
+  _FileContext({
+    required this.resolver,
+    required this.analysisContext,
+    required this.contextCollection,
+    required this.path,
+    required this.configs,
+  }) : key = _AnalysisErrorsKey(
+          filePath: path,
+          analysisContext: analysisContext,
+        );
+
+  final String path;
+  final _AnalysisErrorsKey key;
+  final CustomLintResolverImpl resolver;
+  final AnalysisContext analysisContext;
+  final AnalysisContextCollection contextCollection;
+  final _CustomLintAnalysisConfigs configs;
+}
+
 class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   _ClientAnalyzerPlugin(
     this._channel,
@@ -378,7 +411,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   var _customLintConfigsForAnalysisContexts =
       <AnalysisContext, _CustomLintAnalysisConfigs>{};
   final _analysisErrorsForAnalysisContexts =
-      <_AnalysisErrorsKey, Iterable<AnalysisError>>{};
+      <_AnalysisErrorsKey, List<AnalysisError>>{};
 
   @override
   List<String> get fileGlobsToAnalyze => ['*'];
@@ -388,6 +421,27 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
   @override
   String get version => '1.0.0-alpha.0';
+
+  Future<_FileContext?> _fileContext(String path) async {
+    final contextCollection = await _contextCollection.safeFirst;
+    final analysisContext = contextCollection.contextFor(path);
+    final resolver = analysisContext.createResolverForFile(
+      resourceProvider.getFile(path),
+    );
+
+    if (resolver == null) return null;
+
+    final configs = _customLintConfigsForAnalysisContexts[analysisContext];
+    if (configs == null) return null;
+
+    return _FileContext(
+      path: path,
+      resolver: resolver,
+      analysisContext: analysisContext,
+      contextCollection: contextCollection,
+      configs: configs,
+    );
+  }
 
   Future<void> reAnalyze() async {
     final contextCollection = _contextCollection.valueOrNull;
@@ -510,7 +564,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     runPostRunCallbacks(postRunCallbacks);
 
     return analyzer_plugin.EditGetAssistsResult(
-      await changeReporter.waitForCompletion(),
+      await changeReporter.complete(),
     );
   }
 
@@ -545,121 +599,119 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   Future<analyzer_plugin.EditGetFixesResult> handleEditGetFixes(
     analyzer_plugin.EditGetFixesParams parameters,
   ) async {
-    final contextCollection = await _contextCollection.safeFirst;
-    final analysisContext = contextCollection.contextFor(parameters.file);
-    final resolver = analysisContext.createResolverForFile(
-      resourceProvider.getFile(parameters.file),
-    );
-    if (resolver == null) return analyzer_plugin.EditGetFixesResult([]);
-
-    final key = _AnalysisErrorsKey(
-      filePath: parameters.file,
-      analysisContext: analysisContext,
-    );
-    final configs = _customLintConfigsForAnalysisContexts[analysisContext];
+    final context = await _fileContext(parameters.file);
+    if (context == null) return analyzer_plugin.EditGetFixesResult([]);
 
     final analysisErrorsForContext =
-        _analysisErrorsForAnalysisContexts[key] ?? const {};
-    final errorsAtOffset = analysisErrorsForContext
-        .where(
-          (error) =>
-              parameters.offset >= error.offset &&
-              parameters.offset <= error.offset + error.length,
-        )
-        .toList();
+        _analysisErrorsForAnalysisContexts[context.key] ?? const [];
 
-    if (errorsAtOffset.isEmpty || configs == null) {
-      return analyzer_plugin.EditGetFixesResult([]);
-    }
+    final fixes = await _computeFixes(
+      analysisErrorsForContext
+          .where((error) => error.sourceRange.contains(parameters.offset))
+          .toList(),
+      context,
+      analysisErrorsForContext,
+    );
 
-    final allAnalysisErrorFixes = await Future.wait([
-      for (final error in analysisErrorsForContext)
-        _handlesFixesForError(
-          error,
-          analysisErrorsForContext,
-          configs,
-          resolver,
-          parameters,
-        ),
-    ]);
-
-    final analysisErrorFixesForOffset = allAnalysisErrorFixes.nonNulls
-        .where(
-          (fix) =>
-              parameters.offset >= fix.error.location.offset &&
-              parameters.offset <=
-                  fix.error.location.offset + fix.error.location.length,
-        )
-        .toList();
-
-    final fixAll = <String, analyzer_plugin.AnalysisErrorFixes?>{};
-    for (final fix in allAnalysisErrorFixes) {
-      if (fix == null) continue;
-
-      final errorCode = fix.error.code;
-      fixAll.putIfAbsent(errorCode, () {
-        final analysisErrorsWithCode = allAnalysisErrorFixes.nonNulls
-            .where((fix) => fix.error.code == errorCode)
-            .toList();
-
-        // Don't show "fix-all" unless at least two errors have the same code.
-        if (analysisErrorsWithCode.length < 2) return null;
-
-        final fixesWithCode = analysisErrorsWithCode
-            .where((e) => e.canBatchFix(parameters.file))
-            // Ignoring "ignore" fixes
-            .map((e) {
-          final fixesExcludingIgnores =
-              e.fixes.where((change) => !change.isIgnoreChange).toList();
-
-          return (fixes: fixesExcludingIgnores, error: e.error);
-        }).sorted(
-          (a, b) => b.error.location.offset - a.error.location.offset,
-        );
-
-        // Don't show fix-all if there's no good fix.
-        if (fixesWithCode.isEmpty) return null;
-
-        final priority = fixesWithCode
-                .expand((e) => e.fixes)
-                .map((e) => e.priority - 1)
-                .firstOrNull ??
-            0;
-
-        return analyzer_plugin.AnalysisErrorFixes(
-          fix.error,
-          fixes: [
-            analyzer_plugin.PrioritizedSourceChange(
-              priority,
-              analyzer_plugin.SourceChange(
-                'Fix all "$errorCode"',
-                edits: fixesWithCode
-                    .expand((e) => e.fixes)
-                    .expand((e) => e.change.edits)
-                    .toList(),
-              ),
-            ),
-          ],
-        );
-      });
-    }
-
-    return analyzer_plugin.EditGetFixesResult([
-      ...analysisErrorFixesForOffset,
-      ...fixAll.values.nonNulls,
-    ]);
+    return analyzer_plugin.EditGetFixesResult(
+      fixes.expand<analyzer_plugin.AnalysisErrorFixes>((fixes) {
+        return [
+          fixes.fix,
+          if (fixes.batchFixes case final batchFixes?) batchFixes,
+        ];
+      }).toList(),
+    );
   }
 
-  Future<analyzer_plugin.AnalysisErrorFixes?> _handlesFixesForError(
-    AnalysisError analysisError,
-    Iterable<AnalysisError> allErrors,
-    _CustomLintAnalysisConfigs configs,
-    CustomLintResolver resolver,
-    analyzer_plugin.EditGetFixesParams parameters,
+  Future<
+      List<
+          ({
+            analyzer_plugin.AnalysisErrorFixes? batchFixes,
+            analyzer_plugin.AnalysisErrorFixes fix
+          })>> _computeFixes(
+    List<AnalysisError> errorsToFix,
+    _FileContext context,
+    List<AnalysisError> analysisErrorsForContext,
   ) async {
-    final fixesForError = configs.fixes[analysisError.errorCode];
-    if (fixesForError == null || fixesForError.isEmpty) {
-      return null;
+    return Future.wait(
+      errorsToFix.map((error) async {
+        final toBatch = analysisErrorsForContext
+            .where((e) => e.errorCode == error.errorCode)
+            .toList();
+
+        final changeReporterBuilder = ChangeReporterBuilderImpl(
+          context.resolver,
+          context.configs.analysisContext.currentSession,
+        );
+
+        await _runFixes(
+          context,
+          error,
+          analysisErrorsForContext,
+          changeReporterBuilder: changeReporterBuilder,
+        );
+        final fix = await changeReporterBuilder.completeAsFixes(
+          error,
+          context,
+        );
+
+        final batchFix = fix.findBatchFix(context.path);
+        if (batchFix == null || toBatch.length <= 1) {
+          return (
+            fix: fix,
+            batchFixes: null,
+          );
+        }
+
+        final batchReporter = ChangeReporterImpl(
+          context.configs.analysisContext.currentSession,
+          context.resolver,
+        );
+
+        final batchReporterBuilder = BatchChangeReporterBuilder(
+          batchReporter.createChangeBuilder(
+            message: 'Fix all "${error.errorCode}"',
+            priority: batchFix.priority - 1,
+          ),
+        );
+
+        // Compute batch in sequential mode because ChangeBuilder requires it.
+        for (final toBatchError in toBatch) {
+          await _runFixes(
+            where: (fix) => fix.id == batchFix.id,
+            context,
+            toBatchError,
+            analysisErrorsForContext,
+            changeReporterBuilder: batchReporterBuilder,
+            sequential: true,
+          );
+        }
+
+        final batchFixes =
+            await batchReporterBuilder.completeAsFixes(error, context);
+
+        return (
+          fix: fix,
+          batchFixes: batchFixes,
+        );
+      }),
+    );
+  }
+
+  Future<void> _runFixes(
+    _FileContext context,
+    AnalysisError analysisError,
+    List<AnalysisError> allErrors, {
+    required ChangeReporterBuilder changeReporterBuilder,
+    bool sequential = false,
+    bool Function(Fix fix)? where,
+  }) async {
+    Iterable<Fix>? fixesForError =
+        context.configs.fixes[analysisError.errorCode];
+    if (fixesForError == null) return;
+
+    if (where != null) {
+      fixesForError = fixesForError.where(where);
     }
 
     final otherErrors = allErrors
@@ -670,83 +722,76 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         )
         .toList();
 
-    final postRunCallbacks = <void Function()>[];
+    await _run<FixArgs>(
+      context,
+      fixesForError.map((fix) {
+        return (
+          runnable: fix,
+          args: (
+            reporter: changeReporterBuilder.createChangeReporter(id: fix.id),
+            analysisError: analysisError,
+            others: otherErrors,
+          )
+        );
+      }),
+      sequential: sequential,
+    );
+
+    await changeReporterBuilder.waitForCompletion();
+  }
+
+  Future<void> _run<ArgsT>(
+    _FileContext context,
+    Iterable<({Runnable<ArgsT> runnable, ArgsT args})> allRunnables, {
+    bool sequential = false,
+  }) async {
     // TODO implement verbose mode to log lint duration
-    final registry = NodeLintRegistry(LintRegistry(), enableTiming: false);
-    final sharedState = <Object, Object?>{};
 
-    final changeReporter = ChangeReporterImpl(
-      configs.analysisContext.currentSession,
-      resolver,
-    );
+    final bundledRunnables =
+        sequential ? allRunnables.map((e) => [e]).toList() : [allRunnables];
 
-    await Future.wait([
-      for (final fix in fixesForError)
-        _runFixStartup(
-          resolver,
-          fix,
-          CustomLintContext(
-            LintRuleNodeRegistry(registry, fix.runtimeType.toString()),
-            postRunCallbacks.add,
-            sharedState,
-            configs.pubspec,
+    for (final runnableBundle in bundledRunnables) {
+      final registry = NodeLintRegistry(LintRegistry(), enableTiming: false);
+      final postRunCallbacks = <void Function()>[];
+      final sharedState = <Object, Object?>{};
+
+      await Future.wait([
+        for (final (:runnable, args: _) in runnableBundle)
+          _runLintZoned(
+            context.resolver,
+            () => runnable.startUp(
+              context.resolver,
+              CustomLintContext(
+                LintRuleNodeRegistry(registry, runnable.runtimeType.toString()),
+                postRunCallbacks.add,
+                sharedState,
+                context.configs.pubspec,
+              ),
+            ),
+            name: runnable.runtimeType.toString(),
           ),
-        ),
-    ]);
-    await Future.wait([
-      for (final fix in fixesForError)
-        _runFixRun(
-          resolver,
-          fix,
-          CustomLintContext(
-            LintRuleNodeRegistry(registry, fix.runtimeType.toString()),
-            postRunCallbacks.add,
-            sharedState,
-            configs.pubspec,
+      ]);
+
+      await Future.wait([
+        for (final (:runnable, :args) in runnableBundle)
+          _runLintZoned(
+            context.resolver,
+            () => runnable.callRun(
+              context.resolver,
+              CustomLintContext(
+                LintRuleNodeRegistry(registry, runnable.runtimeType.toString()),
+                postRunCallbacks.add,
+                sharedState,
+                context.configs.pubspec,
+              ),
+              args,
+            ),
+            name: runnable.runtimeType.toString(),
           ),
-          changeReporter,
-          analysisError,
-          otherErrors,
-        ),
-    ]);
+      ]);
 
-    runPostRunCallbacks(postRunCallbacks);
-
-    return analyzer_plugin.AnalysisErrorFixes(
-      CustomAnalyzerConverter().convertAnalysisError(
-        analysisError,
-        lineInfo: resolver.lineInfo,
-        severity: analysisError.errorCode.errorSeverity,
-      ),
-      fixes: await changeReporter.waitForCompletion(),
-    );
-  }
-
-  Future<void> _runFixStartup(
-    CustomLintResolver resolver,
-    Fix fix,
-    CustomLintContext context,
-  ) async {
-    return _runLintZoned(
-      resolver,
-      () => fix.startUp(resolver, context),
-      name: fix.runtimeType.toString(),
-    );
-  }
-
-  Future<void> _runFixRun(
-    CustomLintResolver resolver,
-    Fix fix,
-    CustomLintContext context,
-    ChangeReporter changeReporter,
-    AnalysisError analysisError,
-    List<AnalysisError> others,
-  ) async {
-    return _runLintZoned(
-      resolver,
-      () => fix.run(resolver, changeReporter, context, analysisError, others),
-      name: fix.runtimeType.toString(),
-    );
+      runPostRunCallbacks(postRunCallbacks);
+    }
   }
 
   @override
@@ -966,41 +1011,30 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     final fixedCodes =
         (Zone.current[#_fixedCodes] as Set<String>?) ?? <String>{};
 
-    final allFixes = await _computeFixes(
+    final context = await _fileContext(path);
+    if (context == null) return false;
+
+    final allFixes = await _computeFistBatchFixes(
       allAnalysisErrors,
-      resolver,
-      configs,
+      context,
       fixedCodes,
       path: path,
-    ).toList();
+    );
 
     if (allFixes.isEmpty) return false;
 
     final source = resolver.source.contents.data;
-    final firstFixCode = allFixes.first.analysisError.errorCode;
-    final didApplyAllFixes =
-        allFixes.every((e) => e.analysisError.errorCode == firstFixCode);
 
     try {
-      // Apply fixes from top to bottom.
-      allFixes.sort(
-        (a, b) => b.analysisError.offset - a.analysisError.offset,
-      );
-
       final editedSource = analyzer_plugin.SourceEdit.applySequence(
         source,
-        // We apply fixes only once at a time, to avoid conflicts.
-        // To do so, we take the first fixed lint code, and apply fixes
-        // only for that code.
         allFixes
-            .where((e) => e.analysisError.errorCode == firstFixCode)
+            .expand((e) => e.fixes)
+            .expand((e) => e.change.edits)
             .expand((e) => e.edits),
       );
 
-      if (didApplyAllFixes) {
-        // Apply fixes to the file
-        io.File(path).writeAsStringSync(editedSource);
-      }
+      io.File(path).writeAsStringSync(editedSource);
 
       // Update in-memory file content before re-running analysis.
       resourceProvider.setOverlay(
@@ -1017,7 +1051,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         },
         zoneValues: {
           // We update the list of fixed codes to avoid re-fixing the same lint
-          #_fixedCodes: {...fixedCodes, firstFixCode.name},
+          #_fixedCodes: {...fixedCodes, ...allFixes.map((e) => e.error.code)},
         },
       );
     } catch (e) {
@@ -1027,39 +1061,26 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     }
   }
 
-  Stream<
-      ({
-        AnalysisError analysisError,
-        Iterable<analyzer_plugin.SourceEdit> edits,
-      })> _computeFixes(
+  Future<List<analyzer_plugin.AnalysisErrorFixes>> _computeFistBatchFixes(
     List<AnalysisError> allAnalysisErrors,
-    CustomLintResolver resolver,
-    _CustomLintAnalysisConfigs configs,
+    _FileContext context,
     Set<String> fixedCodes, {
     required String path,
-  }) async* {
-    if (!_client.fix) return;
+  }) async {
+    if (!_client.fix) return [];
 
-    for (final analysisError in allAnalysisErrors) {
-      if (fixedCodes.contains(analysisError.errorCode.name)) continue;
+    final errorToFix = allAnalysisErrors
+        .where((e) => !fixedCodes.contains(e.errorCode.name))
+        .firstOrNull;
+    if (errorToFix == null) return [];
 
-      final fixesForLint = await _handlesFixesForError(
-        analysisError,
-        allAnalysisErrors.toSet(),
-        configs,
-        resolver,
-        analyzer_plugin.EditGetFixesParams(path, analysisError.offset),
-      );
+    final fixes = await _computeFixes(
+      [errorToFix],
+      context,
+      allAnalysisErrors,
+    );
 
-      if (fixesForLint == null || !fixesForLint.canBatchFix(resolver.path)) {
-        continue;
-      }
-
-      yield (
-        analysisError: analysisError,
-        edits: fixesForLint.fixes.single.change.edits.expand((e) => e.edits),
-      );
-    }
+    return fixes.map((e) => e.batchFixes ?? e.fix).toList();
   }
 
   /// Queue an operation to be awaited by [_awaitAnalysisDone]
@@ -1200,4 +1221,20 @@ class _AnalysisErrorListenerDelegate implements AnalysisErrorListener {
 
   @override
   void onError(AnalysisError error) => _onError(error);
+}
+
+extension on ChangeReporterBuilder {
+  Future<analyzer_plugin.AnalysisErrorFixes> completeAsFixes(
+    AnalysisError analysisError,
+    _FileContext context,
+  ) async {
+    return analyzer_plugin.AnalysisErrorFixes(
+      CustomAnalyzerConverter().convertAnalysisError(
+        analysisError,
+        lineInfo: context.resolver.lineInfo,
+        severity: analysisError.errorCode.errorSeverity,
+      ),
+      fixes: await complete(),
+    );
+  }
 }

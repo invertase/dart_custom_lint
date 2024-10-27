@@ -1,6 +1,5 @@
 Message: `Ignore "hello_world" for line`
 Priority: 1
-Id: `ignore_for_line`
 Diff for file `lib/main.dart:1`:
 ```
 - void fn() {}
@@ -12,7 +11,6 @@ void fn2() {}
 ---
 Message: `Ignore "hello_world" for file`
 Priority: 0
-Id: `ignore_for_file`
 Diff for file `lib/main.dart:1`:
 ```
 - void fn() {}
@@ -24,7 +22,6 @@ void fn2() {}
 ---
 Message: `Ignore "hello_world" for line`
 Priority: 1
-Id: `ignore_for_line`
 Diff for file `lib/main.dart:3`:
 ```
 void fn() {}
@@ -38,7 +35,6 @@ void fn() {}
 ---
 Message: `Ignore "hello_world" for file`
 Priority: 0
-Id: `ignore_for_file`
 Diff for file `lib/main.dart:1`:
 ```
 - void fn() {}
@@ -50,7 +46,6 @@ void fn2() {}
 ---
 Message: `Ignore "hello_world" for line`
 Priority: 1
-Id: `ignore_for_line`
 Diff for file `lib/main.dart:5`:
 ```
 void fn2() {}
@@ -62,7 +57,6 @@ void fn2() {}
 ---
 Message: `Ignore "hello_world" for file`
 Priority: 0
-Id: `ignore_for_file`
 Diff for file `lib/main.dart:1`:
 ```
 - void fn() {}

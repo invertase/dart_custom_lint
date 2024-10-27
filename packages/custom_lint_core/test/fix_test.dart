@@ -1,6 +1,9 @@
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/error/error.dart' hide LintCode;
+import 'package:analyzer/error/error.dart'
+    hide
+        // ignore: undefined_hidden_name, Needed to support lower analyzer versions
+        LintCode;
 import 'package:custom_lint_core/src/change_reporter.dart';
 import 'package:custom_lint_core/src/fixes.dart';
 import 'package:custom_lint_core/src/lint_rule.dart';

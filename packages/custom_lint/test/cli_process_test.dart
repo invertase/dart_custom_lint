@@ -588,6 +588,61 @@ Analyzing...
       expect(process.exitCode, 1);
     });
 
+    test('Supports adding imports', () async {
+      final fixedPlugin = createPluginSource([
+        TestLintRule(
+          code: 'oy',
+          message: 'Oy',
+          onVariable: 'if (node.name.toString().endsWith("fixed")) return;',
+          fixes: [
+            TestLintFix(
+              name: 'OyFix',
+              dartBuilderCode: r'''
+builder.importLibrary(Uri.parse('package:path/path.dart'));
+
+builder.addSimpleReplacement(node.name.sourceRange, '${node.name}fixed');
+''',
+            ),
+          ],
+        ),
+      ]);
+
+      final plugin = createPlugin(name: 'test_lint', main: fixedPlugin);
+
+      final app = createLintUsage(
+        name: 'test_app',
+        source: {
+          'lib/main.dart': '''
+void fn() {}
+void fn2() {}
+''',
+        },
+        plugins: {'test_lint': plugin.uri},
+      );
+
+      final process = await Process.run(
+        'dart',
+        [customLintBinPath, '--fix'],
+        workingDirectory: app.path,
+      );
+
+      expect(trimDependencyOverridesWarning(process.stderr), isEmpty);
+
+      expect(app.file('lib', 'main.dart').readAsStringSync(), '''
+import 'package:path/path.dart';
+
+void fnfixed() {}
+void fn2fixed() {}
+''');
+
+      expect(process.stdout, '''
+Analyzing...
+
+No issues found!
+''');
+      expect(process.exitCode, 0);
+    });
+
     test('Can fix all lints', () async {
       final plugin = createPlugin(name: 'test_lint', main: fixedPlugin);
 
