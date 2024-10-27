@@ -615,8 +615,6 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
     return analyzer_plugin.EditGetFixesResult(
       fixes.expand<analyzer_plugin.AnalysisErrorFixes>((fixes) {
-        if (fixes == null) return const [];
-
         return [
           fixes.fix,
           if (fixes.batchFixes case final batchFixes?) batchFixes,
@@ -630,7 +628,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
           ({
             analyzer_plugin.AnalysisErrorFixes? batchFixes,
             analyzer_plugin.AnalysisErrorFixes fix
-          })?>> _computeFixes(
+          })>> _computeFixes(
     List<AnalysisError> errorsToFix,
     _FileContext context,
     List<AnalysisError> analysisErrorsForContext,
@@ -658,7 +656,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         );
 
         final batchFix = fix.findBatchFix(context.path);
-        if (batchFix == null) {
+        if (batchFix == null || toBatch.length <= 1) {
           return (
             fix: fix,
             batchFixes: null,
@@ -1071,22 +1069,18 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   }) async {
     if (!_client.fix) return [];
 
-    final codeToFix = allAnalysisErrors
+    final errorToFix = allAnalysisErrors
         .where((e) => !fixedCodes.contains(e.errorCode.name))
         .firstOrNull;
-    if (codeToFix == null) return [];
-
-    final errorsToFix = allAnalysisErrors
-        .where((e) => e.errorCode == codeToFix.errorCode)
-        .toList();
+    if (errorToFix == null) return [];
 
     final fixes = await _computeFixes(
-      errorsToFix,
+      [errorToFix],
       context,
       allAnalysisErrors,
     );
 
-    return fixes.map((e) => e?.batchFixes ?? e?.fix).nonNulls.toList();
+    return fixes.map((e) => e.batchFixes ?? e.fix).toList();
   }
 
   /// Queue an operation to be awaited by [_awaitAnalysisDone]
