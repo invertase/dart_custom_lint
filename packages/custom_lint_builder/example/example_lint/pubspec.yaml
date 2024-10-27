@@ -9,9 +9,3 @@ dependencies:
   analyzer_plugin: ^0.11.2
   custom_lint_builder:
     path: ../../../custom_lint_builder
-
-dependency_overrides:
-  custom_lint:
-    path: ../../../custom_lint
-  custom_lint_core:
-    path: ../../../custom_lint_core

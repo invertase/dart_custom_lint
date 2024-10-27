@@ -123,7 +123,7 @@ abstract class DartAssist extends Assist {
     run(resolver, reporter, context, target);
     runPostRunCallbacks(postRunCallbacks);
 
-    return reporter.waitForCompletion();
+    return reporter.complete();
   }
 
   /// Analyze a Dart file and runs this assist in test mode.

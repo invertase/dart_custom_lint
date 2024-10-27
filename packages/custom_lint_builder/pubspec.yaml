@@ -17,7 +17,7 @@ dependencies:
   # using a specific contract
   custom_lint_core: 0.6.10
   # Using loose constraint to support a range of analyzer versions.
-  custom_lint_visitor: ^1.0.670
+  custom_lint_visitor: ^1.0.0
   glob: ^2.1.1
   hotreloader: ">=3.0.5 <5.0.0"
   meta: ^1.7.0

@@ -104,10 +104,10 @@ List<IgnoreMetadata> parseIgnoreForFile(String source) {
 /// Built in fix to ignore a lint.
 class IgnoreCode extends DartFix {
   /// The code for 'ignore for line' fix.
-  static const ignoreForLineCode = 'ignore_for_line';
+  static const ignoreId = '<<ignore>>';
 
-  /// The code for 'ignore for file' fix.
-  static const ignoreForFileCode = 'ignore_for_file';
+  @override
+  String get id => ignoreId;
 
   @override
   void run(
@@ -123,7 +123,6 @@ class IgnoreCode extends DartFix {
     final ignoreForLineChangeBuilder = reporter.createChangeBuilder(
       message: 'Ignore "${analysisError.errorCode.name}" for line',
       priority: 1,
-      id: ignoreForLineCode,
     );
 
     ignoreForLineChangeBuilder.addDartFileEdit((builder) {
@@ -152,7 +151,6 @@ class IgnoreCode extends DartFix {
     final ignoreForFileChangeBuilder = reporter.createChangeBuilder(
       message: 'Ignore "${analysisError.errorCode.name}" for file',
       priority: 0,
-      id: ignoreForFileCode,
     );
 
     ignoreForFileChangeBuilder.addDartFileEdit((builder) {
