@@ -19,19 +19,48 @@ abstract class ChangeReporter {
   ChangeBuilder createChangeBuilder({
     required String message,
     required int priority,
-    String? id,
   });
+
+  /// Waits for all [ChangeBuilder] to fully compute the source changes.
+  Future<void> waitForCompletion();
+
+  /// Waits for completion and obtains the changes.
+  ///
+  /// This life-cycle can only be called once per [ChangeReporter].
+  Future<List<PrioritizedSourceChange>> complete();
 }
 
-/// The implementation of [ChangeReporter]
 @internal
-class ChangeReporterImpl implements ChangeReporter {
-  /// The implementation of [ChangeReporter]
-  ChangeReporterImpl(this._analysisSession, this._resolver);
+abstract class ChangeReporterBuilder {
+  ChangeReporter createChangeReporter({required String id});
 
-  final CustomLintResolver _resolver;
-  final AnalysisSession _analysisSession;
-  final _changeBuilders = <_ChangeBuilderImpl>[];
+  Future<List<PrioritizedSourceChange>> complete();
+
+  Future<void> waitForCompletion();
+}
+
+@internal
+class BatchChangeReporterBuilder extends ChangeReporterBuilder {
+  BatchChangeReporterBuilder(ChangeBuilderImpl batchBuilder)
+      : _reporter = BatchChangeReporterImpl(batchBuilder);
+
+  final BatchChangeReporterImpl _reporter;
+
+  @override
+  ChangeReporter createChangeReporter({required String id}) => _reporter;
+
+  @override
+  Future<void> waitForCompletion() => _reporter.waitForCompletion();
+
+  @override
+  Future<List<PrioritizedSourceChange>> complete() => _reporter.complete();
+}
+
+@internal
+class BatchChangeReporterImpl implements ChangeReporter {
+  BatchChangeReporterImpl(this.batchBuilder);
+
+  final ChangeBuilderImpl batchBuilder;
 
   @override
   ChangeBuilder createChangeBuilder({
@@ -39,7 +68,76 @@ class ChangeReporterImpl implements ChangeReporter {
     required int priority,
     String? id,
   }) {
-    final changeBuilderImpl = _ChangeBuilderImpl(
+    return batchBuilder;
+  }
+
+  @override
+  Future<void> waitForCompletion() async => batchBuilder.waitForCompletion();
+
+  @override
+  Future<List<PrioritizedSourceChange>> complete() async {
+    return [await batchBuilder.complete()];
+  }
+}
+
+@internal
+class ChangeReporterBuilderImpl extends ChangeReporterBuilder {
+  ChangeReporterBuilderImpl(this._resolver, this._analysisSession);
+
+  final CustomLintResolver _resolver;
+  final AnalysisSession _analysisSession;
+  final List<ChangeReporterImpl> _reporters = [];
+
+  @override
+  ChangeReporter createChangeReporter({required String id}) {
+    final reporter = ChangeReporterImpl(
+      _analysisSession,
+      _resolver,
+      id: id,
+    );
+    _reporters.add(reporter);
+
+    return reporter;
+  }
+
+  @override
+  Future<void> waitForCompletion() async {
+    await Future.wait(
+      _reporters.map((e) => e.waitForCompletion()),
+    );
+  }
+
+  @override
+  Future<List<PrioritizedSourceChange>> complete() async {
+    final changes = Stream.fromFutures(
+      _reporters.map((e) => e.complete()),
+    );
+
+    return changes.expand((e) => e).toList();
+  }
+}
+
+/// The implementation of [ChangeReporter]
+@internal
+class ChangeReporterImpl implements ChangeReporter {
+  /// The implementation of [ChangeReporter]
+  ChangeReporterImpl(
+    this._analysisSession,
+    this._resolver, {
+    this.id,
+  });
+
+  final CustomLintResolver _resolver;
+  final AnalysisSession _analysisSession;
+  final _changeBuilders = <ChangeBuilderImpl>[];
+  final String? id;
+
+  @override
+  ChangeBuilderImpl createChangeBuilder({
+    required String message,
+    required int priority,
+  }) {
+    final changeBuilderImpl = ChangeBuilderImpl(
       message,
       analysisSession: _analysisSession,
       priority: priority,
@@ -51,11 +149,17 @@ class ChangeReporterImpl implements ChangeReporter {
     return changeBuilderImpl;
   }
 
-  /// Waits for all [ChangeBuilder] to fully compute the source changes.
-  @internal
-  Future<List<PrioritizedSourceChange>> waitForCompletion() async {
+  @override
+  Future<void> waitForCompletion() async {
+    await Future.wait(
+      _changeBuilders.map((e) => e.waitForCompletion()),
+    );
+  }
+
+  @override
+  Future<List<PrioritizedSourceChange>> complete() async {
     return Future.wait(
-      _changeBuilders.map((e) => e._waitForCompletion()),
+      _changeBuilders.map((e) => e.complete()),
     );
   }
 }
@@ -106,8 +210,9 @@ abstract class ChangeBuilder {
   );
 }
 
-class _ChangeBuilderImpl implements ChangeBuilder {
-  _ChangeBuilderImpl(
+@internal
+class ChangeBuilderImpl implements ChangeBuilder {
+  ChangeBuilderImpl(
     this._message, {
     required this.path,
     required this.priority,
@@ -121,6 +226,7 @@ class _ChangeBuilderImpl implements ChangeBuilder {
   final String path;
   final String? id;
   final analyzer_plugin.ChangeBuilder _innerChangeBuilder;
+  var _completed = false;
   final _operations = <Future<void>>[];
 
   @override
@@ -175,8 +281,17 @@ class _ChangeBuilderImpl implements ChangeBuilder {
     );
   }
 
-  Future<PrioritizedSourceChange> _waitForCompletion() async {
+  Future<void> waitForCompletion() async {
     await Future.wait(_operations);
+  }
+
+  Future<PrioritizedSourceChange> complete() async {
+    if (_completed) {
+      throw StateError('Cannot call waitForCompletion more than once');
+    }
+    _completed = true;
+
+    await waitForCompletion();
 
     return PrioritizedSourceChange(
       priority,

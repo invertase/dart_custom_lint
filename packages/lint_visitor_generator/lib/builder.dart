@@ -56,10 +56,8 @@ class _Subscription<T> {
 }
 
 /// The container to register visitors for separate AST node types.
-@internal
 class NodeLintRegistry {
   /// The container to register visitors for separate AST node types.
-  @internal
   NodeLintRegistry(this._lintRegistry, {required bool enableTiming})
       : _enableTiming = enableTiming;
 
@@ -110,10 +108,8 @@ class NodeLintRegistry {
   ) {
     buffer.writeln('''
 /// The AST visitor that runs handlers for nodes from the [_registry].
-@internal
 class LinterVisitor extends GeneralizingAstVisitor<void> {
   /// The AST visitor that runs handlers for nodes from the [_registry].
-  @internal
   LinterVisitor(this._registry);
 
   final NodeLintRegistry _registry;
@@ -161,10 +157,8 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
 class LintRuleNodeRegistry {
   LintRuleNodeRegistry(this.nodeLintRegistry, this.name);
 
-  @internal
   final NodeLintRegistry nodeLintRegistry;
 
-  @internal
   final String name;
 ''');
 

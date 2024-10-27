@@ -1,5 +1,8 @@
 import 'package:analyzer/dart/ast/syntactic_entity.dart';
-import 'package:analyzer/error/error.dart' hide LintCode;
+import 'package:analyzer/error/error.dart'
+    hide
+        // ignore: undefined_hidden_name, Needed to support lower analyzer versions
+        LintCode;
 import 'package:analyzer/source/source_range.dart';
 
 /// Adds [sourceRange]
