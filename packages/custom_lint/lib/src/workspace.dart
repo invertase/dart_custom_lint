@@ -564,7 +564,6 @@ publish_to: 'none'
     _writeEnvironment(buffer);
     _writePubspecDependencies(buffer);
 
-    print('pubpsec:  $buffer');
     return buffer.toString();
   }
 
