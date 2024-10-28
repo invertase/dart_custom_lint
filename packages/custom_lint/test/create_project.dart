@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/error/error.dart' hide LintCode;
+import 'package:analyzer/error/error.dart'
+    hide
+        // ignore: undefined_hidden_name, Needed to support lower analyzer versions
+        LintCode;
 import 'package:path/path.dart';
 import 'package:test/scaffolding.dart';
 
@@ -100,10 +103,13 @@ class TestLintFix {
   TestLintFix({
     required this.name,
     this.nodeVisitor,
+    this.dartBuilderCode =
+        r"builder.addSimpleReplacement(node.name.sourceRange, '${node.name}fixed');",
   });
 
   final String name;
   final String? nodeVisitor;
+  final String? dartBuilderCode;
 
   void write(StringBuffer buffer, TestLintRule rule) {
     buffer.write('''
@@ -124,9 +130,9 @@ class $name extends DartFix {
         message: 'Fix ${rule.code}',
       );
 
-      ${nodeVisitor ?? r'''
+      ${nodeVisitor ?? '''
       changeBuilder.addDartFileEdit((builder) {
-        builder.addSimpleReplacement(node.name.sourceRange, '${node.name}fixed');
+        $dartBuilderCode
       });
 '''}
     });
@@ -251,6 +257,14 @@ dev_dependencies:
   custom_lint:
     path: ${PeerProjectMeta.current.customLintPath}
 ${installAsDevDependency ? pluginDependencies : ""}
+
+dependency_overrides:
+  custom_lint:
+    path: ${PeerProjectMeta.current.customLintPath}
+  custom_lint_core:
+    path: ${PeerProjectMeta.current.customLintCorePath}
+  custom_lint_builder:
+    path: ${PeerProjectMeta.current.customLintBuilderPath}
 ''',
     packageConfig: createPackageConfig(
       plugins: {...plugins, ...extraPackageConfig},

@@ -7,14 +7,11 @@ import 'dart:collection';
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:meta/meta.dart';
-
 import 'pragmas.dart';
 
 part 'node_lint_visitor.g.dart';
 
 /// Manages lint timing.
-@internal
 class LintRegistry {
   /// Dictionary mapping lints (by name) to timers.
   final Map<String, Stopwatch> timers = HashMap<String, Stopwatch>();

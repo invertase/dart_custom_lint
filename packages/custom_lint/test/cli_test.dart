@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/error/error.dart' hide LintCode;
+import 'package:analyzer/error/error.dart'
+    hide
+        // ignore: undefined_hidden_name, Needed to support lower analyzer versions
+        LintCode;
 import 'package:custom_lint/src/output/output_format.dart';
 import 'package:test/test.dart';
 

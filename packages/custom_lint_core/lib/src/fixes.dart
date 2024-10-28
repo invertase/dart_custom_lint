@@ -2,28 +2,48 @@ import 'dart:io';
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/error/error.dart' hide LintCode;
+import 'package:analyzer/error/error.dart'
+    hide
+        // ignore: undefined_hidden_name, Needed to support lower analyzer versions
+        LintCode;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:custom_lint_visitor/custom_lint_visitor.dart';
 import 'package:meta/meta.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:uuid/uuid.dart';
 
 import 'change_reporter.dart';
 import 'lint_rule.dart';
-import 'node_lint_visitor.dart';
 import 'plugin_base.dart';
 import 'resolver.dart';
+import 'runnable.dart';
+
+/// Args for [Fix].
+@internal
+typedef FixArgs = ({
+  ChangeReporter reporter,
+  AnalysisError analysisError,
+  List<AnalysisError> others,
+});
+
+const _uid = Uuid();
 
 /// {@template custom_lint_builder.lint_rule}
 /// A base class for defining quick-fixes for a [LintRule]
 ///
 /// For creating assists inside Dart files, see [DartFix].
-/// Suclassing [Fix] can be helpful if you wish to implement assists for
+/// Subclassing [Fix] can be helpful if you wish to implement assists for
 /// non-Dart files (yaml, json, ...)
 ///
 /// For usage information, see https://github.com/invertase/dart_custom_lint/blob/main/docs/fixes.md
 /// {@endtemplate}
 @immutable
-abstract class Fix {
+abstract class Fix extends Runnable<FixArgs> {
+  /// A unique ID for a fix. Must be unique across all fixes of any package.
+  ///
+  /// This is used to know which fix triggered a change, for batch support.
+  late final String id = _uid.v4();
+
   /// A list of glob patterns matching the files that [run] cares about.
   ///
   /// This can include Dart files, Yaml files, ...
@@ -32,10 +52,27 @@ abstract class Fix {
   /// Emits lints for a given file.
   ///
   /// [run] will only be invoked with files respecting [filesToAnalyze]
+  @override
   Future<void> startUp(
     CustomLintResolver resolver,
     CustomLintContext context,
   ) async {}
+
+  @internal
+  @override
+  void callRun(
+    CustomLintResolver resolver,
+    CustomLintContext context,
+    FixArgs args,
+  ) {
+    run(
+      resolver,
+      args.reporter,
+      context,
+      args.analysisError,
+      args.others,
+    );
+  }
 
   /// Emits lints for a given file.
   ///
@@ -119,7 +156,7 @@ abstract class DartFix extends Fix {
     run(resolver, reporter, context, analysisError, others);
     runPostRunCallbacks(postRunCallbacks);
 
-    return reporter.waitForCompletion();
+    return reporter.complete();
   }
 
   /// Analyze a Dart file and runs this fix in test mode.

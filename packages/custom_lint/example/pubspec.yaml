@@ -11,11 +11,3 @@ dev_dependencies:
   custom_lint:
   custom_lint_example_lint:
     path: ./example_lint
-
-dependency_overrides:
-  custom_lint:
-    path: ../../custom_lint
-  custom_lint_builder:
-    path: ../../custom_lint_builder
-  custom_lint_core:
-    path: ../../custom_lint_core
