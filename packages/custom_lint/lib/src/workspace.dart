@@ -123,8 +123,7 @@ String _buildDependencyConstraint(
       if (hosted.url != null) {
         result.writeln('      url: ${hosted.url}');
       }
-      result.writeln('    version: ${sharedConstraint.getDisplayString()}');
-
+      result.write('    version: ${sharedConstraint.getDisplayString()}');
       return result.toString();
 
     case PathDependency():
