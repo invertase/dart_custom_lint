@@ -17,7 +17,7 @@ If a package wants to access classes such as `LintRule` or `Assist` but do
 not want to make a custom_lint plugin (such as for exposing new utilities
 for plugin authors), then use `custom_lint_core` instead.
 
-Using `cutom_lint_builder` is reserved to plugin authors. Depending it on it
+Using `custom_lint_builder` is reserved to plugin authors. Depending it on it
 will tell custom_lint that your package is a plugin, and therefore will try to
 run it.
 
