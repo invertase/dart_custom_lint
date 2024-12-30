@@ -25,7 +25,7 @@ class CustomLintRunner {
 
   var _closed = false;
 
-  late final _sdkPath = getSdkPath();
+  late final _sdkPath = sdkPath;
 
   /// Starts the plugin and sends the necessary requests for initializing it.
   late final initialize = Future(() async {

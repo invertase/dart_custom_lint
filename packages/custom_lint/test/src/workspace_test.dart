@@ -116,11 +116,10 @@ extension on Pubspec {
     return {
       'name': name,
       if (version != null) 'version': version.toString(),
-      if (environment != null)
-        'environment': {
-          for (final env in environment!.entries)
-            if (env.value != null) env.key: env.value.toString(),
-        },
+      'environment': {
+        for (final env in environment.entries)
+          if (env.value != null) env.key: env.value.toString(),
+      },
       if (dependencies.isNotEmpty)
         'dependencies': {
           for (final dependency in dependencies.entries)
