@@ -230,11 +230,6 @@ extension on Dependency {
       PathDependency() => '"${that.path}"',
       SdkDependency() => 'sdk: ${that.sdk}',
       GitDependency() => 'git: ${that.url}',
-      _ => throw ArgumentError.value(
-          runtimeType,
-          'this',
-          'Unknown dependency type',
-        ),
     };
   }
 }
@@ -557,9 +552,8 @@ publish_to: 'none'
   }
 
   void _writeEnvironment(StringBuffer buffer) {
-    final environmentKeys = projects
-        .expand((e) => e.pubspec.environment?.keys ?? <String>[])
-        .toSet();
+    final environmentKeys =
+        projects.expand((e) => e.pubspec.environment.keys).toSet();
 
     if (environmentKeys.isEmpty) return;
 
@@ -568,7 +562,7 @@ publish_to: 'none'
     for (final key in environmentKeys) {
       final projectMeta = projects
           .map((project) {
-            final constraint = project.pubspec.environment?[key];
+            final constraint = project.pubspec.environment[key];
             if (constraint == null) return null;
             return (project: project, constraint: constraint);
           })
