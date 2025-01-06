@@ -4,5 +4,3 @@ dependency_overrides:
     path: ../custom_lint_core
   custom_lint_visitor:
     path: ../custom_lint_visitor
-  freezed:
-    path: ../../../freezed/packages/freezed
