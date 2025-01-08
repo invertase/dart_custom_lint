@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Support analyzer 7.0.0
+
 ## 0.7.0 - 2024-10-27
 
 - `custom_lint --fix` and the generated "Fix all <code>" assists

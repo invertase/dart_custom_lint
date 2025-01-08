@@ -25,8 +25,6 @@ class CustomLintRunner {
 
   var _closed = false;
 
-  late final _sdkPath = getSdkPath();
-
   /// Starts the plugin and sends the necessary requests for initializing it.
   late final initialize = Future(() async {
     _lintSubscription = channel.lints.listen((event) {
@@ -36,7 +34,7 @@ class CustomLintRunner {
     await channel.sendRequest(
       PluginVersionCheckParams(
         '',
-        _sdkPath,
+        sdkPath,
         _analyzerPluginProtocolVersion,
       ),
     );

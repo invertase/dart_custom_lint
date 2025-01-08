@@ -194,12 +194,12 @@ class CustomAnalyzerConverter {
   /// error severity defined by the plugin API.
   plugin.AnalysisErrorSeverity convertErrorSeverity(
           analyzer.ErrorSeverity severity) =>
-      plugin.AnalysisErrorSeverity(severity.name);
+      plugin.AnalysisErrorSeverity.values.byName(severity.name);
 
   /// Convert the error [type] from the 'analyzer' package to an analysis error
   /// type defined by the plugin API.
   plugin.AnalysisErrorType convertErrorType(analyzer.ErrorType type) =>
-      plugin.AnalysisErrorType(type.name);
+      plugin.AnalysisErrorType.values.byName(type.name);
 
   /// Create a location based on an the given [element].
   plugin.Location? locationFromElement(analyzer.Element? element,
@@ -234,8 +234,7 @@ class CustomAnalyzerConverter {
         // in either or both of these cases?
         ) {
       final type = element.type;
-      // ignore: deprecated_member_use
-      if (type is InterfaceType && type.element2 == element.enclosingElement) {
+      if (type is InterfaceType && type.element3 == element.enclosingElement3) {
         return plugin.ElementKind.ENUM_CONSTANT;
       }
     }
@@ -334,18 +333,15 @@ class CustomAnalyzerConverter {
     if (currentElement is analyzer.CompilationUnitElement) {
       return currentElement;
     }
-    // ignore: deprecated_member_use
-    if (currentElement.enclosingElement is analyzer.LibraryElement) {
-      // ignore: deprecated_member_use
-      currentElement = currentElement.enclosingElement;
+    if (currentElement.enclosingElement3 is analyzer.LibraryElement) {
+      currentElement = currentElement.enclosingElement3;
     }
     if (currentElement is analyzer.LibraryElement) {
       return currentElement.definingCompilationUnit;
     }
     for (;
         currentElement != null;
-        // ignore: deprecated_member_use
-        currentElement = currentElement.enclosingElement) {
+        currentElement = currentElement.enclosingElement3) {
       if (currentElement is analyzer.CompilationUnitElement) {
         return currentElement;
       }
