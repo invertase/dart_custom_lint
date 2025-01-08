@@ -12,7 +12,7 @@ part of 'protocol.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
 CustomLintRequest _$CustomLintRequestFromJson(Map<String, dynamic> json) {
   switch (json['runtimeType']) {
@@ -82,8 +82,13 @@ mixin _$CustomLintRequest {
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
+
+  /// Serializes this CustomLintRequest to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of CustomLintRequest
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $CustomLintRequestCopyWith<CustomLintRequest> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -107,6 +112,8 @@ class _$CustomLintRequestCopyWithImpl<$Res, $Val extends CustomLintRequest>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of CustomLintRequest
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -143,6 +150,8 @@ class __$$CustomLintRequestAnalyzerPluginRequestImplCopyWithImpl<$Res>
       $Res Function(_$CustomLintRequestAnalyzerPluginRequestImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CustomLintRequest
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -196,11 +205,13 @@ class _$CustomLintRequestAnalyzerPluginRequestImpl
             (identical(other.id, id) || other.id == id));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, request, id);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CustomLintRequest
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$CustomLintRequestAnalyzerPluginRequestImplCopyWith<
@@ -304,8 +315,11 @@ abstract class CustomLintRequestAnalyzerPluginRequest
   Request get request;
   @override
   String get id;
+
+  /// Create a copy of CustomLintRequest
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CustomLintRequestAnalyzerPluginRequestImplCopyWith<
           _$CustomLintRequestAnalyzerPluginRequestImpl>
       get copyWith => throw _privateConstructorUsedError;
@@ -333,6 +347,8 @@ class __$$CustomLintRequestAwaitAnalysisDoneImplCopyWithImpl<$Res>
       $Res Function(_$CustomLintRequestAwaitAnalysisDoneImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CustomLintRequest
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -386,11 +402,13 @@ class _$CustomLintRequestAwaitAnalysisDoneImpl
             (identical(other.reload, reload) || other.reload == reload));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, reload);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CustomLintRequest
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$CustomLintRequestAwaitAnalysisDoneImplCopyWith<
@@ -493,8 +511,11 @@ abstract class _CustomLintRequestAwaitAnalysisDone
   @override
   String get id;
   bool get reload;
+
+  /// Create a copy of CustomLintRequest
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CustomLintRequestAwaitAnalysisDoneImplCopyWith<
           _$CustomLintRequestAwaitAnalysisDoneImpl>
       get copyWith => throw _privateConstructorUsedError;
@@ -520,6 +541,8 @@ class __$$CustomLintRequestPingImplCopyWithImpl<$Res>
       $Res Function(_$CustomLintRequestPingImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CustomLintRequest
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -562,11 +585,13 @@ class _$CustomLintRequestPingImpl implements _CustomLintRequestPing {
             (identical(other.id, id) || other.id == id));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CustomLintRequest
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$CustomLintRequestPingImplCopyWith<_$CustomLintRequestPingImpl>
@@ -664,8 +689,11 @@ abstract class _CustomLintRequestPing implements CustomLintRequest {
 
   @override
   String get id;
+
+  /// Create a copy of CustomLintRequest
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CustomLintRequestPingImplCopyWith<_$CustomLintRequestPingImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
@@ -748,8 +776,13 @@ mixin _$CustomLintResponse {
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
+
+  /// Serializes this CustomLintResponse to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $CustomLintResponseCopyWith<CustomLintResponse> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -773,6 +806,8 @@ class _$CustomLintResponseCopyWithImpl<$Res, $Val extends CustomLintResponse>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -809,6 +844,8 @@ class __$$CustomLintResponseAnalyzerPluginResponseImplCopyWithImpl<$Res>
       $Res Function(_$CustomLintResponseAnalyzerPluginResponseImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -863,11 +900,13 @@ class _$CustomLintResponseAnalyzerPluginResponseImpl
             (identical(other.id, id) || other.id == id));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, response, id);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$CustomLintResponseAnalyzerPluginResponseImplCopyWith<
@@ -979,8 +1018,11 @@ abstract class _CustomLintResponseAnalyzerPluginResponse
   Response get response;
   @override
   String get id;
+
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CustomLintResponseAnalyzerPluginResponseImplCopyWith<
           _$CustomLintResponseAnalyzerPluginResponseImpl>
       get copyWith => throw _privateConstructorUsedError;
@@ -1008,6 +1050,8 @@ class __$$CustomLintResponseAwaitAnalysisDoneImplCopyWithImpl<$Res>
       $Res Function(_$CustomLintResponseAwaitAnalysisDoneImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1053,11 +1097,13 @@ class _$CustomLintResponseAwaitAnalysisDoneImpl
             (identical(other.id, id) || other.id == id));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$CustomLintResponseAwaitAnalysisDoneImplCopyWith<
@@ -1166,8 +1212,11 @@ abstract class _CustomLintResponseAwaitAnalysisDone
 
   @override
   String get id;
+
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CustomLintResponseAwaitAnalysisDoneImplCopyWith<
           _$CustomLintResponseAwaitAnalysisDoneImpl>
       get copyWith => throw _privateConstructorUsedError;
@@ -1194,6 +1243,8 @@ class __$$CustomLintResponsePongImplCopyWithImpl<$Res>
       $Res Function(_$CustomLintResponsePongImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1236,11 +1287,13 @@ class _$CustomLintResponsePongImpl implements _CustomLintResponsePong {
             (identical(other.id, id) || other.id == id));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$CustomLintResponsePongImplCopyWith<_$CustomLintResponsePongImpl>
@@ -1346,8 +1399,11 @@ abstract class _CustomLintResponsePong implements CustomLintResponse {
 
   @override
   String get id;
+
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CustomLintResponsePongImplCopyWith<_$CustomLintResponsePongImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
@@ -1374,6 +1430,8 @@ class __$$CustomLintResponseErrorImplCopyWithImpl<$Res>
       $Res Function(_$CustomLintResponseErrorImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1437,11 +1495,13 @@ class _$CustomLintResponseErrorImpl implements _CustomLintResponseError {
                 other.stackTrace == stackTrace));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, message, stackTrace);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$CustomLintResponseErrorImplCopyWith<_$CustomLintResponseErrorImpl>
@@ -1551,8 +1611,11 @@ abstract class _CustomLintResponseError implements CustomLintResponse {
   String get id;
   String get message;
   String get stackTrace;
+
+  /// Create a copy of CustomLintResponse
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CustomLintResponseErrorImplCopyWith<_$CustomLintResponseErrorImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
@@ -1610,6 +1673,8 @@ mixin _$CustomLintMessage {
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
+
+  /// Serializes this CustomLintMessage to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 }
 
@@ -1629,6 +1694,9 @@ class _$CustomLintMessageCopyWithImpl<$Res, $Val extends CustomLintMessage>
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
+
+  /// Create a copy of CustomLintMessage
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
@@ -1652,6 +1720,8 @@ class __$$CustomLintMessageEventImplCopyWithImpl<$Res>
       $Res Function(_$CustomLintMessageEventImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CustomLintMessage
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1665,6 +1735,8 @@ class __$$CustomLintMessageEventImplCopyWithImpl<$Res>
     ));
   }
 
+  /// Create a copy of CustomLintMessage
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $CustomLintEventCopyWith<$Res> get event {
@@ -1702,11 +1774,13 @@ class _$CustomLintMessageEventImpl implements CustomLintMessageEvent {
             (identical(other.event, event) || other.event == event));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, event);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CustomLintMessage
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$CustomLintMessageEventImplCopyWith<_$CustomLintMessageEventImpl>
@@ -1791,7 +1865,10 @@ abstract class CustomLintMessageEvent implements CustomLintMessage {
       _$CustomLintMessageEventImpl.fromJson;
 
   CustomLintEvent get event;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of CustomLintMessage
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CustomLintMessageEventImplCopyWith<_$CustomLintMessageEventImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
@@ -1818,6 +1895,8 @@ class __$$CustomLintMessageResponseImplCopyWithImpl<$Res>
       $Res Function(_$CustomLintMessageResponseImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CustomLintMessage
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -1831,6 +1910,8 @@ class __$$CustomLintMessageResponseImplCopyWithImpl<$Res>
     ));
   }
 
+  /// Create a copy of CustomLintMessage
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $CustomLintResponseCopyWith<$Res> get response {
@@ -1869,11 +1950,13 @@ class _$CustomLintMessageResponseImpl implements CustomLintMessageResponse {
                 other.response == response));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, response);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CustomLintMessage
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$CustomLintMessageResponseImplCopyWith<_$CustomLintMessageResponseImpl>
@@ -1958,7 +2041,10 @@ abstract class CustomLintMessageResponse implements CustomLintMessage {
       _$CustomLintMessageResponseImpl.fromJson;
 
   CustomLintResponse get response;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of CustomLintMessage
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CustomLintMessageResponseImplCopyWith<_$CustomLintMessageResponseImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
@@ -2035,6 +2121,8 @@ mixin _$CustomLintEvent {
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
+
+  /// Serializes this CustomLintEvent to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 }
 
@@ -2054,6 +2142,9 @@ class _$CustomLintEventCopyWithImpl<$Res, $Val extends CustomLintEvent>
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
+
+  /// Create a copy of CustomLintEvent
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
@@ -2076,6 +2167,8 @@ class __$$CustomLintEventAnalyzerPluginNotificationImplCopyWithImpl<$Res>
       $Res Function(_$CustomLintEventAnalyzerPluginNotificationImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CustomLintEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2124,11 +2217,13 @@ class _$CustomLintEventAnalyzerPluginNotificationImpl
                 other.notification == notification));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, notification);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CustomLintEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$CustomLintEventAnalyzerPluginNotificationImplCopyWith<
@@ -2237,7 +2332,10 @@ abstract class _CustomLintEventAnalyzerPluginNotification
 
   @NotificationJsonConverter()
   Notification get notification;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of CustomLintEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CustomLintEventAnalyzerPluginNotificationImplCopyWith<
           _$CustomLintEventAnalyzerPluginNotificationImpl>
       get copyWith => throw _privateConstructorUsedError;
@@ -2260,6 +2358,8 @@ class __$$CustomLintEventErrorImplCopyWithImpl<$Res>
       $Res Function(_$CustomLintEventErrorImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CustomLintEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2321,11 +2421,13 @@ class _$CustomLintEventErrorImpl implements _CustomLintEventError {
                 other.pluginName == pluginName));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, message, stackTrace, pluginName);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CustomLintEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$CustomLintEventErrorImplCopyWith<_$CustomLintEventErrorImpl>
@@ -2430,7 +2532,10 @@ abstract class _CustomLintEventError implements CustomLintEvent {
   String get message;
   String get stackTrace;
   String? get pluginName;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of CustomLintEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CustomLintEventErrorImplCopyWith<_$CustomLintEventErrorImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
@@ -2452,6 +2557,8 @@ class __$$CustomLintEventPrintImplCopyWithImpl<$Res>
       $Res Function(_$CustomLintEventPrintImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CustomLintEvent
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -2504,11 +2611,13 @@ class _$CustomLintEventPrintImpl implements _CustomLintEventPrint {
                 other.pluginName == pluginName));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, message, pluginName);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CustomLintEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$CustomLintEventPrintImplCopyWith<_$CustomLintEventPrintImpl>
@@ -2612,7 +2721,10 @@ abstract class _CustomLintEventPrint implements CustomLintEvent {
 
   String get message;
   String? get pluginName;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of CustomLintEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$CustomLintEventPrintImplCopyWith<_$CustomLintEventPrintImpl>
       get copyWith => throw _privateConstructorUsedError;
 }

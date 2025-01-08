@@ -1,4 +1,6 @@
 name: custom_lint_workspace
 
 packages:
-  - packages/**
+  - packages/custom_lint*
+  - packages/custom_lint*/example**
+  - packages/lint_visitor_generator

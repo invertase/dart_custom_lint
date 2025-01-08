@@ -53,7 +53,7 @@ class MyCustomLintCode extends DartLintRule {
     CustomLintContext context,
   ) {
     context.registry.addVariableDeclaration((node) {
-      reporter.reportErrorForNode(code, node);
+      reporter.atNode(node, code);
     });
   }
 }`}

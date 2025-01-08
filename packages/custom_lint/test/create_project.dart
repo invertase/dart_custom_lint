@@ -90,7 +90,7 @@ $ruleMembers
     $onRun
     context.registry.addFunctionDeclaration((node) {
       $onVariable
-      reporter.reportErrorForToken(code, node.name);
+      reporter.atToken(node.name, code);
     });
   }
 }

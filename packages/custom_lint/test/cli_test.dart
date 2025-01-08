@@ -494,45 +494,45 @@ class _Lint extends DartLintRule {
     CustomLintContext context,
   ) {
     final line2 = resolver.lineInfo.getOffsetOfLine(1);
-    reporter.reportErrorForOffset(
-      const LintCode(name: 'x2', problemMessage: 'x2'),
-      line2 + 1,
-      1,
+    reporter.atOffset(
+      errorCode: const LintCode(name: 'x2', problemMessage: 'x2'),
+      offset: line2 + 1,
+      length: 1,
     );
-    reporter.reportErrorForOffset(
-      const LintCode(name: 'a', problemMessage: 'a'),
-      line2 + 1,
-      1,
+    reporter.atOffset(
+      errorCode: const LintCode(name: 'a', problemMessage: 'a'),
+      offset: line2 + 1,
+      length: 1,
     );
-    reporter.reportErrorForOffset(
-      const LintCode(name: 'x', problemMessage: 'x'),
-      line2 + 1,
-      1,
+    reporter.atOffset(
+      errorCode: const LintCode(name: 'x', problemMessage: 'x'),
+      offset: line2 + 1,
+      length: 1,
     );
-    reporter.reportErrorForOffset(
-      const LintCode(name: 'y', problemMessage: 'y'),
-      line2,
-      1,
+    reporter.atOffset(
+      errorCode: const LintCode(name: 'y', problemMessage: 'y'),
+      offset: line2,
+      length: 1,
     );
-    reporter.reportErrorForOffset(
-      const LintCode(name: 'z', problemMessage: 'z'),
-      0,
-      1,
+    reporter.atOffset(
+      errorCode: const LintCode(name: 'z', problemMessage: 'z'),
+      offset: 0,
+      length: 1,
     );
-    reporter.reportErrorForOffset(
-      const LintCode(name: 'w', problemMessage: 'w', errorSeverity: ErrorSeverity.WARNING),
-      0,
-      1,
+    reporter.atOffset(
+      errorCode: const LintCode(name: 'w', problemMessage: 'w', errorSeverity: ErrorSeverity.WARNING),
+      offset: 0,
+      length: 1,
     );
-    reporter.reportErrorForOffset(
-      const LintCode(name: 'e', problemMessage: 'e', errorSeverity: ErrorSeverity.ERROR),
-      0,
-      1,
+    reporter.atOffset(
+      errorCode: const LintCode(name: 'e', problemMessage: 'e', errorSeverity: ErrorSeverity.ERROR),
+      offset: 0,
+      length: 1,
     );
-    reporter.reportErrorForOffset(
-      const LintCode(name: 's', problemMessage: 's', errorSeverity: ErrorSeverity.ERROR),
-      1,
-      2,
+    reporter.atOffset(
+      errorCode: const LintCode(name: 's', problemMessage: 's', errorSeverity: ErrorSeverity.ERROR),
+      offset: 1,
+      length: 2,
     );
   }
 }
