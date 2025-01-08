@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.7.1 - 2025-01-08
 
 - Support analyzer 7.0.0
 
