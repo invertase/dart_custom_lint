@@ -10,16 +10,16 @@ dependencies:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
-  web: ^0.5.1
   plugin_platform_interface: ^2.0.2
+  riverpod: ^2.0.0
+  web: ^0.5.1
 
 dev_dependencies:
+  custom_lint:
+  custom_lint_example_lint:
+    path: ../example/example_lint
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
-  custom_lint:
-  custom_lint_example_plugin_example_lint:
-    path: ./example_lint
 
 flutter:
   plugin:

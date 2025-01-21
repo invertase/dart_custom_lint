@@ -12,6 +12,8 @@ public class ExamplePlugin: NSObject, FlutterPlugin {
     switch call.method {
     case "getPlatformVersion":
       result("macOS " + ProcessInfo.processInfo.operatingSystemVersionString)
+    case "getWidget":
+      result("Container");
     default:
       result(FlutterMethodNotImplemented)
     }

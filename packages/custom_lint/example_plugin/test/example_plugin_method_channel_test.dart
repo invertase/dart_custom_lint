@@ -1,17 +1,17 @@
+import 'package:custom_lint_example_plugin/example_plugin_method_channel.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:custom_lint_example_plugin/example_plugin_method_channel.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  MethodChannelExamplePlugin platform = MethodChannelExamplePlugin();
-  const MethodChannel channel = MethodChannel('example_plugin');
+  final platform = MethodChannelExamplePlugin();
+  const channel = MethodChannel('example_plugin');
 
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       channel,
-      (MethodCall methodCall) async {
+      (methodCall) async {
         return '42';
       },
     );

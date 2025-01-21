@@ -1,4 +1,0 @@
-# melos_managed_dependency_overrides: custom_lint_example_plugin
-dependency_overrides:
-  custom_lint_example_plugin:
-    path: ..

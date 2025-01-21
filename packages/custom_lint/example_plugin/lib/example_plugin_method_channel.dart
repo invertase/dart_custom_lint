@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 import 'example_plugin_platform_interface.dart';
 
@@ -13,5 +13,11 @@ class MethodChannelExamplePlugin extends ExamplePluginPlatform {
   Future<String?> getPlatformVersion() async {
     final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
     return version;
+  }
+
+  @override
+  Future<Widget> getWidget() async {
+    final widgetToCreate = await methodChannel.invokeMethod<String>('getWidget');
+    return widgetToCreate == 'SizedBox' ? const SizedBox.shrink() : Container();
   }
 }

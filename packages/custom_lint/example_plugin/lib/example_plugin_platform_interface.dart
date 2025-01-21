@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'example_plugin_method_channel.dart';
@@ -25,5 +26,9 @@ abstract class ExamplePluginPlatform extends PlatformInterface {
 
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+
+  Future<Widget?> getWidget() {
+    throw UnimplementedError('getWidget() has not been implemented.');
   }
 }
