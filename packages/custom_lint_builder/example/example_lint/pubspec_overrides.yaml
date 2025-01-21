@@ -6,3 +6,5 @@ dependency_overrides:
     path: ../..
   custom_lint_core:
     path: ../../../custom_lint_core
+  custom_lint_visitor:
+    path: ../../../custom_lint_visitor

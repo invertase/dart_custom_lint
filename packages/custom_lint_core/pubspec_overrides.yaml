@@ -2,5 +2,7 @@
 dependency_overrides:
   custom_lint:
     path: ../custom_lint
+  custom_lint_visitor:
+    path: ../custom_lint_visitor
   lint_visitor_generator:
     path: ../lint_visitor_generator

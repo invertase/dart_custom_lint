@@ -8,3 +8,5 @@ dependency_overrides:
     path: ../../custom_lint_core
   custom_lint_example_lint:
     path: example_lint
+  custom_lint_visitor:
+    path: ../../custom_lint_visitor
