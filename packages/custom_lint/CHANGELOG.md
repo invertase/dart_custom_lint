@@ -1,3 +1,7 @@
+## Unreleased fix
+
+- Fix Android Studio/InteliJ (thanks to @EricSchlichting)
+
 ## 0.7.1 - 2025-01-08
 
 - Support analyzer 7.0.0
