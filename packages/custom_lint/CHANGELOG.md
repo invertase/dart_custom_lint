@@ -1,4 +1,4 @@
-## Unreleased fix
+## 0.7.2 - 2025-01-29
 
 - Fix Android Studio/InteliJ (thanks to @EricSchlichting)
 
