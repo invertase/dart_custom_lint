@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io' as io;
 
 import 'package:analyzer/file_system/file_system.dart';
@@ -20,7 +21,12 @@ File createAnalysisOptions(String content) {
   return PhysicalResourceProvider.INSTANCE.getFile(ioFile.path);
 }
 
-Future<String> createTempProject(String projectName, String tempDirPath) async {
+Future<String> createTempProject({
+  required String tempDirPath,
+  required String projectName,
+  String? packageConfig,
+  String? workspaceRef,
+}) async {
   final projectPath = join(tempDirPath, projectName);
 
   final dir = io.Directory(projectPath);
@@ -35,6 +41,28 @@ custom_lint:
   rules:
     - from_package
   ''');
+
+  final projectDartToolPath = join(projectPath, '.dart_tool');
+  await io.Directory(projectDartToolPath).create(recursive: true);
+
+  if (packageConfig != null) {
+    final String packageConfigPath;
+    if (workspaceRef != null) {
+      final workspaceDartToolPath = join(tempDirPath, '.dart_tool');
+      await io.Directory(workspaceDartToolPath).create(recursive: true);
+      packageConfigPath = join(workspaceDartToolPath, 'package_config.json');
+    } else {
+      packageConfigPath = join(projectDartToolPath, 'package_config.json');
+    }
+    await io.File(packageConfigPath).writeAsString(packageConfig);
+  }
+
+  if (workspaceRef != null) {
+    final pubPath = join(projectDartToolPath, 'pub');
+    await io.Directory(pubPath).create(recursive: true);
+    final workspaceRefPath = join(pubPath, 'workspace_ref.json');
+    await io.File(workspaceRefPath).writeAsString(workspaceRef);
+  }
 
   return dir.path;
 }
@@ -205,7 +233,10 @@ custom_lint:
 include: package:$testPackageName/analysis_options.yaml
       ''');
 
-      final tempProjectDir = await createTempProject(dir.path, testPackageName);
+      final tempProjectDir = await createTempProject(
+        tempDirPath: dir.path,
+        projectName: testPackageName,
+      );
 
       final patchedPackageConfig = patchPackageConfig(
         packageConfig,
@@ -225,7 +256,10 @@ include: package:$testPackageName/$notExistingFileName
       ''');
       final dir = createDir();
 
-      final tempProjectDir = await createTempProject(dir.path, testPackageName);
+      final tempProjectDir = await createTempProject(
+        tempDirPath: dir.path,
+        projectName: testPackageName,
+      );
       final patchedPackageConfig = patchPackageConfig(
         packageConfig,
         testPackageName,
@@ -243,7 +277,11 @@ include: package:$testPackageName/$notExistingFileName
 include: package:$notExistingPackage/analysis_options.yaml
       ''');
       final dir = createDir();
-      final tempProjectDir = await createTempProject(dir.path, testPackageName);
+
+      final tempProjectDir = await createTempProject(
+        tempDirPath: dir.path,
+        projectName: testPackageName,
+      );
 
       final patchedPackageConfig = patchPackageConfig(
         packageConfig,
@@ -298,6 +336,34 @@ foo:
           packageConfig,
         );
         expect(configs, CustomLintConfigs.empty);
+      });
+    });
+
+    group('package config', () {
+      test('single package', () async {
+        final dir = createDir();
+        final projectPath = await createTempProject(
+          tempDirPath: dir.path,
+          projectName: testPackageName,
+          packageConfig: jsonEncode(PackageConfig.toJson(packageConfig)),
+        );
+        final projectDir = io.Directory(projectPath);
+        final parsed = parsePackageConfig(projectDir);
+        expect(parsed, isNotNull);
+      });
+
+      test('workspace', () async {
+        final dir = createDir();
+        print(dir);
+        final projectPath = await createTempProject(
+          tempDirPath: dir.path,
+          projectName: testPackageName,
+          packageConfig: jsonEncode(PackageConfig.toJson(packageConfig)),
+          workspaceRef: jsonEncode({'workspaceRoot': '../../..'}),
+        );
+        final projectDir = io.Directory(projectPath);
+        final parsed = parsePackageConfig(projectDir);
+        expect(parsed, isNotNull);
       });
     });
   });
