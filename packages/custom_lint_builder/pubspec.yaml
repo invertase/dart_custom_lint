@@ -8,7 +8,7 @@ environment:
 
 dependencies:
   analyzer: ^7.0.0
-  analyzer_plugin: ^0.12.0
+  analyzer_plugin: ^0.13.0
   collection: ^1.16.0
   # Using tight constraints as custom_lint_builder communicate with each-other
   # using a specific contract
