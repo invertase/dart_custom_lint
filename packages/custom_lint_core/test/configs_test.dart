@@ -277,7 +277,6 @@ include: package:$testPackageName/$notExistingFileName
 include: package:$notExistingPackage/analysis_options.yaml
       ''');
       final dir = createDir();
-
       final tempProjectDir = await createTempProject(
         tempDirPath: dir.path,
         projectName: testPackageName,
