@@ -750,7 +750,7 @@ publish_to: 'none'
 
   /// Run "pub get" in the client project.
   Future<void> runPubGet(Directory tempDir) async {
-    final command = isUsingFlutter ? 'flutter' : 'dart';
+    final command = Platform.resolvedExecutable;
 
     final result = await runProcess(
       command,

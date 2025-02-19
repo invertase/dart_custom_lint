@@ -950,49 +950,8 @@ dependency_overrides:
 
         expect(
           processes.removeFirst(),
-          (executable: 'dart', args: const ['pub', 'get'], runInShell: false),
-        );
-        expect(processes, isEmpty);
-      });
-
-      test('uses fluter pub get if isUsingFlutter is true',
-          timeout: const Timeout.factor(2), () async {
-        final workingDir = await createSimpleWorkspace([
-          'flutter',
-          'custom_lint_builder',
-          Pubspec(
-            'plugin1',
-            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
-            dependencies: {'custom_lint_builder': HostedDependency()},
-          ),
-          Pubspec(
-            'a',
-            environment: {'sdk': VersionConstraint.parse('^3.0.0')},
-            devDependencies: {
-              'plugin1': PathDependency('../plugin1'),
-              'flutter': PathDependency('../flutter'),
-            },
-          ),
-        ]);
-
-        final processes = spyProcess();
-
-        final workspace = await fromContextRootsFromPaths(
-          ['a'],
-          workingDirectory: workingDir,
-        );
-
-        expect(processes, isEmpty);
-
-        await expectLater(
-          workspace.runPubGet(workingDir.dir('a')),
-          completes,
-        );
-
-        expect(
-          processes.removeFirst(),
           (
-            executable: 'flutter',
+            executable: Platform.resolvedExecutable,
             args: const ['pub', 'get'],
             runInShell: false,
           ),
