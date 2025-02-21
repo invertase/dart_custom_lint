@@ -13,6 +13,7 @@ import 'src/server_isolate_channel.dart';
 import 'src/v2/custom_lint_analyzer_plugin.dart';
 import 'src/workspace.dart';
 
+/// Will the tests pass?
 const _help = '''
 
 Custom lint runner commands:
