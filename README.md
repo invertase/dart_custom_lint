@@ -329,3 +329,5 @@ Testing quick fixes and assists is also possible with regular tests by combining
 </p>
 
 [analyzer_plugin]: https://pub.dev/packages/analyzer_plugin
+
+Will the tests pass?
