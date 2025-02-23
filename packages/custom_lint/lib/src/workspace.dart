@@ -110,7 +110,22 @@ String _buildDependencyConstraint(
 
   switch (sharedConstraint) {
     case HostedDependency():
-      return ' ${sharedConstraint.getDisplayString()}';
+      final hosted = sharedConstraint.hosted;
+      if (hosted == null) {
+        return ' ${sharedConstraint.getDisplayString()}';
+      }
+      final result = StringBuffer();
+      result.writeln();
+      result.writeln('    hosted:');
+      if (hosted.declaredName != null) {
+        result.writeln('      name: ${hosted.declaredName}');
+      }
+      if (hosted.url != null) {
+        result.writeln('      url: ${hosted.url}');
+      }
+      result.write('    version: ${sharedConstraint.getDisplayString()}');
+      return result.toString();
+
     case PathDependency():
       // Use appropriate path separators across platforms
       final path = posix.prettyUri(sharedConstraint.path);

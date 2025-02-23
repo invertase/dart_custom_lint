@@ -46,9 +46,18 @@ extension on Dependency {
     final that = this;
     if (that is HostedDependency) {
       if (that.hosted != null) {
+        String? safeName;
+        try {
+          safeName = that.hosted!.name;
+
+          // `that.hosted!.name` could throw an error if `_nameOfPackage` is null in the getter.
+          // We need to safely handle this scenario because we can't guarantee that the value is not null.
+          // ignore: avoid_catching_errors
+        } on Error catch (_) {}
+
         return {
           'hosted': {
-            'name': that.hosted!.name,
+            if (safeName != null) 'name': safeName,
             'url': that.hosted!.url.toString(),
           },
           'version': that.version.toString(),
@@ -2174,6 +2183,97 @@ dependencies:
   plugin1: ">=1.5.0 <2.0.0"
 ''');
       });
+      group(
+        'Support hosted project with custom source',
+        () {
+          test(
+              'If a dependency comes from a custom hosted source, the generated pubspec.yaml should contain the hosted source',
+              () async {
+            final workingDir = await createSimpleWorkspace([
+              Pubspec(
+                'plugin1',
+                dependencies: {
+                  'custom_lint_builder': HostedDependency(),
+                },
+              ),
+              Pubspec(
+                'a',
+                devDependencies: {
+                  'plugin1': HostedDependency(
+                    hosted: HostedDetails(
+                      'plugin1',
+                      Uri.parse('https://custom.com'),
+                    ),
+                    version: Version(1, 0, 0),
+                  ),
+                },
+              ),
+            ]);
+
+            final workspace = await fromContextRootsFromPaths(
+              ['a'],
+              workingDirectory: workingDir,
+            );
+
+            expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dependencies:
+  plugin1:
+    hosted:
+      name: plugin1
+      url: https://custom.com
+    version: "1.0.0"
+''');
+          });
+          test(
+            'Hosted withouth name should still work',
+            () async {
+              final workingDir = await createSimpleWorkspace([
+                Pubspec(
+                  'plugin1',
+                  dependencies: {
+                    'custom_lint_builder': HostedDependency(),
+                  },
+                ),
+                Pubspec(
+                  'a',
+                  devDependencies: {
+                    'plugin1': HostedDependency(
+                      hosted: HostedDetails(
+                        null,
+                        Uri.parse('https://custom.com'),
+                      ),
+                      version: Version(1, 0, 0),
+                    ),
+                  },
+                ),
+              ]);
+
+              final workspace = await fromContextRootsFromPaths(
+                ['a'],
+                workingDirectory: workingDir,
+              );
+
+              expect(workspace.computePubspec(), '''
+name: custom_lint_client
+description: A client for custom_lint
+version: 0.0.1
+publish_to: 'none'
+
+dependencies:
+  plugin1:
+    hosted:
+      url: https://custom.com
+    version: "1.0.0"
+''');
+            },
+          );
+        },
+      );
     });
 
     group(CustomLintWorkspace.fromPaths, () {
