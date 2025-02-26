@@ -1,6 +1,8 @@
 ## Unreleased patch
 
 - Upgrade Freezed to 3.0
+- Support Dart workspaces (thanks to @Rexios80)
+- Suppport analyzer_plugin 0.13.0 (thanks to @Rexios80)
 
 ## 0.7.3 - 2025-02-08
 
