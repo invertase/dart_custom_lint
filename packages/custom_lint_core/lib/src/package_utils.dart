@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:meta/meta.dart';
@@ -40,6 +41,9 @@ extension PackageIOUtils on Directory {
 
   /// The `.dart_tool/package_config.json` file.
   File get packageConfig => file('.dart_tool', 'package_config.json');
+
+  /// The `.dart_tool/pub/workspace_ref.json` file.
+  File get workspaceRef => file('.dart_tool', 'pub', 'workspace_ref.json');
 
   /// Returns a path relative to the given [other].
   String relativeTo(FileSystemEntity other) {
@@ -119,29 +123,6 @@ $content
 /// Try parsing the package config of the given directory.
 ///
 /// If the parsing fails for any reason, returns null.
-PackageConfig? tryParsePackageConfigSync(Directory directory) {
-  try {
-    return parsePackageConfigSync(directory);
-  } catch (_) {
-    return null;
-  }
-}
-
-/// Parse the package config of the given directory.
-///
-/// Throws if the parsing fails, such as if the file is badly formatted or
-/// does not exists.
-PackageConfig parsePackageConfigSync(Directory directory) {
-  final packageConfigFile = directory.packageConfig;
-  return PackageConfig.parseBytes(
-    packageConfigFile.readAsBytesSync(),
-    packageConfigFile.uri,
-  );
-}
-
-/// Try parsing the package config of the given directory.
-///
-/// If the parsing fails for any reason, returns null.
 Future<PackageConfig?> tryParsePackageConfig(Directory directory) async {
   try {
     return await parsePackageConfig(directory);
@@ -155,7 +136,17 @@ Future<PackageConfig?> tryParsePackageConfig(Directory directory) async {
 /// Throws if the parsing fails, such as if the file is badly formatted or
 /// does not exists.
 Future<PackageConfig> parsePackageConfig(Directory directory) async {
-  final packageConfigFile = directory.packageConfig;
+  var packageConfigFile = directory.packageConfig;
+  if (!packageConfigFile.existsSync()) {
+    final workspaceRefFile = directory.workspaceRef;
+    final content = workspaceRefFile.readAsStringSync();
+    final json = jsonDecode(content) as Map<String, dynamic>;
+    final workspaceRoot = json['workspaceRoot'] as String;
+    final workspacePath =
+        normalize(join(workspaceRefFile.parent.path, workspaceRoot));
+    final workspaceDir = Directory(workspacePath);
+    packageConfigFile = workspaceDir.packageConfig;
+  }
 
   return PackageConfig.parseBytes(
     await packageConfigFile.readAsBytes(),
