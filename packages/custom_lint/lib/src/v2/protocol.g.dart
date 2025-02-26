@@ -8,111 +8,109 @@ part of 'protocol.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$CustomLintRequestAnalyzerPluginRequestImpl
-    _$$CustomLintRequestAnalyzerPluginRequestImplFromJson(
+CustomLintRequestAnalyzerPluginRequest
+    _$CustomLintRequestAnalyzerPluginRequestFromJson(
             Map<String, dynamic> json) =>
-        _$CustomLintRequestAnalyzerPluginRequestImpl(
+        CustomLintRequestAnalyzerPluginRequest(
           Request.fromJson(json['request'] as Map<String, dynamic>),
           id: json['id'] as String,
           $type: json['runtimeType'] as String?,
         );
 
-Map<String, dynamic> _$$CustomLintRequestAnalyzerPluginRequestImplToJson(
-        _$CustomLintRequestAnalyzerPluginRequestImpl instance) =>
+Map<String, dynamic> _$CustomLintRequestAnalyzerPluginRequestToJson(
+        CustomLintRequestAnalyzerPluginRequest instance) =>
     <String, dynamic>{
       'request': instance.request,
       'id': instance.id,
       'runtimeType': instance.$type,
     };
 
-_$CustomLintRequestAwaitAnalysisDoneImpl
-    _$$CustomLintRequestAwaitAnalysisDoneImplFromJson(
-            Map<String, dynamic> json) =>
-        _$CustomLintRequestAwaitAnalysisDoneImpl(
-          id: json['id'] as String,
-          reload: json['reload'] as bool,
-          $type: json['runtimeType'] as String?,
-        );
+CustomLintRequestAwaitAnalysisDone _$CustomLintRequestAwaitAnalysisDoneFromJson(
+        Map<String, dynamic> json) =>
+    CustomLintRequestAwaitAnalysisDone(
+      id: json['id'] as String,
+      reload: json['reload'] as bool,
+      $type: json['runtimeType'] as String?,
+    );
 
-Map<String, dynamic> _$$CustomLintRequestAwaitAnalysisDoneImplToJson(
-        _$CustomLintRequestAwaitAnalysisDoneImpl instance) =>
+Map<String, dynamic> _$CustomLintRequestAwaitAnalysisDoneToJson(
+        CustomLintRequestAwaitAnalysisDone instance) =>
     <String, dynamic>{
       'id': instance.id,
       'reload': instance.reload,
       'runtimeType': instance.$type,
     };
 
-_$CustomLintRequestPingImpl _$$CustomLintRequestPingImplFromJson(
+CustomLintRequestPing _$CustomLintRequestPingFromJson(
         Map<String, dynamic> json) =>
-    _$CustomLintRequestPingImpl(
+    CustomLintRequestPing(
       id: json['id'] as String,
       $type: json['runtimeType'] as String?,
     );
 
-Map<String, dynamic> _$$CustomLintRequestPingImplToJson(
-        _$CustomLintRequestPingImpl instance) =>
+Map<String, dynamic> _$CustomLintRequestPingToJson(
+        CustomLintRequestPing instance) =>
     <String, dynamic>{
       'id': instance.id,
       'runtimeType': instance.$type,
     };
 
-_$CustomLintResponseAnalyzerPluginResponseImpl
-    _$$CustomLintResponseAnalyzerPluginResponseImplFromJson(
+CustomLintResponseAnalyzerPluginResponse
+    _$CustomLintResponseAnalyzerPluginResponseFromJson(
             Map<String, dynamic> json) =>
-        _$CustomLintResponseAnalyzerPluginResponseImpl(
+        CustomLintResponseAnalyzerPluginResponse(
           Response.fromJson(json['response'] as Map<String, dynamic>),
           id: json['id'] as String,
           $type: json['runtimeType'] as String?,
         );
 
-Map<String, dynamic> _$$CustomLintResponseAnalyzerPluginResponseImplToJson(
-        _$CustomLintResponseAnalyzerPluginResponseImpl instance) =>
+Map<String, dynamic> _$CustomLintResponseAnalyzerPluginResponseToJson(
+        CustomLintResponseAnalyzerPluginResponse instance) =>
     <String, dynamic>{
       'response': instance.response,
       'id': instance.id,
       'runtimeType': instance.$type,
     };
 
-_$CustomLintResponseAwaitAnalysisDoneImpl
-    _$$CustomLintResponseAwaitAnalysisDoneImplFromJson(
-            Map<String, dynamic> json) =>
-        _$CustomLintResponseAwaitAnalysisDoneImpl(
+CustomLintResponseAwaitAnalysisDone
+    _$CustomLintResponseAwaitAnalysisDoneFromJson(Map<String, dynamic> json) =>
+        CustomLintResponseAwaitAnalysisDone(
           id: json['id'] as String,
           $type: json['runtimeType'] as String?,
         );
 
-Map<String, dynamic> _$$CustomLintResponseAwaitAnalysisDoneImplToJson(
-        _$CustomLintResponseAwaitAnalysisDoneImpl instance) =>
+Map<String, dynamic> _$CustomLintResponseAwaitAnalysisDoneToJson(
+        CustomLintResponseAwaitAnalysisDone instance) =>
     <String, dynamic>{
       'id': instance.id,
       'runtimeType': instance.$type,
     };
 
-_$CustomLintResponsePongImpl _$$CustomLintResponsePongImplFromJson(
+CustomLintResponsePong _$CustomLintResponsePongFromJson(
         Map<String, dynamic> json) =>
-    _$CustomLintResponsePongImpl(
+    CustomLintResponsePong(
       id: json['id'] as String,
       $type: json['runtimeType'] as String?,
     );
 
-Map<String, dynamic> _$$CustomLintResponsePongImplToJson(
-        _$CustomLintResponsePongImpl instance) =>
+Map<String, dynamic> _$CustomLintResponsePongToJson(
+        CustomLintResponsePong instance) =>
     <String, dynamic>{
       'id': instance.id,
       'runtimeType': instance.$type,
     };
 
-_$CustomLintResponseErrorImpl _$$CustomLintResponseErrorImplFromJson(
+CustomLintResponseError _$CustomLintResponseErrorFromJson(
         Map<String, dynamic> json) =>
-    _$CustomLintResponseErrorImpl(
+    CustomLintResponseError(
       id: json['id'] as String,
       message: json['message'] as String,
       stackTrace: json['stackTrace'] as String,
       $type: json['runtimeType'] as String?,
     );
 
-Map<String, dynamic> _$$CustomLintResponseErrorImplToJson(
-        _$CustomLintResponseErrorImpl instance) =>
+Map<String, dynamic> _$CustomLintResponseErrorToJson(
+        CustomLintResponseError instance) =>
     <String, dynamic>{
       'id': instance.id,
       'message': instance.message,
@@ -120,62 +118,62 @@ Map<String, dynamic> _$$CustomLintResponseErrorImplToJson(
       'runtimeType': instance.$type,
     };
 
-_$CustomLintMessageEventImpl _$$CustomLintMessageEventImplFromJson(
+CustomLintMessageEvent _$CustomLintMessageEventFromJson(
         Map<String, dynamic> json) =>
-    _$CustomLintMessageEventImpl(
+    CustomLintMessageEvent(
       CustomLintEvent.fromJson(json['event'] as Map<String, dynamic>),
       $type: json['runtimeType'] as String?,
     );
 
-Map<String, dynamic> _$$CustomLintMessageEventImplToJson(
-        _$CustomLintMessageEventImpl instance) =>
+Map<String, dynamic> _$CustomLintMessageEventToJson(
+        CustomLintMessageEvent instance) =>
     <String, dynamic>{
       'event': instance.event,
       'runtimeType': instance.$type,
     };
 
-_$CustomLintMessageResponseImpl _$$CustomLintMessageResponseImplFromJson(
+CustomLintMessageResponse _$CustomLintMessageResponseFromJson(
         Map<String, dynamic> json) =>
-    _$CustomLintMessageResponseImpl(
+    CustomLintMessageResponse(
       CustomLintResponse.fromJson(json['response'] as Map<String, dynamic>),
       $type: json['runtimeType'] as String?,
     );
 
-Map<String, dynamic> _$$CustomLintMessageResponseImplToJson(
-        _$CustomLintMessageResponseImpl instance) =>
+Map<String, dynamic> _$CustomLintMessageResponseToJson(
+        CustomLintMessageResponse instance) =>
     <String, dynamic>{
       'response': instance.response,
       'runtimeType': instance.$type,
     };
 
-_$CustomLintEventAnalyzerPluginNotificationImpl
-    _$$CustomLintEventAnalyzerPluginNotificationImplFromJson(
+CustomLintEventAnalyzerPluginNotification
+    _$CustomLintEventAnalyzerPluginNotificationFromJson(
             Map<String, dynamic> json) =>
-        _$CustomLintEventAnalyzerPluginNotificationImpl(
+        CustomLintEventAnalyzerPluginNotification(
           const NotificationJsonConverter()
               .fromJson(json['notification'] as Map<String, Object?>),
           $type: json['runtimeType'] as String?,
         );
 
-Map<String, dynamic> _$$CustomLintEventAnalyzerPluginNotificationImplToJson(
-        _$CustomLintEventAnalyzerPluginNotificationImpl instance) =>
+Map<String, dynamic> _$CustomLintEventAnalyzerPluginNotificationToJson(
+        CustomLintEventAnalyzerPluginNotification instance) =>
     <String, dynamic>{
       'notification':
           const NotificationJsonConverter().toJson(instance.notification),
       'runtimeType': instance.$type,
     };
 
-_$CustomLintEventErrorImpl _$$CustomLintEventErrorImplFromJson(
+CustomLintEventError _$CustomLintEventErrorFromJson(
         Map<String, dynamic> json) =>
-    _$CustomLintEventErrorImpl(
+    CustomLintEventError(
       json['message'] as String,
       json['stackTrace'] as String,
       pluginName: json['pluginName'] as String?,
       $type: json['runtimeType'] as String?,
     );
 
-Map<String, dynamic> _$$CustomLintEventErrorImplToJson(
-        _$CustomLintEventErrorImpl instance) =>
+Map<String, dynamic> _$CustomLintEventErrorToJson(
+        CustomLintEventError instance) =>
     <String, dynamic>{
       'message': instance.message,
       'stackTrace': instance.stackTrace,
@@ -183,16 +181,16 @@ Map<String, dynamic> _$$CustomLintEventErrorImplToJson(
       'runtimeType': instance.$type,
     };
 
-_$CustomLintEventPrintImpl _$$CustomLintEventPrintImplFromJson(
+CustomLintEventPrint _$CustomLintEventPrintFromJson(
         Map<String, dynamic> json) =>
-    _$CustomLintEventPrintImpl(
+    CustomLintEventPrint(
       json['message'] as String,
       pluginName: json['pluginName'] as String?,
       $type: json['runtimeType'] as String?,
     );
 
-Map<String, dynamic> _$$CustomLintEventPrintImplToJson(
-        _$CustomLintEventPrintImpl instance) =>
+Map<String, dynamic> _$CustomLintEventPrintToJson(
+        CustomLintEventPrint instance) =>
     <String, dynamic>{
       'message': instance.message,
       'pluginName': instance.pluginName,

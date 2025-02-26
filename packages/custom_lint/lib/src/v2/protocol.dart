@@ -6,7 +6,7 @@ part 'protocol.freezed.dart';
 
 /// A base class shared between all custom_lint requests
 @freezed
-class CustomLintRequest with _$CustomLintRequest {
+sealed class CustomLintRequest with _$CustomLintRequest {
   /// A request using the analyzer_plugin protocol
   factory CustomLintRequest.analyzerPluginRequest(
     Request request, {
@@ -17,10 +17,10 @@ class CustomLintRequest with _$CustomLintRequest {
   factory CustomLintRequest.awaitAnalysisDone({
     required String id,
     required bool reload,
-  }) = _CustomLintRequestAwaitAnalysisDone;
+  }) = CustomLintRequestAwaitAnalysisDone;
 
   /// Sends a meaningless message to the client, waiting for a response.
-  factory CustomLintRequest.ping({required String id}) = _CustomLintRequestPing;
+  factory CustomLintRequest.ping({required String id}) = CustomLintRequestPing;
 
   /// Decode a custom_lint request from JSON
   factory CustomLintRequest.fromJson(Map<String, Object?> json) =>
@@ -33,27 +33,27 @@ class CustomLintRequest with _$CustomLintRequest {
 
 /// The base class for all responses to a custom_lint request.
 @freezed
-class CustomLintResponse with _$CustomLintResponse {
+sealed class CustomLintResponse with _$CustomLintResponse {
   /// The response for an analyzer_plugin request
   factory CustomLintResponse.analyzerPluginResponse(
     Response response, {
     required String id,
-  }) = _CustomLintResponseAnalyzerPluginResponse;
+  }) = CustomLintResponseAnalyzerPluginResponse;
 
   /// The message sent when the client has completed its analysis
   factory CustomLintResponse.awaitAnalysisDone({required String id}) =
-      _CustomLintResponseAwaitAnalysisDone;
+      CustomLintResponseAwaitAnalysisDone;
 
   /// The reply to a ping request
   factory CustomLintResponse.pong({required String id}) =
-      _CustomLintResponsePong;
+      CustomLintResponsePong;
 
   /// A request failed
   factory CustomLintResponse.error({
     required String id,
     required String message,
     required String stackTrace,
-  }) = _CustomLintResponseError;
+  }) = CustomLintResponseError;
 
   /// Decode a response from JSON
   factory CustomLintResponse.fromJson(Map<String, Object?> json) =>
@@ -65,8 +65,8 @@ class CustomLintResponse with _$CustomLintResponse {
 
 /// A base class between all messages from the client, be it request responses,
 /// or spontaneous events.
-@freezed
-class CustomLintMessage with _$CustomLintMessage {
+@Freezed(copyWith: false)
+abstract class CustomLintMessage with _$CustomLintMessage {
   /// A spontaneous event, not associated with a request
   factory CustomLintMessage.event(CustomLintEvent event) =
       CustomLintMessageEvent;
@@ -102,25 +102,25 @@ class NotificationJsonConverter
 
 /// A base class for all custom_lint events
 @freezed
-class CustomLintEvent with _$CustomLintEvent {
+sealed class CustomLintEvent with _$CustomLintEvent {
   /// The client sent a [Notification] using the analyzer_plugin protocol
   factory CustomLintEvent.analyzerPluginNotification(
     @NotificationJsonConverter() Notification notification,
-  ) = _CustomLintEventAnalyzerPluginNotification;
-  // TOOD add source change event?
+  ) = CustomLintEventAnalyzerPluginNotification;
+  // TODO add source change event?
 
   /// A spontaneous error, unrelated to a request
   factory CustomLintEvent.error(
     String message,
     String stackTrace, {
     required String? pluginName,
-  }) = _CustomLintEventError;
+  }) = CustomLintEventError;
 
   /// A log output
   factory CustomLintEvent.print(
     String message, {
     required String? pluginName,
-  }) = _CustomLintEventPrint;
+  }) = CustomLintEventPrint;
 
   /// Decode an event from JSON
   factory CustomLintEvent.fromJson(Map<String, Object?> json) =>
