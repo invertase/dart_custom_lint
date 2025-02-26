@@ -397,8 +397,8 @@ class CustomLintServer {
   }
 
   Future<void> _handleEvent(CustomLintEvent event) => _runner.run(() async {
-        await event.map(
-          analyzerPluginNotification: (event) async {
+        switch (event) {
+          case CustomLintEventAnalyzerPluginNotification():
             _analyzerPluginClientChannel.sendJson(event.notification.toJson());
 
             final notification = event.notification;
@@ -414,8 +414,7 @@ class CustomLintServer {
                 pluginContextRoots: await _allContextRoots,
               );
             }
-          },
-          error: (event) async {
+          case CustomLintEventError():
             _analyzerPluginClientChannel.sendJson(
               PluginErrorParams(false, event.message, event.stackTrace)
                   .toNotification()
@@ -428,15 +427,13 @@ class CustomLintServer {
               pluginName: event.pluginName ?? 'custom_lint client',
               pluginContextRoots: await _allContextRoots,
             );
-          },
-          print: (event) async {
+          case CustomLintEventPrint():
             delegate.pluginMessage(
               this,
               event.message,
               pluginName: event.pluginName ?? 'custom_lint client',
               pluginContextRoots: await _allContextRoots,
             );
-          },
-        );
+        }
       });
 }

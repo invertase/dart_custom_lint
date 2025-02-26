@@ -235,13 +235,16 @@ void main(List<String> args) async {
       CustomLintRequest.analyzerPluginRequest(request, id: request.id),
     );
 
-    return response.maybeMap<Response>(
-      analyzerPluginResponse: (r) => r.response,
-      orElse: () => throw UnsupportedError(
-        'Expected a CustomLintResponse.analyzerPluginResponse '
-        'but received ${response.runtimeType}.',
-      ),
-    );
+    return switch (response) {
+      CustomLintResponseAnalyzerPluginResponse() => response.response,
+      CustomLintResponseAwaitAnalysisDone() ||
+      CustomLintResponsePong() ||
+      CustomLintResponseError() =>
+        throw UnsupportedError(
+          'Expected a CustomLintResponse.analyzerPluginResponse '
+          'but received ${response.runtimeType}.',
+        )
+    };
   }
 
   /// Sends a custom_lint request to the client, expecting a custom_lint response
@@ -259,10 +262,12 @@ void main(List<String> args) async {
 
     final response = await matchingResponse;
 
-    response.map(
-      awaitAnalysisDone: (_) {},
-      pong: (_) {},
-      analyzerPluginResponse: (response) {
+    switch (response) {
+      case CustomLintResponseAwaitAnalysisDone():
+      case CustomLintResponsePong():
+        break;
+
+      case CustomLintResponseAnalyzerPluginResponse():
         final error = response.response.error;
         if (error != null) {
           throw CustomLintRequestFailure(
@@ -271,15 +276,13 @@ void main(List<String> args) async {
             request: request,
           );
         }
-      },
-      error: (response) {
+      case CustomLintResponseError():
         throw CustomLintRequestFailure(
           message: response.message,
           stackTrace: response.stackTrace,
           request: request,
         );
-      },
-    );
+    }
 
     return response;
   }
