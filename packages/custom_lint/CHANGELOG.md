@@ -1,3 +1,7 @@
+## Unreleased patch
+
+- Upgrade Freezed to 3.0
+
 ## 0.7.3 - 2025-02-08
 
 - Bump analyzer_plugin
