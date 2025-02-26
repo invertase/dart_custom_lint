@@ -189,15 +189,17 @@ class CustomLintPluginClient {
 
   Future<void> _handleCustomLintRequest(CustomLintRequest request) async {
     try {
-      final response = await request.map<FutureOr<CustomLintResponse?>>(
-        // Analyzer_plugin requests are handles by the _analyzer_plugin client
-        analyzerPluginRequest: (_) => null,
-        ping: (param) => CustomLintResponse.pong(id: request.id),
-        awaitAnalysisDone: (param) async {
-          await _analyzerPlugin._awaitAnalysisDone(reload: param.reload);
-          return CustomLintResponse.awaitAnalysisDone(id: request.id);
-        },
-      );
+      // Analyzer_plugin requests are handles by the _analyzer_plugin client
+      final CustomLintResponse? response;
+      switch (request) {
+        case CustomLintRequestAnalyzerPluginRequest():
+          response = null;
+        case CustomLintRequestAwaitAnalysisDone(:final reload):
+          await _analyzerPlugin._awaitAnalysisDone(reload: reload);
+          response = CustomLintResponse.awaitAnalysisDone(id: request.id);
+        case CustomLintRequestPing():
+          response = CustomLintResponse.pong(id: request.id);
+      }
 
       if (response != null) {
         _channel.sendResponse(response);
