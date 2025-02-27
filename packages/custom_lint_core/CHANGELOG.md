@@ -1,3 +1,7 @@
+## 0.7.2 - 2025-02-27
+
+Fix inconsistent version
+
 ## 0.7.1 - 2025-01-08
 
 - Support analyzer 7.0.0
