@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.7.4 - 2025-02-27
 
 - Upgrade Freezed to 3.0
 - Support Dart workspaces (thanks to @Rexios80)
