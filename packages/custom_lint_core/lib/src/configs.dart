@@ -1,3 +1,4 @@
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
@@ -17,6 +18,7 @@ class CustomLintConfigs {
     required this.verbose,
     required this.debug,
     required this.rules,
+    required this.errors,
   });
 
   /// Decode a [CustomLintConfigs] from a file.
@@ -108,11 +110,27 @@ class CustomLintConfigs {
       }
     }
 
+    final errors = <String, ErrorSeverity>{...includedOptions.errors};
+
+    final errorsYaml = customLint['errors'] as Object?;
+    if (errorsYaml is Map) {
+      for (final entry in errorsYaml.entries) {
+        final value = entry.value;
+        if (entry.key case final String key?) {
+          errors[key] = ErrorSeverity.values.firstWhereOrNull(
+                (e) => e.displayName == value,
+              ) ??
+              ErrorSeverity.NONE;
+        }
+      }
+    }
+
     return CustomLintConfigs(
       enableAllLintRules: enableAllLintRules,
       verbose: verbose,
       debug: debug,
       rules: UnmodifiableMapView(rules),
+      errors: errors,
     );
   }
 
@@ -123,6 +141,7 @@ class CustomLintConfigs {
     verbose: false,
     debug: false,
     rules: {},
+    errors: {},
   );
 
   /// A field representing whether to enable/disable lint rules that are not
@@ -146,6 +165,9 @@ class CustomLintConfigs {
 
   /// Whether enable hot-reload and log the VM-service URI.
   final bool debug;
+
+  /// A map of error codes to their severity.
+  final Map<String, ErrorSeverity> errors;
 
   @override
   bool operator ==(Object other) =>
