@@ -117,10 +117,16 @@ class CustomLintConfigs {
       for (final entry in errorsYaml.entries) {
         final value = entry.value;
         if (entry.key case final String key?) {
-          errors[key] = ErrorSeverity.values.firstWhereOrNull(
-                (e) => e.displayName == value,
-              ) ??
-              ErrorSeverity.NONE;
+          final severity = ErrorSeverity.values.firstWhereOrNull(
+            (e) => e.displayName == value,
+          );
+          if (severity == null) {
+            throw ArgumentError(
+              'Provided error severity: $value specified for key: $key is not valid. '
+              'Valid error severities are: ${ErrorSeverity.values.map((e) => e.displayName).join(', ')}',
+            );
+          }
+          errors[key] = severity;
         }
       }
     }
@@ -130,7 +136,7 @@ class CustomLintConfigs {
       verbose: verbose,
       debug: debug,
       rules: UnmodifiableMapView(rules),
-      errors: errors,
+      errors: UnmodifiableMapView(errors),
     );
   }
 
@@ -175,7 +181,8 @@ class CustomLintConfigs {
       other.enableAllLintRules == enableAllLintRules &&
       other.verbose == verbose &&
       other.debug == debug &&
-      const MapEquality<String, LintOptions>().equals(other.rules, rules);
+      const MapEquality<String, LintOptions>().equals(other.rules, rules) &&
+      const MapEquality<String, ErrorSeverity>().equals(other.errors, errors);
 
   @override
   int get hashCode => Object.hash(
@@ -183,6 +190,7 @@ class CustomLintConfigs {
         verbose,
         debug,
         const MapEquality<String, LintOptions>().hash(rules),
+        const MapEquality<String, ErrorSeverity>().hash(errors),
       );
 }
 
