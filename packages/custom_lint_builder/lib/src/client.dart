@@ -995,6 +995,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
               allAnalysisErrors,
               lineInfo: resolver.lineInfo,
               options: analysisContext.getAnalysisOptionsForFile(file),
+              configSeverities: configs.configs.errors,
             ),
           ).toNotification(),
         ),
