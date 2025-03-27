@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io' as io;
 
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:custom_lint_core/custom_lint_core.dart';
@@ -115,6 +116,7 @@ custom_lint:
   test('Empty config', () {
     expect(CustomLintConfigs.empty.enableAllLintRules, null);
     expect(CustomLintConfigs.empty.rules, isEmpty);
+    expect(CustomLintConfigs.empty.errors, isEmpty);
   });
 
   group('parse', () {
@@ -184,6 +186,25 @@ custom_lint:
 
       expect(
         () => configs.rules['b'] = const LintOptions.empty(enabled: true),
+        throwsUnsupportedError,
+      );
+    });
+
+    test('has an immutable map of errors', () {
+      final analysisOptions = createAnalysisOptions('''
+custom_lint:
+  errors:
+    a: error
+''');
+      final configs = CustomLintConfigs.parse(analysisOptions, packageConfig);
+
+      expect(
+        configs.errors,
+        {'a': ErrorSeverity.ERROR},
+      );
+
+      expect(
+        () => configs.errors['a'] = ErrorSeverity.INFO,
         throwsUnsupportedError,
       );
     });
@@ -338,6 +359,68 @@ foo:
       });
     });
 
+    test('Parses error severities from configs', () {
+      final analysisOptions = createAnalysisOptions('''
+custom_lint:
+  errors:
+    rule_name_1: error
+    rule_name_2: warning
+    rule_name_3: info
+    rule_name_4: none
+''');
+      final configs = CustomLintConfigs.parse(analysisOptions, packageConfig);
+
+      expect(configs.errors, {
+        'rule_name_1': ErrorSeverity.ERROR,
+        'rule_name_2': ErrorSeverity.WARNING,
+        'rule_name_3': ErrorSeverity.INFO,
+        'rule_name_4': ErrorSeverity.NONE,
+      });
+    });
+
+    test('Handles unknown error severity values', () {
+      final analysisOptions = createAnalysisOptions('''
+custom_lint:
+  errors:
+    rule_name_1: invalid_severity
+''');
+      expect(
+        () => CustomLintConfigs.parse(analysisOptions, packageConfig),
+        throwsA(
+          isArgumentError.having(
+            (e) => e.message,
+            'message',
+            'Provided error severity: invalid_severity specified for key: rule_name_1 is not valid. '
+                'Valid error severities are: none, info, warning, error',
+          ),
+        ),
+      );
+    });
+
+    test('Merges error severities from included config file', () {
+      final includedFile = createAnalysisOptions('''
+custom_lint:
+  errors:
+    rule_name_1: error
+    rule_name_2: warning
+''');
+
+      final analysisOptions = createAnalysisOptions('''
+include: ${includedFile.path}
+custom_lint:
+  errors:
+    rule_name_2: info
+    rule_name_3: error
+''');
+      final configs = CustomLintConfigs.parse(analysisOptions, packageConfig);
+
+      expect(configs.errors, {
+        'rule_name_1': ErrorSeverity.ERROR,
+        'rule_name_2': ErrorSeverity.INFO,
+        'rule_name_3': ErrorSeverity.ERROR,
+      });
+    });
+
     group('package config', () {
       test('single package', () async {
         final dir = createDir();
@@ -353,7 +436,6 @@ foo:
 
       test('workspace', () async {
         final dir = createDir();
-        print(dir);
         final projectPath = await createTempProject(
           tempDirPath: dir.path,
           projectName: testPackageName,

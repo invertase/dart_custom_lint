@@ -83,4 +83,72 @@ void main() {
       },
     );
   });
+
+  test('Respects configSeverities when converting errors', () {
+    final resourceProvider = MemoryResourceProvider();
+    final source = FileSource(
+      resourceProvider.newFile(
+        '/home/user/project/lib/main.dart',
+        'void main() {}',
+      ),
+    );
+
+    // Create an analysis error with INFO severity
+    final error = AnalysisError.tmp(
+      source: source,
+      offset: 0,
+      length: 4,
+      errorCode: const LintCode(
+        name: 'rule_name_1',
+        problemMessage: 'This is a lint',
+      ),
+    );
+
+    // Create config severities map that changes rule_name_1 to ERROR
+    final configSeverities = <String, ErrorSeverity>{
+      'rule_name_1': ErrorSeverity.ERROR,
+      'rule_name_2': ErrorSeverity.WARNING,
+    };
+
+    final converter = CustomAnalyzerConverter();
+
+    // Convert the error without config severities - should be INFO
+    final defaultResult = converter.convertAnalysisError(error);
+    expect(defaultResult.severity.name, 'INFO');
+
+    // Convert the error with direct severity override
+    final withSeverityParam = converter.convertAnalysisError(
+      error,
+      severity: ErrorSeverity.ERROR,
+    );
+    expect(withSeverityParam.severity.name, 'ERROR');
+
+    // Convert the error with config severities through convertAnalysisErrors
+    final withConfigSeverities = converter.convertAnalysisErrors(
+      [error],
+      configSeverities: configSeverities,
+    ).single;
+
+    // Config severities should have overridden the default severity
+    expect(withConfigSeverities.severity.name, 'ERROR');
+
+    // Create an error with a rule name that doesn't have a config severity
+    final errorWithoutConfigSeverity = AnalysisError.tmp(
+      source: source,
+      offset: 0,
+      length: 4,
+      errorCode: const LintCode(
+        name: 'no_config_rule',
+        problemMessage: 'This is another lint',
+      ),
+    );
+
+    final noConfigResult = converter.convertAnalysisErrors(
+      [errorWithoutConfigSeverity],
+      configSeverities: configSeverities,
+    ).single;
+
+    // Should use default severity when not in config
+    expect(noConfigResult.severity.name, 'INFO');
+  });
 }
