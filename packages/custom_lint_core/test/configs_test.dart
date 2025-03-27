@@ -383,11 +383,17 @@ custom_lint:
   errors:
     rule_name_1: invalid_severity
 ''');
-        final configs = CustomLintConfigs.parse(analysisOptions, packageConfig);
-
-        expect(configs.errors, {
-          'rule_name_1': ErrorSeverity.NONE,
-        });
+        expect(
+          () => CustomLintConfigs.parse(analysisOptions, packageConfig),
+          throwsA(
+            isArgumentError.having(
+              (e) => e.message,
+              'message',
+              'Provided error severity: invalid_severity specified for key: rule_name_1 is not valid. '
+              'Valid error severities are: none, info, warning, error',
+            ),
+          ),
+        );
       });
 
       test('Merges error severities from included config file', () {
