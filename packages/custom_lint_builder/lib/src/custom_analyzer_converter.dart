@@ -78,30 +78,23 @@ class CustomAnalyzerConverter {
     Map<String, analyzer.ErrorSeverity>? configSeverities,
   }) {
     var serverErrors = <plugin.AnalysisError>[];
-    for (var error in errors) {
-      var processor = analyzer.ErrorProcessor.getProcessor(options, error);
-      // Check if there's a severity override in the configs
+    for (final error in errors) {
+      final processor = analyzer.ErrorProcessor.getProcessor(options, error);
       final configSeverity = configSeverities?[error.errorCode.name];
 
-      if (processor != null) {
-        var severity = processor.severity;
-        // Errors with null severity are filtered out.
-        if (severity != null) {
-          // Config severities override processor severities
-          serverErrors.add(convertAnalysisError(
-            error,
-            lineInfo: lineInfo,
-            severity: configSeverity ?? severity,
-          ));
-        }
-      } else {
-        // If no processor, still check for config severities
-        serverErrors.add(convertAnalysisError(
-          error,
-          lineInfo: lineInfo,
-          severity: configSeverity,
-        ));
+      // Config severities override processor severities
+      final severity = configSeverity ?? processor?.severity;
+
+      // Errors with null severity or NONE are filtered out.
+      if (severity == null || severity == analyzer.ErrorSeverity.NONE) {
+        continue;
       }
+
+      serverErrors.add(convertAnalysisError(
+        error,
+        lineInfo: lineInfo,
+        severity: severity,
+      ));
     }
     return serverErrors;
   }
