@@ -77,7 +77,7 @@ class CustomAnalyzerConverter {
     analyzer.AnalysisOptions? options,
     Map<String, analyzer.ErrorSeverity>? configSeverities,
   }) {
-    var serverErrors = <plugin.AnalysisError>[];
+    final serverErrors = <plugin.AnalysisError>[];
     for (final error in errors) {
       final processor = analyzer.ErrorProcessor.getProcessor(options, error);
       final configSeverity = configSeverities?[error.errorCode.name];
