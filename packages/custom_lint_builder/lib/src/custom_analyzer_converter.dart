@@ -83,26 +83,17 @@ class CustomAnalyzerConverter {
       final configSeverity = configSeverities?[error.errorCode.name];
       // Config severities override processor severities
       final severity = configSeverity ?? processor?.severity;
+
+      // Errors with none severity are filtered out.
       if (severity == analyzer.ErrorSeverity.NONE) {
         continue;
       }
 
-      if (processor != null) {
-        // Errors with null severity are filtered out.
-        if (severity != null) {
-          serverErrors.add(convertAnalysisError(
-            error,
-            lineInfo: lineInfo,
-            severity: severity,
-          ));
-        }
-      } else {
-        serverErrors.add(convertAnalysisError(
-          error,
-          lineInfo: lineInfo,
-          severity: severity,
-        ));
-      }
+      serverErrors.add(convertAnalysisError(
+        error,
+        lineInfo: lineInfo,
+        severity: severity,
+      ));
     }
     return serverErrors;
   }
