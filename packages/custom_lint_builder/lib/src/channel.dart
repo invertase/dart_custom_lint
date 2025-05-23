@@ -92,11 +92,11 @@ Future<void> runSocket(
       );
     }),
     (error, stackTrace) {
-      client.then((value) => value.handleError(error, stackTrace));
+      unawaited(client.then((value) => value.handleError(error, stackTrace)));
     },
     zoneSpecification: ZoneSpecification(
       print: (self, parent, zone, line) {
-        client.then((value) => value.handlePrint(line));
+        unawaited(client.then((value) => value.handlePrint(line)));
       },
     ),
   );

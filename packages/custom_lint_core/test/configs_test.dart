@@ -353,7 +353,7 @@ foo:
 
       test('workspace', () async {
         final dir = createDir();
-        print(dir);
+
         final projectPath = await createTempProject(
           tempDirPath: dir.path,
           projectName: testPackageName,

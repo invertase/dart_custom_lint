@@ -5,7 +5,7 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
-  analyzer: ^7.0.0
+  analyzer: ^7.4.5
   build: ^2.3.1
   build_config: ^1.1.0
   collection: ^1.17.1

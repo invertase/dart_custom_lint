@@ -165,7 +165,7 @@ class CustomLintPluginClient {
         switch (value.result) {
           case HotReloadResult.Succeeded:
           case HotReloadResult.PartiallySucceeded:
-            _analyzerPlugin.reAnalyze();
+            unawaited(_analyzerPlugin.reAnalyze());
           default:
         }
       },
