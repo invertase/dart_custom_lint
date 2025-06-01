@@ -235,10 +235,7 @@ This allows you to change INFO level lints to WARNING or ERROR, or vice versa:
 ```yaml
 custom_lint:
   errors:
-    my_lint_rule: error # Override severity to ERROR
-    another_rule: warning # Override severity to WARNING 
-    third_rule: info # Override severity to INFO
-    fourth_rule: none # Suppress the lint entirely
+    my_lint_rule: error
 ```
 
 The available severity levels are: `error`, `warning`, `info`, and `none`.
