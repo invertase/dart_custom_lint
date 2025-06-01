@@ -234,8 +234,6 @@ This allows you to change INFO level lints to WARNING or ERROR, or vice versa:
 
 ```yaml
 custom_lint:
-  rules:
-    - my_lint_rule # enable the rule with default severity
   errors:
     my_lint_rule: error # Override severity to ERROR
     another_rule: warning # Override severity to WARNING 
