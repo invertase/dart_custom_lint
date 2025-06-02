@@ -11,6 +11,7 @@ analyzer:
     included_file_warning: ignore
     # false positive when using Freezed
     invalid_annotation_target: ignore
+    deprecated_member_use: ignore
 
 linter:
   rules:
