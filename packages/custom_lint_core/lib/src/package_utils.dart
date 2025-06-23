@@ -48,6 +48,8 @@ extension PackageIOUtils on Directory {
     if (_packageConfig.existsSync()) return _packageConfig;
 
     final workspaceRefFile = file('.dart_tool', 'pub', 'workspace_ref.json');
+    if (!workspaceRefFile.existsSync()) return _packageConfig;
+
     final content = workspaceRefFile.readAsStringSync();
     final json = jsonDecode(content) as Map<String, dynamic>;
     final workspaceRoot = json['workspaceRoot'] as String;
