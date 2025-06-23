@@ -330,11 +330,9 @@ Stream<YamlMap> visitAnalysisOptionAndIncludes(
   File analysisOptionsFile,
 ) async* {
   final visited = <String>{};
-  late final packageConfigFuture = loadPackageConfig(
-    File(
-      join(analysisOptionsFile.parent.path, '.dart_tool/package_config.json'),
-    ),
-  ).then<PackageConfig?>(
+  late final packageConfigFuture =
+      loadPackageConfig(analysisOptionsFile.parent.packageConfig)
+          .then<PackageConfig?>(
     (value) => value,
     // On error, return null to not throw. The function later handles the null
     onError: (e, s) => null,
@@ -418,7 +416,14 @@ String? _findOptionsForPubspec(String pubspecPath) {
 Iterable<String> _findRoots(String path) sync* {
   final directory = Directory(path);
 
-  yield* directory.listSync(recursive: true).whereType<File>().where((file) {
+  yield* directory
+      .listSync(
+        recursive: true,
+        // Do not follow symbolic links (can be problematic in flutter platform folders)
+        followLinks: false,
+      )
+      .whereType<File>()
+      .where((file) {
     final fileName = basename(file.path);
     if (fileName != 'pubspec.yaml' && fileName != 'analysis_options.yaml') {
       return false;
