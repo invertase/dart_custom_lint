@@ -330,11 +330,9 @@ Stream<YamlMap> visitAnalysisOptionAndIncludes(
   File analysisOptionsFile,
 ) async* {
   final visited = <String>{};
-  late final packageConfigFuture = loadPackageConfig(
-    File(
-      join(analysisOptionsFile.parent.path, '.dart_tool/package_config.json'),
-    ),
-  ).then<PackageConfig?>(
+  late final packageConfigFuture =
+      loadPackageConfig(analysisOptionsFile.parent.packageConfig)
+          .then<PackageConfig?>(
     (value) => value,
     // On error, return null to not throw. The function later handles the null
     onError: (e, s) => null,

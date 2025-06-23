@@ -40,10 +40,22 @@ extension PackageIOUtils on Directory {
   File get pubspecOverrides => file('pubspec_overrides.yaml');
 
   /// The `.dart_tool/package_config.json` file.
-  File get packageConfig => file('.dart_tool', 'package_config.json');
+  File get _packageConfig => file('.dart_tool', 'package_config.json');
 
-  /// The `.dart_tool/pub/workspace_ref.json` file.
-  File get workspaceRef => file('.dart_tool', 'pub', 'workspace_ref.json');
+  /// The `.dart_tool/package_config.json` file. Either from the current
+  /// directory or the workspace root.
+  File get packageConfig {
+    if (_packageConfig.existsSync()) return _packageConfig;
+
+    final workspaceRefFile = file('.dart_tool', 'pub', 'workspace_ref.json');
+    final content = workspaceRefFile.readAsStringSync();
+    final json = jsonDecode(content) as Map<String, dynamic>;
+    final workspaceRoot = json['workspaceRoot'] as String;
+    final workspacePath =
+        normalize(join(workspaceRefFile.parent.path, workspaceRoot));
+    final workspaceDir = Directory(workspacePath);
+    return workspaceDir._packageConfig;
+  }
 
   /// Returns a path relative to the given [other].
   String relativeTo(FileSystemEntity other) {
@@ -136,17 +148,7 @@ Future<PackageConfig?> tryParsePackageConfig(Directory directory) async {
 /// Throws if the parsing fails, such as if the file is badly formatted or
 /// does not exists.
 Future<PackageConfig> parsePackageConfig(Directory directory) async {
-  var packageConfigFile = directory.packageConfig;
-  if (!packageConfigFile.existsSync()) {
-    final workspaceRefFile = directory.workspaceRef;
-    final content = workspaceRefFile.readAsStringSync();
-    final json = jsonDecode(content) as Map<String, dynamic>;
-    final workspaceRoot = json['workspaceRoot'] as String;
-    final workspacePath =
-        normalize(join(workspaceRefFile.parent.path, workspaceRoot));
-    final workspaceDir = Directory(workspacePath);
-    packageConfigFile = workspaceDir.packageConfig;
-  }
+  final packageConfigFile = directory.packageConfig;
 
   return PackageConfig.parseBytes(
     await packageConfigFile.readAsBytes(),
