@@ -77,10 +77,10 @@ class SocketCustomLintServerToClientChannel {
   final CustomLintServer _server;
   final PluginVersionCheckParams _version;
   final ServerSocket _serverSocket;
-  late final Future<Process?> _processFuture;
   final CustomLintWorkspace _workspace;
 
   AnalysisSetContextRootsParams _contextRoots;
+  Future<Process?>? _processFuture;
 
   late final Stream<CustomLintMessage> _messages = _channel.messages
       .map((e) => e! as Map<String, Object?>)
@@ -258,6 +258,13 @@ void main(List<String> args) async {
       ),
     );
 
+    // Drop all request if process not ready yet
+    // Because request will never got response and wait forever
+    if (request is CustomLintRequestAnalyzerPluginRequest &&
+        (_processFuture == null || await _processFuture == null)) {
+      return CustomLintResponseAnalyzerPluginResponse(Response('', 0), id: '');
+    }
+
     await _channel.sendJson(request.toJson());
 
     final response = await matchingResponse;
@@ -296,11 +303,12 @@ void main(List<String> args) async {
       _socket.then((value) => value.close()),
       _serverSocket.close(),
       _channel.close(),
-      _processFuture.then<void>(
-        (value) => value?.kill(),
-        // The process wasn't started. No need to do anything.
-        onError: (_) {},
-      ),
+      if (_processFuture != null)
+        _processFuture!.then<void>(
+          (value) => value?.kill(),
+          // The process wasn't started. No need to do anything.
+          onError: (_) {},
+        ),
     ]);
   }
 }
