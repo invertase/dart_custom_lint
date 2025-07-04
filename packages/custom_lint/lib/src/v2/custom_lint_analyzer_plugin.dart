@@ -190,6 +190,8 @@ class CustomLintServer {
 
             final response =
                 await clientChannel.sendAnalyzerPluginRequest(request);
+            // A request was dropped, so nothing to do.
+            if (response.id.isEmpty) return null;
             _analyzerPluginClientChannel.sendJson(response.toJson());
             return null;
           });
