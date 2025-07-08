@@ -81,6 +81,12 @@ class SocketCustomLintServerToClientChannel {
   final CustomLintWorkspace _workspace;
 
   AnalysisSetContextRootsParams _contextRoots;
+  bool _initialed = false;
+
+  /// Initial state
+  ///
+  /// Returns `true` if requested `analysis.setContextRoots`
+  bool get initialed => _initialed;
 
   late final Stream<CustomLintMessage> _messages = _channel.messages
       .map((e) => e! as Map<String, Object?>)
@@ -127,6 +133,7 @@ class SocketCustomLintServerToClientChannel {
       sendAnalyzerPluginRequest(_version.toRequest(const Uuid().v4())),
       sendAnalyzerPluginRequest(_contextRoots.toRequest(const Uuid().v4())),
     ]);
+    _initialed = true;
   }
 
   /// Updates the context roots on the client
