@@ -187,9 +187,18 @@ class CustomLintServer {
           return _runner.run(() async {
             final clientChannel = await _clientChannel.safeFirst;
             if (clientChannel == null) return null;
+            Request? requestRewrite;
+            if (request.method == ANALYSIS_REQUEST_UPDATE_CONTENT) {
+              final params = AnalysisUpdateContentParams.fromRequest(request);
+              params.files.removeWhere(
+                (key, value) => key.endsWith('custom_lint.log'),
+              );
+              if (params.files.isEmpty) return null;
+              requestRewrite = params.toRequest(request.id);
+            }
 
-            final response =
-                await clientChannel.sendAnalyzerPluginRequest(request);
+            final response = await clientChannel
+                .sendAnalyzerPluginRequest(requestRewrite ?? request);
             _analyzerPluginClientChannel.sendJson(response.toJson());
             return null;
           });
