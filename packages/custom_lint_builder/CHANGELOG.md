@@ -1,3 +1,7 @@
+## 0.7.6 - 2025-07-18
+
+- `custom_lint` upgraded to `0.7.6`
+
 ## 0.7.5 - 2025-02-27
 
 Fix inconsistent version

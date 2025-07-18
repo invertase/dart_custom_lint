@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.7.6 - 2025-07-18
 
 Fix custom_lint not working on up-to-date Dart
 
