@@ -20,10 +20,11 @@ Future<List<AnalysisErrorsParams>> runServerInCliModeForApp(
 }
 
 class ManualRunner {
-  ManualRunner(this.runner, this.channel);
+  ManualRunner(this.runner, this.channel, this.server);
 
   final CustomLintRunner runner;
   final ServerIsolateChannel channel;
+  final CustomLintServer server;
 
   Future<void> get initialize => runner.initialize;
 
@@ -91,7 +92,7 @@ Future<ManualRunner> startRunnerForApp(
 
     unawaited(runner.initialize);
 
-    return ManualRunner(runner, channel);
+    return ManualRunner(runner, channel, customLintServer);
   });
 }
 

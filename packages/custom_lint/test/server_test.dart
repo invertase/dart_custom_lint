@@ -71,6 +71,44 @@ void fn() {}
     );
   });
 
+  test('Handles request before server initialized', () async {
+    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
+
+    final app = createLintUsage(
+      source: {
+        'lib/main.dart': '''
+void fn() {}
+
+void fn2() {}
+''',
+        'lib/another.dart': 'void fn() {}\n',
+      },
+      plugins: {'test_lint': plugin.uri},
+      name: 'test_app',
+    );
+
+    final runner = await startRunnerForApp(app, includeBuiltInLints: false);
+    final another = File(join(app.path, 'lib', 'another.dart'));
+    another.writeAsStringSync('test');
+    await runner.channel.sendRequest(
+      AnalysisUpdateContentParams({
+        another.path: AddContentOverlay(another.readAsStringSync()),
+      }),
+    );
+    await runner.initialize;
+
+    final initialRequest = (await runner.server.clientChannel)?.initialRequest;
+    // Request send before `SocketCustomLintServerToClientChannel.init` must delay,
+    // for ensure initialRequest is [PluginVersionCheckParams, AnalysisSetContextRootsParams]
+    expect(initialRequest, hasLength(2));
+    expect(
+      initialRequest?.last.method,
+      AnalysisSetContextRootsParams([]).toRequest('test').method,
+    );
+
+    await runner.close();
+  });
+
   test('Handles files getting deleted', () async {
     // Regression test for https://github.com/invertase/dart_custom_lint/issues/105
     final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
