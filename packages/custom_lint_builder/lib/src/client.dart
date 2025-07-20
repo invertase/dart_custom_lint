@@ -991,12 +991,21 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         CustomLintEvent.analyzerPluginNotification(
           analyzer_plugin.AnalysisErrorsParams(
             path,
-            CustomAnalyzerConverter().convertAnalysisErrors(
+            CustomAnalyzerConverter()
+                .convertAnalysisErrors(
               allAnalysisErrors,
               lineInfo: resolver.lineInfo,
               options: analysisContext.getAnalysisOptionsForFile(file),
-              configSeverities: configs.configs.errors,
-            ),
+            )
+                .map((error) {
+              var severity = error.severity;
+              if (configs.configs.errors[error.code]
+                  case final ErrorSeverity errorSeverity) {
+                severity = CustomAnalyzerConverter()
+                    .convertErrorSeverity(errorSeverity);
+              }
+              return error.copyWith(severity: severity);
+            }).toList(),
           ).toNotification(),
         ),
       );
@@ -1238,6 +1247,32 @@ extension on ChangeReporterBuilder {
         severity: analysisError.errorCode.errorSeverity,
       ),
       fixes: await complete(),
+    );
+  }
+}
+
+extension on analyzer_plugin.AnalysisError {
+  analyzer_plugin.AnalysisError copyWith({
+    analyzer_plugin.AnalysisErrorSeverity? severity,
+    String? correction,
+    analyzer_plugin.Location? location,
+    String? message,
+    analyzer_plugin.AnalysisErrorType? type,
+    String? code,
+    String? url,
+    List<analyzer_plugin.DiagnosticMessage>? contextMessages,
+    bool? hasFix,
+  }) {
+    return analyzer_plugin.AnalysisError(
+      severity ?? this.severity,
+      type ?? this.type,
+      location ?? this.location,
+      message ?? this.message,
+      code ?? this.code,
+      correction: correction ?? this.correction,
+      url: url ?? this.url,
+      contextMessages: contextMessages ?? this.contextMessages,
+      hasFix: hasFix ?? this.hasFix,
     );
   }
 }

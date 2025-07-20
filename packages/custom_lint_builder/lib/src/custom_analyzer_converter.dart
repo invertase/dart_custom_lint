@@ -72,28 +72,23 @@ class CustomAnalyzerConverter {
   /// start column. If an analysis [options] is provided then the severities of
   /// the errors will be altered based on those options.
   List<plugin.AnalysisError> convertAnalysisErrors(
-    List<analyzer.AnalysisError> errors, {
-    analyzer.LineInfo? lineInfo,
-    analyzer.AnalysisOptions? options,
-    Map<String, analyzer.ErrorSeverity>? configSeverities,
-  }) {
-    final serverErrors = <plugin.AnalysisError>[];
-    for (final error in errors) {
-      final processor = analyzer.ErrorProcessor.getProcessor(options, error);
-      final configSeverity = configSeverities?[error.errorCode.name];
-      // Config severities override processor severities
-      final severity = configSeverity ?? processor?.severity;
-
-      // Errors with ignore severity are filtered out.
-      if (severity == analyzer.ErrorSeverity.NONE) {
-        continue;
+      List<analyzer.AnalysisError> errors,
+      {analyzer.LineInfo? lineInfo,
+      analyzer.AnalysisOptions? options}) {
+    var serverErrors = <plugin.AnalysisError>[];
+    for (var error in errors) {
+      var processor = analyzer.ErrorProcessor.getProcessor(options, error);
+      if (processor != null) {
+        var severity = processor.severity;
+        // Errors with null severity are filtered out.
+        if (severity != null) {
+          // Specified severities override.
+          serverErrors.add(convertAnalysisError(error,
+              lineInfo: lineInfo, severity: severity));
+        }
+      } else {
+        serverErrors.add(convertAnalysisError(error, lineInfo: lineInfo));
       }
-
-      serverErrors.add(convertAnalysisError(
-        error,
-        lineInfo: lineInfo,
-        severity: severity,
-      ));
     }
     return serverErrors;
   }
