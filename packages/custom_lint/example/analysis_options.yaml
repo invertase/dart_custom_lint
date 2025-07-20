@@ -9,7 +9,3 @@ linter:
     public_member_api_docs: false
     avoid_print: false
     unreachable_from_main: false
-
-custom_lint:
-  errors:
-    riverpod_final_provider: error
