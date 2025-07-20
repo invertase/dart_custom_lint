@@ -993,10 +993,16 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
             path,
             CustomAnalyzerConverter()
                 .convertAnalysisErrors(
-              allAnalysisErrors,
-              lineInfo: resolver.lineInfo,
-              options: analysisContext.getAnalysisOptionsForFile(file),
-            )
+                  allAnalysisErrors,
+                  lineInfo: resolver.lineInfo,
+                  options: analysisContext.getAnalysisOptionsForFile(file),
+                )
+                // Filter out lints with severity: ignore
+                .whereNot(
+                  (error) =>
+                      configs.configs.errors[error.code] == ErrorSeverity.NONE,
+                )
+                // Override severities from analysis_options.yaml
                 .map((error) {
               var severity = error.severity;
               if (configs.configs.errors[error.code]

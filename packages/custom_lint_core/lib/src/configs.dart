@@ -112,17 +112,19 @@ class CustomLintConfigs {
 
     final errors = <String, ErrorSeverity>{...includedOptions.errors};
 
-    if (customLint['errors'] case final Map<String, String> errorsYaml) {
+    if (customLint['errors'] case final YamlMap errorsYaml) {
       for (final entry in errorsYaml.entries) {
-        errors[entry.key] = switch (entry.value) {
-          'info' => ErrorSeverity.INFO,
-          'warning' => ErrorSeverity.WARNING,
-          'error' => ErrorSeverity.ERROR,
-          'ignore' => ErrorSeverity.NONE,
-          _ => throw UnsupportedError(
-              'Unsupported severity ${entry.value} for key: ${entry.key}',
-            ),
-        };
+        if (entry.key case final String key) {
+          errors[key] = switch (entry.value) {
+            'info' => ErrorSeverity.INFO,
+            'warning' => ErrorSeverity.WARNING,
+            'error' => ErrorSeverity.ERROR,
+            'ignore' => ErrorSeverity.NONE,
+            _ => throw UnsupportedError(
+                'Unsupported severity ${entry.value} for key: ${entry.key}',
+              ),
+          };
+        }
       }
     }
 

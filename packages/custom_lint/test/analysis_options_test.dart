@@ -45,7 +45,7 @@ void main() {
         );
     test('correctly applies error severity from analysis_options.yaml',
         () async {
-      final plugin = createTestPlugin(errorSeverity: ErrorSeverity.ERROR);
+      final plugin = createTestPlugin();
 
       final app = createLintUsageWith(
         pluginUri: plugin.uri,
