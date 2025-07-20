@@ -11,6 +11,7 @@ import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
 import 'package:async/async.dart';
 import 'package:custom_lint_core/custom_lint_core.dart';
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
@@ -114,6 +115,11 @@ class CustomLintServer {
   /// Whether plugins should include lints used for debugging.
   final bool includeBuiltInLints;
 
+  /// Allow mocking a SocketCustomLintServerToClientChannel for test
+  @visibleForTesting
+  Future<SocketCustomLintServerToClientChannel?> get clientChannel =>
+      _clientChannel.safeFirst;
+
   late final StreamSubscription<void> _requestSubscription;
   StreamSubscription<void>? _clientChannelEventsSubscription;
   late PluginVersionCheckParams _pluginVersionCheckParams;
@@ -187,7 +193,7 @@ class CustomLintServer {
         orElse: () async {
           return _runner.run(() async {
             final clientChannel = await _clientChannel.safeFirst;
-            if (clientChannel == null || !clientChannel.initialed) {
+            if (clientChannel == null || !clientChannel.initialized) {
               _delayedRequest.add(request);
               return null;
             }

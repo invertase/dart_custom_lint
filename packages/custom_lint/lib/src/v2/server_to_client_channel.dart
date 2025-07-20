@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:analyzer_plugin/protocol/protocol.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:uuid/uuid.dart';
 
@@ -81,12 +82,16 @@ class SocketCustomLintServerToClientChannel {
   final CustomLintWorkspace _workspace;
 
   AnalysisSetContextRootsParams _contextRoots;
-  bool _initialed = false;
+  bool _initialized = false;
+
+  /// List request before initialized
+  @visibleForTesting
+  List<Request> initialRequest = [];
 
   /// Initial state
   ///
   /// Returns `true` if requested `analysis.setContextRoots`
-  bool get initialed => _initialed;
+  bool get initialized => _initialized;
 
   late final Stream<CustomLintMessage> _messages = _channel.messages
       .map((e) => e! as Map<String, Object?>)
@@ -133,7 +138,7 @@ class SocketCustomLintServerToClientChannel {
       sendAnalyzerPluginRequest(_version.toRequest(const Uuid().v4())),
       sendAnalyzerPluginRequest(_contextRoots.toRequest(const Uuid().v4())),
     ]);
-    _initialed = true;
+    _initialized = true;
   }
 
   /// Updates the context roots on the client
@@ -238,6 +243,7 @@ void main(List<String> args) async {
   /// Sends a request based on the analyzer_plugin protocol, expecting
   /// an analyzer_plugin response.
   Future<Response> sendAnalyzerPluginRequest(Request request) async {
+    if (!_initialized) initialRequest.add(request);
     final response = await sendCustomLintRequest(
       CustomLintRequest.analyzerPluginRequest(request, id: request.id),
     );
