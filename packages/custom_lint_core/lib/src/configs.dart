@@ -112,22 +112,17 @@ class CustomLintConfigs {
 
     final errors = <String, ErrorSeverity>{...includedOptions.errors};
 
-    final errorsYaml = customLint['errors'] as Object?;
-    if (errorsYaml is Map) {
+    if (customLint['errors'] case final Map<String, String> errorsYaml) {
       for (final entry in errorsYaml.entries) {
-        final value = entry.value;
-        if (entry.key case final String key?) {
-          final severity = ErrorSeverity.values.firstWhereOrNull(
-            (e) => e.displayName == value,
-          );
-          if (severity == null) {
-            throw ArgumentError(
-              'Provided error severity: $value specified for key: $key is not valid. '
-              'Valid error severities are: ${ErrorSeverity.values.map((e) => e.displayName).join(', ')}',
-            );
-          }
-          errors[key] = severity;
-        }
+        errors[entry.key] = switch (entry.value) {
+          'info' => ErrorSeverity.INFO,
+          'warning' => ErrorSeverity.WARNING,
+          'error' => ErrorSeverity.ERROR,
+          'none' => ErrorSeverity.NONE,
+          _ => throw UnsupportedError(
+              'Unsupported severity ${entry.value} for key: ${entry.key}',
+            ),
+        };
       }
     }
 
