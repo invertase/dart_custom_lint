@@ -79,13 +79,15 @@ class CustomLintServer {
     return asyncRunZonedGuarded(
       () => body(),
       (err, stack) {
-        server().handleUncaughtError(err, stack);
+        unawaited(server().handleUncaughtError(err, stack));
       },
       zoneSpecification: ZoneSpecification(
         print: (self, parent, zone, line) {
-          server().handlePrint(
-            line,
-            isClientMessage: false,
+          unawaited(
+            server().handlePrint(
+              line,
+              isClientMessage: false,
+            ),
           );
         },
       ),

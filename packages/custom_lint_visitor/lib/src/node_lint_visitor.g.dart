@@ -321,6 +321,18 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
+  void visitDotShorthandInvocation(DotShorthandInvocation node) {
+    _runSubscriptions(node, _registry._forDotShorthandInvocation);
+    super.visitDotShorthandInvocation(node);
+  }
+
+  @override
+  void visitDotShorthandPropertyAccess(DotShorthandPropertyAccess node) {
+    _runSubscriptions(node, _registry._forDotShorthandPropertyAccess);
+    super.visitDotShorthandPropertyAccess(node);
+  }
+
+  @override
   void visitDottedName(DottedName node) {
     _runSubscriptions(node, _registry._forDottedName);
     super.visitDottedName(node);
@@ -1597,6 +1609,22 @@ class NodeLintRegistry {
   final List<_Subscription<DoStatement>> _forDoStatement = [];
   void addDoStatement(String key, void Function(DoStatement node) listener) {
     _forDoStatement.add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<DotShorthandInvocation>> _forDotShorthandInvocation =
+      [];
+  void addDotShorthandInvocation(
+      String key, void Function(DotShorthandInvocation node) listener) {
+    _forDotShorthandInvocation
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<DotShorthandPropertyAccess>>
+      _forDotShorthandPropertyAccess = [];
+  void addDotShorthandPropertyAccess(
+      String key, void Function(DotShorthandPropertyAccess node) listener) {
+    _forDotShorthandPropertyAccess
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
   final List<_Subscription<DottedName>> _forDottedName = [];
@@ -2915,6 +2943,18 @@ class LintRuleNodeRegistry {
   @preferInline
   void addDoStatement(void Function(DoStatement node) listener) {
     nodeLintRegistry.addDoStatement(name, listener);
+  }
+
+  @preferInline
+  void addDotShorthandInvocation(
+      void Function(DotShorthandInvocation node) listener) {
+    nodeLintRegistry.addDotShorthandInvocation(name, listener);
+  }
+
+  @preferInline
+  void addDotShorthandPropertyAccess(
+      void Function(DotShorthandPropertyAccess node) listener) {
+    nodeLintRegistry.addDotShorthandPropertyAccess(name, listener);
   }
 
   @preferInline

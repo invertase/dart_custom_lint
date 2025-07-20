@@ -13,15 +13,23 @@ Builder lintVisitorGenerator(BuilderOptions options) {
   );
 }
 
+// ignore: deprecated_member_use, TODO migrate to Element2
 extension on LibraryElement {
+  // ignore: deprecated_member_use, TODO migrate to Element2
   Element? findElementWithNameFromPackage(String name) {
     return library.importedLibraries
-        .map((e) => e.exportNamespace.get(name))
+        .map(
+          (e) => e.exportNamespace
+              // ignore: deprecated_member_use, TODO migrate to Element2
+              .get(name),
+        )
         .firstWhereOrNull((element) => element != null);
   }
 
+  // ignore: deprecated_member_use, migrate to Element2
   ClassElement? _findAstVisitor() {
     return findElementWithNameFromPackage('GeneralizingAstVisitor')
+        // ignore: deprecated_member_use, TODO migrate to Element2
         as ClassElement?;
   }
 }
@@ -42,6 +50,7 @@ class _LintVisitorGenerator extends Generator {
 
   void _writeNodeLintRegistry(
     StringBuffer buffer,
+    // ignore: deprecated_member_use, TODO migrate to Element2
     ClassElement visitor,
   ) {
     buffer.writeln('''
@@ -103,6 +112,7 @@ class NodeLintRegistry {
 
   void _writeLinterVisitor(
     StringBuffer buffer,
+    // ignore: deprecated_member_use, TODO migrate to Element2
     ClassElement visitor,
   ) {
     buffer.writeln('''
@@ -151,7 +161,11 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
     buffer.writeln('}');
   }
 
-  void _writeLintRuleNodeRegistry(StringBuffer buffer, ClassElement visitor) {
+  void _writeLintRuleNodeRegistry(
+    StringBuffer buffer,
+    // ignore: deprecated_member_use, TODO migrate to Element2
+    ClassElement visitor,
+  ) {
     buffer.writeln('''
 class LintRuleNodeRegistry {
   LintRuleNodeRegistry(this.nodeLintRegistry, this.name);
