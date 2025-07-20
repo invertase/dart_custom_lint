@@ -84,7 +84,7 @@ class CustomAnalyzerConverter {
       // Config severities override processor severities
       final severity = configSeverity ?? processor?.severity;
 
-      // Errors with none severity are filtered out.
+      // Errors with ignore severity are filtered out.
       if (severity == analyzer.ErrorSeverity.NONE) {
         continue;
       }

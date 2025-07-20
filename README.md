@@ -238,7 +238,7 @@ custom_lint:
     my_lint_rule: error
 ```
 
-The available severity levels are: `error`, `warning`, `info`, and `none`.
+The available severity levels are: `error`, `warning`, `info`, and `ignore`.
 
 ### Obtaining the list of lints in the CI
 

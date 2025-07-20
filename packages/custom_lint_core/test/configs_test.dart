@@ -366,7 +366,7 @@ custom_lint:
     rule_name_1: error
     rule_name_2: warning
     rule_name_3: info
-    rule_name_4: none
+    rule_name_4: ignore
 ''');
       final configs = CustomLintConfigs.parse(analysisOptions, packageConfig);
 
@@ -387,11 +387,10 @@ custom_lint:
       expect(
         () => CustomLintConfigs.parse(analysisOptions, packageConfig),
         throwsA(
-          isArgumentError.having(
+          isA<UnsupportedError>().having(
             (e) => e.message,
             'message',
-            'Provided error severity: invalid_severity specified for key: rule_name_1 is not valid. '
-                'Valid error severities are: none, info, warning, error',
+            'Unsupported severity invalid_severity for key: rule_name_1',
           ),
         ),
       );

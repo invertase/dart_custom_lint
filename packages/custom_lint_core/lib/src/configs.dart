@@ -118,7 +118,7 @@ class CustomLintConfigs {
           'info' => ErrorSeverity.INFO,
           'warning' => ErrorSeverity.WARNING,
           'error' => ErrorSeverity.ERROR,
-          'none' => ErrorSeverity.NONE,
+          'ignore' => ErrorSeverity.NONE,
           _ => throw UnsupportedError(
               'Unsupported severity ${entry.value} for key: ${entry.key}',
             ),

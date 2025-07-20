@@ -121,7 +121,7 @@ Analyzing...
       expect(process.exitCode, 1);
     });
 
-    test('correctly applies none severity from analysis_options.yaml',
+    test('correctly applies ignore severity from analysis_options.yaml',
         () async {
       final plugin = createTestPlugin();
 
@@ -130,7 +130,7 @@ Analyzing...
         analysisOptions: '''
 custom_lint:
   errors:
-    test_lint: none
+    test_lint: ignore
 ''',
       );
 
