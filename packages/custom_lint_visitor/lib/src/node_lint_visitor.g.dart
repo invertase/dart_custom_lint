@@ -1353,14 +1353,18 @@ class NodeLintRegistry {
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
+  @deprecated
   final List<_Subscription<AugmentedExpression>> _forAugmentedExpression = [];
+  @deprecated
   void addAugmentedExpression(
       String key, void Function(AugmentedExpression node) listener) {
     _forAugmentedExpression
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
+  @deprecated
   final List<_Subscription<AugmentedInvocation>> _forAugmentedInvocation = [];
+  @deprecated
   void addAugmentedInvocation(
       String key, void Function(AugmentedInvocation node) listener) {
     _forAugmentedInvocation
@@ -2738,12 +2742,14 @@ class LintRuleNodeRegistry {
     nodeLintRegistry.addAssignmentExpression(name, listener);
   }
 
+  @deprecated
   @preferInline
   void addAugmentedExpression(
       void Function(AugmentedExpression node) listener) {
     nodeLintRegistry.addAugmentedExpression(name, listener);
   }
 
+  @deprecated
   @preferInline
   void addAugmentedInvocation(
       void Function(AugmentedInvocation node) listener) {
