@@ -9,7 +9,6 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_span/source_span.dart';
@@ -126,8 +125,10 @@ abstract class TypeChecker {
     Annotatable annotatable, {
     bool throwOnUnresolved = true,
   }) =>
-      firstAnnotationOfExact(annotatable,
-          throwOnUnresolved: throwOnUnresolved) !=
+      firstAnnotationOfExact(
+        annotatable,
+        throwOnUnresolved: throwOnUnresolved,
+      ) !=
       null;
 
   DartObject? _computeConstantValue(
@@ -399,52 +400,35 @@ class UnresolvedAnnotationException implements Exception {
   final SourceSpan? annotationSource;
 
   static SourceSpan? _findSpan(Element2 annotatedElement, int annotationIndex) {
-    try {
-      final parsedLibrary =
-          annotatedElement.session!.getParsedLibraryByElement2(
-        annotatedElement.library2!,
-      ) as ParsedLibraryResult;
-      final declaration = parsedLibrary.getFragmentDeclaration(
-        annotatedElement.firstFragment,
-      );
-      if (declaration == null) {
-        return null;
-      }
-      final node = declaration.node;
-      final List<Annotation> metadata;
-      if (node is AnnotatedNode) {
-        metadata = node.metadata;
-      } else if (node is FormalParameter) {
-        metadata = node.metadata;
-      } else {
-        throw StateError(
-          'Unhandled Annotated AST node type: ${node.runtimeType}',
-        );
-      }
-      final annotation = metadata[annotationIndex];
-      final start = annotation.offset;
-      final end = start + annotation.length;
-      final parsedUnit = declaration.parsedUnit!;
-      return SourceSpan(
-        SourceLocation(start, sourceUrl: parsedUnit.uri),
-        SourceLocation(end, sourceUrl: parsedUnit.uri),
-        parsedUnit.content.substring(start, end),
-      );
-    } catch (e, stack) {
-      // Trying to get more information on https://github.com/dart-lang/sdk/issues/45127
-      log.warning(
-        '''
-An unexpected error was thrown trying to get location information on `$annotatedElement` (${annotatedElement.runtimeType}).
-
-Please file an issue at https://github.com/dart-lang/source_gen/issues/new
-Include the contents of this warning and the stack trace along with
-the version of `package:source_gen`, `package:analyzer` from `pubspec.lock`.
-''',
-        e,
-        stack,
-      );
+    final parsedLibrary = annotatedElement.session!.getParsedLibraryByElement2(
+      annotatedElement.library2!,
+    ) as ParsedLibraryResult;
+    final declaration = parsedLibrary.getFragmentDeclaration(
+      annotatedElement.firstFragment,
+    );
+    if (declaration == null) {
       return null;
     }
+    final node = declaration.node;
+    final List<Annotation> metadata;
+    if (node is AnnotatedNode) {
+      metadata = node.metadata;
+    } else if (node is FormalParameter) {
+      metadata = node.metadata;
+    } else {
+      throw StateError(
+        'Unhandled Annotated AST node type: ${node.runtimeType}',
+      );
+    }
+    final annotation = metadata[annotationIndex];
+    final start = annotation.offset;
+    final end = start + annotation.length;
+    final parsedUnit = declaration.parsedUnit!;
+    return SourceSpan(
+      SourceLocation(start, sourceUrl: parsedUnit.uri),
+      SourceLocation(end, sourceUrl: parsedUnit.uri),
+      parsedUnit.content.substring(start, end),
+    );
   }
 
   @override
