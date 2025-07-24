@@ -62,7 +62,7 @@ class PreferFinalProviders extends DartLintRule {
     // Using this function, we search for [VariableDeclaration] reference the
     // analyzed Dart file.
     context.registry.addVariableDeclaration((node) {
-      final element = node.declaredElement;
+      final element = node.declaredElement2;
       if (element == null ||
           element.isFinal ||
           // We check that the variable is a Riverpod provider
@@ -71,7 +71,7 @@ class PreferFinalProviders extends DartLintRule {
       }
 
       // This emits our lint warning at the location of the variable.
-      reporter.atElement(element, code);
+      reporter.atElement2(element, code);
     });
   }
 
@@ -113,7 +113,7 @@ class _MakeProviderFinalFix extends DartFix {
       // We define one edit, giving it a message which will show-up in the IDE.
       final changeBuilder = reporter.createChangeBuilder(
         message: 'Make provider final',
-        // This represents how high-low should this qick-fix show-up in the list
+        // This represents how high-low should this quick-fix show-up in the list
         // of quick-fixes.
         priority: 1,
       );
@@ -127,7 +127,7 @@ class _MakeProviderFinalFix extends DartFix {
           // Replace "var x = ..." into "final x = ...""
 
           // Using "builder", we can emit changes to a file.
-          // In this case, addSimpleReplacement is used to overrite a selection
+          // In this case, addSimpleReplacement is used to overwrite a selection
           // with a new content.
           builder.addSimpleReplacement(
             SourceRange(nodeKeyword.offset, nodeKeyword.length),
@@ -164,7 +164,7 @@ class _ConvertToStreamProvider extends DartAssist {
       if (!target.intersects(node.sourceRange)) return;
 
       // verify that the visited node is a provider, to only show the assist on providers
-      final element = node.declaredElement;
+      final element = node.declaredElement2;
       if (element == null ||
           element.isFinal ||
           !_providerBaseChecker.isAssignableFromType(element.type)) {
