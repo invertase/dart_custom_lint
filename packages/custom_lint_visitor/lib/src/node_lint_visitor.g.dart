@@ -86,12 +86,14 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
     super.visitAssignmentExpression(node);
   }
 
+  @deprecated
   @override
   void visitAugmentedExpression(AugmentedExpression node) {
     _runSubscriptions(node, _registry._forAugmentedExpression);
     super.visitAugmentedExpression(node);
   }
 
+  @deprecated
   @override
   void visitAugmentedInvocation(AugmentedInvocation node) {
     _runSubscriptions(node, _registry._forAugmentedInvocation);

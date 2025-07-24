@@ -149,6 +149,11 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
     for (final visitorMethod in visitor.methods2) {
       if (visitorMethod.metadata2.hasDeprecated) continue;
 
+      if (visitorMethod.formalParameters.single.type.element3!.asAnnotatable!
+          .metadata2.hasDeprecated) {
+        buffer.write('@deprecated ');
+      }
+
       buffer
         ..write('@override void ')
         ..write(visitorMethod.name3)
