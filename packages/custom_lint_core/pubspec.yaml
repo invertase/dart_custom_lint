@@ -7,7 +7,7 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
-  analyzer: ^7.0.0
+  analyzer: ^7.5.0
   analyzer_plugin: ^0.13.0
   collection: ^1.16.0
   custom_lint_visitor: ^1.0.0
@@ -22,7 +22,7 @@ dependencies:
   yaml: ^3.1.1
 
 dev_dependencies:
-  build_runner: ^2.3.3
+  build_runner: ^2.5.0
   lint_visitor_generator:
     path: ../lint_visitor_generator
   test: ^1.22.2
