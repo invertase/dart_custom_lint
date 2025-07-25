@@ -11,6 +11,7 @@ import 'package:analyzer_plugin/src/protocol/protocol_internal.dart'
     show ResponseResult;
 import 'package:async/async.dart';
 import 'package:custom_lint_core/custom_lint_core.dart';
+import 'package:meta/meta.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
@@ -114,6 +115,11 @@ class CustomLintServer {
   /// Whether plugins should include lints used for debugging.
   final bool includeBuiltInLints;
 
+  /// Allow mocking a SocketCustomLintServerToClientChannel for test
+  @visibleForTesting
+  Future<SocketCustomLintServerToClientChannel?> get clientChannel =>
+      _clientChannel.safeFirst;
+
   late final StreamSubscription<void> _requestSubscription;
   StreamSubscription<void>? _clientChannelEventsSubscription;
   late PluginVersionCheckParams _pluginVersionCheckParams;
@@ -122,6 +128,7 @@ class CustomLintServer {
       BehaviorSubject<SocketCustomLintServerToClientChannel?>();
   final _contextRoots = BehaviorSubject<AnalysisSetContextRootsParams>();
   final _runner = PendingOperation();
+  final _delayedRequest = <Request>[];
 
   /// A shorthand for accessing the current list of context roots.
   Future<List<ContextRoot>?> get _allContextRoots {
@@ -186,7 +193,10 @@ class CustomLintServer {
         orElse: () async {
           return _runner.run(() async {
             final clientChannel = await _clientChannel.safeFirst;
-            if (clientChannel == null) return null;
+            if (clientChannel == null || !clientChannel.initialized) {
+              _delayedRequest.add(request);
+              return null;
+            }
 
             final response =
                 await clientChannel.sendAnalyzerPluginRequest(request);
@@ -291,6 +301,7 @@ class CustomLintServer {
     return _closeFuture = Future(() async {
       // Cancel pending operations
       await _contextRoots.close();
+      _delayedRequest.clear();
 
       // Flushes logs before stopping server.
       await _runner.wait();
@@ -396,6 +407,14 @@ class CustomLintServer {
     await clientChannel.init(
       debug: configs.any((e) => e != null && e.debug),
     );
+    _sendDelayedRequest();
+  }
+
+  void _sendDelayedRequest() {
+    for (final request in _delayedRequest) {
+      unawaited(_handleRequest(request));
+    }
+    _delayedRequest.clear();
   }
 
   Future<void> _handleEvent(CustomLintEvent event) => _runner.run(() async {
