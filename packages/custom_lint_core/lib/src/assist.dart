@@ -110,7 +110,7 @@ abstract class DartAssist extends Assist {
       () => Future.value(result),
       lineInfo: result.lineInfo,
       path: result.path,
-      source: result.libraryElement.source,
+      source: result.libraryElement2.firstFragment.source,
     );
     final reporter = ChangeReporterImpl(result.session, resolver);
 

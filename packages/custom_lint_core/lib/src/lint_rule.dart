@@ -30,7 +30,7 @@ class CustomLintContext {
   /// The listeners will be executed after the `run` function has ended.
   final LintRuleNodeRegistry registry;
 
-  /// An object shared with all lint rules/fixes/assits running.
+  /// An object shared with all lint rules/fixes/assist running.
   final Map<Object, Object?> sharedState;
 
   /// The pubspec of the analyzed project.
@@ -54,7 +54,7 @@ abstract class LintRule {
   /// A base class for plugins to define emit warnings/errors/infos.
   ///
   /// For creating assists inside Dart files, see [DartLintRule].
-  /// Suclassing [LintRule] can be helpful if you wish to implement assists for
+  /// Subclassing [LintRule] can be helpful if you wish to implement assists for
   /// non-Dart files (yaml, json, ...)
   ///
   /// For usage information, see https://github.com/invertase/dart_custom_lint/blob/main/docs/lints.md
@@ -164,13 +164,13 @@ abstract class DartLintRule extends LintRule {
       () => Future.value(result),
       lineInfo: result.lineInfo,
       path: result.path,
-      source: result.libraryElement.source,
+      source: result.libraryElement2.firstFragment.source,
     );
 
     final listener = RecordingErrorListener();
     final reporter = ErrorReporter(
       listener,
-      result.libraryElement.source,
+      result.libraryElement2.firstFragment.source,
     );
 
     await startUp(resolver, context);
