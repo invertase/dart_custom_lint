@@ -153,7 +153,7 @@ class SocketCustomLintServerToClientChannel {
 
       return _asyncRetry(retryCount: 5, () async {
         final process = await Process.start(
-          Platform.resolvedExecutable,
+          'dart',
           [
             if (_server.watchMode ?? debug) '--enable-vm-service=0',
             join('lib', 'custom_lint_client.dart'),
