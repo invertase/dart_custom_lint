@@ -7,7 +7,7 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
-  custom_lint: 0.7.6
+  custom_lint: 0.7.7
 
 # TODO: If you want to contribute to custom_lint, add a pubspec_overrides.yaml file
 # in this folder, containing the following:
