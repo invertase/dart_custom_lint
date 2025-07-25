@@ -266,10 +266,12 @@ class _PackageChecker extends TypeChecker {
 
   @override
   bool isExactly(Element2 element) {
-    final elementLibraryIdentifier =
-        element.library2?.uri.pathSegments.firstOrNull;
-    return elementLibraryIdentifier != null &&
-        elementLibraryIdentifier == _packageName;
+    final targetUri = element.library2?.uri;
+    if (targetUri == null) return false;
+    if (_packageName == targetUri.toString()) return true;
+
+    final targetPackageName = targetUri.pathSegments.firstOrNull;
+    return targetPackageName != null && targetPackageName == _packageName;
   }
 
   @override
