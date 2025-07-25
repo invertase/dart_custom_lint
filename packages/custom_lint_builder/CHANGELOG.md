@@ -1,3 +1,7 @@
+## Unreleased patch
+
+Support analyzer 7.5.0
+
 ## 0.7.6 - 2025-07-18
 
 - `custom_lint` upgraded to `0.7.6`

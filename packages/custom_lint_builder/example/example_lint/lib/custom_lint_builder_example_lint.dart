@@ -62,7 +62,7 @@ class PreferFinalProviders extends DartLintRule {
     // Using this function, we search for [VariableDeclaration] reference the
     // analyzed Dart file.
     context.registry.addVariableDeclaration((node) {
-      final element = node.declaredElement2;
+      final element = node.declaredFragment?.element;
       if (element == null ||
           element.isFinal ||
           // We check that the variable is a Riverpod provider
@@ -164,7 +164,7 @@ class _ConvertToStreamProvider extends DartAssist {
       if (!target.intersects(node.sourceRange)) return;
 
       // verify that the visited node is a provider, to only show the assist on providers
-      final element = node.declaredElement2;
+      final element = node.declaredFragment?.element;
       if (element == null ||
           element.isFinal ||
           !_providerBaseChecker.isAssignableFromType(element.type)) {
