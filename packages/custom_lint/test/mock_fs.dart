@@ -119,7 +119,7 @@ class _StdoutOverride implements Stdout {
 ///
 /// Alternatively, set [IOOverrides.global] to a [_MockFs] instance in your
 /// test's `setUp`, and to `null` in the `tearDown`.
-class _MockFs extends IOOverrides {
+final class _MockFs extends IOOverrides {
   _MockFs(
     Stdout out,
     this._directory, {
