@@ -351,7 +351,7 @@ foo:
         expect(parsed, isNotNull);
       });
 
-      test('workspace', () async {
+      test('dart workspace', () async {
         final dir = createDir();
 
         final projectPath = await createTempProject(

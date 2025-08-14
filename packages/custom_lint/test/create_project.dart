@@ -222,6 +222,7 @@ Directory createLintUsage({
   Map<String, Uri> extraPackageConfig = const {},
   bool installAsDevDependency = true,
   required String name,
+  bool workspace = false,
 }) {
   final pluginDependencies = plugins.entries
       .map(
@@ -244,9 +245,10 @@ analyzer:
 name: $name
 version: 0.0.1
 publish_to: none
+${workspace ? 'resolution: workspace' : ''}
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ^3.6.0
 
 dependencies:
   analyzer: any
@@ -270,6 +272,7 @@ dependency_overrides:
       plugins: {...plugins, ...extraPackageConfig},
       name: name,
     ),
+    workspaceRef: workspace ? jsonEncode({'workspaceRoot': '../../..'}) : null,
     name: name,
     parent: parent,
   );
@@ -336,22 +339,38 @@ Directory createDartProject({
   String? analysisOptions,
   String? pubspec,
   String? packageConfig,
+  String? workspaceRef,
   Map<String, String>? sources,
   required String name,
 }) {
   // TODO import .dart_tool/package_config.json by default for speed, avoiding unnecessary pub get
 
-  return createTmpFolder(
-    parent: parent,
-    {
-      ...?sources,
-      if (analysisOptions != null) 'analysis_options.yaml': analysisOptions,
-      if (pubspec != null) 'pubspec.yaml': pubspec,
-      if (packageConfig != null)
-        join('.dart_tool', 'package_config.json'): packageConfig,
-    },
-    name,
-  );
+  final files = {
+    ...?sources,
+    if (analysisOptions != null) 'analysis_options.yaml': analysisOptions,
+    if (pubspec != null) 'pubspec.yaml': pubspec,
+    if (workspaceRef != null) ...{
+      join('..', 'pubspec.yaml'): '''
+name: _
+environment:
+  sdk: ^3.6.0
+workspace:
+  - $name
+''',
+      join('.dart_tool', 'pub', 'workspace_ref.json'): workspaceRef,
+    }
+  };
+
+  if (packageConfig != null) {
+    var packageConfigPath = join('.dart_tool', 'package_config.json');
+    if (workspaceRef != null) {
+      packageConfigPath = join('..', packageConfigPath);
+    }
+
+    files[packageConfigPath] = packageConfig;
+  }
+
+  return createTmpFolder(parent: parent, files, name);
 }
 
 /// Creates a temporary folder with the given [files] and [name].

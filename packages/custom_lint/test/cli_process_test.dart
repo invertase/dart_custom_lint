@@ -711,4 +711,27 @@ Analyzing...
       expect(process.exitCode, 1);
     });
   });
+
+  test('Finds analysis issues in a dart workspace', () async {
+    final workspace = createTemporaryDirectory();
+
+    final plugin = createPlugin(name: 'test_lint', main: helloWordPluginSource);
+
+    createLintUsage(
+      parent: workspace,
+      name: 'test_app',
+      source: {'lib/main.dart': 'void fn() {}'},
+      plugins: {'test_lint': plugin.uri},
+      workspace: true,
+    );
+
+    final process = await Process.run(
+      'dart',
+      [customLintBinPath],
+      workingDirectory: workspace.path,
+    );
+
+    expect(process.stdout, contains('1 issue found.'));
+    expect(process.exitCode, 1);
+  });
 }
