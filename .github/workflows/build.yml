@@ -22,7 +22,8 @@ jobs:
         channel:
           - master
         pub:
-          - get
+          # TODO - uncomment this after the SDK bumps its dependencies
+          # - get
           - upgrade
 
     steps:
