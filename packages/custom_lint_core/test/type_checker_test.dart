@@ -53,7 +53,7 @@ void fn((int, String) record) {
       }),
     );
 
-    expect(propertyAccessNode.realTarget.staticType!.element, isNull);
+    expect(propertyAccessNode.realTarget.staticType!.element3, isNull);
     expect(
       checker.isExactlyType(propertyAccessNode.realTarget.staticType!),
       isFalse,
@@ -97,7 +97,8 @@ environment:
       expect(
         checker.isExactlyType(
           (unit.unit.declarations.first as ClassDeclaration)
-              .declaredElement!
+              .declaredFragment!
+              .element
               .thisType,
         ),
         true,
@@ -105,7 +106,8 @@ environment:
       expect(
         checker2.isExactlyType(
           (unit.unit.declarations.first as ClassDeclaration)
-              .declaredElement!
+              .declaredFragment!
+              .element
               .thisType,
         ),
         false,

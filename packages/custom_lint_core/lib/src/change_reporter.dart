@@ -232,6 +232,7 @@ class ChangeBuilderImpl implements ChangeBuilder {
   @override
   void addDartFileEdit(
     void Function(DartFileEditBuilder builder) buildFileEdit, {
+    @Deprecated('Deprecated in the SDK, so deprecated here too.')
     ImportPrefixGenerator? importPrefixGenerator,
     String? customPath,
   }) {
@@ -245,6 +246,7 @@ class ChangeBuilderImpl implements ChangeBuilder {
             : _innerChangeBuilder.addDartFileEdit(
                 customPath ?? path,
                 buildFileEdit,
+                // ignore: deprecated_member_use, deprecated already
                 importPrefixGenerator: importPrefixGenerator,
               );
       }),
