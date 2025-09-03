@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:analyzer/error/error.dart' show AnalysisError;
+import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_visitor/custom_lint_visitor.dart';
 import 'package:meta/meta.dart';
@@ -97,7 +97,7 @@ abstract class LintRule {
   /// [run] will only be invoked with files respecting [filesToAnalyze]
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   );
 
@@ -145,7 +145,7 @@ abstract class DartLintRule extends LintRule {
   /// be passed to [CustomLintContext.pubspec].
   /// By default, an empty pubspec with the name `test_project` will be used.
   @visibleForTesting
-  Future<List<AnalysisError>> testRun(
+  Future<List<Diagnostic>> testRun(
     ResolvedUnitResult result, {
     Pubspec? pubspec,
   }) async {
@@ -164,13 +164,13 @@ abstract class DartLintRule extends LintRule {
       () => Future.value(result),
       lineInfo: result.lineInfo,
       path: result.path,
-      source: result.libraryElement2.firstFragment.source,
+      source: result.libraryElement.firstFragment.source,
     );
 
-    final listener = RecordingErrorListener();
-    final reporter = ErrorReporter(
+    final listener = RecordingDiagnosticListener();
+    final reporter = DiagnosticReporter(
       listener,
-      result.libraryElement2.firstFragment.source,
+      result.libraryElement.firstFragment.source,
     );
 
     await startUp(resolver, context);
@@ -178,15 +178,15 @@ abstract class DartLintRule extends LintRule {
     run(resolver, reporter, context);
     runPostRunCallbacks(postRunCallbacks);
 
-    return listener.errors;
+    return listener.diagnostics;
   }
 
   /// Analyze a Dart file and runs this assist in test mode.
   ///
   /// The result will contain all the changes that would have been applied by [run].
   @visibleForTesting
-  Future<List<AnalysisError>> testAnalyzeAndRun(File file) async {
-    final result = await resolveFile2(path: file.path);
+  Future<List<Diagnostic>> testAnalyzeAndRun(File file) async {
+    final result = await resolveFile(path: file.path);
     result as ResolvedUnitResult;
     return testRun(result);
   }

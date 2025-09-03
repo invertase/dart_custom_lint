@@ -1,9 +1,6 @@
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/error/error.dart'
-    hide
-        // ignore: undefined_hidden_name, Needed to support lower analyzer versions
-        LintCode;
+import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:custom_lint_core/src/change_reporter.dart';
 import 'package:custom_lint_core/src/fixes.dart';
 import 'package:custom_lint_core/src/lint_rule.dart';
@@ -25,7 +22,7 @@ void main() {
 }
 ''';
     final file = writeToTemporaryFile(fileSource);
-    final result = await resolveFile2(path: file.path);
+    final result = await resolveFile(path: file.path);
     result as ResolvedUnitResult;
 
     final errors = await const MyLintRule().testRun(result);
@@ -116,8 +113,8 @@ class MyFix extends DartFix {
     CustomLintResolver resolver,
     ChangeReporter reporter,
     CustomLintContext context,
-    AnalysisError analysisError,
-    List<AnalysisError> others,
+    Diagnostic analysisError,
+    List<Diagnostic> others,
   ) {
     context.registry.addMethodInvocation((node) {
       final changeBuilder = reporter.createChangeBuilder(

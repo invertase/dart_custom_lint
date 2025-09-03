@@ -9,6 +9,7 @@ import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/context_root.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
+import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/error/error.dart'
     hide
         // ignore: undefined_hidden_name, Needed to support lower analyzer versions
@@ -413,7 +414,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   var _customLintConfigsForAnalysisContexts =
       <AnalysisContext, _CustomLintAnalysisConfigs>{};
   final _analysisErrorsForAnalysisContexts =
-      <_AnalysisErrorsKey, List<AnalysisError>>{};
+      <_AnalysisErrorsKey, List<Diagnostic>>{};
 
   @override
   List<String> get fileGlobsToAnalyze => ['*'];
@@ -631,14 +632,14 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
             analyzer_plugin.AnalysisErrorFixes? batchFixes,
             analyzer_plugin.AnalysisErrorFixes fix
           })>> _computeFixes(
-    List<AnalysisError> errorsToFix,
+    List<Diagnostic> errorsToFix,
     _FileContext context,
-    List<AnalysisError> analysisErrorsForContext,
+    List<Diagnostic> analysisErrorsForContext,
   ) async {
     return Future.wait(
       errorsToFix.map((error) async {
         final toBatch = analysisErrorsForContext
-            .where((e) => e.errorCode == error.errorCode)
+            .where((e) => e.diagnosticCode == error.diagnosticCode)
             .toList();
 
         final changeReporterBuilder = ChangeReporterBuilderImpl(
@@ -672,7 +673,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
         final batchReporterBuilder = BatchChangeReporterBuilder(
           batchReporter.createChangeBuilder(
-            message: 'Fix all "${error.errorCode}"',
+            message: 'Fix all "${error.diagnosticCode}"',
             priority: batchFix.priority - 1,
           ),
         );
@@ -702,14 +703,14 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
   Future<void> _runFixes(
     _FileContext context,
-    AnalysisError analysisError,
-    List<AnalysisError> allErrors, {
+    Diagnostic analysisError,
+    List<Diagnostic> allErrors, {
     required ChangeReporterBuilder changeReporterBuilder,
     bool sequential = false,
     bool Function(Fix fix)? where,
   }) async {
     Iterable<Fix>? fixesForError =
-        context.configs.fixes[analysisError.errorCode];
+        context.configs.fixes[analysisError.diagnosticCode];
     if (fixesForError == null) return;
 
     if (where != null) {
@@ -720,7 +721,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         .where(
           (element) =>
               element != analysisError &&
-              element.errorCode == analysisError.errorCode,
+              element.diagnosticCode == analysisError.diagnosticCode,
         )
         .toList();
 
@@ -912,15 +913,15 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     final resolver = analysisContext.createResolverForFile(file);
     if (resolver == null) return;
 
-    final lintsBeforeExpectLint = <AnalysisError>[];
-    final reporterBeforeExpectLint = ErrorReporter(
+    final lintsBeforeExpectLint = <Diagnostic>[];
+    final reporterBeforeExpectLint = DiagnosticReporter(
       // TODO assert that a LintRule only emits lints with a code matching LintRule.code
       // TODO asserts lintRules can only emit lints in the analyzed file
       _AnalysisErrorListenerDelegate((analysisError) async {
         final ignoreForLine =
             parseIgnoreForLine(analysisError.offset, resolver);
 
-        if (!ignoreForLine.isIgnored(analysisError.errorCode.name)) {
+        if (!ignoreForLine.isIgnored(analysisError.diagnosticCode.name)) {
           lintsBeforeExpectLint.add(analysisError);
         }
       }),
@@ -966,8 +967,8 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
       runPostRunCallbacks(postRunCallbacks);
 
-      final allAnalysisErrors = <AnalysisError>[];
-      final analyzerPluginReporter = ErrorReporter(
+      final allAnalysisErrors = <Diagnostic>[];
+      final analyzerPluginReporter = DiagnosticReporter(
         // TODO assert that a LintRule only emits lints with a code matching LintRule.code
         // TODO asserts lintRules can only emit lints in the analyzed file
         _AnalysisErrorListenerDelegate(allAnalysisErrors.add),
@@ -1003,7 +1004,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   }
 
   Future<bool> _applyFixes(
-    List<AnalysisError> allAnalysisErrors,
+    List<Diagnostic> allAnalysisErrors,
     CustomLintResolver resolver,
     _CustomLintAnalysisConfigs configs, {
     required String path,
@@ -1033,7 +1034,8 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         allFixes
             .expand((e) => e.fixes)
             .expand((e) => e.change.edits)
-            .expand((e) => e.edits),
+            .expand((e) => e.edits)
+            .toList(),
       );
 
       io.File(path).writeAsStringSync(editedSource);
@@ -1064,7 +1066,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   }
 
   Future<List<analyzer_plugin.AnalysisErrorFixes>> _computeFistBatchFixes(
-    List<AnalysisError> allAnalysisErrors,
+    List<Diagnostic> allAnalysisErrors,
     _FileContext context,
     Set<String> fixedCodes, {
     required String path,
@@ -1072,7 +1074,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     if (!_client.fix) return [];
 
     final errorToFix = allAnalysisErrors
-        .where((e) => !fixedCodes.contains(e.errorCode.name))
+        .where((e) => !fixedCodes.contains(e.diagnosticCode.name))
         .firstOrNull;
     if (errorToFix == null) return [];
 
@@ -1112,7 +1114,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   Future<R> _runLintZoned<R>(
     CustomLintResolver resolver,
     FutureOr<R> Function() cb, {
-    ErrorReporter? reporter,
+    DiagnosticReporter? reporter,
     required String name,
   }) {
     void onLog(String message) {
@@ -1143,7 +1145,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   Future<void> _startUpLintRule(
     LintRule lintRule,
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext lintContext,
   ) async {
     await _runLintZoned(
@@ -1157,7 +1159,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   Future<void> _runLintRule(
     LintRule lintRule,
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext lintContext,
   ) async {
     await _runLintZoned(
@@ -1174,7 +1176,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     CustomLintResolver resolver,
     Object error,
     StackTrace stackTrace, {
-    ErrorReporter? reporter,
+    DiagnosticReporter? reporter,
     required String pluginName,
   }) {
     _channel.sendEvent(
@@ -1190,7 +1192,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     const code = LintCode(
       name: 'custom_lint_get_lint_fail',
       problemMessage: 'A lint plugin threw an exception',
-      errorSeverity: ErrorSeverity.ERROR,
+      severity: DiagnosticSeverity.ERROR,
     );
 
     // TODO add context message that points to the fir line of the stacktrace
@@ -1201,7 +1203,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         resolver.lineInfo.lineStarts.elementAtOrNull(1) ?? startOffset;
 
     reporter.atOffset(
-      errorCode: code,
+      diagnosticCode: code,
       offset: startOffset,
       length: endOffset - startOffset,
     );
@@ -1216,25 +1218,25 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   }
 }
 
-class _AnalysisErrorListenerDelegate implements AnalysisErrorListener {
+class _AnalysisErrorListenerDelegate implements DiagnosticListener {
   _AnalysisErrorListenerDelegate(this._onError);
 
-  final void Function(AnalysisError error) _onError;
+  final void Function(Diagnostic error) _onError;
 
   @override
-  void onError(AnalysisError error) => _onError(error);
+  void onDiagnostic(Diagnostic error) => _onError(error);
 }
 
 extension on ChangeReporterBuilder {
   Future<analyzer_plugin.AnalysisErrorFixes> completeAsFixes(
-    AnalysisError analysisError,
+    Diagnostic analysisError,
     _FileContext context,
   ) async {
     return analyzer_plugin.AnalysisErrorFixes(
       CustomAnalyzerConverter().convertAnalysisError(
         analysisError,
         lineInfo: context.resolver.lineInfo,
-        severity: analysisError.errorCode.errorSeverity,
+        severity: analysisError.diagnosticCode.severity,
       ),
       fixes: await complete(),
     );

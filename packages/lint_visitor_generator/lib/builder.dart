@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:collection/collection.dart';
 import 'package:source_gen/source_gen.dart';
@@ -13,25 +13,18 @@ Builder lintVisitorGenerator(BuilderOptions options) {
   );
 }
 
-extension on Element2 {
-  Annotatable? get asAnnotatable {
-    if (this is Annotatable) return this as Annotatable;
-    return null;
-  }
-}
-
-extension on LibraryElement2 {
-  Element2? findElementWithNameFromPackage(String name) {
-    return library2.firstFragment.importedLibraries2
+extension on LibraryElement {
+  Element? findElementWithNameFromPackage(String name) {
+    return library.firstFragment.importedLibraries
         .map(
           (e) => e.exportNamespace.get2(name),
         )
         .firstWhereOrNull((element) => element != null);
   }
 
-  ClassElement2? _findAstVisitor() {
+  ClassElement? _findAstVisitor() {
     return findElementWithNameFromPackage('GeneralizingAstVisitor')
-        as ClassElement2?;
+        as ClassElement?;
   }
 }
 
@@ -49,7 +42,7 @@ class _LintVisitorGenerator extends Generator {
     return buffer.toString();
   }
 
-  void _writeNodeLintRegistry(StringBuffer buffer, ClassElement2 visitor) {
+  void _writeNodeLintRegistry(StringBuffer buffer, ClassElement visitor) {
     buffer.writeln('''
 /// A single subscription for a node type, by the specified "key"
 class _Subscription<T> {
@@ -80,13 +73,13 @@ class NodeLintRegistry {
 ''');
 
     for (final visitorMethod
-        in visitor.methods2.where((e) => e.name3!.startsWith('visit'))) {
-      if (visitorMethod.metadata2.hasDeprecated) continue;
+        in visitor.methods.where((e) => e.name!.startsWith('visit'))) {
+      if (visitorMethod.metadata.hasDeprecated) continue;
 
       const start = 'visit'.length;
 
-      if (visitorMethod.formalParameters.single.type.element3!.asAnnotatable!
-          .metadata2.hasDeprecated) {
+      if (visitorMethod
+          .formalParameters.single.type.element!.metadata.hasDeprecated) {
         buffer.write('@deprecated ');
       }
 
@@ -97,14 +90,14 @@ class NodeLintRegistry {
         ..write(visitorMethod.formalParameters.single.type)
         ..write(' = [];');
 
-      if (visitorMethod.formalParameters.single.type.element3!.asAnnotatable!
-          .metadata2.hasDeprecated) {
+      if (visitorMethod
+          .formalParameters.single.type.element!.metadata.hasDeprecated) {
         buffer.write('@deprecated ');
       }
 
       buffer
         ..write('void add')
-        ..write(visitorMethod.name3!.substring(start))
+        ..write(visitorMethod.name!.substring(start))
         ..write('(String key, void Function(')
         ..write(visitorMethod.formalParameters.single.type)
         ..write(' node) listener) {_for')
@@ -117,7 +110,7 @@ class NodeLintRegistry {
     buffer.write('}');
   }
 
-  void _writeLinterVisitor(StringBuffer buffer, ClassElement2 visitor) {
+  void _writeLinterVisitor(StringBuffer buffer, ClassElement visitor) {
     buffer.writeln('''
 /// The AST visitor that runs handlers for nodes from the [_registry].
 class LinterVisitor extends GeneralizingAstVisitor<void> {
@@ -146,30 +139,30 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
 
 ''');
 
-    for (final visitorMethod in visitor.methods2) {
-      if (visitorMethod.metadata2.hasDeprecated) continue;
+    for (final visitorMethod in visitor.methods) {
+      if (visitorMethod.metadata.hasDeprecated) continue;
 
-      if (visitorMethod.formalParameters.single.type.element3!.asAnnotatable!
-          .metadata2.hasDeprecated) {
+      if (visitorMethod
+          .formalParameters.single.type.element!.metadata.hasDeprecated) {
         buffer.write('@deprecated ');
       }
 
       buffer
         ..write('@override void ')
-        ..write(visitorMethod.name3)
+        ..write(visitorMethod.name)
         ..write('(')
         ..write(visitorMethod.formalParameters.single.type)
         ..write(' node) {_runSubscriptions(node, _registry._for')
         ..write(visitorMethod.formalParameters.single.type)
         ..write('); super.')
-        ..write(visitorMethod.name3)
+        ..write(visitorMethod.name)
         ..write('(node);}');
     }
 
     buffer.writeln('}');
   }
 
-  void _writeLintRuleNodeRegistry(StringBuffer buffer, ClassElement2 visitor) {
+  void _writeLintRuleNodeRegistry(StringBuffer buffer, ClassElement visitor) {
     buffer.writeln('''
 class LintRuleNodeRegistry {
   LintRuleNodeRegistry(this.nodeLintRegistry, this.name);
@@ -180,23 +173,23 @@ class LintRuleNodeRegistry {
 ''');
 
     for (final visitorMethod
-        in visitor.methods2.where((e) => e.name3!.startsWith('visit'))) {
-      if (visitorMethod.metadata2.hasDeprecated) continue;
+        in visitor.methods.where((e) => e.name!.startsWith('visit'))) {
+      if (visitorMethod.metadata.hasDeprecated) continue;
 
       const start = 'visit'.length;
 
-      if (visitorMethod.formalParameters.single.type.element3!.asAnnotatable!
-          .metadata2.hasDeprecated) {
+      if (visitorMethod
+          .formalParameters.single.type.element!.metadata.hasDeprecated) {
         buffer.write('@deprecated ');
       }
 
       buffer
         ..write('@preferInline void add')
-        ..write(visitorMethod.name3!.substring(start))
+        ..write(visitorMethod.name!.substring(start))
         ..write('(void Function(')
         ..write(visitorMethod.formalParameters.single.type)
         ..write(' node) listener) {nodeLintRegistry.add')
-        ..write(visitorMethod.name3!.substring(start))
+        ..write(visitorMethod.name!.substring(start))
         ..write('(name, listener);}');
     }
 

@@ -52,7 +52,7 @@ class PreferFinalProviders extends DartLintRule {
   void run(
     // This object contains metadata about the analyzed file
     CustomLintResolver resolver,
-    // ErrorReporter is for submitting lints. It contains utilities to specify
+    // DiagnosticReporter is for submitting lints. It contains utilities to specify
     // where the lint should show-up.
     ErrorReporter reporter,
     // This contains various utilities, including tools for inspecting the content
@@ -93,7 +93,7 @@ class _MakeProviderFinalFix extends DartFix {
   @override
   void run(
     CustomLintResolver resolver,
-    // Similar to ErrorReporter, ChangeReporter is an object used for submitting
+    // Similar to DiagnosticReporter, ChangeReporter is an object used for submitting
     // edits within a Dart file.
     ChangeReporter reporter,
     CustomLintContext context,

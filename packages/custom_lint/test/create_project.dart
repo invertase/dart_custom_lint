@@ -34,7 +34,7 @@ class TestLintRule {
     this.onVariable = '',
     this.ruleMembers = '',
     this.fixes = const [],
-    this.errorSeverity = ErrorSeverity.INFO,
+    this.severity = DiagnosticSeverity.INFO,
   });
 
   final String code;
@@ -44,7 +44,7 @@ class TestLintRule {
   final String onVariable;
   final String ruleMembers;
   final List<TestLintFix> fixes;
-  final ErrorSeverity errorSeverity;
+  final DiagnosticSeverity severity;
 
   void run(StringBuffer buffer) {
     final fixesCode = fixes.isEmpty
@@ -64,7 +64,7 @@ class $code extends DartLintRule {
     : super(
         code: LintCode(name: '$code',
         problemMessage: '$message',
-        errorSeverity: ErrorSeverity.${errorSeverity.displayName.toUpperCase()}),
+        severity: DiagnosticSeverity.${severity.displayName.toUpperCase()}),
       );
 
 $fixesCode
@@ -86,7 +86,7 @@ $ruleMembers
     buffer.write(
       '''
   @override
-  void run(CustomLintResolver resolver, ErrorReporter reporter, CustomLintContext context) {
+  void run(CustomLintResolver resolver, DiagnosticReporter reporter, CustomLintContext context) {
     $onRun
     context.registry.addFunctionDeclaration((node) {
       $onVariable
@@ -119,8 +119,8 @@ class $name extends DartFix {
     CustomLintResolver resolver,
     ChangeReporter reporter,
     CustomLintContext context,
-    AnalysisError analysisError,
-    List<AnalysisError> others,
+    Diagnostic analysisError,
+    List<Diagnostic> others,
   ) {
     context.registry.addFunctionDeclaration((node) {
       if (!analysisError.sourceRange.intersects(node.sourceRange)) return;

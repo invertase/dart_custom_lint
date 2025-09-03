@@ -1,7 +1,4 @@
-import 'package:analyzer/error/error.dart'
-    hide
-        // ignore: undefined_hidden_name, Needed to support lower analyzer versions
-        LintCode;
+import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/file_system/memory_file_system.dart';
 import 'package:analyzer/source/file_source.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
@@ -24,11 +21,11 @@ void main() {
       ),
     );
 
-    final another = AnalysisError.tmp(
+    final another = Diagnostic.tmp(
       source: source,
       offset: 11,
       length: 12,
-      errorCode: const LintCode(
+      diagnosticCode: const LintCode(
         name: 'another',
         problemMessage: 'another message',
         url: 'https://dart.dev/diagnostics/another',
@@ -38,11 +35,11 @@ void main() {
     expect(
       CustomAnalyzerConverter()
           .convertAnalysisError(
-            AnalysisError.tmp(
+            Diagnostic.tmp(
               source: source2,
               offset: 13,
               length: 14,
-              errorCode: const LintCode(
+              diagnosticCode: const LintCode(
                 name: 'foo',
                 problemMessage: 'bar',
                 url: 'https://google.com/diagnostics/foo',

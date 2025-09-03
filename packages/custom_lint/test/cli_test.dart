@@ -1,10 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:analyzer/error/error.dart'
-    hide
-        // ignore: undefined_hidden_name, Needed to support lower analyzer versions
-        LintCode;
+import 'package:analyzer/error/error.dart';
 import 'package:custom_lint/src/output/output_format.dart';
 import 'package:test/test.dart';
 
@@ -315,7 +312,7 @@ Analyzing...
         TestLintRule(
           code: 'hello_world',
           message: 'Hello world',
-          errorSeverity: ErrorSeverity.WARNING,
+          severity: DiagnosticSeverity.WARNING,
         ),
       ]),
     );
@@ -439,7 +436,7 @@ lib/custom_lint_client.dart:18:26: Error: Undefined name 'createPlugin'.
         allOf(
           contains('''
 [hello_world]
-[hello_world]  
+[hello_world]
 [hello_world] Hello
 [hello_world] world
 '''),
@@ -490,47 +487,47 @@ class _Lint extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     final line2 = resolver.lineInfo.getOffsetOfLine(1);
     reporter.atOffset(
-      errorCode: const LintCode(name: 'x2', problemMessage: 'x2'),
+      diagnosticCode: const LintCode(name: 'x2', problemMessage: 'x2'),
       offset: line2 + 1,
       length: 1,
     );
     reporter.atOffset(
-      errorCode: const LintCode(name: 'a', problemMessage: 'a'),
+      diagnosticCode: const LintCode(name: 'a', problemMessage: 'a'),
       offset: line2 + 1,
       length: 1,
     );
     reporter.atOffset(
-      errorCode: const LintCode(name: 'x', problemMessage: 'x'),
+      diagnosticCode: const LintCode(name: 'x', problemMessage: 'x'),
       offset: line2 + 1,
       length: 1,
     );
     reporter.atOffset(
-      errorCode: const LintCode(name: 'y', problemMessage: 'y'),
+      diagnosticCode: const LintCode(name: 'y', problemMessage: 'y'),
       offset: line2,
       length: 1,
     );
     reporter.atOffset(
-      errorCode: const LintCode(name: 'z', problemMessage: 'z'),
+      diagnosticCode: const LintCode(name: 'z', problemMessage: 'z'),
       offset: 0,
       length: 1,
     );
     reporter.atOffset(
-      errorCode: const LintCode(name: 'w', problemMessage: 'w', errorSeverity: ErrorSeverity.WARNING),
+      diagnosticCode: const LintCode(name: 'w', problemMessage: 'w', severity: DiagnosticSeverity.WARNING),
       offset: 0,
       length: 1,
     );
     reporter.atOffset(
-      errorCode: const LintCode(name: 'e', problemMessage: 'e', errorSeverity: ErrorSeverity.ERROR),
+      diagnosticCode: const LintCode(name: 'e', problemMessage: 'e', severity: DiagnosticSeverity.ERROR),
       offset: 0,
       length: 1,
     );
     reporter.atOffset(
-      errorCode: const LintCode(name: 's', problemMessage: 's', errorSeverity: ErrorSeverity.ERROR),
+      diagnosticCode: const LintCode(name: 's', problemMessage: 's', severity: DiagnosticSeverity.ERROR),
       offset: 1,
       length: 2,
     );

@@ -35,7 +35,7 @@ void main() {
 }
 ''';
     final file = writeToTemporaryFile(fileSource);
-    final result = await resolveFile2(path: file.path);
+    final result = await resolveFile(path: file.path);
     result as ResolvedUnitResult;
 
     final changes = assist.testRun(result, SourceRange.EMPTY);
@@ -108,7 +108,7 @@ void main() {
   print('Custom world');
 }
 ''');
-    final result = await resolveFile2(path: file.path);
+    final result = await resolveFile(path: file.path);
     result as ResolvedUnitResult;
 
     final changeList1 = await assist1.testRun(result, SourceRange.EMPTY);

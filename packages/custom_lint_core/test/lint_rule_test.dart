@@ -28,7 +28,7 @@ class TestLintRule extends LintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {}
 }
@@ -45,7 +45,7 @@ class MyLintRule extends DartLintRule {
   @override
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
     context.registry.addMethodInvocation((node) {
@@ -67,14 +67,14 @@ void main() {
   print('Hello world');
 }
 ''');
-    final result = await resolveFile2(path: file.path);
+    final result = await resolveFile(path: file.path);
     result as ResolvedUnitResult;
 
     final analysisErrors = await assist.testRun(result);
 
     expect(analysisErrors, hasLength(1));
 
-    expect(analysisErrors.first.errorCode.name, 'my_lint_code');
+    expect(analysisErrors.first.diagnosticCode.name, 'my_lint_code');
     expect(analysisErrors.first.message, 'message');
     expect(analysisErrors.first.offset, 16);
     expect(analysisErrors.first.length, 'print'.length);
@@ -93,14 +93,14 @@ void main() {
 
     expect(analysisErrors, hasLength(1));
 
-    expect(analysisErrors.first.errorCode.name, 'my_lint_code');
+    expect(analysisErrors.first.diagnosticCode.name, 'my_lint_code');
     expect(analysisErrors.first.message, 'message');
     expect(analysisErrors.first.offset, 16);
     expect(analysisErrors.first.length, 'print'.length);
   });
 
   group('LintRule.isEnabled', () {
-    test('defaults to checking "enabedByDefault"', () {
+    test('defaults to checking "enabledByDefault"', () {
       expect(onByDefault.isEnabled(CustomLintConfigs.empty), true);
       expect(offByDefault.isEnabled(CustomLintConfigs.empty), false);
     });

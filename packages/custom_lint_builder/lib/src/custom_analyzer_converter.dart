@@ -22,12 +22,12 @@ class CustomAnalyzerConverter {
   /// error's location will have a start line and start column. If a [severity]
   /// is provided, then it will override the severity defined by the error.
   plugin.AnalysisError convertAnalysisError(
-    analyzer.AnalysisError error, {
+    analyzer.Diagnostic error, {
     analyzer.LineInfo? lineInfo,
-    analyzer.ErrorSeverity? severity,
+    analyzer.DiagnosticSeverity? severity,
   }) {
-    var errorCode = error.errorCode;
-    severity ??= errorCode.errorSeverity;
+    var diagnosticCode = error.diagnosticCode;
+    severity ??= diagnosticCode.severity;
     var offset = error.offset;
     var startLine = -1;
     var startColumn = -1;
@@ -50,16 +50,16 @@ class CustomAnalyzerConverter {
     }
     return plugin.AnalysisError(
       convertErrorSeverity(severity),
-      convertErrorType(errorCode.type),
+      convertErrorType(diagnosticCode.type),
       plugin.Location(
           error.source.fullName, offset, error.length, startLine, startColumn,
           endLine: endLine, endColumn: endColumn),
       error.message,
-      errorCode.name.toLowerCase(),
+      diagnosticCode.name.toLowerCase(),
       contextMessages: contextMessages,
-      correction: error.correction,
+      correction: error.correctionMessage,
       hasFix: null,
-      url: errorCode.url,
+      url: diagnosticCode.url,
     );
   }
 
@@ -69,7 +69,7 @@ class CustomAnalyzerConverter {
   /// start column. If an analysis [options] is provided then the severities of
   /// the errors will be altered based on those options.
   List<plugin.AnalysisError> convertAnalysisErrors(
-      List<analyzer.AnalysisError> errors,
+      List<analyzer.Diagnostic> errors,
       {analyzer.LineInfo? lineInfo,
       analyzer.AnalysisOptions? options}) {
     var serverErrors = <plugin.AnalysisError>[];
@@ -120,11 +120,11 @@ class CustomAnalyzerConverter {
   /// Convert the error [severity] from the 'analyzer' package to an analysis
   /// error severity defined by the plugin API.
   plugin.AnalysisErrorSeverity convertErrorSeverity(
-          analyzer.ErrorSeverity severity) =>
+          analyzer.DiagnosticSeverity severity) =>
       plugin.AnalysisErrorSeverity.values.byName(severity.name);
 
   /// Convert the error [type] from the 'analyzer' package to an analysis error
   /// type defined by the plugin API.
-  plugin.AnalysisErrorType convertErrorType(analyzer.ErrorType type) =>
+  plugin.AnalysisErrorType convertErrorType(analyzer.DiagnosticType type) =>
       plugin.AnalysisErrorType.values.byName(type.name);
 }

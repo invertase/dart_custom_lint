@@ -1,0 +1,5 @@
+dependency_overrides:
+  freezed:
+    path: ../freezed/packages/freezed/
+  build: ^4.0.0
+  source_gen: ^4.0.0

@@ -1,7 +1,5 @@
-import 'package:analyzer/error/error.dart'
-    hide
-        // ignore: undefined_hidden_name, Needed to support lower analyzer versions
-        LintCode;
+import 'package:analyzer/diagnostic/diagnostic.dart';
+import 'package:analyzer/error/error.dart' hide LintCode;
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:meta/meta.dart';
@@ -22,16 +20,16 @@ class ExpectLint {
         'Expected to find the lint {0} on next line but none found.',
     correctionMessage: 'Either update the code such that it emits the lint {0} '
         'or update the expect_lint clause to not include the code {0}.',
-    errorSeverity: ErrorSeverity.ERROR,
+    severity: DiagnosticSeverity.ERROR,
   );
 
   /// The list of lints emitted in the file.
-  final List<AnalysisError> analysisErrors;
+  final List<Diagnostic> analysisErrors;
 
   /// Emits expect_lints
   void run(
     CustomLintResolver resolver,
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
   ) {
     final expectLints = _getAllExpectedLints(
       resolver.source.contents.data,
@@ -54,7 +52,7 @@ class ExpectLint {
         // we remove 1 to have them on the same unit. Then we remove 1 again
         // to access the line before the lint.
         lintLine.lineNumber - 2,
-        lint.errorCode.name,
+        lint.diagnosticCode.name,
       );
 
       if (allExpectedLints.contains(matchingExpectLintMeta)) {
@@ -74,7 +72,7 @@ class ExpectLint {
     // Some expect_lint clauses where not respected
     for (final unfulfilledExpectedLint in unfulfilledExpectedLints) {
       reporter.atOffset(
-        errorCode: _code,
+        diagnosticCode: _code,
         offset: unfulfilledExpectedLint.offset,
         length: unfulfilledExpectedLint.code.length,
         arguments: [unfulfilledExpectedLint.code],

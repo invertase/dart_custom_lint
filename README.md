@@ -97,7 +97,7 @@ To create a custom lint, you will need two things:
   ```dart
   import 'package:analyzer/error/listener.dart';
   import 'package:custom_lint_builder/custom_lint_builder.dart';
-  
+
   // This is the entrypoint of our custom linter
   PluginBase createPlugin() => _ExampleLinter();
 
@@ -123,7 +123,7 @@ To create a custom lint, you will need two things:
     @override
     void run(
       CustomLintResolver resolver,
-      ErrorReporter reporter,
+      DiagnosticReporter reporter,
       CustomLintContext context,
     ) {
       // Our lint will highlight all variable declarations with our custom warning.

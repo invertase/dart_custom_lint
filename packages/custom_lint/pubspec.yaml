@@ -10,7 +10,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  analyzer: ^7.5.0
+  analyzer: ^8.1.0
   analyzer_plugin: ^0.13.0
   args: ^2.3.1
   async: ^2.9.0

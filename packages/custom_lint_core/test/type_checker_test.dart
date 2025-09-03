@@ -19,7 +19,7 @@ void main() {
 }
 ''');
 
-    final unit = await resolveFile2(path: file.path);
+    final unit = await resolveFile(path: file.path);
     unit as ResolvedUnitResult;
 
     const checker = TypeChecker.fromName('foo');
@@ -41,7 +41,7 @@ void fn((int, String) record) {
 }
 ''');
 
-    final unit = await resolveFile2(path: file.path);
+    final unit = await resolveFile(path: file.path);
     unit as ResolvedUnitResult;
 
     const checker = TypeChecker.fromName('record');
@@ -53,7 +53,7 @@ void fn((int, String) record) {
       }),
     );
 
-    expect(propertyAccessNode.realTarget.staticType!.element3, isNull);
+    expect(propertyAccessNode.realTarget.staticType!.element, isNull);
     expect(
       checker.isExactlyType(propertyAccessNode.realTarget.staticType!),
       isFalse,
@@ -88,7 +88,7 @@ environment:
         workingDirectory: tempDir.path,
       );
 
-      final unit = await resolveFile2(path: file.path);
+      final unit = await resolveFile(path: file.path);
       unit as ResolvedUnitResult;
 
       const checker = TypeChecker.fromPackage('some_package');
@@ -132,7 +132,7 @@ int a;
 File? x;
 ''');
 
-      final unit = await resolveFile2(path: file.path);
+      final unit = await resolveFile(path: file.path);
       unit as ResolvedUnitResult;
 
       const checker = TypeChecker.fromPackage('dart:core');

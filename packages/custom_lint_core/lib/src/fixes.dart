@@ -2,10 +2,7 @@ import 'dart:io';
 
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/error/error.dart'
-    hide
-        // ignore: undefined_hidden_name, Needed to support lower analyzer versions
-        LintCode;
+import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer_plugin/protocol/protocol_generated.dart';
 import 'package:custom_lint_visitor/custom_lint_visitor.dart';
 import 'package:meta/meta.dart';
@@ -22,8 +19,8 @@ import 'runnable.dart';
 @internal
 typedef FixArgs = ({
   ChangeReporter reporter,
-  AnalysisError analysisError,
-  List<AnalysisError> others,
+  Diagnostic analysisError,
+  List<Diagnostic> others,
 });
 
 const _uid = Uuid();
@@ -86,8 +83,8 @@ abstract class Fix extends Runnable<FixArgs> {
     CustomLintResolver resolver,
     ChangeReporter reporter,
     CustomLintContext context,
-    AnalysisError analysisError,
-    List<AnalysisError> others,
+    Diagnostic analysisError,
+    List<Diagnostic> others,
   );
 }
 
@@ -129,8 +126,8 @@ abstract class DartFix extends Fix {
   @visibleForTesting
   Future<List<PrioritizedSourceChange>> testRun(
     ResolvedUnitResult result,
-    AnalysisError analysisError,
-    List<AnalysisError> others, {
+    Diagnostic analysisError,
+    List<Diagnostic> others, {
     Pubspec? pubspec,
   }) async {
     final registry = LintRuleNodeRegistry(
@@ -148,7 +145,7 @@ abstract class DartFix extends Fix {
       () => Future.value(result),
       lineInfo: result.lineInfo,
       path: result.path,
-      source: result.libraryElement2.firstFragment.source,
+      source: result.libraryElement.firstFragment.source,
     );
     final reporter = ChangeReporterImpl(result.session, resolver);
 
@@ -165,10 +162,10 @@ abstract class DartFix extends Fix {
   @visibleForTesting
   Future<List<PrioritizedSourceChange>> testAnalyzeAndRun(
     File file,
-    AnalysisError analysisError,
-    List<AnalysisError> others,
+    Diagnostic analysisError,
+    List<Diagnostic> others,
   ) async {
-    final result = await resolveFile2(path: file.path);
+    final result = await resolveFile(path: file.path);
     result as ResolvedUnitResult;
     return testRun(result, analysisError, others);
   }

@@ -110,7 +110,7 @@ abstract class DartAssist extends Assist {
       () => Future.value(result),
       lineInfo: result.lineInfo,
       path: result.path,
-      source: result.libraryElement2.firstFragment.source,
+      source: result.libraryElement.firstFragment.source,
     );
     final reporter = ChangeReporterImpl(result.session, resolver);
 
@@ -134,7 +134,7 @@ abstract class DartAssist extends Assist {
     io.File file,
     SourceRange target,
   ) async {
-    final result = await resolveFile2(path: file.path);
+    final result = await resolveFile(path: file.path);
     result as ResolvedUnitResult;
     return testRun(result, target);
   }

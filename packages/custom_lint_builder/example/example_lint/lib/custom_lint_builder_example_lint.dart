@@ -1,7 +1,4 @@
-import 'package:analyzer/error/error.dart'
-    hide
-        // ignore: undefined_hidden_name, Needed to support lower analyzer versions
-        LintCode;
+import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/source/source_range.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
@@ -52,9 +49,9 @@ class PreferFinalProviders extends DartLintRule {
   void run(
     // This object contains metadata about the analyzed file
     CustomLintResolver resolver,
-    // ErrorReporter is for submitting lints. It contains utilities to specify
+    // DiagnosticReporter is for submitting lints. It contains utilities to specify
     // where the lint should show-up.
-    ErrorReporter reporter,
+    DiagnosticReporter reporter,
     // This contains various utilities, including tools for inspecting the content
     // of Dart files in an efficient manner.
     CustomLintContext context,
@@ -93,16 +90,16 @@ class _MakeProviderFinalFix extends DartFix {
   @override
   void run(
     CustomLintResolver resolver,
-    // Similar to ErrorReporter, ChangeReporter is an object used for submitting
+    // Similar to DiagnosticReporter, ChangeReporter is an object used for submitting
     // edits within a Dart file.
     ChangeReporter reporter,
     CustomLintContext context,
     // This is the warning that was emitted by our [LintRule] and which we are
     // trying to fix.
-    AnalysisError analysisError,
+    Diagnostic analysisError,
     // This is the other warnings in the same file defined by our [LintRule].
     // Useful in case we want to offer a "fix all" option.
-    List<AnalysisError> others,
+    List<Diagnostic> others,
   ) {
     // Using similar logic as in "PreferFinalProviders", we inspect the Dart file
     // to search for variable declarations.

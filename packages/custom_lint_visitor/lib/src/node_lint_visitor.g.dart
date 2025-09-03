@@ -86,20 +86,6 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
     super.visitAssignmentExpression(node);
   }
 
-  @deprecated
-  @override
-  void visitAugmentedExpression(AugmentedExpression node) {
-    _runSubscriptions(node, _registry._forAugmentedExpression);
-    super.visitAugmentedExpression(node);
-  }
-
-  @deprecated
-  @override
-  void visitAugmentedInvocation(AugmentedInvocation node) {
-    _runSubscriptions(node, _registry._forAugmentedInvocation);
-    super.visitAugmentedInvocation(node);
-  }
-
   @override
   void visitAwaitExpression(AwaitExpression node) {
     _runSubscriptions(node, _registry._forAwaitExpression);
@@ -1352,24 +1338,6 @@ class NodeLintRegistry {
   void addAssignmentExpression(
       String key, void Function(AssignmentExpression node) listener) {
     _forAssignmentExpression
-        .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
-  @deprecated
-  final List<_Subscription<AugmentedExpression>> _forAugmentedExpression = [];
-  @deprecated
-  void addAugmentedExpression(
-      String key, void Function(AugmentedExpression node) listener) {
-    _forAugmentedExpression
-        .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
-  @deprecated
-  final List<_Subscription<AugmentedInvocation>> _forAugmentedInvocation = [];
-  @deprecated
-  void addAugmentedInvocation(
-      String key, void Function(AugmentedInvocation node) listener) {
-    _forAugmentedInvocation
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
@@ -2742,20 +2710,6 @@ class LintRuleNodeRegistry {
   void addAssignmentExpression(
       void Function(AssignmentExpression node) listener) {
     nodeLintRegistry.addAssignmentExpression(name, listener);
-  }
-
-  @deprecated
-  @preferInline
-  void addAugmentedExpression(
-      void Function(AugmentedExpression node) listener) {
-    nodeLintRegistry.addAugmentedExpression(name, listener);
-  }
-
-  @deprecated
-  @preferInline
-  void addAugmentedInvocation(
-      void Function(AugmentedInvocation node) listener) {
-    nodeLintRegistry.addAugmentedInvocation(name, listener);
   }
 
   @preferInline

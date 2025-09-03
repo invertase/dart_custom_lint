@@ -7,7 +7,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  analyzer: ^7.5.0
+  analyzer: ^8.1.0
   analyzer_plugin: ^0.13.0
   custom_lint_builder:
     path: ../../../custom_lint_builder
