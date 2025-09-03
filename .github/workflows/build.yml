@@ -22,8 +22,7 @@ jobs:
         channel:
           - master
         pub:
-          # TODO - uncomment this after the SDK bumps its dependencies
-          # - get
+          - get
           - upgrade
 
     steps:
@@ -36,16 +35,16 @@ jobs:
       - name: Add pub cache bin to PATH
         run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
 
-      - name: Add pub cache to PATH
-        run: echo "PUB_CACHE="$HOME/.pub-cache"" >> $GITHUB_ENV
-
-      - name: Add pubspec_overrides to the analyzer_plugin starter
-        run: "echo \"dependency_overrides:\n  custom_lint:\n    path: ${{github.workspace}}/packages/custom_lint\" > packages/custom_lint/tools/analyzer_plugin/pubspec_overrides.yaml"
+      - name: Add pub cache to env
+        run: echo "PUB_CACHE=\"$HOME/.pub-cache\"" >> $GITHUB_ENV
 
       - run: dart pub global activate melos
 
       - name: Install dependencies
-        run: melos exec -- "dart pub ${{ matrix.pub }}"
+        run: |
+          dart pub ${{ matrix.pub }}
+          cd packages/custom_lint/example/example_lint/ dart pub ${{ matrix.pub }}
+          cd ../../../custom_lint_builder/example/example_lint/ dart pub ${{ matrix.pub }}
 
       - name: Check format
         run: dart format --set-exit-if-changed .

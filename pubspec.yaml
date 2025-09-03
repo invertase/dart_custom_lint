@@ -2,6 +2,17 @@ name: melos_root
 publish_to: none
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ^3.5.0
+
+workspace:
+  - packages/custom_lint
+  - packages/custom_lint/example
+  - packages/custom_lint/tools/analyzer_plugin
+  - packages/custom_lint_builder
+  - packages/custom_lint_builder/example
+  - packages/custom_lint_core
+  - packages/custom_lint_visitor
+  - packages/lint_visitor_generator
+
 dev_dependencies:
-  melos: ^3.0.0
+  melos: ^7.1.0

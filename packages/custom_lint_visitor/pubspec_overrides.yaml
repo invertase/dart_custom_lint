@@ -1,4 +1,0 @@
-# melos_managed_dependency_overrides: lint_visitor_generator
-dependency_overrides:
-  lint_visitor_generator:
-    path: ../lint_visitor_generator
