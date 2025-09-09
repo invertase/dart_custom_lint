@@ -86,20 +86,6 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
     super.visitAssignmentExpression(node);
   }
 
-  @deprecated
-  @override
-  void visitAugmentedExpression(AugmentedExpression node) {
-    _runSubscriptions(node, _registry._forAugmentedExpression);
-    super.visitAugmentedExpression(node);
-  }
-
-  @deprecated
-  @override
-  void visitAugmentedInvocation(AugmentedInvocation node) {
-    _runSubscriptions(node, _registry._forAugmentedInvocation);
-    super.visitAugmentedInvocation(node);
-  }
-
   @override
   void visitAwaitExpression(AwaitExpression node) {
     _runSubscriptions(node, _registry._forAwaitExpression);
@@ -320,6 +306,13 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   void visitDoStatement(DoStatement node) {
     _runSubscriptions(node, _registry._forDoStatement);
     super.visitDoStatement(node);
+  }
+
+  @override
+  void visitDotShorthandConstructorInvocation(
+      DotShorthandConstructorInvocation node) {
+    _runSubscriptions(node, _registry._forDotShorthandConstructorInvocation);
+    super.visitDotShorthandConstructorInvocation(node);
   }
 
   @override
@@ -1355,24 +1348,6 @@ class NodeLintRegistry {
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
-  @deprecated
-  final List<_Subscription<AugmentedExpression>> _forAugmentedExpression = [];
-  @deprecated
-  void addAugmentedExpression(
-      String key, void Function(AugmentedExpression node) listener) {
-    _forAugmentedExpression
-        .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
-  @deprecated
-  final List<_Subscription<AugmentedInvocation>> _forAugmentedInvocation = [];
-  @deprecated
-  void addAugmentedInvocation(
-      String key, void Function(AugmentedInvocation node) listener) {
-    _forAugmentedInvocation
-        .add(_Subscription(listener, _getTimer(key), Zone.current));
-  }
-
   final List<_Subscription<AwaitExpression>> _forAwaitExpression = [];
   void addAwaitExpression(
       String key, void Function(AwaitExpression node) listener) {
@@ -1615,6 +1590,14 @@ class NodeLintRegistry {
   final List<_Subscription<DoStatement>> _forDoStatement = [];
   void addDoStatement(String key, void Function(DoStatement node) listener) {
     _forDoStatement.add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<DotShorthandConstructorInvocation>>
+      _forDotShorthandConstructorInvocation = [];
+  void addDotShorthandConstructorInvocation(String key,
+      void Function(DotShorthandConstructorInvocation node) listener) {
+    _forDotShorthandConstructorInvocation
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
   final List<_Subscription<DotShorthandInvocation>> _forDotShorthandInvocation =
@@ -2744,20 +2727,6 @@ class LintRuleNodeRegistry {
     nodeLintRegistry.addAssignmentExpression(name, listener);
   }
 
-  @deprecated
-  @preferInline
-  void addAugmentedExpression(
-      void Function(AugmentedExpression node) listener) {
-    nodeLintRegistry.addAugmentedExpression(name, listener);
-  }
-
-  @deprecated
-  @preferInline
-  void addAugmentedInvocation(
-      void Function(AugmentedInvocation node) listener) {
-    nodeLintRegistry.addAugmentedInvocation(name, listener);
-  }
-
   @preferInline
   void addAwaitExpression(void Function(AwaitExpression node) listener) {
     nodeLintRegistry.addAwaitExpression(name, listener);
@@ -2951,6 +2920,12 @@ class LintRuleNodeRegistry {
   @preferInline
   void addDoStatement(void Function(DoStatement node) listener) {
     nodeLintRegistry.addDoStatement(name, listener);
+  }
+
+  @preferInline
+  void addDotShorthandConstructorInvocation(
+      void Function(DotShorthandConstructorInvocation node) listener) {
+    nodeLintRegistry.addDotShorthandConstructorInvocation(name, listener);
   }
 
   @preferInline
