@@ -86,7 +86,8 @@ String _encodePrioritizedSourceChanges(
         final output = SourceEdit.applySequence(
           source,
           prioritizedSourceChange.change.edits
-              .expand((element) => element.edits),
+              .expand((element) => element.edits)
+              .toList(),
         );
 
         final outputLineInfo = LineInfo.fromContent(output);
