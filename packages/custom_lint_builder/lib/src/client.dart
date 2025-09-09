@@ -1033,7 +1033,8 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         allFixes
             .expand((e) => e.fixes)
             .expand((e) => e.change.edits)
-            .expand((e) => e.edits),
+            .expand((e) => e.edits)
+            .toList(),
       );
 
       io.File(path).writeAsStringSync(editedSource);
