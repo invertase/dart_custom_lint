@@ -1,5 +1,5 @@
 name: custom_lint
-version: 0.8.0
+version: 0.8.1
 description: Lint rules are a powerful way to improve the maintainability of a project. Custom Lint allows package authors and developers to easily write custom lint rules.
 repository: https://github.com/invertase/dart_custom_lint
 issue_tracker: https://github.com/invertase/dart_custom_lint/issues
@@ -8,14 +8,14 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
-  analyzer: ^7.5.0
+  analyzer: ^8.0.0
   analyzer_plugin: ^0.13.0
   args: ^2.3.1
   async: ^2.9.0
   ci: ^0.1.0
   cli_util: ^0.4.2
   collection: ^1.16.0
-  custom_lint_core: 0.8.0
+  custom_lint_core: 0.8.1
   freezed_annotation: ^3.0.0
   json_annotation: ^4.7.0
   meta: ^1.7.0
@@ -32,7 +32,7 @@ dev_dependencies:
   benchmark_harness: ^2.2.0
   build_runner: ^2.5.0
   file: ^7.0.0
-  freezed: ^3.0.0
+  freezed: ^3.2.1
   glob: ^2.1.2
   json_serializable: ^6.5.4
   test: ^1.20.2

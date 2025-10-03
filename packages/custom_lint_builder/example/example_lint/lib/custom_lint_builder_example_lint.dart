@@ -23,7 +23,7 @@ PluginBase createPlugin() => _RiverpodLint();
 class _RiverpodLint extends PluginBase {
   @override
   List<LintRule> getLintRules(CustomLintConfigs configs) => [
-        PreferFinalProviders(),
+        const PreferFinalProviders(),
       ];
 
   @override
@@ -36,7 +36,7 @@ class _RiverpodLint extends PluginBase {
 ///
 /// For emitting lints on non-Dart files, subclass [LintRule].
 class PreferFinalProviders extends DartLintRule {
-  PreferFinalProviders() : super(code: _code);
+  const PreferFinalProviders() : super(code: _code);
 
   /// Metadata about the lint define. This is the code which will show-up in the IDE,
   /// and its description..

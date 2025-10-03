@@ -167,7 +167,7 @@ abstract class DartLintRule extends LintRule {
       source: result.libraryElement2.firstFragment.source,
     );
 
-    final listener = RecordingErrorListener();
+    final listener = RecordingDiagnosticListener();
     final reporter = ErrorReporter(
       listener,
       result.libraryElement2.firstFragment.source,

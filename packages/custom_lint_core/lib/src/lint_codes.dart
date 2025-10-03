@@ -43,4 +43,7 @@ class LintCode extends ErrorCode {
   bool operator ==(Object other) {
     return other is LintCode && uniqueName == other.uniqueName;
   }
+
+  @override
+  DiagnosticSeverity get severity => errorSeverity;
 }
