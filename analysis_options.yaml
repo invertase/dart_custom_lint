@@ -13,6 +13,7 @@ analyzer:
     invalid_annotation_target: ignore
     ## Too painful to upgrade analyzer, and an official Google package is coming
     deprecated_member_use: ignore
+    experimental_member_use: ignore
 
 linter:
   rules:

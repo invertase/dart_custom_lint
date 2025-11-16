@@ -105,6 +105,12 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
+  void visitBlockClassBody(BlockClassBody node) {
+    _runSubscriptions(node, _registry._forBlockClassBody);
+    super.visitBlockClassBody(node);
+  }
+
+  @override
   void visitBlockFunctionBody(BlockFunctionBody node) {
     _runSubscriptions(node, _registry._forBlockFunctionBody);
     super.visitBlockFunctionBody(node);
@@ -153,6 +159,12 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
+  void visitClassBody(ClassBody node) {
+    _runSubscriptions(node, _registry._forClassBody);
+    super.visitClassBody(node);
+  }
+
+  @override
   void visitClassDeclaration(ClassDeclaration node) {
     _runSubscriptions(node, _registry._forClassDeclaration);
     super.visitClassDeclaration(node);
@@ -162,6 +174,12 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   void visitClassMember(ClassMember node) {
     _runSubscriptions(node, _registry._forClassMember);
     super.visitClassMember(node);
+  }
+
+  @override
+  void visitClassNamePart(ClassNamePart node) {
+    _runSubscriptions(node, _registry._forClassNamePart);
+    super.visitClassNamePart(node);
   }
 
   @override
@@ -346,6 +364,12 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
+  void visitEmptyClassBody(EmptyClassBody node) {
+    _runSubscriptions(node, _registry._forEmptyClassBody);
+    super.visitEmptyClassBody(node);
+  }
+
+  @override
   void visitEmptyFunctionBody(EmptyFunctionBody node) {
     _runSubscriptions(node, _registry._forEmptyFunctionBody);
     super.visitEmptyFunctionBody(node);
@@ -355,6 +379,12 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   void visitEmptyStatement(EmptyStatement node) {
     _runSubscriptions(node, _registry._forEmptyStatement);
     super.visitEmptyStatement(node);
+  }
+
+  @override
+  void visitEnumBody(EnumBody node) {
+    _runSubscriptions(node, _registry._forEnumBody);
+    super.visitEnumBody(node);
   }
 
   @override
@@ -802,6 +832,12 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
+  void visitNameWithTypeParameters(NameWithTypeParameters node) {
+    _runSubscriptions(node, _registry._forNameWithTypeParameters);
+    super.visitNameWithTypeParameters(node);
+  }
+
+  @override
   void visitNativeClause(NativeClause node) {
     _runSubscriptions(node, _registry._forNativeClause);
     super.visitNativeClause(node);
@@ -926,6 +962,18 @@ class LinterVisitor extends GeneralizingAstVisitor<void> {
   void visitPrefixExpression(PrefixExpression node) {
     _runSubscriptions(node, _registry._forPrefixExpression);
     super.visitPrefixExpression(node);
+  }
+
+  @override
+  void visitPrimaryConstructorDeclaration(PrimaryConstructorDeclaration node) {
+    _runSubscriptions(node, _registry._forPrimaryConstructorDeclaration);
+    super.visitPrimaryConstructorDeclaration(node);
+  }
+
+  @override
+  void visitPrimaryConstructorName(PrimaryConstructorName node) {
+    _runSubscriptions(node, _registry._forPrimaryConstructorName);
+    super.visitPrimaryConstructorName(node);
   }
 
   @override
@@ -1385,6 +1433,13 @@ class NodeLintRegistry {
     _forBlock.add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
+  final List<_Subscription<BlockClassBody>> _forBlockClassBody = [];
+  void addBlockClassBody(
+      String key, void Function(BlockClassBody node) listener) {
+    _forBlockClassBody
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
   final List<_Subscription<BlockFunctionBody>> _forBlockFunctionBody = [];
   void addBlockFunctionBody(
       String key, void Function(BlockFunctionBody node) listener) {
@@ -1435,6 +1490,11 @@ class NodeLintRegistry {
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
+  final List<_Subscription<ClassBody>> _forClassBody = [];
+  void addClassBody(String key, void Function(ClassBody node) listener) {
+    _forClassBody.add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
   final List<_Subscription<ClassDeclaration>> _forClassDeclaration = [];
   void addClassDeclaration(
       String key, void Function(ClassDeclaration node) listener) {
@@ -1445,6 +1505,13 @@ class NodeLintRegistry {
   final List<_Subscription<ClassMember>> _forClassMember = [];
   void addClassMember(String key, void Function(ClassMember node) listener) {
     _forClassMember.add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<ClassNamePart>> _forClassNamePart = [];
+  void addClassNamePart(
+      String key, void Function(ClassNamePart node) listener) {
+    _forClassNamePart
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
   final List<_Subscription<ClassTypeAlias>> _forClassTypeAlias = [];
@@ -1654,6 +1721,13 @@ class NodeLintRegistry {
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
+  final List<_Subscription<EmptyClassBody>> _forEmptyClassBody = [];
+  void addEmptyClassBody(
+      String key, void Function(EmptyClassBody node) listener) {
+    _forEmptyClassBody
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
   final List<_Subscription<EmptyFunctionBody>> _forEmptyFunctionBody = [];
   void addEmptyFunctionBody(
       String key, void Function(EmptyFunctionBody node) listener) {
@@ -1666,6 +1740,11 @@ class NodeLintRegistry {
       String key, void Function(EmptyStatement node) listener) {
     _forEmptyStatement
         .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<EnumBody>> _forEnumBody = [];
+  void addEnumBody(String key, void Function(EnumBody node) listener) {
+    _forEnumBody.add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
   final List<_Subscription<EnumConstantArguments>> _forEnumConstantArguments =
@@ -2169,6 +2248,14 @@ class NodeLintRegistry {
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
+  final List<_Subscription<NameWithTypeParameters>> _forNameWithTypeParameters =
+      [];
+  void addNameWithTypeParameters(
+      String key, void Function(NameWithTypeParameters node) listener) {
+    _forNameWithTypeParameters
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
   final List<_Subscription<NativeClause>> _forNativeClause = [];
   void addNativeClause(String key, void Function(NativeClause node) listener) {
     _forNativeClause.add(_Subscription(listener, _getTimer(key), Zone.current));
@@ -2309,6 +2396,22 @@ class NodeLintRegistry {
   void addPrefixExpression(
       String key, void Function(PrefixExpression node) listener) {
     _forPrefixExpression
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<PrimaryConstructorDeclaration>>
+      _forPrimaryConstructorDeclaration = [];
+  void addPrimaryConstructorDeclaration(
+      String key, void Function(PrimaryConstructorDeclaration node) listener) {
+    _forPrimaryConstructorDeclaration
+        .add(_Subscription(listener, _getTimer(key), Zone.current));
+  }
+
+  final List<_Subscription<PrimaryConstructorName>> _forPrimaryConstructorName =
+      [];
+  void addPrimaryConstructorName(
+      String key, void Function(PrimaryConstructorName node) listener) {
+    _forPrimaryConstructorName
         .add(_Subscription(listener, _getTimer(key), Zone.current));
   }
 
@@ -2781,6 +2884,11 @@ class LintRuleNodeRegistry {
   }
 
   @preferInline
+  void addBlockClassBody(void Function(BlockClassBody node) listener) {
+    nodeLintRegistry.addBlockClassBody(name, listener);
+  }
+
+  @preferInline
   void addBlockFunctionBody(void Function(BlockFunctionBody node) listener) {
     nodeLintRegistry.addBlockFunctionBody(name, listener);
   }
@@ -2822,6 +2930,11 @@ class LintRuleNodeRegistry {
   }
 
   @preferInline
+  void addClassBody(void Function(ClassBody node) listener) {
+    nodeLintRegistry.addClassBody(name, listener);
+  }
+
+  @preferInline
   void addClassDeclaration(void Function(ClassDeclaration node) listener) {
     nodeLintRegistry.addClassDeclaration(name, listener);
   }
@@ -2829,6 +2942,11 @@ class LintRuleNodeRegistry {
   @preferInline
   void addClassMember(void Function(ClassMember node) listener) {
     nodeLintRegistry.addClassMember(name, listener);
+  }
+
+  @preferInline
+  void addClassNamePart(void Function(ClassNamePart node) listener) {
+    nodeLintRegistry.addClassNamePart(name, listener);
   }
 
   @preferInline
@@ -2995,6 +3113,11 @@ class LintRuleNodeRegistry {
   }
 
   @preferInline
+  void addEmptyClassBody(void Function(EmptyClassBody node) listener) {
+    nodeLintRegistry.addEmptyClassBody(name, listener);
+  }
+
+  @preferInline
   void addEmptyFunctionBody(void Function(EmptyFunctionBody node) listener) {
     nodeLintRegistry.addEmptyFunctionBody(name, listener);
   }
@@ -3002,6 +3125,11 @@ class LintRuleNodeRegistry {
   @preferInline
   void addEmptyStatement(void Function(EmptyStatement node) listener) {
     nodeLintRegistry.addEmptyStatement(name, listener);
+  }
+
+  @preferInline
+  void addEnumBody(void Function(EnumBody node) listener) {
+    nodeLintRegistry.addEnumBody(name, listener);
   }
 
   @preferInline
@@ -3402,6 +3530,12 @@ class LintRuleNodeRegistry {
   }
 
   @preferInline
+  void addNameWithTypeParameters(
+      void Function(NameWithTypeParameters node) listener) {
+    nodeLintRegistry.addNameWithTypeParameters(name, listener);
+  }
+
+  @preferInline
   void addNativeClause(void Function(NativeClause node) listener) {
     nodeLintRegistry.addNativeClause(name, listener);
   }
@@ -3509,6 +3643,18 @@ class LintRuleNodeRegistry {
   @preferInline
   void addPrefixExpression(void Function(PrefixExpression node) listener) {
     nodeLintRegistry.addPrefixExpression(name, listener);
+  }
+
+  @preferInline
+  void addPrimaryConstructorDeclaration(
+      void Function(PrimaryConstructorDeclaration node) listener) {
+    nodeLintRegistry.addPrimaryConstructorDeclaration(name, listener);
+  }
+
+  @preferInline
+  void addPrimaryConstructorName(
+      void Function(PrimaryConstructorName node) listener) {
+    nodeLintRegistry.addPrimaryConstructorName(name, listener);
   }
 
   @preferInline
