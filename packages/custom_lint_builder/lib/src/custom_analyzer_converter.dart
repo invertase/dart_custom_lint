@@ -24,7 +24,7 @@ class CustomAnalyzerConverter {
   plugin.AnalysisError convertAnalysisError(
     analyzer.AnalysisError error, {
     analyzer.LineInfo? lineInfo,
-    analyzer.ErrorSeverity? severity,
+    analyzer.DiagnosticSeverity? severity,
   }) {
     var errorCode = error.errorCode;
     severity ??= errorCode.errorSeverity;
@@ -120,11 +120,11 @@ class CustomAnalyzerConverter {
   /// Convert the error [severity] from the 'analyzer' package to an analysis
   /// error severity defined by the plugin API.
   plugin.AnalysisErrorSeverity convertErrorSeverity(
-          analyzer.ErrorSeverity severity) =>
+          analyzer.DiagnosticSeverity severity) =>
       plugin.AnalysisErrorSeverity.values.byName(severity.name);
 
   /// Convert the error [type] from the 'analyzer' package to an analysis error
   /// type defined by the plugin API.
-  plugin.AnalysisErrorType convertErrorType(analyzer.ErrorType type) =>
+  plugin.AnalysisErrorType convertErrorType(analyzer.DiagnosticType type) =>
       plugin.AnalysisErrorType.values.byName(type.name);
 }

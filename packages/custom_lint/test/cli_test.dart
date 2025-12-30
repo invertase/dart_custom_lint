@@ -315,7 +315,7 @@ Analyzing...
         TestLintRule(
           code: 'hello_world',
           message: 'Hello world',
-          errorSeverity: ErrorSeverity.WARNING,
+          diagnosticSeverity: DiagnosticSeverity.WARNING,
         ),
       ]),
     );

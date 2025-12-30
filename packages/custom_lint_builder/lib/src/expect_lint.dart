@@ -22,7 +22,7 @@ class ExpectLint {
         'Expected to find the lint {0} on next line but none found.',
     correctionMessage: 'Either update the code such that it emits the lint {0} '
         'or update the expect_lint clause to not include the code {0}.',
-    errorSeverity: ErrorSeverity.ERROR,
+    errorSeverity: DiagnosticSeverity.ERROR,
   );
 
   /// The list of lints emitted in the file.
@@ -74,7 +74,7 @@ class ExpectLint {
     // Some expect_lint clauses where not respected
     for (final unfulfilledExpectedLint in unfulfilledExpectedLints) {
       reporter.atOffset(
-        errorCode: _code,
+        diagnosticCode: _code,
         offset: unfulfilledExpectedLint.offset,
         length: unfulfilledExpectedLint.code.length,
         arguments: [unfulfilledExpectedLint.code],

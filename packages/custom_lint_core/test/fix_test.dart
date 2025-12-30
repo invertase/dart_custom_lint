@@ -25,7 +25,7 @@ void main() {
 }
 ''';
     final file = writeToTemporaryFile(fileSource);
-    final result = await resolveFile2(path: file.path);
+    final result = await resolveFile(path: file.path);
     result as ResolvedUnitResult;
 
     final errors = await const MyLintRule().testRun(result);

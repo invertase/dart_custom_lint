@@ -12,29 +12,29 @@ import 'package:meta/meta.dart';
 
 import '../custom_lint_core.dart';
 
-/// A class representing an [ErrorCode] for [LintRule]s.
+/// A class representing an [DiagnosticCode] for [LintRule]s.
 @immutable
-class LintCode extends ErrorCode {
-  /// A class representing an [ErrorCode] for [LintRule]s.
+class LintCode extends DiagnosticCode {
+  /// A class representing an [DiagnosticCode] for [LintRule]s.
   const LintCode({
     required super.name,
     required super.problemMessage,
     super.correctionMessage,
     String? uniqueName,
     this.url,
-    this.errorSeverity = ErrorSeverity.INFO,
+    this.errorSeverity = DiagnosticSeverity.INFO,
   }) : super(
           uniqueName: uniqueName ?? name,
         );
 
   @override
-  ErrorType get type => ErrorType.LINT;
+  DiagnosticType get type => DiagnosticType.LINT;
 
   @override
   final String? url;
 
   @override
-  final ErrorSeverity errorSeverity;
+  final DiagnosticSeverity errorSeverity;
 
   @override
   int get hashCode => uniqueName.hashCode;

@@ -1191,7 +1191,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     const code = LintCode(
       name: 'custom_lint_get_lint_fail',
       problemMessage: 'A lint plugin threw an exception',
-      errorSeverity: ErrorSeverity.ERROR,
+      errorSeverity: DiagnosticSeverity.ERROR,
     );
 
     // TODO add context message that points to the fir line of the stacktrace
@@ -1202,7 +1202,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         resolver.lineInfo.lineStarts.elementAtOrNull(1) ?? startOffset;
 
     reporter.atOffset(
-      errorCode: code,
+      diagnosticCode: code,
       offset: startOffset,
       length: endOffset - startOffset,
     );
@@ -1217,13 +1217,13 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
   }
 }
 
-class _AnalysisErrorListenerDelegate implements AnalysisErrorListener {
+class _AnalysisErrorListenerDelegate implements DiagnosticListener {
   _AnalysisErrorListenerDelegate(this._onError);
 
   final void Function(AnalysisError error) _onError;
 
   @override
-  void onError(AnalysisError error) => _onError(error);
+  void onDiagnostic(AnalysisError error) => _onError(error);
 }
 
 extension on ChangeReporterBuilder {

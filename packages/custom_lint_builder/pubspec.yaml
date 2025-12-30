@@ -7,7 +7,7 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
-  analyzer: ^8.0.0
+  analyzer: ^9.0.0
   analyzer_plugin: ^0.13.0
   collection: ^1.16.0
   # Using tight constraints as custom_lint_builder communicate with each-other
