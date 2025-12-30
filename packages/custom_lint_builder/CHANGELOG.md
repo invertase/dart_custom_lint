@@ -1,4 +1,4 @@
-## Unreleased patch
+## 0.8.2 - 2025-12-30
 
 Support analyzer 9.0.0
 
