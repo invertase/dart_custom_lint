@@ -34,7 +34,7 @@ class TestLintRule {
     this.onVariable = '',
     this.ruleMembers = '',
     this.fixes = const [],
-    this.errorSeverity = ErrorSeverity.INFO,
+    this.diagnosticSeverity = DiagnosticSeverity.INFO,
   });
 
   final String code;
@@ -44,7 +44,7 @@ class TestLintRule {
   final String onVariable;
   final String ruleMembers;
   final List<TestLintFix> fixes;
-  final ErrorSeverity errorSeverity;
+  final DiagnosticSeverity diagnosticSeverity;
 
   void run(StringBuffer buffer) {
     final fixesCode = fixes.isEmpty
@@ -64,7 +64,7 @@ class $code extends DartLintRule {
     : super(
         code: LintCode(name: '$code',
         problemMessage: '$message',
-        errorSeverity: ErrorSeverity.${errorSeverity.displayName.toUpperCase()}),
+        diagnosticSeverity: DiagnosticSeverity.${diagnosticSeverity.displayName.toUpperCase()}),
       );
 
 $fixesCode

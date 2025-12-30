@@ -28,7 +28,7 @@ void main() {
       source: source,
       offset: 11,
       length: 12,
-      errorCode: const LintCode(
+      diagnosticCode: const LintCode(
         name: 'another',
         problemMessage: 'another message',
         url: 'https://dart.dev/diagnostics/another',
@@ -42,7 +42,7 @@ void main() {
               source: source2,
               offset: 13,
               length: 14,
-              errorCode: const LintCode(
+              diagnosticCode: const LintCode(
                 name: 'foo',
                 problemMessage: 'bar',
                 url: 'https://google.com/diagnostics/foo',

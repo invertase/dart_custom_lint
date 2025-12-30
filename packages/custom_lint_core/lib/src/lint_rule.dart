@@ -164,13 +164,13 @@ abstract class DartLintRule extends LintRule {
       () => Future.value(result),
       lineInfo: result.lineInfo,
       path: result.path,
-      source: result.libraryElement2.firstFragment.source,
+      source: result.libraryElement.firstFragment.source,
     );
 
     final listener = RecordingDiagnosticListener();
     final reporter = ErrorReporter(
       listener,
-      result.libraryElement2.firstFragment.source,
+      result.libraryElement.firstFragment.source,
     );
 
     await startUp(resolver, context);
@@ -178,7 +178,7 @@ abstract class DartLintRule extends LintRule {
     run(resolver, reporter, context);
     runPostRunCallbacks(postRunCallbacks);
 
-    return listener.errors;
+    return listener.diagnostics;
   }
 
   /// Analyze a Dart file and runs this assist in test mode.
@@ -186,7 +186,7 @@ abstract class DartLintRule extends LintRule {
   /// The result will contain all the changes that would have been applied by [run].
   @visibleForTesting
   Future<List<AnalysisError>> testAnalyzeAndRun(File file) async {
-    final result = await resolveFile2(path: file.path);
+    final result = await resolveFile(path: file.path);
     result as ResolvedUnitResult;
     return testRun(result);
   }

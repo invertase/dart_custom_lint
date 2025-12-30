@@ -67,7 +67,7 @@ void main() {
   print('Hello world');
 }
 ''');
-    final result = await resolveFile2(path: file.path);
+    final result = await resolveFile(path: file.path);
     result as ResolvedUnitResult;
 
     final analysisErrors = await assist.testRun(result);

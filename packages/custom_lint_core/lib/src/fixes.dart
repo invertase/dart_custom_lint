@@ -148,7 +148,7 @@ abstract class DartFix extends Fix {
       () => Future.value(result),
       lineInfo: result.lineInfo,
       path: result.path,
-      source: result.libraryElement2.firstFragment.source,
+      source: result.libraryElement.firstFragment.source,
     );
     final reporter = ChangeReporterImpl(result.session, resolver);
 
@@ -168,7 +168,7 @@ abstract class DartFix extends Fix {
     AnalysisError analysisError,
     List<AnalysisError> others,
   ) async {
-    final result = await resolveFile2(path: file.path);
+    final result = await resolveFile(path: file.path);
     result as ResolvedUnitResult;
     return testRun(result, analysisError, others);
   }
