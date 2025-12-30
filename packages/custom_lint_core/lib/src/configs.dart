@@ -1,3 +1,4 @@
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
@@ -17,6 +18,7 @@ class CustomLintConfigs {
     required this.verbose,
     required this.debug,
     required this.rules,
+    required this.errors,
   });
 
   /// Decode a [CustomLintConfigs] from a file.
@@ -108,11 +110,30 @@ class CustomLintConfigs {
       }
     }
 
+    final errors = <String, ErrorSeverity>{...includedOptions.errors};
+
+    if (customLint['errors'] case final YamlMap errorsYaml) {
+      for (final entry in errorsYaml.entries) {
+        if (entry.key case final String key) {
+          errors[key] = switch (entry.value) {
+            'info' => ErrorSeverity.INFO,
+            'warning' => ErrorSeverity.WARNING,
+            'error' => ErrorSeverity.ERROR,
+            'ignore' => ErrorSeverity.NONE,
+            _ => throw UnsupportedError(
+                'Unsupported severity ${entry.value} for key: ${entry.key}',
+              ),
+          };
+        }
+      }
+    }
+
     return CustomLintConfigs(
       enableAllLintRules: enableAllLintRules,
       verbose: verbose,
       debug: debug,
       rules: UnmodifiableMapView(rules),
+      errors: UnmodifiableMapView(errors),
     );
   }
 
@@ -123,6 +144,7 @@ class CustomLintConfigs {
     verbose: false,
     debug: false,
     rules: {},
+    errors: {},
   );
 
   /// A field representing whether to enable/disable lint rules that are not
@@ -147,13 +169,18 @@ class CustomLintConfigs {
   /// Whether enable hot-reload and log the VM-service URI.
   final bool debug;
 
+  /// A map of lint rules to their severity. This is used to override the severity
+  /// of a lint rule for a specific lint.
+  final Map<String, ErrorSeverity> errors;
+
   @override
   bool operator ==(Object other) =>
       other is CustomLintConfigs &&
       other.enableAllLintRules == enableAllLintRules &&
       other.verbose == verbose &&
       other.debug == debug &&
-      const MapEquality<String, LintOptions>().equals(other.rules, rules);
+      const MapEquality<String, LintOptions>().equals(other.rules, rules) &&
+      const MapEquality<String, ErrorSeverity>().equals(other.errors, errors);
 
   @override
   int get hashCode => Object.hash(
@@ -161,6 +188,7 @@ class CustomLintConfigs {
         verbose,
         debug,
         const MapEquality<String, LintOptions>().hash(rules),
+        const MapEquality<String, ErrorSeverity>().hash(errors),
       );
 }
 
