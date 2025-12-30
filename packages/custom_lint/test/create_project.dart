@@ -219,7 +219,6 @@ Directory createLintUsage({
   Directory? parent,
   Map<String, Uri> plugins = const {},
   Map<String, String> source = const {},
-  String? analysisOptions,
   Map<String, Uri> extraPackageConfig = const {},
   bool installAsDevDependency = true,
   required String name,
@@ -240,7 +239,6 @@ analyzer:
   plugins:
     - custom_lint
 
-${analysisOptions ?? ''}
 ''',
     pubspec: '''
 name: $name

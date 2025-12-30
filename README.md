@@ -227,19 +227,6 @@ custom_lint:
       some_parameter: "some value"
 ```
 
-#### Overriding lint error severities
-
-You can also override the severity of lint rules in the `analysis_options.yaml` file.
-This allows you to change INFO level lints to WARNING or ERROR, or vice versa:
-
-```yaml
-custom_lint:
-  errors:
-    my_lint_rule: error
-```
-
-The available severity levels are: `error`, `warning`, `info`, and `ignore`.
-
 ### Obtaining the list of lints in the CI
 
 Unfortunately, running `dart analyze` does not pick up our newly defined lints.
