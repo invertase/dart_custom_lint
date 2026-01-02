@@ -239,8 +239,6 @@ $ dart run custom_lint
   lib/main.dart:0:0 • This is the description of our custom lint • my_custom_lint_code
 ```
 
-If you are working on a Flutter project, run `flutter pub run custom_lint` instead.
-
 ### Using the Dart debugger and enabling hot-reload
 
 By default, custom_lint does enable hot-reload or give you the necessary
