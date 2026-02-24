@@ -121,7 +121,7 @@ class IgnoreCode extends DartFix {
     final ignoreForFile = parseIgnoreForFile(resolver.source.contents.data);
 
     final ignoreForLineChangeBuilder = reporter.createChangeBuilder(
-      message: 'Ignore "${analysisError.errorCode.name}" for line',
+      message: 'Ignore "${analysisError.diagnosticCode.name}" for line',
       priority: 1,
     );
 
@@ -129,7 +129,7 @@ class IgnoreCode extends DartFix {
       if (ignoreForLine.hasIgnore) {
         builder.addSimpleInsertion(
           ignoreForLine.endOffset,
-          ', ${analysisError.errorCode.name}',
+          ', ${analysisError.diagnosticCode.name}',
         );
       } else {
         final offsetLine =
@@ -143,13 +143,13 @@ class IgnoreCode extends DartFix {
 
         builder.addSimpleInsertion(
           startLineOffset,
-          '${' ' * indentLength}// ignore: ${analysisError.errorCode.name}\n',
+          '${' ' * indentLength}// ignore: ${analysisError.diagnosticCode.name}\n',
         );
       }
     });
 
     final ignoreForFileChangeBuilder = reporter.createChangeBuilder(
-      message: 'Ignore "${analysisError.errorCode.name}" for file',
+      message: 'Ignore "${analysisError.diagnosticCode.name}" for file',
       priority: 0,
     );
 
@@ -158,12 +158,12 @@ class IgnoreCode extends DartFix {
       if (firstIgnore == null) {
         builder.addSimpleInsertion(
           0,
-          '// ignore_for_file: ${analysisError.errorCode.name}\n',
+          '// ignore_for_file: ${analysisError.diagnosticCode.name}\n',
         );
       } else {
         builder.addSimpleInsertion(
           firstIgnore.endOffset,
-          ', ${analysisError.errorCode.name}',
+          ', ${analysisError.diagnosticCode.name}',
         );
       }
     });

@@ -1,8 +1,0 @@
-# melos_managed_dependency_overrides: custom_lint_visitor
-dependency_overrides:
-  custom_lint:
-    path: ../custom_lint
-  custom_lint_core:
-    path: ../custom_lint_core
-  lint_visitor_generator:
-    path: ../lint_visitor_generator

@@ -74,7 +74,7 @@ void main() {
 
     expect(analysisErrors, hasLength(1));
 
-    expect(analysisErrors.first.errorCode.name, 'my_lint_code');
+    expect(analysisErrors.first.diagnosticCode.name, 'my_lint_code');
     expect(analysisErrors.first.message, 'message');
     expect(analysisErrors.first.offset, 16);
     expect(analysisErrors.first.length, 'print'.length);
@@ -93,7 +93,7 @@ void main() {
 
     expect(analysisErrors, hasLength(1));
 
-    expect(analysisErrors.first.errorCode.name, 'my_lint_code');
+    expect(analysisErrors.first.diagnosticCode.name, 'my_lint_code');
     expect(analysisErrors.first.message, 'message');
     expect(analysisErrors.first.offset, 16);
     expect(analysisErrors.first.length, 'print'.length);

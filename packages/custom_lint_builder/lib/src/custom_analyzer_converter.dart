@@ -26,8 +26,8 @@ class CustomAnalyzerConverter {
     analyzer.LineInfo? lineInfo,
     analyzer.DiagnosticSeverity? severity,
   }) {
-    var errorCode = error.errorCode;
-    severity ??= errorCode.errorSeverity;
+    var errorCode = error.diagnosticCode;
+    severity ??= errorCode.severity;
     var offset = error.offset;
     var startLine = -1;
     var startColumn = -1;
@@ -57,7 +57,7 @@ class CustomAnalyzerConverter {
       error.message,
       errorCode.name.toLowerCase(),
       contextMessages: contextMessages,
-      correction: error.correction,
+      correction: error.correctionMessage,
       hasFix: null,
       url: errorCode.url,
     );

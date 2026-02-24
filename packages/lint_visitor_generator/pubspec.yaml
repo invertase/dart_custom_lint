@@ -1,8 +1,9 @@
 name: lint_visitor_generator
+version: 0.8.2
 publish_to: none
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ^3.9.0
 
 dependencies:
   analyzer: ^9.0.0

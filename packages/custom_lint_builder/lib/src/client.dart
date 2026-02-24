@@ -638,7 +638,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     return Future.wait(
       errorsToFix.map((error) async {
         final toBatch = analysisErrorsForContext
-            .where((e) => e.errorCode == error.errorCode)
+            .where((e) => e.diagnosticCode == error.diagnosticCode)
             .toList();
 
         final changeReporterBuilder = ChangeReporterBuilderImpl(
@@ -672,7 +672,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
 
         final batchReporterBuilder = BatchChangeReporterBuilder(
           batchReporter.createChangeBuilder(
-            message: 'Fix all "${error.errorCode}"',
+            message: 'Fix all "${error.diagnosticCode}"',
             priority: batchFix.priority - 1,
           ),
         );
@@ -709,7 +709,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     bool Function(Fix fix)? where,
   }) async {
     Iterable<Fix>? fixesForError =
-        context.configs.fixes[analysisError.errorCode];
+        context.configs.fixes[analysisError.diagnosticCode];
     if (fixesForError == null) return;
 
     if (where != null) {
@@ -720,7 +720,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         .where(
           (element) =>
               element != analysisError &&
-              element.errorCode == analysisError.errorCode,
+              element.diagnosticCode == analysisError.diagnosticCode,
         )
         .toList();
 
@@ -920,7 +920,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
         final ignoreForLine =
             parseIgnoreForLine(analysisError.offset, resolver);
 
-        if (!ignoreForLine.isIgnored(analysisError.errorCode.name)) {
+        if (!ignoreForLine.isIgnored(analysisError.diagnosticCode.name)) {
           lintsBeforeExpectLint.add(analysisError);
         }
       }),
@@ -1073,7 +1073,7 @@ class _ClientAnalyzerPlugin extends analyzer_plugin.ServerPlugin {
     if (!_client.fix) return [];
 
     final errorToFix = allAnalysisErrors
-        .where((e) => !fixedCodes.contains(e.errorCode.name))
+        .where((e) => !fixedCodes.contains(e.diagnosticCode.name))
         .firstOrNull;
     if (errorToFix == null) return [];
 
@@ -1235,7 +1235,7 @@ extension on ChangeReporterBuilder {
       CustomAnalyzerConverter().convertAnalysisError(
         analysisError,
         lineInfo: context.resolver.lineInfo,
-        severity: analysisError.errorCode.errorSeverity,
+        severity: analysisError.diagnosticCode.severity,
       ),
       fixes: await complete(),
     );

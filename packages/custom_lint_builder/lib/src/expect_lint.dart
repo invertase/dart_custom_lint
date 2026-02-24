@@ -54,7 +54,7 @@ class ExpectLint {
         // we remove 1 to have them on the same unit. Then we remove 1 again
         // to access the line before the lint.
         lintLine.lineNumber - 2,
-        lint.errorCode.name,
+        lint.diagnosticCode.name,
       );
 
       if (allExpectedLints.contains(matchingExpectLintMeta)) {
