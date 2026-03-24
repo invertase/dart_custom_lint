@@ -1,3 +1,6 @@
+> [!WARNING]
+> This package is no longer under active development. Please see [this comment](https://github.com/invertase/dart_custom_lint/issues/379#issuecomment-3861787414). The official [`analysis_server_plugin`](https://pub.dev/packages/analysis_server_plugin) is now the recommended approach for building custom lints. 
+
 <p align="center">
   <h1>custom_lint</h1>
   <span>Tools for building custom lint rules.</span>
