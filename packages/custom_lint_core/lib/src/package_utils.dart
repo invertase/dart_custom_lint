@@ -139,13 +139,34 @@ Future<PackageConfig> parsePackageConfig(Directory directory) async {
   var packageConfigFile = directory.packageConfig;
   if (!packageConfigFile.existsSync()) {
     final workspaceRefFile = directory.workspaceRef;
+    if (!workspaceRefFile.existsSync()) {
+      throw FileSystemException(
+        'Failed to find package_config.json at ${packageConfigFile.path} '
+        'and workspace_ref.json does not exist at ${workspaceRefFile.path}.',
+        packageConfigFile.path,
+      );
+    }
+
     final content = workspaceRefFile.readAsStringSync();
     final json = jsonDecode(content) as Map<String, dynamic>;
     final workspaceRoot = json['workspaceRoot'] as String;
-    final workspacePath =
-        normalize(join(workspaceRefFile.parent.path, workspaceRoot));
+    // Resolve the workspace root path relative to the workspace_ref.json file's parent directory
+    // Use absolute() to ensure proper resolution of relative paths like "../../.."
+    final workspacePath = normalize(
+      absolute(
+        join(workspaceRefFile.parent.path, workspaceRoot),
+      ),
+    );
     final workspaceDir = Directory(workspacePath);
     packageConfigFile = workspaceDir.packageConfig;
+
+    if (!packageConfigFile.existsSync()) {
+      throw FileSystemException(
+        'Failed to find package_config.json at workspace root ${workspaceDir.path}. '
+        'Workspace root was resolved from ${workspaceRefFile.path} with workspaceRoot: "$workspaceRoot".',
+        packageConfigFile.path,
+      );
+    }
   }
 
   return PackageConfig.parseBytes(
